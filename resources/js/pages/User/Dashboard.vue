@@ -31,21 +31,24 @@
         return '';
     });
 
-    // Define props - wallet_balances is optional because it's deferred
+    interface Wallet {
+        name: string;
+        symbol: string;
+        balance: number;
+        usd_value: number;
+        profit_loss: number;
+        price_change_percentage: number;
+        is_profit: boolean;
+        image: string;
+    }
+
+    interface WalletBalances {
+        wallets: Wallet[];
+        totalUsdValue: number;
+    }
+
     defineProps<{
-        wallet_balances?: {
-            wallets: {
-                name: string;
-                symbol: string;
-                balance: number;
-                usd_value: number;
-                profit_loss: number;
-                price_change_percentage: number;
-                is_profit: boolean;
-                image: string;
-            }[];
-            totalUsdValue: number;
-        };
+        wallet_balances?: WalletBalances;
     }>();
 
     const openNotificationsModal = () => {
@@ -58,9 +61,9 @@
 </script>
 
 <template>
-    <Head title="Dashboard" />
-
     <AppLayout>
+        <Head title="Dashboard" />
+
         <!-- Main Content -->
         <div class="lg:ml-64 pt-5 lg:pt-10 p-4 sm:p-6 lg:p-8 pb-24 lg:pb-8">
             <!-- Header - Hidden on mobile (search moved to mobile header) -->

@@ -61,9 +61,9 @@
 </script>
 
 <template>
-    <AppLayout>
-        <Head title="Dashboard" />
+    <Head title="Dashboard" />
 
+    <AppLayout>
         <!-- Main Content -->
         <div class="lg:ml-64 pt-5 lg:pt-10 p-4 sm:p-6 lg:p-8 pb-24 lg:pb-8">
             <!-- Header - Hidden on mobile (search moved to mobile header) -->

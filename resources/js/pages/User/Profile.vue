@@ -52,9 +52,9 @@
 </script>
 
 <template>
-    <AppLayout>
-        <Head title="Settings" />
+    <Head title="Settings" />
 
+    <AppLayout>
         <div class="lg:ml-64 pt-5 lg:pt-10 p-4 sm:p-6 lg:p-8 pb-24 lg:pb-8">
             <Breadcrumb
                 :items="breadcrumbItems"

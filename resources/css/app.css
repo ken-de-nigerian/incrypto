@@ -1,0 +1,838 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+@import 'tailwindcss';
+
+@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
+@source '../../storage/framework/views/*.php';
+
+/* InCrypto Design System - Dark Theme Cryptocurrency Exchange */
+
+@layer base {
+    :root {
+        /* Font family configuration */
+        --font-family-inter: Inter, ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+
+        /* Core Dark Theme Colors with #9ae600 accent */
+        --background: 0 0% 0%;
+        --foreground: 0 0% 100%;
+        --card: 0 0% 5%;
+        --card-foreground: 0 0% 100%;
+        --popover: 0 0% 8%;
+        --popover-foreground: 0 0% 100%;
+        --primary: 74 100% 45%; /* #9ae600 */
+        --primary-foreground: 0 0% 0%;
+        --secondary: 0 0% 15%;
+        --secondary-foreground: 0 0% 100%;
+        --muted: 0 0% 10%;
+        --muted-foreground: 0 0% 65%;
+        --accent: 74 100% 45%; /* #9ae600 */
+        --accent-foreground: 0 0% 0%;
+        --success: 120 100% 40%;
+        --success-foreground: 0 0% 100%;
+        --warning: 30 100% 50%;
+        --warning-foreground: 0 0% 0%;
+        --destructive: 0 100% 50%;
+        --destructive-foreground: 0 0% 100%;
+        --border: 0 0% 20%;
+        --input: 0 0% 15%;
+        --ring: 74 100% 45%; /* #9ae600 */
+
+        /* Sidebar colors */
+        --sidebar-background: 0 0% 5%;
+        --sidebar-foreground: 0 0% 90%;
+        --sidebar-primary: 74 100% 45%; /* #9ae600 */
+        --sidebar-primary-foreground: 0 0% 0%;
+        --sidebar-accent: 0 0% 10%;
+        --sidebar-accent-foreground: 0 0% 90%;
+        --sidebar-border: 0 0% 15%;
+        --sidebar-ring: 74 100% 45%; /* #9ae600 */
+
+        /* Crypto-specific colors */
+        --crypto-bitcoin: 30 100% 50%;
+        --crypto-ethereum: 240 100% 60%;
+        --crypto-positive: 74 100% 45%; /* #9ae600 for positive changes */
+        --crypto-negative: 0 100% 60%;
+
+        /* Border radius */
+        --radius: 0.75rem;
+
+        /* Gradients with #9ae600 */
+        --gradient-crypto: linear-gradient(135deg, hsl(74 100% 45%), hsl(80 100% 50%));
+        --gradient-card: linear-gradient(135deg, hsl(0 0% 8%), hsl(0 0% 12%));
+        --gradient-hero: linear-gradient(135deg, hsl(0 0% 0%), hsl(0 0% 8%));
+
+        /* Shadows with #9ae600 glow */
+        --shadow-crypto: 0 10px 30px -10px hsl(74 100% 45% / 0.3);
+        --shadow-card: 0 4px 20px -2px hsl(0 0% 0% / 0.5);
+        --shadow-glow: 0 0 40px hsl(74 100% 45% / 0.2);
+
+        /* Animations */
+        --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        --transition-bounce: all 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    }
+
+    * {
+        border-color: hsl(var(--border));
+    }
+
+    body {
+        background-color: hsl(var(--background));
+        color: hsl(var(--foreground));
+        font-family: var(--font-family-inter), sans-serif !important;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        font-feature-settings: "cv11", "ss01";
+        font-variation-settings: "opsz" 32;
+    }
+}
+
+@layer utilities {
+    .bg-accent {
+        background-color: hsl(var(--accent));
+    }
+
+    .bg-accent\/20 {
+        background-color: hsl(var(--accent) / .2);
+    }
+
+    .bg-accent\/30 {
+        background-color: hsl(var(--accent) / .3);
+    }
+
+    .bg-background {
+        background-color: hsl(var(--background));
+    }
+
+    .bg-black\/80 {
+        background-color: #000c;
+    }
+
+    .bg-border {
+        background-color: hsl(var(--border));
+    }
+
+    .bg-card {
+        background-color: hsl(var(--card));
+    }
+
+    .bg-crypto-bitcoin {
+        background-color: hsl(var(--crypto-bitcoin));
+    }
+
+    .bg-crypto-bitcoin\/20 {
+        background-color: hsl(var(--crypto-bitcoin) / .2);
+    }
+
+    .bg-crypto-bitcoin\/30 {
+        background-color: hsl(var(--crypto-bitcoin) / .3);
+    }
+
+    .bg-crypto-ethereum {
+        background-color: hsl(var(--crypto-ethereum));
+    }
+
+    .bg-crypto-ethereum\/20 {
+        background-color: hsl(var(--crypto-ethereum) / .2);
+    }
+
+    .bg-crypto-ethereum\/30 {
+        background-color: hsl(var(--crypto-ethereum) / .3);
+    }
+
+    .bg-crypto-positive {
+        background-color: hsl(var(--crypto-positive));
+    }
+
+    .bg-crypto-positive\/20 {
+        background-color: hsl(var(--crypto-positive) / .2);
+    }
+
+    .bg-destructive {
+        background-color: hsl(var(--destructive));
+    }
+
+    .bg-foreground {
+        background-color: hsl(var(--foreground));
+    }
+
+    .border-accent {
+        border-color: hsl(var(--accent));
+    }
+
+    .border-t-2 {
+        border-top-width: 2px;
+    }
+    .border-l-2 {
+        border-left-width: 2px;
+    }
+
+    .border-foreground\/30 {
+        border-color: hsl(var(--foreground) / .3);
+    }
+
+    .bg-foreground\/50 {
+        background-color: hsl(var(--foreground) / .5);
+    }
+
+    .bg-gray-100 {
+        --tw-bg-opacity: 1;
+        background-color: rgb(243 244 246 / var(--tw-bg-opacity, 1));
+    }
+
+    .bg-muted {
+        background-color: hsl(var(--muted));
+    }
+
+    .bg-muted\/10 {
+        background-color: hsl(var(--muted) / .1);
+    }
+
+    .bg-muted\/20 {
+        background-color: hsl(var(--muted) / .2);
+    }
+
+    .bg-muted\/30 {
+        background-color: hsl(var(--muted) / .3);
+    }
+
+    .bg-muted\/40 {
+        background-color: hsl(var(--muted) / .4);
+    }
+
+    .bg-muted\/50 {
+        background-color: hsl(var(--muted) / .5);
+    }
+
+    .bg-popover {
+        background-color: hsl(var(--popover));
+    }
+
+    .bg-primary {
+        background-color: hsl(var(--primary));
+    }
+
+    .bg-secondary {
+        background-color: hsl(var(--secondary));
+    }
+
+    .bg-sidebar {
+        background-color: hsl(var(--sidebar-background));
+    }
+
+    .bg-sidebar-accent {
+        background-color: hsl(var(--sidebar-accent));
+    }
+
+    .bg-sidebar-accent\/30 {
+        background-color: hsl(var(--sidebar-accent) / .3);
+    }
+
+    .bg-sidebar-border {
+        background-color: hsl(var(--sidebar-border));
+    }
+
+    .bg-success {
+        background-color: hsl(var(--success));
+    }
+
+    .bg-success\/10 {
+        background-color: hsl(var(--success) / .1);
+    }
+
+    .bg-transparent {
+        background-color: transparent;
+    }
+
+    /* Checkbox styling with higher specificity */
+    #privacy[type="checkbox"] {
+        appearance: none;
+        border-radius: var(--radius, 0.75rem);
+        border: 1px solid hsl(var(--primary));
+        background-color: hsl(var(--background));
+        transition: var(--transition-smooth);
+        width: 16px;
+        height: 16px;
+        position: relative;
+        cursor: pointer;
+    }
+
+    #privacy[type="checkbox"]:checked::after {
+        content: "";
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 8px;
+        height: 8px;
+        background-color: hsl(var(--primary-foreground));
+        clip-path: polygon(14% 44%, 0% 65%, 50% 100%, 100% 16%, 80% 0%, 43% 62%);
+    }
+
+    #privacy[type="checkbox"]:checked {
+        background-color: hsl(var(--primary));
+    }
+
+    #privacy[type="checkbox"]:focus-visible {
+        outline: none;
+        box-shadow: 0 0 0 2px hsl(var(--ring));
+    }
+
+    #privacy[type="checkbox"]:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+
+    #remember[type="checkbox"] {
+        appearance: none;
+        border-radius: var(--radius, 0.75rem);
+        border: 1px solid hsl(var(--primary));
+        background-color: hsl(var(--background));
+        transition: var(--transition-smooth);
+        width: 16px;
+        height: 16px;
+        position: relative;
+        cursor: pointer;
+    }
+
+    #remember[type="checkbox"]:checked::after {
+        content: "";
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 8px;
+        height: 8px;
+        background-color: hsl(var(--primary-foreground));
+        clip-path: polygon(14% 44%, 0% 65%, 50% 100%, 100% 16%, 80% 0%, 43% 62%);
+    }
+
+    #remember[type="checkbox"]:checked {
+        background-color: hsl(var(--primary));
+    }
+
+    #remember[type="checkbox"]:focus-visible {
+        outline: none;
+        box-shadow: 0 0 0 2px hsl(var(--ring));
+    }
+
+    #remember[type="checkbox"]:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+
+    #hideZeroBalances[type="checkbox"] {
+        appearance: none;
+        border-radius: var(--radius, 0.75rem);
+        border: 1px solid hsl(var(--primary));
+        background-color: hsl(var(--background));
+        transition: var(--transition-smooth);
+        width: 16px;
+        height: 16px;
+        position: relative;
+        cursor: pointer;
+    }
+
+    #hideZeroBalances[type="checkbox"]:checked::after {
+        content: "";
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 8px;
+        height: 8px;
+        background-color: hsl(var(--primary-foreground));
+        clip-path: polygon(14% 44%, 0% 65%, 50% 100%, 100% 16%, 80% 0%, 43% 62%);
+    }
+
+    #hideZeroBalances[type="checkbox"]:checked {
+        background-color: hsl(var(--primary));
+    }
+
+    #hideZeroBalances[type="checkbox"]:focus-visible {
+        outline: none;
+        box-shadow: 0 0 0 2px hsl(var(--ring));
+    }
+
+    #hideZeroBalances[type="checkbox"]:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+
+    .ring-offset-background {
+        --tw-ring-offset-color: hsl(var(--background)) !important;
+    }
+
+    .border-primary {
+        border-color: hsl(var(--primary)) !important;
+    }
+
+    .border {
+        border-width: 1px !important;
+    }
+
+    .rounded-sm {
+        border-radius: calc(var(--radius) - 4px) !important;
+    }
+
+    .shrink-0 {
+        flex-shrink: 0 !important;
+    }
+
+    .text-2xl {
+        font-size: 1.5rem !important;
+        line-height: 2rem !important;
+    }
+
+    .space-y-2 > :not([hidden]) ~ :not([hidden]) {
+        --tw-space-y-reverse: 0 !important;
+        margin-top: calc(.5rem * calc(1 - var(--tw-space-y-reverse))) !important;
+        margin-bottom: calc(.5rem * var(--tw-space-y-reverse)) !important;
+    }
+
+    .space-y-4>:not([hidden])~:not([hidden]) {
+        --tw-space-y-reverse: 0;
+        margin-top: calc(1rem * calc(1 - var(--tw-space-y-reverse)));
+        margin-bottom: calc(1rem * var(--tw-space-y-reverse));
+    }
+
+    .space-y-1\.5>:not([hidden])~:not([hidden]) {
+        --tw-space-y-reverse: 0;
+        margin-top: calc(.375rem * calc(1 - var(--tw-space-y-reverse)));
+        margin-bottom: calc(.375rem * var(--tw-space-y-reverse));
+    }
+
+    .space-y-6>:not([hidden])~:not([hidden]) {
+        --tw-space-y-reverse: 0;
+        margin-top: calc(1.5rem * calc(1 - var(--tw-space-y-reverse)));
+        margin-bottom: calc(1.5rem * var(--tw-space-y-reverse));
+    }
+
+    .border-muted {
+        border-color: hsl(var(--muted)) !important;
+    }
+
+    .border-4 {
+        border-width: 4px !important;
+    }
+
+    .rounded-full {
+        border-radius: 9999px !important;
+    }
+
+    .border-foreground {
+        border-color: hsl(var(--foreground)) !important;
+    }
+
+    .border-2 {
+        border-width: 2px !important;
+    }
+
+    .border-border {
+        border-color: hsl(var(--border)) !important;
+    }
+
+    .rounded-lg {
+        border-radius: var(--radius) !important;
+    }
+
+    .border-crypto-ethereum\/50 {
+        border-color: hsl(var(--crypto-ethereum) / .5);
+    }
+
+    .text-transparent {
+        color: transparent;
+    }
+
+    .text-sidebar-primary {
+        color: hsl(var(--sidebar-primary));
+    }
+
+    .border-sidebar-primary\/20 {
+        border-color: hsl(var(--sidebar-primary) / .2);
+    }
+
+    .font-bold {
+        font-weight: 700;
+    }
+
+    .text-4xl {
+        font-size: 2.25rem;
+        line-height: 2.5rem;
+    }
+
+    .bg-clip-text {
+        -webkit-background-clip: text;
+        background-clip: text;
+    }
+
+    .from-foreground {
+        --tw-gradient-from: hsl(var(--foreground)) !important;
+        --tw-gradient-to: hsl(var(--foreground) / 0) !important;
+        --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to);
+    }
+
+    .to-muted-foreground {
+        --tw-gradient-to: hsl(var(--muted-foreground)) !important;
+    }
+
+    .to-accent\/40 {
+        --tw-gradient-to: hsl(var(--accent) / .4) !important;
+    }
+
+    .to-accent\/20 {
+        --tw-gradient-to: hsl(var(--accent) / .2) !important;
+    }
+
+    .from-accent\/10 {
+        --tw-gradient-from: hsl(var(--accent) / .1) !important;
+        --tw-gradient-to: hsl(var(--accent) / 0) !important;
+        --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to);
+    }
+
+    .from-accent\/20 {
+        --tw-gradient-from: hsl(var(--accent) / .2) !important;
+        --tw-gradient-to: hsl(var(--accent) / 0) !important;
+        --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to);
+    }
+
+    .bg-gradient-to-r {
+        --tw-gradient-from: hsl(var(--foreground)) !important;
+        --tw-gradient-to: hsl(var(--muted-foreground)) !important;
+        --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to);
+        background-image: linear-gradient(to right, var(--tw-gradient-stops)) !important;
+    }
+
+    .bg-gradient-to-br {
+        background-image: linear-gradient(to bottom right, var(--tw-gradient-stops));
+    }
+
+    .text-foreground {
+        color: hsl(var(--foreground));
+    }
+
+    .text-card-foreground {
+        color: hsl(var(--card-foreground));
+    }
+
+    .text-popover-foreground {
+        color: hsl(var(--popover-foreground));
+    }
+
+    .text-primary {
+        color: hsl(var(--primary));
+    }
+
+    .text-primary-foreground {
+        color: hsl(var(--primary-foreground));
+    }
+
+    .text-secondary {
+        color: hsl(var(--secondary));
+    }
+
+    .text-secondary-foreground {
+        color: hsl(var(--secondary-foreground));
+    }
+
+    .text-muted {
+        color: hsl(var(--muted));
+    }
+
+    .text-muted-foreground {
+        color: hsl(var(--muted-foreground));
+    }
+
+    .text-accent {
+        color: hsl(var(--accent));
+    }
+
+    .text-accent-foreground {
+        color: hsl(var(--accent-foreground));
+    }
+
+    .text-destructive {
+        color: hsl(var(--destructive));
+    }
+
+    .text-destructive-foreground {
+        color: hsl(var(--destructive-foreground));
+    }
+
+    .text-success {
+        color: hsl(var(--success));
+    }
+
+    .text-warning {
+        color: hsl(var(--warning));
+    }
+
+    .text-crypto-positive {
+        color: hsl(var(--crypto-positive));
+    }
+
+    .border-input {
+        border-color: hsl(var(--input));
+    }
+
+    .ring-ring {
+        --tw-ring-color: hsl(var(--ring));
+    }
+
+    .font-inter {
+        font-family: var(--font-family-inter), sans-serif;
+    }
+
+    .shadow-card {
+        box-shadow: var(--shadow-card);
+    }
+
+    .shadow-crypto {
+        box-shadow: var(--shadow-crypto);
+    }
+
+    .shadow-glow {
+        box-shadow: var(--shadow-glow);
+    }
+
+    .backdrop-blur-sm {
+        backdrop-filter: blur(4px);
+    }
+}
+
+@layer components {
+    .btn-crypto {
+        background-color: hsl(var(--accent));
+        color: hsl(var(--accent-foreground));
+        font-weight: 600;
+        border-radius: 0.75rem;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        box-shadow: 0 4px 20px -2px hsl(0 0% 0% / 0.5);
+    }
+
+    .btn-crypto:hover {
+        background-color: hsl(var(--accent) / 0.9);
+        box-shadow: 0 10px 30px -10px hsl(74 100% 45% / 0.4);
+    }
+
+    .btn-crypto-outline {
+        border: 1px solid hsl(var(--accent));
+        color: hsl(var(--accent));
+        background-color: transparent;
+        font-weight: 600;
+        border-radius: 0.75rem;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .btn-crypto-outline:hover {
+        background-color: hsl(var(--accent));
+        color: hsl(var(--accent-foreground));
+    }
+
+    .btn-social-facebook {
+        background-color: rgb(37, 99, 235);
+        color: white;
+        font-weight: 500;
+        border-radius: 0.75rem;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .btn-social-facebook:hover {
+        background-color: rgb(29, 78, 216);
+    }
+
+    .btn-social-apple {
+        background-color: black;
+        border: 1px solid rgb(55, 65, 81);
+        color: white;
+        font-weight: 500;
+        border-radius: 0.75rem;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .btn-social-apple:hover {
+        background-color: rgb(17, 24, 39);
+    }
+
+    .btn-social-google {
+        background-color: white;
+        color: #0a0a0a !important;
+        font-weight: 500;
+        border-radius: 0.75rem;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .btn-social-google:hover {
+        background-color: rgb(243, 244, 246);
+    }
+
+    .card-crypto {
+        background: var(--gradient-card);
+        border: 1px solid hsl(var(--border));
+        border-radius: 1rem;
+        padding: 1.5rem;
+        backdrop-filter: blur(4px);
+        box-shadow: 0 4px 20px -2px hsl(0 0% 0% / 0.5);
+    }
+
+    .auth-card {
+        background-image: linear-gradient(135deg, hsl(0 5% 0% / 0.85), hsl(0 0% 12% / 0.85)),
+        url('/public/assets/images/auth-sidebar.jpg');
+        background-size: cover;
+        background-position: center;
+        background-repeat: no-repeat;
+        position: relative;
+        padding: 1.5rem;
+        backdrop-filter: blur(4px);
+        box-shadow: 0 4px 20px -2px hsl(0 0% 0% / 0.5);
+    }
+
+    .card-crypto-highlight {
+        background: var(--gradient-card);
+        border: 1px solid hsl(var(--accent) / 0.2);
+        border-radius: 1rem;
+        padding: 1.5rem;
+        backdrop-filter: blur(4px);
+        box-shadow: 0 0 40px hsl(74 100% 45% / 0.2);
+    }
+
+    .input-crypto {
+        background-color: hsl(var(--input));
+        border: 1px solid hsl(var(--border));
+        border-radius: 0.75rem;
+        padding: 0.75rem 1rem;
+        color: hsl(var(--foreground));
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        width: 100%;
+    }
+
+    .input-crypto::placeholder {
+        color: hsl(var(--muted-foreground));
+    }
+
+    .input-crypto:focus {
+        outline: none;
+        border-color: hsl(var(--accent));
+        box-shadow: 0 0 0 1px hsl(var(--accent));
+    }
+
+    .badge-positive {
+        background-color: hsl(var(--crypto-positive) / 0.2);
+        color: hsl(var(--crypto-positive));
+        border: 1px solid hsl(var(--crypto-positive) / 0.3);
+        border-radius: 0.5rem;
+        padding: 0.25rem 0.5rem;
+        font-size: 0.75rem;
+        line-height: 1rem;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+    }
+
+    .badge-negative {
+        background-color: hsl(var(--destructive) / 0.2);
+        color: hsl(var(--destructive));
+        border: 1px solid hsl(var(--destructive) / 0.3);
+        border-radius: 0.5rem;
+        padding: 0.25rem 0.5rem;
+        font-size: 0.75rem;
+        line-height: 1rem;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+    }
+
+    .badge-neutral {
+        background-color: hsl(var(--muted) / 0.5);
+        color: hsl(var(--muted-foreground));
+        border: 1px solid hsl(var(--border));
+        border-radius: 0.5rem;
+        padding: 0.25rem 0.5rem;
+        font-size: 0.75rem;
+        line-height: 1rem;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+    }
+
+    .checkbox-crypto {
+        appearance: none;
+        border-radius: var(--radius);
+        position: relative;
+        display: inline-block;
+        vertical-align: middle;
+        background-color: hsl(var(--input));
+        transition: var(--transition-smooth);
+    }
+
+    .checkbox-crypto::after {
+        content: "";
+        display: block;
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 8px;
+        height: 8px;
+        background-color: transparent;
+    }
+
+    .checkbox-crypto[data-state="checked"]::after {
+        background-color: hsl(var(--primary-foreground));
+        clip-path: polygon(14% 44%, 0% 65%, 50% 100%, 100% 16%, 80% 0%, 43% 62%);
+    }
+
+    .checkbox-crypto:focus-visible {
+        box-shadow: 0 0 0 1px hsl(var(--ring));
+    }
+
+    .checkbox-crypto:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+
+    .animate-crypto-glow {
+        animation: crypto-glow 2s ease-in-out infinite alternate;
+    }
+
+    .animate-float {
+        animation: float 3s ease-in-out infinite;
+    }
+
+    .animate-pulse-slow {
+        animation: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    }
+}
+
+@keyframes crypto-glow {
+    from {
+        box-shadow: 0 0 20px hsl(74 100% 45% / 0.3);
+    }
+    to {
+        box-shadow: 0 0 40px hsl(74 100% 45% / 0.6);
+    }
+}
+
+@keyframes float {
+    0%, 100% {
+        transform: translateY(0px);
+    }
+    50% {
+        transform: translateY(-10px);
+    }
+}
+
+::-webkit-scrollbar {
+    width: 6px;
+}
+
+::-webkit-scrollbar-track {
+    background: hsl(var(--muted));
+}
+
+::-webkit-scrollbar-thumb {
+    background: hsl(var(--accent));
+    border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--accent) / 0.8);
+}

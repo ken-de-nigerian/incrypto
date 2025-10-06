@@ -1,0 +1,68 @@
+<?php
+
+namespace App\Http\Controllers\Auth;
+
+use App\Http\Controllers\Controller;
+use Illuminate\Auth\AuthenticationException;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+
+class SessionController extends Controller
+{
+    protected array $supportedProviders = ['google', 'facebook', 'linkedin'];
+
+    /**
+     * Log the user out of the application.
+     */
+    public function destroy(Request $request): RedirectResponse
+    {
+        Auth::logout();
+
+        $request->session()->invalidate();
+
+        $request->session()->regenerateToken();
+
+        return redirect()->route('login')->with('success', __('You have been logged out.'));
+    }
+
+    /**
+     * Log out all of the user's other browser sessions.
+     * @throws AuthenticationException
+     */
+    public function logoutOtherDevices(Request $request): RedirectResponse
+    {
+        $request->validate([
+            'password' => ['required', 'string', 'current_password'],
+        ]);
+
+        // Delete other sessions
+        DB::table('sessions')
+            ->where('user_id', auth()->id())
+            ->where('id', '!=', session()->getId())
+            ->delete();
+
+        Auth::logoutOtherDevices($request->password);
+
+        return back()->with('success', __('All other browser sessions have been logged out.'));
+    }
+
+    /**
+     * Unlink a social provider from the user's account.
+     * Note: This might be better placed in a UserProfileController.
+     */
+    public function unlinkSocialAccount(Request $request, string $provider): RedirectResponse
+    {
+        if (!in_array($provider, $this->supportedProviders)) {
+            return back()->with('error',  __('auth.unsupported_provider', ['provider' => $provider]));
+        }
+
+        $request->user()->update([
+            'social_login_provider' => null,
+            'social_login_id' => null
+        ]);
+
+        return back()->with('success', __('Successfully unlinked your :Provider account.', ['provider' => ucfirst($provider)]));
+    }
+}

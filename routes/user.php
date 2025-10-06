@@ -1,0 +1,130 @@
+<?php
+
+use App\Http\Controllers\User\ManageUserKycController;
+use App\Http\Controllers\User\ManageUserNotificationsController;
+use App\Http\Controllers\User\ManageUserProfileController;
+use App\Http\Controllers\User\ManageUserReceiveCryptoController;
+use App\Http\Controllers\User\ManageUserRewardsController;
+use App\Http\Controllers\User\ManageUserSendCryptoController;
+use App\Http\Controllers\User\ManageUserSwapCryptoController;
+use App\Http\Controllers\User\ManageUserTradeController;
+use App\Http\Controllers\User\ManageUserTransactionController;
+use App\Http\Controllers\User\ManageUserWalletConnectController;
+use App\Http\Controllers\User\UserDashboardController;
+use Illuminate\Support\Facades\Route;
+
+/*
+|--------------------------------------------------------------------------
+| User Dashboard Routes
+|--------------------------------------------------------------------------
+*/
+Route::prefix('user')
+    ->name('user.')
+    ->middleware(['auth', 'auth.session', 'can:access-user-dashboard'])
+    ->group(function () {
+
+        // Dashboard
+        Route::get('/dashboard', UserDashboardController::class)->name('dashboard');
+
+        // Profile Management
+        Route::prefix('profile')
+            ->name('profile.')
+            ->controller(ManageUserProfileController::class)
+            ->group(function () {
+                Route::get('/', 'index')->name('index');
+                Route::post('/update/profile', 'updateProfile')->name('update.profile');
+                Route::put('/reset/password', 'resetPassword')->name('reset.password');
+                Route::delete('/delete/profile', 'destroy')->name('destroy');
+            });
+
+        // Kyc Management
+        Route::prefix('kyc')
+            ->name('kyc.')
+            ->controller(ManageUserKycController::class)
+            ->group(function () {
+                Route::get('/', 'index')->name('index');
+                Route::get('create', 'create')->name('create');
+                Route::post('store', 'store')->name('store');
+                Route::get('/{submission}/edit', 'edit')->name('edit');
+                Route::put('/{submission}/update', 'update')->name('update');
+            });
+
+        // Wallet Connect Management
+        Route::prefix('connect')
+            ->name('connect.')
+            ->controller(ManageUserWalletConnectController::class)
+            ->group(function () {
+                Route::get('/', 'index')->name('index');
+                Route::get('create', 'create')->name('create');
+                Route::post('store', 'store')->name('store');
+            });
+
+        // Rewards Management
+        Route::prefix('rewards')
+            ->name('rewards.')
+            ->controller(ManageUserRewardsController::class)
+            ->group(function () {
+            Route::get('/', 'index')->name('index');
+            Route::get('create', 'create')->name('create');
+            Route::post('store', 'store')->name('store');
+        });
+
+        // Trade Management
+        Route::prefix('trade')
+            ->name('trade.')
+            ->controller(ManageUserTradeController::class)
+            ->group(function () {
+            Route::get('/', 'index')->name('index');
+            Route::get('{symbol}/{type}', 'show')->name('show');
+            Route::post('{symbol}/{type}', 'process')->name('submit');
+            Route::post('confirm-buy-payment', 'buyCoin')->name('confirm.payment.buy');
+            Route::post('confirm-sell-payment', 'sellCoin')->name('confirm.payment.sell');
+            Route::post('convert-amount', 'convert')->name('convert.amount');
+        });
+
+        // Send Crypto
+        Route::prefix('send')
+            ->name('send.')
+            ->controller(ManageUserSendCryptoController::class)
+            ->group(function () {
+            Route::get('/', 'index')->name('index');
+            Route::get('{symbol}', 'show')->name('show');
+            Route::post('{symbol}', 'store')->name('store');
+        });
+
+        // Receive Crypto
+        Route::prefix('receive')
+            ->name('receive.')
+            ->controller(ManageUserReceiveCryptoController::class)
+            ->group(function () {
+            Route::get('/', 'index')->name('index');
+            Route::get('{symbol}', 'show')->name('show');
+        });
+
+        // Swap Crypto
+        Route::prefix('swap')
+            ->name('swap.')
+            ->controller(ManageUserSwapCryptoController::class)
+            ->group(function () {
+            Route::get('/', 'index')->name('index');
+            Route::post('store', 'store')->name('store');
+        });
+
+        // Transaction Completed Page
+        Route::prefix('transactions')
+            ->name('transactions.')
+            ->controller(ManageUserTransactionController::class)
+            ->group(function () {
+            Route::get('/', 'index')->name('index');
+        });
+
+        // Notifications
+        Route::prefix('notifications')
+            ->name('notifications.')
+            ->controller(ManageUserNotificationsController::class)
+            ->group(function () {
+                Route::post('/{notification}/read', 'markAsRead')->name('read');
+                Route::delete('/{notification}/destroy', 'destroy')->name('destroy');
+                Route::delete('/destroy/all', 'destroyAll')->name('destroyAll');
+            });
+    });

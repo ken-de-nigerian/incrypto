@@ -1,5 +1,6 @@
 <script setup lang="ts">
-    import { computed, ref, onMounted, watchEffect } from 'vue';
+    import { computed, ref, watch } from 'vue';
+    import { useAppearance } from '@/composables/useAppearance';
     import {
         Menu,
         Search,
@@ -24,7 +25,9 @@
         FileText,
         Mail,
         Copy,
-        Check
+        Check,
+        Monitor,
+        Sun
     } from 'lucide-vue-next';
     import TextLink from '@/components/TextLink.vue';
     import NotificationsModal from '@/components/utilities/NotificationsModal.vue';
@@ -35,38 +38,17 @@
     const isAccountModalOpen = ref(false);
     const isNotificationsModalOpen = ref(false);
     const emailCopied = ref(false);
+    const { appearance, updateAppearance } = useAppearance();
 
-    const isDarkMode = ref(false);
-
-    const toggleTheme = () => {
-        isDarkMode.value = !isDarkMode.value;
-        localStorage.setItem('theme', isDarkMode.value ? 'dark' : 'light');
-    };
-
-    watchEffect(() => {
-        const root = document.documentElement;
-        if (isDarkMode.value) {
-            root.classList.add('dark');
-        } else {
-            root.classList.remove('dark');
-        }
-    });
-
-    onMounted(() => {
-        const savedTheme = localStorage.getItem('theme');
-        if (savedTheme) {
-            isDarkMode.value = savedTheme === 'dark';
-        } else {
-            isDarkMode.value = window.matchMedia('(prefers-color-scheme: dark)').matches;
-        }
-    });
-
+    const tabs = [
+        { value: 'light', Icon: Sun, label: 'Light' },
+        { value: 'dark', Icon: Moon, label: 'Dark' },
+        { value: 'system', Icon: Monitor, label: 'System' },
+    ] as const;
 
     const notificationCount = computed(() => page.props.auth.notification_count);
-
     const user = computed(() => page.props.auth.user);
 
-    // Computes user's initials as a fallback for the avatar
     const initials = computed(() => {
         if (user.value) {
             const first = user.value.first_name?.charAt(0) || '';
@@ -100,26 +82,23 @@
 
     const kycStatus = computed(() => {
         const status = page.props.auth.user?.kyc?.status;
-
         if (status === 'approved') return 'Verified';
         if (status === 'pending') return 'Pending';
         if (status === 'rejected') return 'Rejected';
-
         return 'Unverified';
     });
 
     const kycStatusClass = computed(() => {
         const baseClasses = 'inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium border';
-
         switch (kycStatus.value) {
             case 'Verified':
-                return `${baseClasses} bg-green-500/20 text-green-400 border-green-500/30`;
+                return `${baseClasses} bg-success/20 text-success border-success/30`;
             case 'Pending':
-                return `${baseClasses} bg-yellow-500/20 text-yellow-400 border-yellow-500/30`;
+                return `${baseClasses} bg-warning/20 text-warning border-warning/30`;
             case 'Rejected':
             case 'Unverified':
             default:
-                return `${baseClasses} bg-red-500/20 text-red-400 border-red-500/30`;
+                return `${baseClasses} bg-destructive/20 text-destructive border-destructive/30`;
         }
     });
 
@@ -127,9 +106,13 @@
         searchQuery.value = '';
     };
 
-    const closeAccountModal = (event: MouseEvent) => {
+    const closeAccountModal = () => {
+        isAccountModalOpen.value = false;
+    };
+
+    const handleAccountBackdropClick = (event: MouseEvent) => {
         if (event.target === event.currentTarget) {
-            isAccountModalOpen.value = false;
+            closeAccountModal();
         }
     };
 
@@ -146,23 +129,31 @@
             }, 2000);
         }
     };
+
+    watch(isAccountModalOpen, (isOpen) => {
+        if (isOpen) {
+            document.body.style.overflow = 'hidden';
+        } else {
+            document.body.style.overflow = '';
+        }
+    });
 </script>
 
 <template>
-    <div class="lg:hidden top-0 inset-x-0 z-40 px-4 py-4 flex items-center gap-3 shadow-md bg-background">
+    <div class="lg:hidden top-0 inset-x-0 z-40 px-4 py-4 flex items-center gap-3 bg-background border-b border-border">
         <button class="w-8 h-8 flex items-center justify-center rounded-md bg-accent text-accent-foreground" aria-label="Menu" @click="isAccountModalOpen = true">
             <Menu class="w-7 h-7" />
         </button>
 
-        <div class="flex items-center flex-1 bg-sidebar-accent rounded-xl px-3 py-3">
-            <Search class="w-3.5 h-3.5 text-sidebar-foreground/60" />
-            <input id="globalSearch" v-model="searchQuery" type="text" class="flex-1 bg-transparent border-0 focus:ring-0 focus:outline-none text-xs text-sidebar-foreground placeholder:text-sidebar-foreground/50 ml-2" placeholder="Search" />
-            <X v-if="searchQuery" class="w-4 h-4 text-sidebar-foreground/60 cursor-pointer hover:text-sidebar-foreground" @click="clearSearch" />
+        <div class="flex items-center flex-1 bg-secondary rounded-xl px-3 py-3">
+            <Search class="w-3.5 h-3.5 text-muted-foreground" />
+            <input id="globalSearch" v-model="searchQuery" type="text" class="flex-1 bg-transparent border-0 focus:ring-0 focus:outline-none text-xs text-foreground placeholder:text-muted-foreground ml-2" placeholder="Search" />
+            <X v-if="searchQuery" class="w-4 h-4 text-muted-foreground cursor-pointer hover:text-foreground" @click="clearSearch" />
         </div>
 
-        <button @click="isNotificationsModalOpen = true" class="p-2 bg-zinc-900 rounded-xl border border-zinc-800 hover:bg-zinc-800 relative cursor-pointer" title="Notifications">
-            <BellIcon class="w-5 h-5" />
-            <span v-if="notificationCount > 0" class="absolute top-1 right-1 w-2 h-2 bg-lime-400 rounded-full"></span>
+        <button @click="isNotificationsModalOpen = true" class="p-2 bg-card rounded-xl border border-border hover:bg-secondary relative cursor-pointer transition-colors" title="Notifications">
+            <BellIcon class="w-5 h-5 text-card-foreground" />
+            <span v-if="notificationCount > 0" class="absolute top-1 right-1 w-2 h-2 bg-primary rounded-full"></span>
         </button>
 
         <TextLink :href="route('user.profile.index')" class="w-9 h-9 bg-accent rounded-xl relative cursor-pointer overflow-hidden flex items-center justify-center" title="My Profile">
@@ -173,141 +164,139 @@
         </TextLink>
     </div>
 
-    <div v-if="isAccountModalOpen" class="fixed inset-0 z-50 flex items-end lg:items-center justify-center bg-black/50 backdrop-blur-sm pt-4 pb-24" @click="closeAccountModal">
-        <div class="bg-card text-sidebar-foreground w-full lg:w-[90%] lg:max-w-md rounded-t-3xl lg:rounded-2xl shadow-2xl animate-slideUp lg:animate-fadeIn max-h-[calc(100vh-10rem)] overflow-y-auto no-scrollbar" @click.stop>
-
-            <!-- Handle bar for mobile -->
-            <div class="lg:hidden pt-2 pb-3 flex justify-center">
-                <div class="w-12 h-1 bg-sidebar-foreground/20 rounded-full"></div>
-            </div>
-
-            <!-- Close button for desktop -->
-            <button @click="isAccountModalOpen = false" class="hidden lg:block absolute top-4 right-4 p-2 hover:bg-sidebar-accent rounded-lg transition-colors">
-                <X class="w-5 h-5" />
-            </button>
-
-            <!-- Profile Header -->
-            <div class="px-5 pb-4">
-                <div class="relative">
-                    <div class="flex items-start gap-4 p-4 rounded-2xl bg-gradient-to-br from-primary/10 via-primary/5 to-transparent border border-sidebar-accent">
-                        <div class="relative">
-                            <div class="rounded-full h-16 w-16 object-cover ring-2 ring-primary/20 overflow-hidden bg-sidebar-accent flex items-center justify-center">
-                                <img v-if="user.profile?.profile_photo_path" :src="user.profile.profile_photo_path" :alt="`${user.first_name} ${user.last_name}`" class="h-full w-full object-cover">
-                                <span v-else class="text-xl font-bold text-accent-foreground">{{ initials }}</span>
+    <Transition enter-active-class="transition-opacity duration-200" enter-from-class="opacity-0" enter-to-class="opacity-100" leave-active-class="transition-opacity duration-200" leave-from-class="opacity-100" leave-to-class="opacity-0">
+        <div v-if="isAccountModalOpen" class="fixed inset-0 z-[100] flex lg:items-center lg:justify-center bg-black/50 backdrop-blur-sm lg:pt-4 lg:pb-24" @click="handleAccountBackdropClick">
+            <Transition enter-active-class="transition-all duration-200" enter-from-class="opacity-0 scale-95" enter-to-class="opacity-100 scale-100" leave-active-class="transition-all duration-200" leave-from-class="opacity-100 scale-100" leave-to-class="opacity-0 scale-95">
+                <div v-if="isAccountModalOpen" class="bg-card text-card-foreground w-full h-full lg:w-[80%] lg:max-w-md lg:rounded-lg flex flex-col rounded-none shadow-lg overflow-y-auto no-scrollbar border border-border relative" @click.stop>
+                    <div class="sticky top-0 bg-card z-10 px-5 pt-6 pb-4 border-b border-border">
+                        <div class="flex items-start justify-between mb-1">
+                            <div class="flex-1">
+                                <h3 class="text-xl font-semibold text-card-foreground">Account Menu</h3>
+                                <p class="text-sm text-muted-foreground mt-1">Manage your account and preferences</p>
                             </div>
-                            <div class="absolute -bottom-1 -right-1 w-5 h-5 bg-green-500 rounded-full border-2 border-card"></div>
+                            <button @click="closeAccountModal" class="p-2 hover:bg-muted rounded-lg transition-colors flex-shrink-0" title="Close">
+                                <X class="h-5 w-5 text-muted-foreground" />
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="px-5 pt-6 pb-4">
+                        <div class="flex items-start gap-4 p-4 rounded-2xl bg-gradient-to-br from-primary/10 via-primary/5 to-transparent border border-border">
+                            <div class="relative">
+                                <div class="rounded-full h-16 w-16 object-cover ring-2 ring-primary/20 overflow-hidden bg-secondary flex items-center justify-center">
+                                    <img v-if="user.profile?.profile_photo_path" :src="user.profile.profile_photo_path" :alt="`${user.first_name} ${user.last_name}`" class="h-full w-full object-cover">
+                                    <span v-else class="text-xl font-bold text-accent-foreground">{{ initials }}</span>
+                                </div>
+                                <div class="absolute -bottom-1 -right-1 w-5 h-5 bg-success rounded-full border-2 border-card"></div>
+                            </div>
+
+                            <div class="flex-1 min-w-0">
+                                <h2 class="font-bold text-lg leading-tight">{{ user.first_name }} {{ user.last_name }}</h2>
+                                <div class="flex items-center gap-2 mt-1">
+                                    <p class="text-sm text-muted-foreground truncate">{{ user.email }}</p>
+                                    <button @click="copyEmail" class="p-1 hover:bg-secondary rounded transition-colors flex-shrink-0" :title="emailCopied ? 'Copied!' : 'Copy email'">
+                                        <Check v-if="emailCopied" class="w-3.5 h-3.5 text-success" />
+                                        <Copy v-else class="w-3.5 h-3.5 text-muted-foreground" />
+                                    </button>
+                                </div>
+                                <span :class="kycStatusClass" class="mt-2">
+                                        {{ kycStatus }}
+                                    </span>
+                            </div>
+
+                            <TextLink :href="route('user.profile.index')" class="p-2 hover:bg-secondary rounded-lg transition-colors flex-shrink-0" title="Edit Profile">
+                                <Settings class="w-5 h-5 text-muted-foreground" />
+                            </TextLink>
+                        </div>
+                    </div>
+
+                    <div class="px-5 pb-6 space-y-6 flex-1">
+                        <div>
+                            <h3 class="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3 px-1">Quick Actions</h3>
+                            <div class="grid grid-cols-3 gap-2.5">
+                                <TextLink v-for="item in navigation" :key="item.name" :href="route(item.href)" @click="closeAccountModal" class="flex flex-col items-center justify-center p-3 rounded-xl bg-secondary/50 hover:bg-secondary active:scale-95 border border-border hover:border-border/60 transition-all group">
+                                    <div class="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center mb-2 group-hover:bg-primary/20 transition-colors">
+                                        <component :is="item.icon" class="w-5 h-5 text-primary" />
+                                    </div>
+                                    <span class="text-xs font-medium text-center leading-tight">{{ item.name }}</span>
+                                </TextLink>
+                            </div>
                         </div>
 
-                        <div class="flex-1 min-w-0">
-                            <h2 class="font-bold text-lg leading-tight">{{ user.first_name }} {{ user.last_name }}</h2>
-                            <div class="flex items-center gap-2 mt-1">
-                                <p class="text-sm text-sidebar-foreground/60 truncate">{{ user.email }}</p>
-                                <button @click="copyEmail" class="p-1 hover:bg-sidebar-accent rounded transition-colors flex-shrink-0" :title="emailCopied ? 'Copied!' : 'Copy email'">
-                                    <Check v-if="emailCopied" class="w-3.5 h-3.5 text-green-500" />
-                                    <Copy v-else class="w-3.5 h-3.5 text-sidebar-foreground/60" />
+                        <div>
+                            <h3 class="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3 px-1">Account Settings</h3>
+                            <div class="space-y-1">
+                                <TextLink v-for="item in accountLinks" :key="item.name" :href="route(item.href)" @click="closeAccountModal" class="flex items-center gap-3 p-3 rounded-xl hover:bg-secondary active:bg-secondary/80 transition-all group">
+                                    <div class="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors flex-shrink-0">
+                                        <component :is="item.icon" class="w-5 h-5 text-primary" />
+                                    </div>
+                                    <div class="flex-1 min-w-0">
+                                        <p class="font-medium text-sm">{{ item.name }}</p>
+                                        <p class="text-xs text-muted-foreground">{{ item.description }}</p>
+                                    </div>
+                                    <ChevronRight class="w-4 h-4 text-muted-foreground/50 group-hover:text-muted-foreground transition-colors flex-shrink-0" />
+                                </TextLink>
+                            </div>
+                        </div>
+
+                        <div>
+                            <h3 class="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3 px-1">Preferences</h3>
+                            <div class="space-y-1">
+                                <div class="p-3">
+                                    <div class="flex items-center gap-2 p-1 rounded-lg bg-secondary">
+                                        <button
+                                            v-for="{ value, Icon, label } in tabs"
+                                            :key="value"
+                                            @click="updateAppearance(value as 'light' | 'dark' | 'system')"
+                                            :class="[
+                                                'flex-1 flex items-center justify-center gap-2 rounded-md px-3 py-1.5 text-sm transition-colors',
+                                                appearance === value
+                                                    ? 'bg-primary text-primary-foreground shadow'
+                                                    : 'text-muted-foreground hover:bg-muted hover:text-foreground',
+                                            ]">
+                                            <component :is="Icon" class="h-4 w-4" />
+                                            <span>{{ label }}</span>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <button class="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-secondary active:bg-secondary/80 transition-all group">
+                                    <div class="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors flex-shrink-0">
+                                        <Globe class="w-5 h-5 text-primary" />
+                                    </div>
+                                    <div class="flex-1 text-left">
+                                        <p class="font-medium text-sm">Language</p>
+                                        <p class="text-xs text-muted-foreground">English (US)</p>
+                                    </div>
+                                    <ChevronRight class="w-4 h-4 text-muted-foreground/50 group-hover:text-muted-foreground transition-colors flex-shrink-0" />
                                 </button>
                             </div>
-                            <span :class="kycStatusClass" class="mt-2">
-                                {{ kycStatus }}
-                            </span>
                         </div>
 
-                        <TextLink :href="route('user.profile.index')" class="p-2 hover:bg-sidebar-accent rounded-lg transition-colors flex-shrink-0" title="Edit Profile">
-                            <Settings class="w-5 h-5 text-sidebar-foreground/60" />
+                        <div>
+                            <h3 class="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3 px-1">Support & Legal</h3>
+                            <div class="space-y-1">
+                                <TextLink v-for="item in supportLinks" :key="item.name" :href="route(item.href)" @click="closeAccountModal" class="flex items-center gap-3 p-3 rounded-xl hover:bg-secondary active:bg-secondary/80 transition-all group">
+                                    <component :is="item.icon" class="w-5 h-5 text-muted-foreground flex-shrink-0" />
+                                    <span class="font-medium text-sm">{{ item.name }}</span>
+                                    <ChevronRight class="w-4 h-4 text-muted-foreground/50 group-hover:text-muted-foreground transition-colors flex-shrink-0 ml-auto" />
+                                </TextLink>
+                            </div>
+                        </div>
+
+                        <TextLink :href="route('logout')" method="post" as="button" class="w-full flex items-center justify-center gap-2 p-4 rounded-xl bg-destructive/10 hover:bg-destructive/20 active:bg-destructive/30 border border-destructive/30 hover:border-destructive/50 transition-all group cursor-pointer">
+                            <LogOut class="w-5 h-5 text-destructive" />
+                            <span class="font-semibold text-destructive">Logout</span>
                         </TextLink>
+
+                        <div class="text-center pt-2 pb-4">
+                            <p class="text-xs text-muted-foreground/50">Version 2.1.0</p>
+                        </div>
                     </div>
                 </div>
-            </div>
-
-            <div class="px-5 pb-6 space-y-6">
-                <!-- Quick Actions -->
-                <div>
-                    <h3 class="text-xs font-semibold text-sidebar-foreground/60 uppercase tracking-wider mb-3 px-1">Quick Actions</h3>
-                    <div class="grid grid-cols-3 gap-2.5">
-                        <TextLink v-for="item in navigation" :key="item.name" :href="route(item.href)" @click="isAccountModalOpen = false" class="flex flex-col items-center justify-center p-3 rounded-xl bg-sidebar-accent/40 hover:bg-sidebar-accent active:scale-95 border border-sidebar-accent hover:border-sidebar-accent/60 transition-all group">
-                            <div class="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center mb-2 group-hover:bg-primary/20 transition-colors">
-                                <component :is="item.icon" class="w-5 h-5 text-primary" />
-                            </div>
-                            <span class="text-xs font-medium text-center leading-tight">{{ item.name }}</span>
-                        </TextLink>
-                    </div>
-                </div>
-
-                <!-- Account Settings -->
-                <div>
-                    <h3 class="text-xs font-semibold text-sidebar-foreground/60 uppercase tracking-wider mb-3 px-1">Account Settings</h3>
-                    <div class="space-y-1">
-                        <TextLink v-for="item in accountLinks" :key="item.name" :href="route(item.href)" @click="isAccountModalOpen = false" class="flex items-center gap-3 p-3 rounded-xl hover:bg-sidebar-accent active:bg-sidebar-accent/80 transition-all group">
-                            <div class="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors flex-shrink-0">
-                                <component :is="item.icon" class="w-5 h-5 text-primary" />
-                            </div>
-                            <div class="flex-1 min-w-0">
-                                <p class="font-medium text-sm">{{ item.name }}</p>
-                                <p class="text-xs text-sidebar-foreground/60">{{ item.description }}</p>
-                            </div>
-                            <ChevronRight class="w-4 h-4 text-sidebar-foreground/40 group-hover:text-sidebar-foreground/60 transition-colors flex-shrink-0" />
-                        </TextLink>
-                    </div>
-                </div>
-
-                <!-- Preferences -->
-                <div>
-                    <h3 class="text-xs font-semibold text-sidebar-foreground/60 uppercase tracking-wider mb-3 px-1">Preferences</h3>
-                    <div class="space-y-1">
-                        <button @click="toggleTheme" class="w-full flex items-center justify-between p-3 rounded-xl hover:bg-sidebar-accent active:bg-sidebar-accent/80 transition-all group">
-                            <div class="flex items-center gap-3">
-                                <div class="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
-                                    <Moon class="w-5 h-5 text-primary" />
-                                </div>
-                                <div class="text-left">
-                                    <p class="font-medium text-sm">Dark Mode</p>
-                                    <p class="text-xs text-sidebar-foreground/60">{{ isDarkMode ? 'Enabled' : 'Disabled' }}</p>
-                                </div>
-                            </div>
-                            <div :class="isDarkMode ? 'bg-primary' : 'bg-sidebar-accent'" class="w-11 h-6 rounded-full relative flex-shrink-0 transition-colors">
-                                <div :class="{ 'translate-x-5': isDarkMode, 'translate-x-0.5': !isDarkMode }" class="w-5 h-5 bg-white rounded-full absolute top-0.5 shadow-sm transition-transform"></div>
-                            </div>
-                        </button>
-
-                        <!-- Language (example) -->
-                        <button class="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-sidebar-accent active:bg-sidebar-accent/80 transition-all group">
-                            <div class="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors flex-shrink-0">
-                                <Globe class="w-5 h-5 text-primary" />
-                            </div>
-                            <div class="flex-1 text-left">
-                                <p class="font-medium text-sm">Language</p>
-                                <p class="text-xs text-sidebar-foreground/60">English (US)</p>
-                            </div>
-                            <ChevronRight class="w-4 h-4 text-sidebar-foreground/40 group-hover:text-sidebar-foreground/60 transition-colors flex-shrink-0" />
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Support -->
-                <div>
-                    <h3 class="text-xs font-semibold text-sidebar-foreground/60 uppercase tracking-wider mb-3 px-1">Support & Legal</h3>
-                    <div class="space-y-1">
-                        <TextLink v-for="item in supportLinks" :key="item.name" :href="route(item.href)" @click="isAccountModalOpen = false" class="flex items-center gap-3 p-3 rounded-xl hover:bg-sidebar-accent active:bg-sidebar-accent/80 transition-all group">
-                            <component :is="item.icon" class="w-5 h-5 text-sidebar-foreground/60 flex-shrink-0" />
-                            <span class="font-medium text-sm">{{ item.name }}</span>
-                            <ChevronRight class="w-4 h-4 text-sidebar-foreground/40 group-hover:text-sidebar-foreground/60 transition-colors flex-shrink-0 ml-auto" />
-                        </TextLink>
-                    </div>
-                </div>
-
-                <!-- Logout Button -->
-                <TextLink :href="route('logout')" method="post" as="button" class="w-full flex items-center justify-center gap-2 p-4 rounded-xl bg-red-500/10 hover:bg-red-500/20 active:bg-red-500/30 border border-red-500/30 hover:border-red-500/50 transition-all group cursor-pointer">
-                    <LogOut class="w-5 h-5 text-red-500" />
-                    <span class="font-semibold text-red-500">Logout</span>
-                </TextLink>
-
-                <!-- App Version -->
-                <div class="text-center pt-2 pb-4">
-                    <p class="text-xs text-sidebar-foreground/40">Version 2.1.0</p>
-                </div>
-            </div>
+            </Transition>
         </div>
-    </div>
+    </Transition>
 
     <NotificationsModal
         :is-open="isNotificationsModalOpen"
@@ -315,44 +304,12 @@
     />
 </template>
 
-<style>
-    @keyframes fadeIn {
-        from {
-            opacity: 0;
-            transform: scale(0.95);
-        }
-        to {
-            opacity: 1;
-            transform: scale(1);
-        }
-    }
-
-    @keyframes slideUp {
-        from {
-            opacity: 0;
-            transform: translateY(100%);
-        }
-        to {
-            opacity: 1;
-            transform: translateY(0);
-        }
-    }
-
-    .animate-fadeIn {
-        animation: fadeIn 0.2s ease-out;
-    }
-
-    .animate-slideUp {
-        animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-    }
-
-    /* Hide scrollbar for Chrome, Safari and Opera */
+<style scoped>
     .no-scrollbar::-webkit-scrollbar {
         display: none;
     }
-    /* Hide scrollbar for IE, Edge and Firefox */
     .no-scrollbar {
-        -ms-overflow-style: none;  /* IE and Edge */
-        scrollbar-width: none;  /* Firefox */
+        -ms-overflow-style: none;
+        scrollbar-width: none;
     }
 </style>

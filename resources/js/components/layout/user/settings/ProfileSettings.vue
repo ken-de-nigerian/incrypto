@@ -104,7 +104,7 @@
 
                     <div class="space-y-2">
                         <div class="flex space-x-2">
-                            <button @click.prevent="selectNewPhoto" type="button" class="inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-9 rounded-lg px-3 cursor-pointer">
+                            <button @click.prevent="selectNewPhoto" type="button" class="btn-crypto-outline h-9 px-3 text-sm inline-flex items-center justify-center gap-2">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-camera mr-2 h-4 w-4" aria-hidden="true">
                                     <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"></path>
                                     <circle cx="12" cy="13" r="3"></circle>
@@ -112,7 +112,7 @@
                                 Change
                             </button>
 
-                            <button v-if="photoPreview" @click.prevent="removePhoto" type="button" class="inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-9 rounded-lg px-3 cursor-pointer">
+                            <button v-if="photoPreview" @click.prevent="removePhoto" type="button" class="btn-crypto-outline h-9 px-3 text-sm inline-flex items-center justify-center gap-2">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-trash2 lucide-trash-2 mr-2 h-4 w-4" aria-hidden="true">
                                     <path d="M3 6h18"></path>
                                     <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path>
@@ -179,7 +179,7 @@
 </template>
 
 <style>
-    /* Custom styling for vue-tel-input (Unchanged) */
+    /* Custom styling for vue-tel-input */
     .vue-tel-input-custom {
         border-radius: 0.75rem;
         border: 1px solid hsl(var(--border));
@@ -225,7 +225,7 @@
         border-radius: 0.75rem;
         max-height: 200px;
         overflow-y: auto;
-        box-shadow: 0 4px 20px -2px hsl(0 0% 0% / 0.5);
+        box-shadow: var(--shadow-card);
         margin-top: 0.25rem;
     }
 

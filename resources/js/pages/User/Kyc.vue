@@ -1,17 +1,17 @@
 <script setup lang="ts">
-    import { computed, ref } from 'vue';
     import { Head, usePage } from '@inertiajs/vue3';
     import AppLayout from '@/components/layout/user/dashboard/AppLayout.vue';
     import NotificationsModal from '@/components/utilities/NotificationsModal.vue';
     import KycStatusCard from '@/components/layout/user/kyc/KycStatusCard.vue';
     import Breadcrumb from '@/components/Breadcrumb.vue';
+    import { computed, ref } from 'vue';
 
     // Define the prop coming from your Laravel controller with defaults
-   defineProps({
+    defineProps({
         kycData: {
             type: Object,
         }
-   });
+    });
 
     const page = usePage();
     const user = computed(() => page.props.auth.user);

@@ -147,7 +147,6 @@
 
     <div class="min-h-screen bg-gradient-to-br from-background via-background to-muted/20 flex flex-col items-center justify-center p-6">
         <div class="w-full max-w-md mx-auto">
-            <!-- Slide Content -->
             <div class="text-center">
                 <component :is="slides[currentSlide].graphic" />
 
@@ -160,12 +159,10 @@
                 </p>
             </div>
 
-            <!-- Navigation Dots -->
             <div class="flex justify-center space-x-2 mb-8">
                 <button v-for="(_, index) in slides" :key="index" @click="currentSlide = index" :class="`w-2 h-2 rounded-full transition-all duration-300 ${ index === currentSlide ? 'bg-accent w-6' : 'bg-muted' }`" :aria-label="`Go to slide ${index + 1}`" />
             </div>
 
-            <!-- Action Buttons -->
             <div class="space-y-4">
                 <button v-if="currentSlide < slides.length - 1" @click="nextSlide" class="btn-crypto w-full h-12 px-6 py-3 inline-flex items-center justify-center whitespace-nowrap rounded-xl text-sm font-semibold mb-auto cursor-pointer">
                     Continue

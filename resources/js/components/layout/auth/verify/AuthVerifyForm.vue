@@ -215,7 +215,7 @@
                 </p>
 
                 <p class="text-center text-sm mt-4">
-                    <TextLink :href="route('register')" class="mx-auto block text-sm">
+                    <TextLink :href="route('register')" class="mx-auto block text-sm text-muted-foreground hover:underline">
                         Back to Register
                     </TextLink>
                 </p>

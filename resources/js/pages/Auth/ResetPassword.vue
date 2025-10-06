@@ -52,11 +52,11 @@
                 <p class="mt-1 text-sm text-muted-foreground">Protect your account with a secure password.</p>
             </header>
 
-            <div v-if="form.errors.email" class="mb-4 text-center text-sm font-medium text-red-600">
+            <div v-if="form.errors.email" class="mb-4 text-center text-sm font-medium text-destructive">
                 {{ form.errors.email }}
             </div>
 
-            <div v-if="form.errors.token" class="mb-4 text-center text-sm font-medium text-red-600">
+            <div v-if="form.errors.token" class="mb-4 text-center text-sm font-medium text-destructive">
                 {{ form.errors.token }}
             </div>
 

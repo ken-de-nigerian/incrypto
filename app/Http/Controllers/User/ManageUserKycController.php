@@ -46,10 +46,10 @@ class ManageUserKycController extends Controller
                 'status' => 'rejected',
                 'title' => 'Verification Rejected',
                 'staticMessage' => 'We couldn\'t verify your identity with the provided documents.',
-                'dynamicMessage' => $user->kyc->rejection_reason ?? 'Documents didn\'t meet requirements. Please try again.',
+                'dynamicMessage' => $user->kyc?->rejection_reason ?? 'Documents didn\'t meet requirements. Please try again.',
                 'action' => [
                     'text' => 'Resubmit Documents',
-                    'href' => route('user.kyc.edit', $user->kyc->id)
+                    'href' => route('user.kyc.edit', $user->kyc?->id ?? 0)
                 ]
             ],
             'unverified' => [

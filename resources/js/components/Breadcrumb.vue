@@ -60,23 +60,23 @@
 
         <div class="hidden lg:flex items-center gap-4">
             <div class="relative">
-                <Search class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
+                <Search class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
                 <input
                     type="text"
                     placeholder="Search"
-                    class="bg-zinc-800 border border-zinc-700 rounded-xl pl-10 pr-4 py-2 text-white placeholder-zinc-400 focus:outline-none focus:border-lime-400 cursor-pointer"
+                    class="input-crypto pl-10 pr-4 py-2"
                 />
             </div>
 
             <button
                 @click="openNotificationsModal"
-                class="p-2 bg-zinc-800 rounded-xl border border-zinc-700 hover:bg-zinc-700 relative cursor-pointer"
+                class="p-2 bg-card rounded-xl border border-border hover:bg-secondary relative cursor-pointer transition-colors"
                 title="Notifications"
             >
-                <Bell class="w-5 h-5" />
+                <Bell class="w-5 h-5 text-card-foreground" />
                 <span
                     v-if="notificationCount > 0"
-                    class="absolute top-1 right-1 w-2 h-2 bg-lime-400 rounded-full"
+                    class="absolute top-1 right-1 w-2 h-2 bg-primary rounded-full"
                 ></span>
             </button>
 

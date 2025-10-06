@@ -86,12 +86,11 @@
         </template>
 
         <template #form>
-            <div v-if="provider" class="mb-4 text-center text-sm font-medium text-red-600">
+            <div v-if="provider" class="mb-4 text-center text-sm font-medium text-destructive">
                 {{ provider }}
             </div>
 
             <div class="space-y-4 mb-8">
-                <!-- Social login buttons, shown only when showEmailForm is false -->
                 <div v-if="!showEmailForm" class="space-y-4">
                     <a :href="route('social.redirect', 'facebook')" class="btn-social-facebook w-full h-12 px-6 py-3 inline-flex items-center justify-center whitespace-nowrap rounded-xl text-sm font-semibold mb-auto cursor-pointer">
                         Continue with Facebook
@@ -110,7 +109,6 @@
                     </button>
                 </div>
 
-                <!-- Email input form, shown when showEmailForm is true -->
                 <div v-if="showEmailForm">
                     <form method="POST" @submit.prevent="submit" class="space-y-3">
                         <div class="space-y-2">

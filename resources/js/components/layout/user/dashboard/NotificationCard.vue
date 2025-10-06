@@ -36,10 +36,10 @@
 </script>
 
 <template>
-    <div class="bg-zinc-900 rounded-xl sm:rounded-2xl p-4 sm:p-6 border border-zinc-800">
+    <div class="card-crypto p-4 sm:p-6">
         <div class="flex justify-between items-center mb-8">
-            <h3 class="text-white font-semibold text-sm sm:text-base">Your Notifications</h3>
-            <button v-if="notifications.length > 0" @click="deleteAllNotifications" class="text-sm text-red-400 hover:text-red-300 flex items-center gap-2 cursor-pointer">
+            <h3 class="text-card-foreground font-semibold text-sm sm:text-base">Your Notifications</h3>
+            <button v-if="notifications.length > 0" @click="deleteAllNotifications" class="text-sm text-destructive hover:opacity-80 flex items-center gap-2 cursor-pointer transition-opacity">
                 Clear All
             </button>
         </div>
@@ -47,36 +47,36 @@
         <div v-if="notifications.length > 0" class="flex flex-col gap-4">
             <div v-for="notification in notifications" :key="notification.id" class="flex flex-col gap-2">
                 <div class="flex justify-between items-center">
-                    <span class="text-zinc-400 text-xs font-light">
+                    <span class="text-muted-foreground text-xs font-light">
                         {{ formatTimeAgo(notification.created_at) }}
                     </span>
                     <div class="flex gap-2">
-                        <button v-if="!notification.read_at" @click="markAsRead(notification.id)" class="text-zinc-400 hover:text-zinc-300 cursor-pointer" title="Mark as read">
+                        <button v-if="!notification.read_at" @click="markAsRead(notification.id)" class="text-muted-foreground hover:text-card-foreground cursor-pointer transition-colors" title="Mark as read">
                             <CheckCircle class="h-4 w-4" />
                         </button>
 
-                        <button @click="deleteNotification(notification.id)" class="text-red-400 hover:text-red-300 cursor-pointer" title="Delete notification">
+                        <button @click="deleteNotification(notification.id)" class="text-destructive hover:opacity-80 cursor-pointer transition-opacity" title="Delete notification">
                             <XCircle class="h-4 w-4" />
                         </button>
                     </div>
                 </div>
 
-                <div class="flex flex-col gap-2 p-4 bg-zinc-800 rounded-lg border border-zinc-700">
-                    <h4 class="flex items-center gap-2 text-xs font-medium">
-                        <span v-if="!notification.read_at" class="w-2 h-2 bg-lime-400 rounded-full"></span>
+                <div class="flex flex-col gap-2 p-4 bg-secondary rounded-lg border border-border">
+                    <h4 class="flex items-center gap-2 text-xs font-medium text-card-foreground">
+                        <span v-if="!notification.read_at" class="w-2 h-2 bg-primary rounded-full"></span>
                         {{ notification.data.title }}
                     </h4>
 
-                    <p class="text-xs font-light text-zinc-300">
+                    <p class="text-xs font-light text-muted-foreground">
                         {{ notification.data.content }}
                     </p>
                 </div>
             </div>
         </div>
 
-        <div v-else class="flex flex-col items-center justify-center py-8 text-center text-zinc-400">
-            <Bell class="h-12 w-12 mb-4 text-zinc-500" />
-            <p class="text-lg font-medium mb-2 text-white">No New Notifications</p>
+        <div v-else class="flex flex-col items-center justify-center py-8 text-center text-muted-foreground">
+            <Bell class="h-12 w-12 mb-4 text-muted" />
+            <p class="text-lg font-medium mb-2 text-card-foreground">No New Notifications</p>
             <p class="text-sm">It looks like your inbox is empty. Check back later!</p>
         </div>
     </div>

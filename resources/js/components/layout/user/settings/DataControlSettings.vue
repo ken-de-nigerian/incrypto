@@ -1,28 +1,28 @@
 <script setup lang="ts">
-    import { useForm } from '@inertiajs/vue3';
-    import { route } from 'ziggy-js';
-    import ActionButton from '@/components/ActionButton.vue';
-    import InputError from '@/components/InputError.vue';
+import { useForm } from '@inertiajs/vue3';
+import { route } from 'ziggy-js';
+import ActionButton from '@/components/ActionButton.vue';
+import InputError from '@/components/InputError.vue';
 
-    const form = useForm({
-        confirm: ''
+const form = useForm({
+    confirm: ''
+});
+
+// Function to handle deletion
+const submit = () => {
+    form.delete(route('user.profile.destroy'), {
+        preserveScroll: true,
+        onSuccess: () => {
+            accountForm.reset();
+        },
     });
+};
 
-    // Function to handle deletion
-    const submit = () => {
-       form.delete(route('user.profile.destroy'), {
-            preserveScroll: true,
-            onSuccess: () => {
-                accountForm.reset();
-            },
-        });
-    };
-
-    const clearError = (field: keyof typeof form.errors) => {
-        if (form.errors[field]) {
-            form.clearErrors(field);
-        }
-    };
+const clearError = (field: keyof typeof form.errors) => {
+    if (form.errors[field]) {
+        form.clearErrors(field);
+    }
+};
 </script>
 
 <template>
@@ -60,7 +60,7 @@
                         <form @submit.prevent="submit" class="space-y-2">
                             <input v-model="form.confirm" @focus="clearError('confirm')" type="text" placeholder="Type DELETE to confirm" class="input-crypto w-full" />
                             <InputError :message="form.errors.confirm" />
-                            <ActionButton :processing="form.processing">Permanently Delete Account</ActionButton>
+                            <ActionButton :processing="form.processing" class="bg-destructive text-destructive-foreground hover:opacity-90">Permanently Delete Account</ActionButton>
                         </form>
                     </div>
                 </div>

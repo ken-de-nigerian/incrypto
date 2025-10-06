@@ -76,15 +76,15 @@
 
 <template>
     <form @submit.prevent="submit" class="space-y-8">
-        <div class="bg-zinc-900 border border-zinc-800 rounded-2xl">
+        <div class="bg-card border border-border rounded-2xl">
             <div class="p-6 sm:p-8">
-                <h3 class="text-xl font-semibold text-white">Basic Details</h3>
-                <p class="mt-1 text-sm text-zinc-400">
+                <h3 class="text-xl font-semibold text-card-foreground">Basic Details</h3>
+                <p class="mt-1 text-sm text-muted-foreground">
                     Please ensure this information matches your identity proof exactly. Details cannot be edited after submission.
                 </p>
             </div>
 
-            <div class="p-6 sm:p-8 border-t border-zinc-800">
+            <div class="p-6 sm:p-8 border-t border-border">
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
                     <div class="space-y-2">
                         <label for="first_name" class="text-sm font-medium">First Name</label>
@@ -100,7 +100,7 @@
 
                     <div class="space-y-2">
                         <label for="email" class="text-sm font-medium">Email Address</label>
-                        <input id="email" v-model="form.email" type="email" placeholder="your@email.com" disabled class="input-crypto w-full cursor-not-allowed" />
+                        <input id="email" v-model="form.email" type="email" placeholder="your@email.com" disabled class="input-crypto w-full disabled:cursor-not-allowed disabled:opacity-60" />
                     </div>
 
                     <div class="space-y-2">
@@ -116,41 +116,41 @@
                     </div>
                 </div>
 
-                <hr class="border-zinc-700 my-6" />
+                <hr class="border-border my-6" />
 
-                <h4 class="font-semibold text-white">Upload Supporting Identity Document</h4>
-                <p class="text-zinc-400 text-sm mt-1 mb-6">Ensure the document is valid, not expired, and clearly visible.</p>
+                <h4 class="font-semibold text-card-foreground">Upload Supporting Identity Document</h4>
+                <p class="text-muted-foreground text-sm mt-1 mb-6">Ensure the document is valid, not expired, and clearly visible.</p>
 
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                    <label class="p-4 border rounded-lg cursor-pointer transition-all" :class="form.id_proof_type === 'national_id' ? 'border-lime-400 bg-lime-500/10 ring-2 ring-lime-400' : 'border-zinc-700 bg-zinc-800/50 hover:border-zinc-500'">
+                    <label class="p-4 border rounded-lg cursor-pointer transition-all" :class="form.id_proof_type === 'national_id' ? 'border-primary bg-primary/10 ring-2 ring-primary' : 'border-border bg-secondary/50 hover:border-muted'">
                         <input type="radio" v-model="form.id_proof_type" value="national_id" class="hidden" />
                         <div class="flex items-center gap-4">
-                            <div class="w-12 h-12 flex items-center justify-center rounded-md bg-zinc-700 text-lime-400 shrink-0"><IdCardIcon class="w-6 h-6" /></div>
+                            <div class="w-12 h-12 flex items-center justify-center rounded-md bg-muted text-primary shrink-0"><IdCardIcon class="w-6 h-6" /></div>
                             <div>
-                                <h5 class="font-semibold text-white">National ID</h5>
-                                <p class="text-zinc-400 text-sm">Government-Issued ID</p>
+                                <h5 class="font-semibold text-card-foreground">National ID</h5>
+                                <p class="text-muted-foreground text-sm">Government-Issued ID</p>
                             </div>
                         </div>
                     </label>
 
-                    <label class="p-4 border rounded-lg cursor-pointer transition-all" :class="form.id_proof_type === 'passport' ? 'border-lime-400 bg-lime-500/10 ring-2 ring-lime-400' : 'border-zinc-700 bg-zinc-800/50 hover:border-zinc-500'">
+                    <label class="p-4 border rounded-lg cursor-pointer transition-all" :class="form.id_proof_type === 'passport' ? 'border-primary bg-primary/10 ring-2 ring-primary' : 'border-border bg-secondary/50 hover:border-muted'">
                         <input type="radio" v-model="form.id_proof_type" value="passport" class="hidden" />
                         <div class="flex items-center gap-4">
-                            <div class="w-12 h-12 flex items-center justify-center rounded-md bg-zinc-700 text-lime-400 shrink-0"><Files class="w-6 h-6" /></div>
+                            <div class="w-12 h-12 flex items-center justify-center rounded-md bg-muted text-primary shrink-0"><Files class="w-6 h-6" /></div>
                             <div>
-                                <h5 class="font-semibold text-white">Passport</h5>
-                                <p class="text-zinc-400 text-sm">International Passport</p>
+                                <h5 class="font-semibold text-card-foreground">Passport</h5>
+                                <p class="text-muted-foreground text-sm">International Passport</p>
                             </div>
                         </div>
                     </label>
 
-                    <label class="p-4 border rounded-lg cursor-pointer transition-all" :class="form.id_proof_type === 'driving_license' ? 'border-lime-400 bg-lime-500/10 ring-2 ring-lime-400' : 'border-zinc-700 bg-zinc-800/50 hover:border-zinc-500'">
+                    <label class="p-4 border rounded-lg cursor-pointer transition-all" :class="form.id_proof_type === 'driving_license' ? 'border-primary bg-primary/10 ring-2 ring-primary' : 'border-border bg-secondary/50 hover:border-muted'">
                         <input type="radio" v-model="form.id_proof_type" value="driving_license" class="hidden" />
                         <div class="flex items-center gap-4">
-                            <div class="w-12 h-12 flex items-center justify-center rounded-md bg-zinc-700 text-lime-400 shrink-0"><CarIcon class="w-6 h-6" /></div>
+                            <div class="w-12 h-12 flex items-center justify-center rounded-md bg-muted text-primary shrink-0"><CarIcon class="w-6 h-6" /></div>
                             <div>
-                                <h5 class="font-semibold text-white">Driver's License</h5>
-                                <p class="text-zinc-400 text-sm">State-Issued License</p>
+                                <h5 class="font-semibold text-card-foreground">Driver's License</h5>
+                                <p class="text-muted-foreground text-sm">State-Issued License</p>
                             </div>
                         </div>
                     </label>
@@ -159,32 +159,32 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div class="space-y-2">
                         <label class="text-sm font-medium">Front-side of Proof</label>
-                        <input type="file" @change="handleFileChange($event, 'id_front_proof')" @focus="clearError('id_front_proof')" class="block w-full text-sm text-zinc-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-zinc-700 file:text-zinc-200 hover:file:bg-zinc-600" />
+                        <input type="file" @change="handleFileChange($event, 'id_front_proof')" @focus="clearError('id_front_proof')" class="block w-full text-sm text-muted-foreground file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-secondary file:text-secondary-foreground hover:file:bg-muted" />
                         <InputError :message="form.errors.id_front_proof" />
                     </div>
 
                     <div class="space-y-2">
                         <label class="text-sm font-medium">Back-side of Proof</label>
-                        <input type="file" @change="handleFileChange($event, 'id_back_proof')" @focus="clearError('id_back_proof')" class="block w-full text-sm text-zinc-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-zinc-700 file:text-zinc-200 hover:file:bg-zinc-600" />
+                        <input type="file" @change="handleFileChange($event, 'id_back_proof')" @focus="clearError('id_back_proof')" class="block w-full text-sm text-muted-foreground file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-secondary file:text-secondary-foreground hover:file:bg-muted" />
                         <InputError :message="form.errors.id_back_proof" />
                     </div>
                 </div>
             </div>
         </div>
 
-        <div class="bg-zinc-900 border border-zinc-800 rounded-2xl">
+        <div class="bg-card border border-border rounded-2xl">
             <div class="p-6 sm:p-8">
-                <h3 class="text-xl font-semibold text-white">Address Details</h3>
-                <p class="mt-1 text-sm text-zinc-400">
+                <h3 class="text-xl font-semibold text-card-foreground">Address Details</h3>
+                <p class="mt-1 text-sm text-muted-foreground">
                     Enter your residential address and upload a matching proof of address.
                 </p>
             </div>
 
-            <div class="p-6 sm:p-8 border-t border-zinc-800">
+            <div class="p-6 sm:p-8 border-t border-border">
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
                     <div class="space-y-2">
                         <label for="country" class="text-sm font-medium">Country</label>
-                        <input id="country" v-model="form.country" @focus="clearError('country')" type="text" placeholder="Country" disabled class="block w-full bg-zinc-800/50 border-zinc-700 rounded-lg p-3 text-zinc-400 cursor-not-allowed" />
+                        <input id="country" v-model="form.country" @focus="clearError('country')" type="text" placeholder="Country" disabled class="input-crypto w-full disabled:cursor-not-allowed disabled:opacity-60" />
                         <InputError :message="form.errors.country" />
                     </div>
 
@@ -207,46 +207,46 @@
                     </div>
                 </div>
 
-                <hr class="border-zinc-700 my-6" />
+                <hr class="border-border my-6" />
 
-                <h4 class="font-semibold text-white">Upload Proof of Address</h4>
-                <p class="text-zinc-400 text-sm mt-1 mb-6">e.g., Utility bill or Bank Statement not older than 3 months.</p>
+                <h4 class="font-semibold text-card-foreground">Upload Proof of Address</h4>
+                <p class="text-muted-foreground text-sm mt-1 mb-6">e.g., Utility bill or Bank Statement not older than 3 months.</p>
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                    <label class="p-4 border rounded-lg cursor-pointer transition-all" :class="form.address_proof_type === 'electricity_bill' ? 'border-lime-400 bg-lime-500/10 ring-2 ring-lime-400' : 'border-zinc-700 bg-zinc-800/50 hover:border-zinc-500'">
+                    <label class="p-4 border rounded-lg cursor-pointer transition-all" :class="form.address_proof_type === 'electricity_bill' ? 'border-primary bg-primary/10 ring-2 ring-primary' : 'border-border bg-secondary/50 hover:border-muted'">
                         <input type="radio" v-model="form.address_proof_type" value="electricity_bill" class="hidden" />
                         <div class="flex items-center gap-4">
-                            <div class="w-12 h-12 flex items-center justify-center rounded-md bg-zinc-700 text-lime-400 shrink-0">
+                            <div class="w-12 h-12 flex items-center justify-center rounded-md bg-muted text-primary shrink-0">
                                 <LightbulbIcon class="w-6 h-6" />
                             </div>
                             <div>
-                                <h5 class="font-semibold text-white">Utility Bill</h5>
-                                <p class="text-zinc-400 text-sm">Water, Gas, or Electricity</p>
+                                <h5 class="font-semibold text-card-foreground">Utility Bill</h5>
+                                <p class="text-muted-foreground text-sm">Water, Gas, or Electricity</p>
                             </div>
                         </div>
                     </label>
 
-                    <label class="p-4 border rounded-lg cursor-pointer transition-all" :class="form.address_proof_type === 'bank_statement' ? 'border-lime-400 bg-lime-500/10 ring-2 ring-lime-400' : 'border-zinc-700 bg-zinc-800/50 hover:border-zinc-500'">
+                    <label class="p-4 border rounded-lg cursor-pointer transition-all" :class="form.address_proof_type === 'bank_statement' ? 'border-primary bg-primary/10 ring-2 ring-primary' : 'border-border bg-secondary/50 hover:border-muted'">
                         <input type="radio" v-model="form.address_proof_type" value="bank_statement" class="hidden" />
                         <div class="flex items-center gap-4">
-                            <div class="w-12 h-12 flex items-center justify-center rounded-md bg-zinc-700 text-lime-400 shrink-0">
+                            <div class="w-12 h-12 flex items-center justify-center rounded-md bg-muted text-primary shrink-0">
                                 <LandmarkIcon class="w-6 h-6" />
                             </div>
                             <div>
-                                <h5 class="font-semibold text-white">Bank Statement</h5>
-                                <p class="text-zinc-400 text-sm">Official bank document</p>
+                                <h5 class="font-semibold text-card-foreground">Bank Statement</h5>
+                                <p class="text-muted-foreground text-sm">Official bank document</p>
                             </div>
                         </div>
                     </label>
 
-                    <label class="p-4 border rounded-lg cursor-pointer transition-all" :class="form.address_proof_type === 'tenancy_agreement' ? 'border-lime-400 bg-lime-500/10 ring-2 ring-lime-400' : 'border-zinc-700 bg-zinc-800/50 hover:border-zinc-500'">
+                    <label class="p-4 border rounded-lg cursor-pointer transition-all" :class="form.address_proof_type === 'tenancy_agreement' ? 'border-primary bg-primary/10 ring-2 ring-primary' : 'border-border bg-secondary/50 hover:border-muted'">
                         <input type="radio" v-model="form.address_proof_type" value="tenancy_agreement" class="hidden" />
                         <div class="flex items-center gap-4">
-                            <div class="w-12 h-12 flex items-center justify-center rounded-md bg-zinc-700 text-lime-400 shrink-0">
+                            <div class="w-12 h-12 flex items-center justify-center rounded-md bg-muted text-primary shrink-0">
                                 <FileTextIcon class="w-6 h-6" />
                             </div>
                             <div>
-                                <h5 class="font-semibold text-white">Tenancy Agreement</h5>
-                                <p class="text-zinc-400 text-sm">Signed rental contract</p>
+                                <h5 class="font-semibold text-card-foreground">Tenancy Agreement</h5>
+                                <p class="text-muted-foreground text-sm">Signed rental contract</p>
                             </div>
                         </div>
                     </label>
@@ -254,7 +254,7 @@
 
                 <div class="space-y-2">
                     <label class="text-sm font-medium">Upload Proof</label>
-                    <input type="file" @change="handleFileChange($event, 'address_front_proof')" @focus="clearError('address_front_proof')" class="block w-full text-sm text-zinc-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-zinc-700 file:text-zinc-200 hover:file:bg-zinc-600" />
+                    <input type="file" @change="handleFileChange($event, 'address_front_proof')" @focus="clearError('address_front_proof')" class="block w-full text-sm text-muted-foreground file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-secondary file:text-secondary-foreground hover:file:bg-muted" />
                     <InputError :message="form.errors.address_front_proof" />
                 </div>
             </div>
@@ -277,48 +277,55 @@
 </template>
 
 <style>
-    /* Custom styling for vue-tel-input to match your dark theme */
+    /* Custom styling for vue-tel-input to match the theme */
     .vue-tel-input-custom {
-        border-radius: 0.5rem;
-        border: 1px solid #3f3f46; /* zinc-700 */
+        border-radius: 0.75rem;
+        border: 1px solid hsl(var(--border));
     }
+
     .vue-tel-input-custom:focus-within {
-        border-color: #a3e635; /* lime-500 */
-        box-shadow: 0 0 0 1px #a3e635;
+        border-color: hsl(var(--accent));
+        box-shadow: 0 0 0 1px hsl(var(--accent));
     }
+
     .vue-tel-input-custom .vti__input {
-        background-color: #27272a; /* zinc-800 */
+        background-color: hsl(var(--input));
         border: none;
-        border-radius: 0 0.5rem 0.5rem 0;
-        padding-top: 0.75rem;
-        padding-bottom: 0.75rem;
-        color: #ffffff;
+        border-radius: 0 0.75rem 0.75rem 0;
+        padding: 0.75rem 1rem;
+        color: hsl(var(--foreground));
         width: 100%;
     }
+
     .vue-tel-input-custom .vti__input::placeholder {
-        color: #71717a; /* zinc-500 */
+        color: hsl(var(--muted-foreground));
     }
+
     .vue-tel-input-custom .vti__dropdown {
-        background-color: #27272a; /* zinc-800 */
-        border-radius: 0.5rem 0 0 0.5rem;
-        border-right: 1px solid #3f3f46; /* zinc-700 */
+        background-color: hsl(var(--input));
+        border-radius: 0.75rem 0 0 0.75rem;
+        border-right: 1px solid hsl(var(--border));
     }
+
     .vue-tel-input-custom .vti__dropdown:hover {
-        background-color: #3f3f46; /* zinc-700 */
+        background-color: hsl(var(--muted));
     }
+
     .vue-tel-input-custom .vti__dropdown-list {
-        background-color: #18181b; /* zinc-900 */
-        border: 1px solid #3f3f46; /* zinc-700 */
-        border-radius: 0.5rem;
+        background-color: hsl(var(--card));
+        border: 1px solid hsl(var(--border));
+        border-radius: 0.75rem;
         max-height: 200px;
-        box-shadow: 0 4px 20px -2px rgba(0,0,0,0.5);
+        box-shadow: var(--shadow-card);
     }
+
     .vue-tel-input-custom .vti__dropdown-item {
-        color: #f4f4f5; /* zinc-100 */
+        color: hsl(var(--foreground));
         padding: 0.5rem 1rem;
     }
+
     .vue-tel-input-custom .vti__dropdown-item:hover,
     .vue-tel-input-custom .vti__dropdown-item.highlighted {
-        background-color: #3f3f46; /* zinc-700 */
+        background-color: hsl(var(--muted));
     }
 </style>

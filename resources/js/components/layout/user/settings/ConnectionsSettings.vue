@@ -56,14 +56,14 @@
                                 <div>
                                     <h3 class="font-medium">Google</h3>
                                     <div v-if="isGoogleConnected" class="flex items-center space-x-2 text-sm text-muted-foreground">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-circle-check-big h-4 w-4 text-green-600" aria-hidden="true">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-circle-check-big h-4 w-4 text-success" aria-hidden="true">
                                             <path d="M21.801 10A10 10 0 1 1 17 3.335"></path>
                                             <path d="m9 11 3 3L22 4"></path>
                                         </svg>
                                         <span class="capitalize">connected</span>
                                     </div>
                                     <div v-else class="flex items-center space-x-2 text-sm text-muted-foreground">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-circle-x h-4 w-4 text-red-600" aria-hidden="true">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-circle-x h-4 w-4 text-destructive" aria-hidden="true">
                                             <path d="M22 12 A10 10 0 0 1 12 22 A10 10 0 0 1 2 12 A10 10 0 0 1 12 2 A10 10 0 0 1 22 12 z"></path>
                                             <path d="m15 9-6 6"></path>
                                             <path d="m9 9 6 6"></path>
@@ -75,7 +75,7 @@
                         </div>
 
                         <div class="flex items-center space-x-2 mt-3 sm:mt-0">
-                            <button v-if="isGoogleConnected" @click="invokeAccount('google')" :disabled="connectForm.processing" class="inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-9 rounded-md px-3 cursor-pointer">Disconnect</button>
+                            <button v-if="isGoogleConnected" @click="invokeAccount('google')" :disabled="connectForm.processing" class="btn-crypto-outline h-9 px-3 text-sm disabled:pointer-events-none disabled:opacity-50">Disconnect</button>
                         </div>
                     </div>
                 </div>
@@ -95,14 +95,14 @@
                                 <div>
                                     <h3 class="font-medium">Facebook</h3>
                                     <div v-if="isFacebookConnected" class="flex items-center space-x-2 text-sm text-muted-foreground">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-circle-check-big h-4 w-4 text-green-600" aria-hidden="true">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-circle-check-big h-4 w-4 text-success" aria-hidden="true">
                                             <path d="M21.801 10A10 10 0 1 1 17 3.335"></path>
                                             <path d="m9 11 3 3L22 4"></path>
                                         </svg>
                                         <span class="capitalize">connected</span>
                                     </div>
                                     <div v-else class="flex items-center space-x-2 text-sm text-muted-foreground">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-circle-x h-4 w-4 text-red-600" aria-hidden="true">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-circle-x h-4 w-4 text-destructive" aria-hidden="true">
                                             <path d="M22 12 A10 10 0 0 1 12 22 A10 10 0 0 1 2 12 A10 10 0 0 1 12 2 A10 10 0 0 1 22 12 z"></path>
                                             <path d="m15 9-6 6"></path>
                                             <path d="m9 9 6 6"></path>
@@ -114,7 +114,7 @@
                         </div>
 
                         <div class="flex items-center space-x-2 mt-3 sm:mt-0">
-                            <button v-if="isFacebookConnected" @click="invokeAccount('facebook')" :disabled="connectForm.processing" class="inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-9 rounded-md px-3 cursor-pointer">Disconnect</button>
+                            <button v-if="isFacebookConnected" @click="invokeAccount('facebook')" :disabled="connectForm.processing" class="btn-crypto-outline h-9 px-3 text-sm disabled:pointer-events-none disabled:opacity-50">Disconnect</button>
                         </div>
                     </div>
                 </div>
@@ -134,14 +134,14 @@
                                 <div>
                                     <h3 class="font-medium">LinkedIn</h3>
                                     <div v-if="isLinkedInConnected" class="flex items-center space-x-2 text-sm text-muted-foreground">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-circle-check-big h-4 w-4 text-green-600" aria-hidden="true">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-circle-check-big h-4 w-4 text-success" aria-hidden="true">
                                             <path d="M21.801 10A10 10 0 1 1 17 3.335"></path>
                                             <path d="m9 11 3 3L22 4"></path>
                                         </svg>
                                         <span class="capitalize">connected</span>
                                     </div>
                                     <div v-else class="flex items-center space-x-2 text-sm text-muted-foreground">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-circle-x h-4 w-4 text-red-600" aria-hidden="true">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-circle-x h-4 w-4 text-destructive" aria-hidden="true">
                                             <path d="M22 12 A10 10 0 0 1 12 22 A10 10 0 0 1 2 12 A10 10 0 0 1 12 2 A10 10 0 0 1 22 12 z"></path>
                                             <path d="m15 9-6 6"></path>
                                             <path d="m9 9 6 6"></path>
@@ -153,7 +153,7 @@
                         </div>
 
                         <div class="flex items-center space-x-2 mt-3 sm:mt-0">
-                            <button v-if="isLinkedInConnected" @click="invokeAccount('linkedin')" :disabled="connectForm.processing" class="inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-9 rounded-md px-3 cursor-pointer">Disconnect</button>
+                            <button v-if="isLinkedInConnected" @click="invokeAccount('linkedin')" :disabled="connectForm.processing" class="btn-crypto-outline h-9 px-3 text-sm disabled:pointer-events-none disabled:opacity-50">Disconnect</button>
                         </div>
                     </div>
                 </div>

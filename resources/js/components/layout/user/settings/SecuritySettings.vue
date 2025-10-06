@@ -144,7 +144,7 @@
                             </p>
                         </div>
 
-                        <button v-if="activeSessions && activeSessions.length > 1" @click="openLogoutModal" class="inline-flex h-10 w-full items-center justify-center gap-2 whitespace-nowrap rounded-md border border-input bg-background px-4 py-2 text-sm font-medium ring-offset-background transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 md:w-auto cursor-pointer" type="button">
+                        <button v-if="activeSessions && activeSessions.length > 1" @click="openLogoutModal" class="btn-crypto-outline h-10 px-4 text-sm inline-flex items-center justify-center gap-2 w-full md:w-auto" type="button">
                             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-log-out mr-2 h-4 w-4" aria-hidden="true">
                                 <path d="m16 17 5-5-5-5"></path>
                                 <path d="M21 12H9"></path>
@@ -169,7 +169,7 @@
                                 <div class="space-y-1">
                                     <div class="flex items-center space-x-2">
                                         <span class="font-medium">{{ session.device }}</span>
-                                        <span v-if="session.is_current" class="text-sm text-green-500">(Current)</span>
+                                        <span v-if="session.is_current" class="text-sm text-success">(Current)</span>
                                     </div>
                                     <div class="space-y-1 text-sm text-muted-foreground">
                                         <div>{{ session.browser }} • {{ session.platform }}</div>
@@ -203,8 +203,8 @@
                 </div>
 
                 <div class="mt-6 flex justify-end gap-4">
-                    <button type="button" @click="closeLogoutModal" class="btn-social-apple w-50 h-12 px-6 py-3 inline-flex items-center justify-center whitespace-nowrap rounded-xl text-sm font-semibold cursor-pointer">Cancel</button>
-                    <ActionButton :processing="logoutForm.processing">Log Out Other Devices</ActionButton>
+                    <button type="button" @click="closeLogoutModal" class="btn-crypto-outline h-12 px-6 text-sm">Cancel</button>
+                    <ActionButton :processing="logoutForm.processing" class="bg-destructive text-destructive-foreground hover:opacity-90 h-12 px-6 text-sm">Log Out Other Devices</ActionButton>
                 </div>
             </form>
         </div>

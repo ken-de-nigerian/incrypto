@@ -208,7 +208,7 @@
         border-radius: 0.75rem;
         max-height: 200px;
         overflow-y: auto;
-        box-shadow: 0 4px 20px -2px hsl(0 0% 0% / 0.5);
+        box-shadow: var(--shadow-card);
         margin-top: 0.25rem;
     }
 

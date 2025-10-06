@@ -1,12 +1,12 @@
 <template>
-    <div class="bg-zinc-900 rounded-xl sm:rounded-2xl p-4 sm:p-6 border border-zinc-800">
-        <h3 class="text-white font-semibold mb-3 sm:mb-4 text-sm sm:text-base">Quick Actions</h3>
+    <div class="card-crypto p-4 sm:p-6">
+        <h3 class="text-card-foreground font-semibold mb-3 sm:mb-4 text-sm sm:text-base">Quick Actions</h3>
         <div class="grid grid-cols-4 gap-2 sm:gap-3">
-            <TextLink v-for="item in navigation" :key="item.name" :href="route(item.href)" class="flex flex-col items-center gap-1.5 sm:gap-2 p-2 sm:p-3 bg-zinc-800/50 rounded-lg sm:rounded-xl hover:bg-zinc-800 transition-colors group">
-                <div class="w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center rounded-lg bg-zinc-700/50 group-hover:bg-lime-400/10 transition-colors">
-                    <component :is="item.icon" class="w-4 h-4 sm:w-5 sm:h-5 text-zinc-300 group-hover:text-lime-400 transition-colors" />
+            <TextLink v-for="item in navigation" :key="item.name" :href="route(item.href)" class="flex flex-col items-center gap-1.5 sm:gap-2 p-2 sm:p-3 bg-secondary/50 rounded-lg sm:rounded-xl hover:bg-secondary transition-colors group">
+                <div class="w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center rounded-lg bg-secondary group-hover:bg-primary/10 transition-colors">
+                    <component :is="item.icon" class="w-4 h-4 sm:w-5 sm:h-5 text-muted-foreground group-hover:text-primary transition-colors" />
                 </div>
-                <span class="text-white text-[10px] sm:text-xs text-center leading-tight">{{ item.name }}</span>
+                <span class="text-card-foreground text-[10px] sm:text-xs text-center leading-tight">{{ item.name }}</span>
             </TextLink>
         </div>
     </div>

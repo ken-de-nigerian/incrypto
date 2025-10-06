@@ -6,14 +6,11 @@
 </script>
 
 <template>
-    <div class="min-h-screen bg-black text-white">
-        <!-- Sidebar - Hidden on mobile, visible on lg screens -->
+    <div class="min-h-screen bg-background text-foreground">
         <SidebarNav />
 
-        <!-- Mobile Header -->
         <TopbarNav />
 
-        <!-- Mobile Menu Overlay -->
         <MobileNav />
 
         <slot/>

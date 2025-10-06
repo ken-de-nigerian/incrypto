@@ -56,7 +56,7 @@
 
 <template>
     <div class="hidden lg:flex lg:w-64 lg:flex-col lg:fixed lg:inset-y-0">
-        <div class="flex flex-col flex-grow bg-sidebar p-3">
+        <div class="flex flex-col flex-grow bg-sidebar p-3 border-r border-sidebar-border">
             <div class="flex items-center px-4 py-4 pb-[50px]">
                 <div class="flex items-center">
                     <TextLink :href="route('home')" aria-label="Dashboard" class="inline-flex items-center gap-2 select-none">
@@ -66,27 +66,27 @@
             </div>
 
             <nav class="flex-1 px-3 py-2 space-y-6">
-                <TextLink v-for="item in navigation" :key="item.name" :href="route(item.href)" class="flex items-center px-3 py-2 text-md font-sm rounded-lg transition-all duration-200 hover:bg-sidebar-accent/30" :class="[route().current(item.href) ? 'bg-zinc-800 text-white' : 'text-zinc-400 hover:bg-zinc-900']">
+                <TextLink v-for="item in navigation" :key="item.name" :href="route(item.href)" class="flex items-center px-3 py-2 text-md font-sm rounded-lg transition-all duration-200" :class="[route().current(item.href) ? 'bg-sidebar-accent text-sidebar-foreground' : 'text-sidebar-foreground/70 hover:bg-sidebar-accent/30']">
                     <component :is="item.icon" class="mr-5 h-5 w-5 text-sidebar-foreground/70" />
                     {{ item.name }}
                 </TextLink>
             </nav>
 
             <div class="px-3 py-2 space-y-6">
-                <TextLink v-for="item in bottomNavigation" :key="item.name" :href="route(item.href)" class="flex items-center px-3 py-2 text-md font-sm rounded-lg transition-all duration-200 hover:bg-sidebar-accent/30" :class="[item.name === 'KYC Verification' ? (isKycActive ? 'bg-zinc-800 text-white' : 'text-zinc-400 hover:bg-zinc-900') : (route().current(item.href) ? 'bg-zinc-800 text-white' : 'text-zinc-400 hover:bg-zinc-900')]">
+                <TextLink v-for="item in bottomNavigation" :key="item.name" :href="route(item.href)" class="flex items-center px-3 py-2 text-md font-sm rounded-lg transition-all duration-200" :class="[item.name === 'KYC Verification' ? (isKycActive ? 'bg-sidebar-accent text-sidebar-foreground' : 'text-sidebar-foreground/70 hover:bg-sidebar-accent/30') : (route().current(item.href) ? 'bg-sidebar-accent text-sidebar-foreground' : 'text-sidebar-foreground/70 hover:bg-sidebar-accent/30')]">
                     <component :is="item.icon" class="mr-5 h-5 w-5 text-sidebar-foreground/70" />
                     {{ item.name }}
                 </TextLink>
 
-                <button @click="openNotificationsModal" class="w-full flex items-center px-3 py-2 text-md font-sm rounded-lg transition-all duration-200 hover:bg-zinc-900 hover:bg-sidebar-accent/30 cursor-pointer">
+                <button @click="openNotificationsModal" class="w-full flex items-center px-3 py-2 text-md font-sm rounded-lg transition-all duration-200 text-sidebar-foreground/70 hover:bg-sidebar-accent/30 cursor-pointer">
                     <Bell class="mr-5 h-5 w-5 text-sidebar-foreground/70" />
                     Notification
-                    <div v-if="notificationCount > 0" class="ml-auto bg-destructive text-white text-xs font-semibold rounded-full px-2 py-0.5 flex items-center justify-center">
+                    <div v-if="notificationCount > 0" class="ml-auto bg-destructive text-destructive-foreground text-xs font-semibold rounded-full px-2 py-0.5 flex items-center justify-center">
                         {{ notificationCount }}
                     </div>
                 </button>
 
-                <TextLink :href="route('logout')" method="post" as="button" class="w-full flex items-center px-3 py-2 text-md font-sm rounded-lg transition-all duration-200 text-zinc-400 hover:bg-zinc-900 cursor-pointer">
+                <TextLink :href="route('logout')" method="post" as="button" class="w-full flex items-center px-3 py-2 text-md font-sm rounded-lg transition-all duration-200 text-sidebar-foreground/70 hover:bg-sidebar-accent/30 cursor-pointer">
                     <LogOut class="mr-5 h-5 w-5 text-sidebar-foreground/70" />
                     Logout
                 </TextLink>
@@ -105,7 +105,6 @@
         </div>
     </div>
 
-    <!-- Notifications Modal -->
     <NotificationsModal
         :is-open="isNotificationsModalOpen"
         @close="closeNotificationsModal"

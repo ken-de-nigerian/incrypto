@@ -132,7 +132,7 @@
                 <p class="text-muted-foreground text-sm mt-1 mb-6">Ensure the document is valid, not expired, and clearly visible.</p>
 
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                    <label class="p-4 border rounded-lg cursor-pointer transition-all" :class="form.id_proof_type === 'national_id' ? 'border-primary bg-primary/10 ring-2 ring-primary' : 'border-border bg-secondary/50 hover:border-muted'">
+                    <label class="p-4 border rounded-lg cursor-pointer transition-all" :class="form.id_proof_type === 'national_id' ? 'border-primary bg-primary/10' : 'border-border bg-secondary/50 hover:border-muted'">
                         <input type="radio" v-model="form.id_proof_type" value="national_id" class="hidden" />
                         <div class="flex items-center gap-4">
                             <div class="w-12 h-12 flex items-center justify-center rounded-md bg-muted text-primary shrink-0"><IdCardIcon class="w-6 h-6" /></div>
@@ -143,7 +143,7 @@
                         </div>
                     </label>
 
-                    <label class="p-4 border rounded-lg cursor-pointer transition-all" :class="form.id_proof_type === 'passport' ? 'border-primary bg-primary/10 ring-2 ring-primary' : 'border-border bg-secondary/50 hover:border-muted'">
+                    <label class="p-4 border rounded-lg cursor-pointer transition-all" :class="form.id_proof_type === 'passport' ? 'border-primary bg-primary/10' : 'border-border bg-secondary/50 hover:border-muted'">
                         <input type="radio" v-model="form.id_proof_type" value="passport" class="hidden" />
                         <div class="flex items-center gap-4">
                             <div class="w-12 h-12 flex items-center justify-center rounded-md bg-muted text-primary shrink-0"><Files class="w-6 h-6" /></div>
@@ -154,7 +154,7 @@
                         </div>
                     </label>
 
-                    <label class="p-4 border rounded-lg cursor-pointer transition-all" :class="form.id_proof_type === 'driving_license' ? 'border-primary bg-primary/10 ring-2 ring-primary' : 'border-border bg-secondary/50 hover:border-muted'">
+                    <label class="p-4 border rounded-lg cursor-pointer transition-all" :class="form.id_proof_type === 'driving_license' ? 'border-primary bg-primary/10' : 'border-border bg-secondary/50 hover:border-muted'">
                         <input type="radio" v-model="form.id_proof_type" value="driving_license" class="hidden" />
                         <div class="flex items-center gap-4">
                             <div class="w-12 h-12 flex items-center justify-center rounded-md bg-muted text-primary shrink-0"><CarIcon class="w-6 h-6" /></div>
@@ -230,7 +230,7 @@
                 <h4 class="font-semibold text-card-foreground">Upload Proof of Address</h4>
                 <p class="text-muted-foreground text-sm mt-1 mb-6">e.g., Utility bill or Bank Statement not older than 3 months.</p>
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                    <label class="p-4 border rounded-lg cursor-pointer transition-all" :class="form.address_proof_type === 'electricity_bill' ? 'border-primary bg-primary/10 ring-2 ring-primary' : 'border-border bg-secondary/50 hover:border-muted'">
+                    <label class="p-4 border rounded-lg cursor-pointer transition-all" :class="form.address_proof_type === 'electricity_bill' ? 'border-primary bg-primary/10' : 'border-border bg-secondary/50 hover:border-muted'">
                         <input type="radio" v-model="form.address_proof_type" value="electricity_bill" class="hidden" />
                         <div class="flex items-center gap-4">
                             <div class="w-12 h-12 flex items-center justify-center rounded-md bg-muted text-primary shrink-0">
@@ -243,7 +243,7 @@
                         </div>
                     </label>
 
-                    <label class="p-4 border rounded-lg cursor-pointer transition-all" :class="form.address_proof_type === 'bank_statement' ? 'border-primary bg-primary/10 ring-2 ring-primary' : 'border-border bg-secondary/50 hover:border-muted'">
+                    <label class="p-4 border rounded-lg cursor-pointer transition-all" :class="form.address_proof_type === 'bank_statement' ? 'border-primary bg-primary/10' : 'border-border bg-secondary/50 hover:border-muted'">
                         <input type="radio" v-model="form.address_proof_type" value="bank_statement" class="hidden" />
                         <div class="flex items-center gap-4">
                             <div class="w-12 h-12 flex items-center justify-center rounded-md bg-muted text-primary shrink-0">
@@ -256,7 +256,7 @@
                         </div>
                     </label>
 
-                    <label class="p-4 border rounded-lg cursor-pointer transition-all" :class="form.address_proof_type === 'tenancy_agreement' ? 'border-primary bg-primary/10 ring-2 ring-primary' : 'border-border bg-secondary/50 hover:border-muted'">
+                    <label class="p-4 border rounded-lg cursor-pointer transition-all" :class="form.address_proof_type === 'tenancy_agreement' ? 'border-primary bg-primary/10' : 'border-border bg-secondary/50 hover:border-muted'">
                         <input type="radio" v-model="form.address_proof_type" value="tenancy_agreement" class="hidden" />
                         <div class="flex items-center gap-4">
                             <div class="w-12 h-12 flex items-center justify-center rounded-md bg-muted text-primary shrink-0">

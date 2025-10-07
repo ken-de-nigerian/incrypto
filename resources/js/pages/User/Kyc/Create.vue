@@ -94,8 +94,7 @@
                                     <div class="flex flex-col items-center">
                                         <div
                                             class="w-8 h-8 rounded-full flex items-center justify-center border-2 flex-shrink-0"
-                                            :class="step.completed ? 'bg-primary/10 border-primary text-primary' : 'bg-secondary border-border text-muted-foreground'"
-                                        >
+                                            :class="step.completed ? 'bg-primary/10 border-primary text-primary' : 'bg-secondary border-border text-muted-foreground'">
                                             <CheckCircleIcon v-if="step.completed" class="w-4 h-4" />
                                             <span v-else class="text-xs font-semibold">{{ step.step }}</span>
                                         </div>

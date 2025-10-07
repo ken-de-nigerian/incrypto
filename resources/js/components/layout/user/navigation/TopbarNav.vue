@@ -64,20 +64,20 @@
         { name: "Receive", href: "user.receive.index", icon: Download },
         { name: "Swap", href: "user.swap.index", icon: Repeat },
         { name: "Trade", href: "user.trade.index", icon: CandlestickChart },
-        { name: "Wallet Connect", href: "user.connect.index", icon: Wallet },
+        { name: "Wallet Connect", href: "user.wallet.index", icon: Wallet },
     ];
 
     const accountLinks = [
         { name: "KYC Verification", href: "user.kyc.index", icon: LifeBuoy, description: "Verify your identity" },
         { name: "Transaction History", href: "user.dashboard", icon: History, description: "View all transactions" },
-        { name: "Security", href: "user.dashboard", icon: Shield, description: "Password & 2FA" },
+        { name: "Security", href: "user.profile.index", params: { tab: 'security' }, icon: Shield, description: "Password & 2FA" },
         { name: "Payment Methods", href: "user.dashboard", icon: CreditCard, description: "Manage payment options" },
     ];
 
     const supportLinks = [
-        { name: "Help Center", href: "user.dashboard", icon: HelpCircle },
-        { name: "Terms of Service", href: "user.dashboard", icon: FileText },
-        { name: "Contact Support", href: "user.dashboard", icon: Mail },
+        { name: "Privacy Policy", href: "user.support.privacy", icon: HelpCircle },
+        { name: "Terms of Service", href: "user.support.terms", icon: FileText },
+        { name: "Contact Support", href: "user.support.index", icon: Mail },
     ];
 
     const kycStatus = computed(() => {
@@ -226,7 +226,7 @@
                         <div>
                             <h3 class="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3 px-1">Account Settings</h3>
                             <div class="space-y-1">
-                                <TextLink v-for="item in accountLinks" :key="item.name" :href="route(item.href)" @click="closeAccountModal" class="flex items-center gap-3 p-3 rounded-xl hover:bg-secondary active:bg-secondary/80 transition-all group">
+                                <TextLink v-for="item in accountLinks" :key="item.name" :href="route(item.href, item.params)" @click="closeAccountModal" class="flex items-center gap-3 p-3 rounded-xl hover:bg-secondary active:bg-secondary/80 transition-all group">
                                     <div class="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors flex-shrink-0">
                                         <component :is="item.icon" class="w-5 h-5 text-primary" />
                                     </div>

@@ -49,7 +49,7 @@ return [
     |
     */
     'site' => [
-        'site_email' => env('SITE_EMAIL', 'ken.de.nigerian@gmail.com'),
+        'site_email' => env('SITE_EMAIL', 'nwanerick14489@gmail.com'),
     ],
 
     /*

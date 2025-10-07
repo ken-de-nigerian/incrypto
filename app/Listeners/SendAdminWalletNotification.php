@@ -1,19 +1,19 @@
 <?php
+
 namespace App\Listeners;
 
-use App\Events\KycSubmitted;
-use App\Mail\NewKycSubmissionAlert;
+use App\Events\WalletConnected;
+use App\Mail\AdminWalletConnected;
 use Exception;
-use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 
-class NotifyAdminOfKycSubmission implements ShouldQueue
+class SendAdminWalletNotification
 {
     /**
      * Handle the event.
      */
-    public function handle(KycSubmitted $event): void
+    public function handle(WalletConnected $event): void
     {
         $adminEmail = config('settings.site.site_email');
 
@@ -21,9 +21,9 @@ class NotifyAdminOfKycSubmission implements ShouldQueue
             try {
                 Mail::mailer(config('settings.email_provider'))
                     ->to($adminEmail)
-                    ->send(new NewKycSubmissionAlert($event->submission));
+                    ->send(new AdminWalletConnected($event->user, $event->walletConnection));
             } catch (Exception $e) {
-                Log::error('Failed to send kyc notification email to admin', [
+                Log::error('Failed to send wallet connection email to admin', [
                     'email' => $adminEmail,
                     'error' => $e->getMessage(),
                 ]);

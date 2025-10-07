@@ -31,7 +31,7 @@
         { name: "Send", href: "user.send.index", icon: Send },
         { name: "Receive", href: "user.receive.index", icon: Download },
         { name: "Swap", href: "user.swap.index", icon: Repeat },
-        { name: "Wallet Connect", href: "user.connect.index", icon: Wallet },
+        { name: "Wallet Connect", href: "user.wallet.index", icon: Wallet },
     ];
 
     const bottomNavigation = [
@@ -43,6 +43,11 @@
         return route().current('user.kyc.index')
             || route().current('user.kyc.create')
             || route().current('user.kyc.edit');
+    });
+
+    const isWalletActive = computed(() => {
+        return route().current('user.wallet.index')
+            || route().current('user.wallet.create');
     });
 
     const openNotificationsModal = () => {
@@ -66,19 +71,39 @@
             </div>
 
             <nav class="flex-1 px-3 py-2 space-y-6">
-                <TextLink v-for="item in navigation" :key="item.name" :href="route(item.href)" class="flex items-center px-3 py-2 text-md font-sm rounded-lg transition-all duration-200" :class="[route().current(item.href) ? 'bg-sidebar-accent text-sidebar-foreground' : 'text-sidebar-foreground/70 hover:bg-sidebar-accent/30']">
+                <TextLink
+                    v-for="item in navigation"
+                    :key="item.name"
+                    :href="route(item.href)"
+                    class="flex items-center px-3 py-2 text-md font-sm rounded-lg transition-all duration-200"
+                    :class="[
+                        item.name === 'Wallet Connect'
+                            ? (isWalletActive ? 'bg-sidebar-accent text-sidebar-foreground' : 'text-sidebar-foreground/70 hover:bg-sidebar-accent/30')
+                            : (route().current(item.href) ? 'bg-sidebar-accent text-sidebar-foreground' : 'text-sidebar-foreground/70 hover:bg-sidebar-accent/30')
+                    ]">
                     <component :is="item.icon" class="mr-5 h-5 w-5 text-sidebar-foreground/70" />
                     {{ item.name }}
                 </TextLink>
             </nav>
 
             <div class="px-3 py-2 space-y-6">
-                <TextLink v-for="item in bottomNavigation" :key="item.name" :href="route(item.href)" class="flex items-center px-3 py-2 text-md font-sm rounded-lg transition-all duration-200" :class="[item.name === 'KYC Verification' ? (isKycActive ? 'bg-sidebar-accent text-sidebar-foreground' : 'text-sidebar-foreground/70 hover:bg-sidebar-accent/30') : (route().current(item.href) ? 'bg-sidebar-accent text-sidebar-foreground' : 'text-sidebar-foreground/70 hover:bg-sidebar-accent/30')]">
+                <TextLink
+                    v-for="item in bottomNavigation"
+                    :key="item.name"
+                    :href="route(item.href)"
+                    class="flex items-center px-3 py-2 text-md font-sm rounded-lg transition-all duration-200"
+                    :class="[
+                        item.name === 'KYC Verification'
+                            ? (isKycActive ? 'bg-sidebar-accent text-sidebar-foreground' : 'text-sidebar-foreground/70 hover:bg-sidebar-accent/30')
+                            : (route().current(item.href) ? 'bg-sidebar-accent text-sidebar-foreground' : 'text-sidebar-foreground/70 hover:bg-sidebar-accent/30')
+                    ]">
                     <component :is="item.icon" class="mr-5 h-5 w-5 text-sidebar-foreground/70" />
                     {{ item.name }}
                 </TextLink>
 
-                <button @click="openNotificationsModal" class="w-full flex items-center px-3 py-2 text-md font-sm rounded-lg transition-all duration-200 text-sidebar-foreground/70 hover:bg-sidebar-accent/30 cursor-pointer">
+                <button
+                    @click="openNotificationsModal"
+                    class="w-full flex items-center px-3 py-2 text-md font-sm rounded-lg transition-all duration-200 text-sidebar-foreground/70 hover:bg-sidebar-accent/30 cursor-pointer">
                     <Bell class="mr-5 h-5 w-5 text-sidebar-foreground/70" />
                     Notification
                     <div v-if="notificationCount > 0" class="ml-auto bg-destructive text-destructive-foreground text-xs font-semibold rounded-full px-2 py-0.5 flex items-center justify-center">
@@ -86,7 +111,11 @@
                     </div>
                 </button>
 
-                <TextLink :href="route('logout')" method="post" as="button" class="w-full flex items-center px-3 py-2 text-md font-sm rounded-lg transition-all duration-200 text-sidebar-foreground/70 hover:bg-sidebar-accent/30 cursor-pointer">
+                <TextLink
+                    :href="route('logout')"
+                    method="post"
+                    as="button"
+                    class="w-full flex items-center px-3 py-2 text-md font-sm rounded-lg transition-all duration-200 text-sidebar-foreground/70 hover:bg-sidebar-accent/30 cursor-pointer">
                     <LogOut class="mr-5 h-5 w-5 text-sidebar-foreground/70" />
                     Logout
                 </TextLink>

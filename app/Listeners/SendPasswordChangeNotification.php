@@ -13,14 +13,6 @@ use Jenssegers\Agent\Agent;
 class SendPasswordChangeNotification
 {
     /**
-     * Create the event listener.
-     */
-    public function __construct()
-    {
-        //
-    }
-
-    /**
      * Handle the event.
      */
     public function handle(PasswordUpdated $event): void

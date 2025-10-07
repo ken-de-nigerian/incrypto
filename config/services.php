@@ -57,4 +57,16 @@ return [
         'client_secret' => env('LINKEDIN_CLIENT_SECRET'),
         'redirect' => env('LINKEDIN_REDIRECT_URI'),
     ],
+
+    'cryptocompare' => [
+        'key' => env('CRYPTOCOMPARE_API_KEY'),
+    ],
+
+    'coinmarketcap' => [
+        'key' => env('COINMARKETCAP_API_KEY'),
+    ],
+
+    'coingecko' => [
+        'key' => env('COINGECKO_API_KEY'),
+    ],
 ];

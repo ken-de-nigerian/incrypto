@@ -2,10 +2,20 @@
     import { Head, usePage } from '@inertiajs/vue3';
     import AppLayout from '@/components/layout/user/dashboard/AppLayout.vue';
     import { computed, ref } from 'vue';
-    import { ShieldCheckIcon, AlertCircleIcon, InfoIcon, ClockIcon, CheckCircleIcon, FileTextIcon, LockIcon } from 'lucide-vue-next';
+    import {
+        ShieldCheckIcon,
+        AlertCircleIcon,
+        InfoIcon,
+        ClockIcon,
+        CheckCircleIcon,
+        FileTextIcon,
+        LockIcon,
+        ExternalLinkIcon
+    } from 'lucide-vue-next';
     import NotificationsModal from '@/components/utilities/NotificationsModal.vue';
     import Breadcrumb from '@/components/Breadcrumb.vue';
     import KycEditForm from '@/pages/User/Kyc/Partials/KycEditForm.vue';
+    import TextLink from '@/components/TextLink.vue';
 
     const page = usePage();
     const user = computed(() => page.props.auth.user);
@@ -156,9 +166,10 @@
                             <p class="text-xs text-muted-foreground mb-3">
                                 Our support team is available 24/7 to assist you with the verification process.
                             </p>
-                            <a href="mailto:support@example.com" class="text-xs text-muted-foreground hover:underline font-medium">
-                                support@example.com
-                            </a>
+                            <TextLink :href="route('user.support.index')" class="inline-flex items-center gap-2 text-sm font-medium text-primary hover:underline">
+                                Contact Support
+                                <ExternalLinkIcon class="w-4 h-4" />
+                            </TextLink>
                         </div>
                     </div>
 

@@ -18,15 +18,16 @@ class ManageUserKycController extends Controller
     public function index()
     {
         $user = Auth::user()->load('kyc');
-        $status = $user->kyc->status ?? 'unverified';
+        $kyc = $user->kyc;
+        $status = $kyc->status ?? 'unverified';
 
-        // Prepare the data array
+        // Prepare the base data array for each status
         $statusData = [
             'pending' => [
                 'status' => 'pending',
                 'title' => 'Verification in Progress',
-                'staticMessage' => 'To protect against fraudulent activity, all participants will be required to complete identity verification (KYC/AML).',
-                'dynamicMessage' => 'Your documents are under review. This typically takes 24 - 48 hours to verify.',
+                'staticMessage' => 'Your documents have been received and are now being reviewed by our compliance team.',
+                'dynamicMessage' => 'We appreciate your patience during this process.',
                 'action' => [
                     'text' => 'Back to Dashboard',
                     'href' => route('user.dashboard')
@@ -35,8 +36,8 @@ class ManageUserKycController extends Controller
             'verified' => [
                 'status' => 'verified',
                 'title' => 'Verification Complete',
-                'staticMessage' => 'Your account is now fully verified and you can access all platform features.',
-                'dynamicMessage' => 'Your identity has been successfully verified!',
+                'staticMessage' => 'Congratulations! Your account is now fully verified and you have access to all platform features.',
+                'dynamicMessage' => 'Your identity has been successfully confirmed.',
                 'action' => [
                     'text' => 'Go to Dashboard',
                     'href' => route('user.dashboard')
@@ -45,18 +46,18 @@ class ManageUserKycController extends Controller
             'rejected' => [
                 'status' => 'rejected',
                 'title' => 'Verification Rejected',
-                'staticMessage' => 'We couldn\'t verify your identity with the provided documents.',
-                'dynamicMessage' => $user->kyc?->rejection_reason ?? 'Documents didn\'t meet requirements. Please try again.',
+                'staticMessage' => 'We were unable to verify your identity with the documents provided.',
+                'dynamicMessage' => 'Please review the reason provided below and resubmit the required documents.',
                 'action' => [
                     'text' => 'Resubmit Documents',
-                    'href' => route('user.kyc.edit', $user->kyc?->id ?? 0)
+                    'href' => $kyc ? route('user.kyc.edit', $kyc->id) : '#'
                 ]
             ],
             'unverified' => [
                 'status' => 'unverified',
                 'title' => 'Account Verification Required',
-                'staticMessage' => 'To protect against fraudulent activity, all participants will be required to complete identity verification (KYC/AML).',
-                'dynamicMessage' => 'To access all features, please complete your identity verification.',
+                'staticMessage' => 'To protect against fraudulent activity, please complete identity verification (KYC/AML).',
+                'dynamicMessage' => 'Completing verification unlocks all features and enhances your account security.',
                 'action' => [
                     'text' => 'Start Verification',
                     'href' => route('user.kyc.create')
@@ -66,12 +67,24 @@ class ManageUserKycController extends Controller
 
         $currentStatusData = $statusData[$status] ?? $statusData['unverified'];
 
-        // Add the contact email
-        $currentStatusData['contactEmail'] = config('settings.site.site_email', 'support@example.com');
+        $dynamicData = [];
+        if ($kyc) {
+            $dynamicData = [
+                'documentTypes' => array_filter([$kyc->id_proof_type, $kyc->address_proof_type]),
+                'submissionId' => 'KYC-' . str_pad($kyc->id, 4, '0', STR_PAD_LEFT) . '-' . strtoupper(substr(md5($kyc->id), 0, 4)),
+                'submittedAt' => $kyc->created_at?->format('M d, Y, h:i A'),
+                'reviewedAt' => $kyc->updated_at?->format('M d, Y, h:i A'),
+                'rejectionReason' => $kyc->rejection_reason ?? '',
+                'estimatedReviewTime' => '24-48 hours',
+            ];
+        }
 
-        // Pass a single 'kycData' object to the view
+        // Merge the base data with the dynamic data
+        $finalKycData = array_merge($currentStatusData, $dynamicData);
+
+        // Pass the single, complete 'kycData' object to the view
         return Inertia::render('User/Kyc', [
-            'kycData' => $currentStatusData
+            'kycData' => $finalKycData
         ]);
     }
 
@@ -89,7 +102,6 @@ class ManageUserKycController extends Controller
     public function store(StoreKycRequest $request, KycService $kycService)
     {
         try {
-
             $kycService->submitKyc($request->user(), $request->validated());
 
             return redirect()->route('user.kyc.index')

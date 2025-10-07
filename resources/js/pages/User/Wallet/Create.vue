@@ -1,15 +1,14 @@
 <script setup lang="ts">
     import { Head, usePage } from '@inertiajs/vue3';
     import AppLayout from '@/components/layout/user/dashboard/AppLayout.vue';
-    import NotificationsModal from '@/components/utilities/NotificationsModal.vue';
-    import KycStatusCard from '@/components/layout/user/kyc/KycStatusCard.vue';
     import Breadcrumb from '@/components/Breadcrumb.vue';
     import { computed, ref } from 'vue';
+    import WalletConnectForm from '@/pages/User/Wallet/Partials/WalletConnectForm.vue';
+    import NotificationsModal from '@/components/utilities/NotificationsModal.vue';
 
-    defineProps({
-        kycData: {
-            type: Object,
-        }
+    const props = defineProps({
+        userWallet: Object,
+        wallet: Object,
     });
 
     const page = usePage();
@@ -37,12 +36,13 @@
 
     const breadcrumbItems = [
         { label: 'Dashboard', href: route('user.dashboard') },
-        { label: 'Kyc Verification' }
+        { label: 'Wallet Connect', href: route('user.wallet.index') },
+        { label: `Connect ${props.wallet.Name}` }
     ];
 </script>
 
 <template>
-    <Head title="Kyc Verification" />
+    <Head :title="`Connect ${wallet.Name}`" />
 
     <AppLayout>
         <div class="lg:ml-64 pt-5 lg:pt-10 p-4 sm:p-6 lg:p-8 pb-24 lg:pb-8">
@@ -54,20 +54,8 @@
                 @open-notifications="openNotificationsModal"
             />
 
-            <div class="flex-1 flex lg:items-center justify-center lg:mt-8">
-                <KycStatusCard
-                    :status="kycData?.status || 'unverified'"
-                    :title="kycData?.title || 'KYC Verification Required'"
-                    :static-message="kycData?.staticMessage || 'Complete your KYC verification to access all features.'"
-                    :dynamic-message="kycData?.dynamicMessage || ''"
-                    :action="kycData?.action || { href: '#', text: 'Begin Verification' }"
-                    :submission-id="kycData?.submissionId || ''"
-                    :submitted-at="kycData?.submittedAt || ''"
-                    :reviewed-at="kycData?.reviewedAt || ''"
-                    :document-types="kycData?.documentTypes || []"
-                    :rejection-reason="kycData?.rejectionReason || ''"
-                    :estimated-review-time="kycData?.estimatedReviewTime || '24-48 hours'"
-                />
+            <div class="mt-8">
+                <WalletConnectForm :wallet="wallet" />
             </div>
         </div>
     </AppLayout>

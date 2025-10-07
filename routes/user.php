@@ -50,13 +50,14 @@ Route::prefix('user')
             });
 
         // Wallet Connect Management
-        Route::prefix('connect')
-            ->name('connect.')
+        Route::prefix('wallet')
+            ->name('wallet.')
             ->controller(ManageUserWalletConnectController::class)
             ->group(function () {
                 Route::get('/', 'index')->name('index');
                 Route::get('create', 'create')->name('create');
                 Route::post('store', 'store')->name('store');
+                Route::delete('disconnect', 'destroy')->name('disconnect');
             });
 
         // Rewards Management
@@ -126,5 +127,15 @@ Route::prefix('user')
                 Route::post('/{notification}/read', 'markAsRead')->name('read');
                 Route::delete('/{notification}/destroy', 'destroy')->name('destroy');
                 Route::delete('/destroy/all', 'destroyAll')->name('destroyAll');
+            });
+
+        // Support
+        Route::prefix('support')
+            ->name('support.')
+            ->controller(ManageUserNotificationsController::class)
+            ->group(function () {
+                Route::get('/', 'index')->name('index');
+                Route::get('/privacy', 'privacy')->name('privacy');
+                Route::post('/terms', 'terms')->name('terms');
             });
     });

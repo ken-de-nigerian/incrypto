@@ -16,6 +16,7 @@ class GatewayHandlerService
     private const CACHE_TTL = [
         'PRICE_DATA' => 300,       // 5 minutes for real-time price data
         'COIN_LIST' => 120,        // 2 minutes for currency conversion data
+        'WALLET_DATA' => 43200,    // 12 hours for wallet data
     ];
 
     /**
@@ -161,6 +162,61 @@ class GatewayHandlerService
         }
 
         return $result;
+    }
+
+
+    /**
+     * Gets a list of cryptocurrency wallets.
+     *
+     * @return array
+     */
+    public function getWallets(): array
+    {
+        $cacheKey = "cryptoCompareWallets";
+        $url = "https://min-api.cryptocompare.com/data/wallets/general";
+
+        if ($apiKey = config('services.cryptocompare.key')) {
+            $url .= "?api_key=" . $apiKey;
+        }
+
+        $data = $this->fetchData(
+            $cacheKey,
+            $url,
+            self::CACHE_TTL['WALLET_DATA'],
+            'Failed to fetch wallet data'
+        );
+
+        return [
+            'Data' => isset($data['Data']) ? $this->sortWalletData($data['Data']) : [],
+            'Message' => $data['Message'] ?? ($data['message'] ?? ''),
+        ];
+    }
+
+    /**
+     * Sort wallet data by name
+     */
+    private function sortWalletData(array $wallets): array
+    {
+        usort($wallets, fn($a, $b) => strcmp($a['Name'] ?? '', $b['Name'] ?? ''));
+        return $wallets;
+    }
+
+    /**
+     * Gets a single cryptocurrency wallet.
+     *
+     * @param string $walletId
+     * @return array|null
+     */
+    public function getWallet(string $walletId): ?array
+    {
+        $wallets = $this->getWallets();
+        foreach (($wallets['Data']) as $wallet) {
+            if ($wallet['Id'] === $walletId) {
+                return $wallet;
+            }
+        }
+
+        return null;
     }
 
     /**

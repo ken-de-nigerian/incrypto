@@ -7,7 +7,7 @@
         { name: 'Home', href: 'user.dashboard', icon: Home },
         { name: "Send", href: "user.send.index", icon: Send },
         { name: "Receive", href: "user.receive.index", icon: Download },
-        { name: 'Connect', href: 'user.connect.index', icon: Wallet },
+        { name: 'Connect', href: 'user.wallet.index', icon: Wallet },
         { name: 'Account', href: 'user.profile.index', icon: User2 }
     ];
 </script>

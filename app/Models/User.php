@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Notifications\Auth\ResetPasswordNotification;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -91,5 +92,10 @@ class User extends Authenticatable
     public function kyc(): HasOne|KycSubmission
     {
         return $this->hasOne(KycSubmission::class);
+    }
+
+    public function wallets(): HasMany
+    {
+        return $this->hasMany(WalletConnect::class);
     }
 }

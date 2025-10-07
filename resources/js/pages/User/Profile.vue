@@ -9,8 +9,9 @@
     import TextLink from '@/components/TextLink.vue';
     import DataControlSettings from '@/components/layout/user/settings/DataControlSettings.vue';
     import Breadcrumb from '@/components/Breadcrumb.vue';
+    import AppearanceSettings from '@/components/layout/user/settings/AppearanceSettings.vue';
 
-    type Tab = 'profile' | 'security' | 'connections' | 'data';
+    type Tab = 'profile' | 'security' | 'appearance' | 'connections' | 'data';
 
     defineProps({
         activeTab: {
@@ -107,6 +108,23 @@
                         </TextLink>
 
                         <TextLink
+                            :href="route('user.profile.index', { tab: 'appearance' })"
+                            :class="[
+                                'inline-flex items-center gap-2 w-full justify-start text-left h-auto p-3 whitespace-nowrap rounded-md text-sm font-medium transition-colors cursor-pointer text-foreground',
+                                activeTab === 'appearance' ? 'bg-secondary text-secondary-foreground' : 'hover:bg-accent hover:text-accent-foreground'
+                            ]">
+                            <div class="flex items-start space-x-3">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-shield h-5 w-5 mt-0.5 flex-shrink-0">
+                                    <path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"></path>
+                                </svg>
+                                <div class="flex-1 min-w-0">
+                                    <div class="font-medium">Appearance</div>
+                                    <div class="text-xs text-muted-foreground mt-1 whitespace-normal line-clamp-2">Choose your preferred theme.</div>
+                                </div>
+                            </div>
+                        </TextLink>
+
+                        <TextLink
                             :href="route('user.profile.index', { tab: 'connections' })"
                             :class="[
                                 'inline-flex items-center gap-2 w-full justify-start text-left h-auto p-3 whitespace-nowrap rounded-md text-sm font-medium transition-colors cursor-pointer text-foreground',
@@ -148,6 +166,7 @@
                 <div class="flex-1 md:p-6">
                     <ProfileSettings v-if="activeTab === 'profile'" />
                     <SecuritySettings v-if="activeTab === 'security'" :active-sessions="activeSessions" />
+                    <AppearanceSettings v-if="activeTab === 'appearance'" />
                     <ConnectionsSettings v-if="activeTab === 'connections'" :connected-accounts="connectedAccounts" />
                     <DataControlSettings v-if="activeTab === 'data'" />
                 </div>

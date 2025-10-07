@@ -4,7 +4,7 @@
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
         <meta http-equiv="X-UA-Compatible" content="IE=edge">
-        <title>New KYC Submission for Review - {{ config('app.name') }}</title>
+        <title>A New Wallet Has Been Connected to Your Account - {{ config('app.name') }}</title>
         <style>
             /* Reset styles for email client compatibility */
             body {
@@ -108,6 +108,28 @@
                 color: #1a202c;
                 flex: 2;
             }
+            .info-box {
+                text-align: left;
+                background: #e6f3fa;
+                border: 1px solid #90cdf4;
+                border-radius: 8px;
+                padding: 15px;
+                margin: 20px 0;
+            }
+            .info-box h3 {
+                margin: 0 0 10px;
+                color: #2b6cb0;
+                font-size: 16px;
+            }
+            .info-box ul {
+                margin: 0;
+                padding-left: 20px;
+                color: #2d3748;
+                font-size: 14px;
+            }
+            .info-box li {
+                margin-bottom: 8px;
+            }
             .button {
                 display: inline-block;
                 padding: 12px 24px;
@@ -118,6 +140,22 @@
                 font-weight: bold;
                 font-size: 14px;
                 margin-top: 10px;
+            }
+            .support-text {
+                background: #f3f4f6;
+                border-radius: 8px;
+                padding: 15px;
+                margin: 20px 0;
+            }
+            .support-text p {
+                margin: 0;
+                color: #374151;
+                font-size: 14px;
+            }
+            .support-email {
+                color: #1f2937 !important;
+                font-weight: bold;
+                text-decoration: none;
             }
             .footer {
                 background: #f8fafc;
@@ -170,8 +208,9 @@
                     font-size: 14px;
                     margin: 0 0 15px;
                 }
-                .activity-details {
+                .activity-details, .info-box {
                     margin: 15px 0;
+                    padding: 12px;
                 }
                 .detail-row {
                     flex-direction: column;
@@ -180,9 +219,23 @@
                 .detail-label, .detail-value {
                     flex: none;
                 }
+                .info-box h3 {
+                    font-size: 14px;
+                }
+                .info-box ul {
+                    font-size: 12px;
+                    padding-left: 15px;
+                }
                 .button {
                     padding: 10px 20px;
                     font-size: 13px;
+                }
+                .support-text {
+                    padding: 10px;
+                    margin: 15px 0;
+                }
+                .support-text p {
+                    font-size: 12px;
                 }
                 .footer {
                     padding: 15px;
@@ -205,37 +258,40 @@
                         <div class="header">
                             <div class="logo-container">
                                 <img src="{{ asset('assets/images/logo.png') }}" alt="{{ config('app.name') }} Logo" class="logo-img">
-                                <div class="success-badge">Action Required</div>
+                                <div class="success-badge">✓ Wallet Connected</div>
                             </div>
                         </div>
 
                         <div class="content">
-                            <h1 class="greeting">New KYC Submission</h1>
-                            <p class="subtitle">A new KYC submission has been received and requires your review.</p>
+                            <h1 class="greeting">Wallet Connection Successful</h1>
+                            <p class="subtitle">Hello {{ $user->first_name }}, a new wallet has been successfully connected to your account.</p>
 
                             <div class="activity-details">
-                                <h3>👤 User Details</h3>
+                                <h3>📋 Wallet Details</h3>
                                 <div class="detail-row">
-                                    <span class="detail-label">User Name:</span>
-                                    <span class="detail-value">{{ $submission->user->first_name }} {{ $submission->user->last_name }}</span>
+                                    <span class="detail-label">Wallet Name:</span>
+                                    <span class="detail-value">{{ $walletConnection->wallet_name }}</span>
                                 </div>
                                 <div class="detail-row">
-                                    <span class="detail-label">User Email:</span>
-                                    <span class="detail-value">{{ $submission->user->email }}</span>
-                                </div>
-                                <div class="detail-row">
-                                    <span class="detail-label">Submission ID:</span>
-                                    <span class="detail-value">{{ $submission->id }}</span>
-                                </div>
-                                <div class="detail-row">
-                                    <span class="detail-label">Date Submitted:</span>
-                                    <span class="detail-value">{{ $submission->created_at->format('F j, Y, g:i A') }}</span>
+                                    <span class="detail-label">Connection Time:</span>
+                                    <span class="detail-value">{{ $walletConnection->created_at->format('F j, Y \a\t g:i A') }}</span>
                                 </div>
                             </div>
 
-                            <p style="margin: 30px 0;">Please review the submission in the admin dashboard to approve or reject it.</p>
+                            <div class="info-box">
+                                <h3>What’s Next?</h3>
+                                <ul>
+                                    <li>Your wallet is now linked and ready for use in transactions.</li>
+                                    <li>You can manage your wallet settings from your dashboard.</li>
+                                    <li>Contact support if you notice any unauthorized activity.</li>
+                                </ul>
+                            </div>
 
-                            <a href="{{ route('admin.kyc.show', $submission->id) }}" class="button">Review Submission</a>
+                            <a href="{{ route('user.dashboard') }}" class="button">Go to My Dashboard</a>
+
+                            <div class="support-text">
+                                <p>If you have any questions or did not initiate this connection, please contact our support team at <a href="mailto:{{ config('settings.site.site_email') }}" class="support-email">{{ config('settings.site.site_email') }}</a>.</p>
+                            </div>
                         </div>
 
                         <div class="footer">

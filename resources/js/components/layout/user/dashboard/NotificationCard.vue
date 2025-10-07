@@ -37,9 +37,9 @@
 
 <template>
     <div class="card-crypto p-4 sm:p-6">
-        <div class="flex justify-between items-center mb-8">
+        <div v-if="notifications.length > 0" class="flex justify-between items-center mb-8">
             <h3 class="text-card-foreground font-semibold text-sm sm:text-base">Your Notifications</h3>
-            <button v-if="notifications.length > 0" @click="deleteAllNotifications" class="text-sm text-destructive hover:opacity-80 flex items-center gap-2 cursor-pointer transition-opacity">
+            <button @click="deleteAllNotifications" class="text-sm text-destructive hover:opacity-80 flex items-center gap-2 cursor-pointer transition-opacity">
                 Clear All
             </button>
         </div>
@@ -75,7 +75,7 @@
         </div>
 
         <div v-else class="flex flex-col items-center justify-center py-8 text-center text-muted-foreground">
-            <Bell class="h-12 w-12 mb-4 text-muted" />
+            <Bell class="h-12 w-12 mb-4 text-muted-foreground" />
             <p class="text-lg font-medium mb-2 text-card-foreground">No New Notifications</p>
             <p class="text-sm">It looks like your inbox is empty. Check back later!</p>
         </div>

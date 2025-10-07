@@ -163,9 +163,11 @@
 
 <style>
     /* Custom styling for vue-tel-input to match input-crypto */
-    .vue-tel-input-custom {
-        border-radius: 0.75rem;
-        border: 1px solid hsl(var(--border));
+    .vue-tel-input {
+        border-radius: 0.75rem !important;
+        display: flex !important;
+        border: none !important;
+        text-align: left !important;
     }
 
     .vue-tel-input-custom .vti__input {

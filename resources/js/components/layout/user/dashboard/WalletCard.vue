@@ -133,17 +133,17 @@
             <template v-if="isLoading">
                 <div v-for="i in skeletonCount" :key="`skeleton-${i}`" class="flex items-center justify-between py-2 sm:py-3 border-b border-border last:border-0">
                     <div class="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
-                        <div class="w-8 h-8 sm:w-8 sm:h-8 rounded-full bg-muted animate-pulse flex-shrink-0"></div>
+                        <div class="w-8 h-8 sm:w-8 sm:h-8 rounded-full bg-secondary animate-pulse flex-shrink-0"></div>
                         <div class="min-w-0 flex-1">
-                            <div class="h-4 w-24 sm:w-32 bg-muted rounded animate-pulse mb-2"></div>
-                            <div class="h-3 w-16 sm:w-20 bg-muted rounded animate-pulse"></div>
+                            <div class="h-4 w-24 sm:w-32 bg-secondary rounded animate-pulse mb-2"></div>
+                            <div class="h-3 w-16 sm:w-20 bg-secondary rounded animate-pulse"></div>
                         </div>
                     </div>
 
                     <div class="text-right flex-shrink-0 ml-2">
-                        <div class="h-4 w-20 sm:w-24 bg-muted rounded animate-pulse mb-2 ml-auto"></div>
-                        <div class="h-3 w-16 sm:w-20 bg-muted rounded animate-pulse mb-2 ml-auto"></div>
-                        <div class="h-3 w-20 sm:w-24 bg-muted rounded animate-pulse ml-auto"></div>
+                        <div class="h-4 w-20 sm:w-24 bg-secondary rounded animate-pulse mb-2 ml-auto"></div>
+                        <div class="h-3 w-16 sm:w-20 bg-secondary rounded animate-pulse mb-2 ml-auto"></div>
+                        <div class="h-3 w-20 sm:w-24 bg-secondary rounded animate-pulse ml-auto"></div>
                     </div>
                 </div>
             </template>

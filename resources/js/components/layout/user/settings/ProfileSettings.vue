@@ -81,9 +81,12 @@
     };
 
     const initials = computed(() => {
-        const first = user.value.first_name?.charAt(0) || '';
-        const last = user.value.last_name?.charAt(0) || '';
-        return `${first}${last}`.toUpperCase();
+        if (user.value) {
+            const first = user.value.first_name?.charAt(0) || '';
+            const last = user.value.last_name?.charAt(0) || '';
+            return `${first}${last}`.toUpperCase();
+        }
+        return '';
     });
 </script>
 
@@ -98,9 +101,13 @@
                 <input ref="photoInput" type="file" class="hidden" @change="updatePhotoPreview" accept="image/*" />
 
                 <div class="flex items-center flex-wrap gap-4">
-                    <span class="relative flex shrink-0 overflow-hidden rounded-xl h-20 w-20">
-                        <img class="aspect-square h-full w-full object-cover" alt="Profile Picture" :src="photoPreview || user.profile?.profile_photo_path || `https://placehold.co/124x124/222934/ffffff?text=${initials}`" />
-                    </span>
+                    <div class="rounded-xl h-20 w-20 object-cover border border-border overflow-hidden bg-secondary flex items-center justify-center">
+                        <img v-if="photoPreview || user.profile?.profile_photo_path"
+                             :src="photoPreview || user.profile?.profile_photo_path"
+                             :alt="`${user.first_name} ${user.last_name}`"
+                             class="h-full w-full object-cover">
+                        <span v-else class="text-xl font-bold text-muted-foreground">{{ initials }}</span>
+                    </div>
 
                     <div class="space-y-2">
                         <div class="flex space-x-2">

@@ -76,7 +76,7 @@
                                 <h3 class="text-xl font-semibold text-card-foreground">Notifications</h3>
                                 <p class="text-sm text-muted-foreground mt-1">Stay updated with your latest activities</p>
                             </div>
-                            <button @click="handleClose" class="p-2 hover:bg-muted rounded-lg transition-colors flex-shrink-0" title="Close">
+                            <button @click="handleClose" class="p-2 hover:bg-muted rounded-lg transition-colors flex-shrink-0 cursor-pointer" title="Close">
                                 <X class="h-5 w-5 text-muted-foreground" />
                             </button>
                         </div>
@@ -120,7 +120,7 @@
                             </div>
 
                             <div v-else class="flex flex-col items-center justify-center py-8 text-center text-muted-foreground flex-1">
-                                <Bell class="h-12 w-12 mb-4 text-muted" />
+                                <Bell class="h-12 w-12 mb-4 text-muted-foreground" />
                                 <p class="text-lg font-medium mb-2 text-card-foreground">No New Notifications</p>
                                 <p class="text-sm">It looks like your inbox is empty. Check back later!</p>
                             </div>

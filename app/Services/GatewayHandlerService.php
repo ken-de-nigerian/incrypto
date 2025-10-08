@@ -15,6 +15,7 @@ class GatewayHandlerService
      */
     private const CACHE_TTL = [
         'PRICE_DATA' => 300,       // 5 minutes for real-time price data
+        'GAS_PRICE_DATA' => 120,   // 2 minutes for gas price data
         'COIN_LIST' => 120,        // 2 minutes for currency conversion data
         'WALLET_DATA' => 43200,    // 12 hours for wallet data
     ];
@@ -28,6 +29,17 @@ class GatewayHandlerService
      * Base delay between retries in seconds (exponential backoff).
      */
     private const RETRY_BASE_DELAY = 1;
+
+    /**
+     * Chain ID mapping for supported chains
+     */
+    private const CHAIN_IDS = [
+        'Ethereum' => 1,
+        'BSC' => 56,
+        'Polygon' => 137,
+        'Arbitrum' => 42161,
+        'Optimism' => 10,
+    ];
 
     /**
      * Retrieve gateway currencies from the configuration.
@@ -55,6 +67,122 @@ class GatewayHandlerService
             Log::error('Error in getGateways(): ' . $e->getMessage());
             return [];
         }
+    }
+
+    /**
+     * Fetch Ethereum gas prices from Etherscan V2 with USD conversion.
+     *
+     * @param string $chain The blockchain network (e.g., Ethereum, BSC)
+     * @return array
+     */
+    public function fetchGasPrices(string $chain = 'Ethereum'): array
+    {
+        $cacheKey = "etherscan_gas_prices_$chain";
+        $apiKey = config('services.etherscan.key');
+
+        if (!$apiKey) {
+            Log::error('Etherscan API key is not configured.');
+            return $this->getFallbackGasPrices();
+        }
+
+        $chainId = self::CHAIN_IDS[$chain] ?? 1;
+
+        return Cache::remember($cacheKey, self::CACHE_TTL['GAS_PRICE_DATA'], function () use ($apiKey, $chain, $chainId) {
+            try {
+                // Fetch current ETH price (uses its own caching)
+                $ethPrice = $this->fetchEthPrice();
+
+                // Fetch gas oracle data from Etherscan V2 using fetchData helper
+                $url = "https://api.etherscan.io/v2/api?module=gastracker&action=gasoracle&chainid=$chainId&apikey=$apiKey";
+                $response = $this->fetchData(
+                    "etherscan_gas_oracle_$chain",
+                    $url,
+                    self::CACHE_TTL['GAS_PRICE_DATA'],
+                    "Failed to fetch Etherscan V2 Gas Oracle data for chain $chain"
+                );
+
+                if ($response['status'] !== '1' || !isset($response['result'])) {
+                    throw new Exception('Invalid response from Etherscan V2 Gas Oracle API: ' . ($response['message'] ?? 'Unknown error'));
+                }
+
+                $result = $response['result'];
+
+                // Validate required fields (V2 may use camelCase or PascalCase)
+                $safeGasPrice = $result['safeGasPrice'] ?? $result['SafeGasPrice'] ?? null;
+                $proposeGasPrice = $result['proposeGasPrice'] ?? $result['ProposeGasPrice'] ?? null;
+                $fastGasPrice = $result['fastGasPrice'] ?? $result['FastGasPrice'] ?? null;
+
+                if (!$safeGasPrice || !$proposeGasPrice || !$fastGasPrice) {
+                    throw new Exception('Missing gas price fields in Etherscan V2 response');
+                }
+
+                // Define the calculation logic for USD conversion
+                $gweiToUsd = fn($gwei) => ($gwei * 21000 * $ethPrice) / 1e9;
+
+                // Structure and return the data
+                return [
+                    'low' => [
+                        'gwei' => (float) $safeGasPrice,
+                        'time' => '~3 min',
+                        'usd' => round($gweiToUsd($safeGasPrice), 2),
+                    ],
+                    'medium' => [
+                        'gwei' => (float) $proposeGasPrice,
+                        'time' => '~1 min',
+                        'usd' => round($gweiToUsd($proposeGasPrice), 2),
+                    ],
+                    'high' => [
+                        'gwei' => (float) $fastGasPrice,
+                        'time' => '~15 sec',
+                        'usd' => round($gweiToUsd($fastGasPrice), 2),
+                    ],
+                ];
+            } catch (Throwable $e) {
+                Log::error('Failed to fetch gas prices: ' . $e->getMessage(), [
+                    'api_key' => substr($apiKey, 0, 4) . '****',
+                    'chain' => $chain,
+                    'chainid' => $chainId,
+                    'response' => $response ?? null,
+                ]);
+                return $this->getFallbackGasPrices();
+            }
+        });
+    }
+
+    /**
+     * Return fallback gas prices.
+     *
+     * @return array
+     */
+    private function getFallbackGasPrices(): array
+    {
+        return [
+            'low' => ['gwei' => 25, 'time' => '~3 min', 'usd' => 3.50],
+            'medium' => ['gwei' => 35, 'time' => '~1 min', 'usd' => 4.90],
+            'high' => ['gwei' => 50, 'time' => '~15 sec', 'usd' => 7.00],
+        ];
+    }
+
+    /**
+     * Fetch the current price of Ethereum in USD from CoinGecko.
+     *
+     * @return float
+     */
+    private function fetchEthPrice(): float
+    {
+        $cacheKey = 'coingecko_eth_price';
+        $url = 'https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=usd';
+
+        // Use the existing fetchData helper for simple API calls
+        $response = $this->fetchData(
+            $cacheKey,
+            $url,
+            self::CACHE_TTL['PRICE_DATA'],
+            'Failed to fetch ETH price from CoinGecko'
+        );
+
+        // Return the price or a reasonable fallback value
+        return $response['ethereum']['usd'] ?? 2000.0;
     }
 
     /**
@@ -164,7 +292,6 @@ class GatewayHandlerService
         return $result;
     }
 
-
     /**
      * Gets a list of cryptocurrency wallets.
      *
@@ -230,11 +357,11 @@ class GatewayHandlerService
      */
     private function fetchData(string $cacheKey, string $apiUrl, int $ttl, string $errorContext = ''): array
     {
-        return Cache::remember($cacheKey, $ttl, function() use ($apiUrl, $errorContext) {
+        return Cache::remember($cacheKey, $ttl, function () use ($apiUrl, $errorContext) {
             $data = $this->fetchFromAPIWithRetry($apiUrl);
 
             if (empty($data)) {
-                Log::warning("Empty response from API", ['context' => $errorContext]);
+                Log::warning("Empty response from API", ['context' => $errorContext, 'url' => $apiUrl]);
                 return [];
             }
 
@@ -281,8 +408,8 @@ class GatewayHandlerService
     private function makeApiRequest(string $apiUrl): array
     {
         try {
-            $apiKey = config('settings.coingecko.key', '');
-            $urlWithKey = $apiKey
+            $apiKey = config('services.coingecko.key', '');
+            $urlWithKey = $apiKey && !str_contains($apiUrl, 'etherscan')
                 ? $apiUrl . (str_contains($apiUrl, '?') ? '&' : '?') . 'x_cg_api_key=' . $apiKey
                 : $apiUrl;
 

@@ -69,4 +69,8 @@ return [
     'coingecko' => [
         'key' => env('COINGECKO_API_KEY'),
     ],
+
+    'etherscan' => [
+        'key' => env('ETHERSCAN_API_KEY'),
+    ]
 ];

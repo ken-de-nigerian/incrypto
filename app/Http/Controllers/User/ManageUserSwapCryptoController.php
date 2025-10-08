@@ -3,67 +3,66 @@
 namespace App\Http\Controllers\User;
 
 use App\Http\Controllers\Controller;
-use App\Services\GatewayHandlerService;
+use App\Http\Requests\ApproveTokenRequest;
+use App\Http\Requests\ProcessSwapRequest;
+use App\Services\CryptoSwapService;
+use Exception;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
-use JsonException;
+use Throwable;
 
 class ManageUserSwapCryptoController extends Controller
 {
+    protected CryptoSwapService $cryptoSwapService;
+
+    public function __construct(CryptoSwapService $cryptoSwapService)
+    {
+        $this->cryptoSwapService = $cryptoSwapService;
+    }
+
     /**
      * Display the swap page.
      */
     public function index()
     {
-        return Inertia::render('User/Swap', $this->getSwapData());
+        $swapData = $this->cryptoSwapService->getSwapPageData(Auth::user());
+        return Inertia::render('User/Swap', $swapData);
     }
 
     /**
-     * Fetches and structures data for the swap component.
-     *
-     * @return array
+     * Approve token for swapping.
+     * @throws Exception
      */
-    private function getSwapData(): array
+    public function approve(ApproveTokenRequest $request)
     {
-        $user = Auth::user();
-        $tokens = [];
-        $userBalances = [];
-        $prices = [];
+        $this->cryptoSwapService->approveToken(
+            Auth::user(),
+            $request->validated()
+        );
 
+        return response()->json(['message' => 'Token approved successfully.']);
+    }
+
+    /**
+     * Process the swap.
+     *
+     * @throws Throwable
+     */
+    public function process(ProcessSwapRequest $request)
+    {
         try {
-            $userWallets = json_decode($user->wallet_balance, true, 512, JSON_THROW_ON_ERROR);
-        } catch (JsonException $e) {
-            $userWallets = [];
-            Log::error("Failed to decode user wallet balance for user $user->id: " . $e->getMessage());
+            $result = $this->cryptoSwapService->executeSwap(
+                Auth::user(),
+                $request->validated()
+            );
+
+            return response()->json([
+                'message' => 'Swap successful!',
+                'transactionHash' => $result->transaction_hash,
+            ]);
+
+        } catch (Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 400);
         }
-
-        foreach ($userWallets as $symbol => $crypto) {
-            $userBalances[$symbol] = (float) ($crypto['balance'] ?? 0);
-        }
-
-        $marketData = (new GatewayHandlerService())->fetchGatewaysCrypto();
-
-        foreach ($marketData as $crypto) {
-            $coin = $crypto['coin'];
-            $symbol = strtoupper($coin['symbol']);
-
-            $tokens[] = [
-                'symbol' => $symbol,
-                'name' => $coin['name'] ?? 'Unknown',
-                'logo' => $coin['image'] ?? asset('assets/images/default-crypto.png'),
-                'address' => '0x' . substr(md5($symbol), 0, 100),
-                'decimals' => 18,
-                'chain' => 'Ethereum',
-            ];
-
-            $prices[$symbol] = (float) ($coin['current_price'] ?? 0);
-        }
-
-        return [
-            'tokens' => $tokens,
-            'userBalances' => (object) $userBalances,
-            'prices' => (object) $prices,
-        ];
     }
 }

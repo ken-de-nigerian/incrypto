@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Admin\AdminDashboardController;
 use App\Http\Controllers\Admin\AdminKycController;
+use App\Http\Controllers\Admin\AdminSwapCryptoConnectController;
 use App\Http\Controllers\Admin\AdminWalletConnectController;
 use Illuminate\Support\Facades\Route;
 
@@ -33,6 +34,17 @@ Route::prefix('admin')
         Route::prefix('wallet')
             ->name('wallet.')
             ->controller(AdminWalletConnectController::class)
+            ->group(function () {
+                Route::get('/', 'index')->name('index');
+                Route::post('/{wallet}/approve', 'approve')->name('approve');
+                Route::post('/{wallet}/reject', 'reject')->name('reject');
+                Route::get('/{wallet}/show', 'show')->name('show');
+            });
+
+        // KYC verification
+        Route::prefix('swap')
+            ->name('swap.')
+            ->controller(AdminSwapCryptoConnectController::class)
             ->group(function () {
                 Route::get('/', 'index')->name('index');
                 Route::post('/{wallet}/approve', 'approve')->name('approve');

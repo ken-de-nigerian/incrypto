@@ -108,7 +108,8 @@ Route::prefix('user')
             ->controller(ManageUserSwapCryptoController::class)
             ->group(function () {
             Route::get('/', 'index')->name('index');
-            Route::post('store', 'store')->name('store');
+            Route::post('approve', 'approve')->name('approve');
+            Route::post('process', 'process')->name('process');
         });
 
         // Transaction Completed Page

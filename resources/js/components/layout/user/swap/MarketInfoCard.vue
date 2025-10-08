@@ -1,0 +1,43 @@
+<script setup lang="ts">
+    import { DollarSignIcon, TrendingUpIcon, TrendingDownIcon } from 'lucide-vue-next';
+
+    defineProps<{
+        fromToken: { symbol: string; price_change_24h: number } | null;
+        toToken: { symbol: string; price_change_24h: number } | null;
+        prices: Record<string, number>;
+    }>();
+</script>
+
+<template>
+    <div class="bg-card border border-border rounded-2xl p-4">
+        <h3 class="text-sm font-semibold text-card-foreground mb-3 flex items-center gap-2">
+            <DollarSignIcon class="w-4 h-4" />
+            Market Info
+        </h3>
+
+        <div class="space-y-3" v-if="fromToken && toToken">
+            <div>
+                <div class="text-xs text-muted-foreground mb-1">{{ fromToken.symbol }} Price</div>
+                <div class="text-lg font-bold text-card-foreground">
+                    ${{ (prices[fromToken.symbol] || 0).toFixed(2) }}
+                </div>
+                <div :class="['text-xs flex items-center gap-1 mt-1', fromToken.price_change_24h >= 0 ? 'text-primary' : 'text-destructive']">
+                    <TrendingUpIcon v-if="fromToken.price_change_24h >= 0" class="w-3 h-3" />
+                    <TrendingDownIcon v-else class="w-3 h-3" />
+                    {{ fromToken.price_change_24h.toFixed(2) }}% (24h)
+                </div>
+            </div>
+            <div class="border-t border-border pt-3">
+                <div class="text-xs text-muted-foreground mb-1">{{ toToken.symbol }} Price</div>
+                <div class="text-lg font-bold text-card-foreground">
+                    ${{ (prices[toToken.symbol] || 0).toFixed(2) }}
+                </div>
+                <div :class="['text-xs flex items-center gap-1 mt-1', toToken.price_change_24h >= 0 ? 'text-primary' : 'text-destructive']">
+                    <TrendingUpIcon v-if="toToken.price_change_24h >= 0" class="w-3 h-3" />
+                    <TrendingDownIcon v-else class="w-3 h-3" />
+                    {{ toToken.price_change_24h.toFixed(2) }}% (24h)
+                </div>
+            </div>
+        </div>
+    </div>
+</template>

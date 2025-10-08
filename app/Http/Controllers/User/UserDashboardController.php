@@ -20,8 +20,6 @@ class UserDashboardController extends Controller
 
     private function walletBalances()
     {
-        sleep(10);
-
         // Fetch auth user
         $user = Auth::user();
 

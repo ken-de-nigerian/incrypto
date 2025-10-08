@@ -4,11 +4,10 @@ namespace App\Listeners;
 use App\Events\KycSubmitted;
 use App\Mail\NewKycSubmissionAlert;
 use Exception;
-use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 
-class NotifyAdminOfKycSubmission implements ShouldQueue
+class NotifyAdminOfKycSubmission
 {
     /**
      * Handle the event.

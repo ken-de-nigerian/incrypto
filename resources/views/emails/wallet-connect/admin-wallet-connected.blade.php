@@ -4,15 +4,15 @@
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
         <meta http-equiv="X-UA-Compatible" content="IE=edge">
-        <title>[Admin] A New Wallet Was Connected - {{ config('app.name') }}</title>
+        <title>New Wallet Connection - {{ config('app.name') }}</title>
         <style>
             /* Reset styles for email client compatibility */
             body {
                 margin: 0;
                 padding: 0;
                 font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, Helvetica, sans-serif;
-                background: #f1f5f9;
-                color: #1a202c;
+                background: #f4f7fa;
+                color: #1f2a44;
                 line-height: 1.6;
                 -webkit-font-smoothing: antialiased;
                 -moz-osx-font-smoothing: grayscale;
@@ -24,15 +24,16 @@
             table {
                 border-collapse: collapse;
                 width: 100%;
-                max-width: 600px;
+                max-width: 640px;
+                margin: 0 auto;
             }
             img {
                 border: 0;
                 outline: none;
                 text-decoration: none;
-                -ms-interpolation-mode: bicubic;
                 max-width: 100%;
                 height: auto;
+                display: block;
             }
             a {
                 text-decoration: none;
@@ -40,159 +41,178 @@
             }
             .email-wrapper {
                 width: 100%;
-                background: #f1f5f9;
-                padding: 20px 0;
+                background: #f4f7fa;
+                padding: 24px 16px;
             }
             .container {
-                width: 100%;
-                max-width: 600px;
-                margin: 0 auto;
                 background: #ffffff;
-                border-radius: 8px;
+                border-radius: 12px;
                 overflow: hidden;
                 border: 1px solid #e2e8f0;
+                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
             }
             .header {
-                background: #000000;
-                padding: 30px;
+                background: #1f2a44;
+                padding: 32px 24px;
                 text-align: center;
             }
             .logo-container {
                 text-align: center;
             }
             .logo-img {
-                max-width: 150px;
-                height: auto;
-                display: block;
-                margin: 0 auto 10px;
+                max-width: 140px;
+                margin: 0 auto 12px;
             }
             .success-badge {
                 display: inline-block;
-                background: rgba(255, 255, 255, 0.95);
-                color: #000000;
-                padding: 6px 16px;
-                border-radius: 20px;
+                background: #ffffff;
+                color: #1f2a44;
+                padding: 8px 20px;
+                border-radius: 9999px;
                 font-size: 14px;
                 font-weight: 600;
+                border: 1px solid #e2e8f0;
             }
             .content {
-                padding: 30px 20px;
+                padding: 32px 24px;
                 text-align: center;
             }
             .greeting {
-                font-size: 24px;
-                font-weight: bold;
-                margin: 0 0 10px;
-                color: #000000;
+                font-size: 26px;
+                font-weight: 700;
+                margin: 0 0 12px;
+                color: #1f2a44;
             }
             .subtitle {
                 font-size: 16px;
-                color: #6b7280;
-                margin: 0 0 20px;
+                color: #64748b;
+                max-width: 90%;
+                margin: 0 auto 24px;
             }
             .activity-details {
                 text-align: left;
-                margin: 20px 0;
+                margin: 24px 0;
+                background: #f8fafc;
+                padding: 20px;
+                border-radius: 8px;
             }
             .detail-row {
-                margin-bottom: 10px;
                 display: flex;
                 justify-content: space-between;
+                margin-bottom: 12px;
+                font-size: 15px;
             }
             .detail-label {
-                font-weight: bold;
-                color: #1a202c;
+                font-weight: 600;
+                color: #1f2a44;
                 flex: 1;
             }
             .detail-value {
-                color: #1a202c;
+                color: #1f2a44;
                 flex: 2;
+                word-break: break-word;
             }
             .button {
                 display: inline-block;
-                padding: 12px 24px;
+                padding: 12px 28px;
                 background: #dc2626;
                 color: #ffffff !important;
                 text-decoration: none;
                 border-radius: 8px;
-                font-weight: bold;
-                font-size: 14px;
-                margin-top: 10px;
+                font-weight: 600;
+                font-size: 15px;
+                margin: 16px 0;
+                transition: background-color 0.2s ease;
+            }
+            .button:hover {
+                background: #b91c1c;
             }
             .footer {
                 background: #f8fafc;
-                padding: 20px;
+                padding: 24px;
                 text-align: center;
                 border-top: 1px solid #e2e8f0;
             }
             .footer p {
-                margin: 4px 0;
-                font-size: 12px;
-                color: #6b7280;
+                margin: 6px 0;
+                font-size: 13px;
+                color: #64748b;
             }
             .social-links {
-                margin: 15px 0 0;
+                margin: 16px 0 0;
             }
             .social-link {
                 display: inline-block;
-                margin: 0 6px;
-                text-decoration: none;
+                margin: 0 8px;
             }
             .social-img {
-                width: 24px;
-                height: 24px;
+                width: 28px;
+                height: 28px;
                 vertical-align: middle;
+                opacity: 0.8;
+                transition: opacity 0.2s ease;
+            }
+            .social-img:hover {
+                opacity: 1;
             }
             /* Media Queries for Responsiveness */
-            @media only screen and (max-width: 600px) {
+            @media only screen and (max-width: 640px) {
                 .email-wrapper {
-                    padding: 10px;
+                    padding: 16px 8px;
                 }
                 .container {
-                    width: 100% !important;
                     border-radius: 0;
                     border-left: 0;
                     border-right: 0;
                 }
                 .header {
-                    padding: 20px;
+                    padding: 24px 16px;
                 }
                 .logo-img {
                     max-width: 120px;
                 }
+                .success-badge {
+                    padding: 6px 16px;
+                    font-size: 13px;
+                }
                 .content {
-                    padding: 20px 15px;
+                    padding: 24px 16px;
                 }
                 .greeting {
-                    font-size: 20px;
+                    font-size: 22px;
                 }
                 .subtitle {
                     font-size: 14px;
-                    margin: 0 0 15px;
+                    margin: 0 0 16px;
                 }
                 .activity-details {
-                    margin: 15px 0;
+                    margin: 16px 0;
+                    padding: 16px;
                 }
                 .detail-row {
                     flex-direction: column;
-                    margin-bottom: 8px;
+                    margin-bottom: 10px;
+                    font-size: 14px;
                 }
                 .detail-label, .detail-value {
                     flex: none;
                 }
+                .detail-value {
+                    margin-top: 4px;
+                }
                 .button {
-                    padding: 10px 20px;
-                    font-size: 13px;
+                    padding: 10px 24px;
+                    font-size: 14px;
                 }
                 .footer {
-                    padding: 15px;
+                    padding: 16px;
                 }
                 .footer p {
-                    font-size: 11px;
+                    font-size: 12px;
                 }
                 .social-img {
-                    width: 20px;
-                    height: 20px;
+                    width: 24px;
+                    height: 24px;
                 }
             }
         </style>
@@ -214,7 +234,7 @@
                             <p class="subtitle">A new wallet has been connected to a user account and requires your review.</p>
 
                             <div class="activity-details">
-                                <h3>👤 User Details</h3>
+                                <h3 style="margin: 0 0 16px; font-size: 18px; color: #1f2a44;">👤 User Details</h3>
                                 <div class="detail-row">
                                     <span class="detail-label">User Name:</span>
                                     <span class="detail-value">{{ $user->first_name }} {{ $user->last_name }}</span>
@@ -237,7 +257,7 @@
                                 </div>
                             </div>
 
-                            <p style="margin: 30px 0;">Please review the wallet connection in the admin dashboard for verification or monitoring.</p>
+                            <p style="margin: 24px 0; color: #1f2a44;">Please review the wallet connection in the admin dashboard for verification or monitoring.</p>
 
                             <a href="{{ route('admin.wallet.show', $walletConnection->id) }}" class="button">Review Wallet Connection</a>
                         </div>
@@ -247,16 +267,16 @@
                             <p>Building the future of digital finance</p>
                             <div class="social-links">
                                 <a href="{{ config('settings.social.site_fb') }}" class="social-link" title="Facebook">
-                                    <img src="https://img.icons8.com/color/24/000000/facebook-new.png" alt="Facebook Icon" class="social-img">
+                                    <img src="https://img.icons8.com/color/28/000000/facebook-new.png" alt="Facebook Icon" class="social-img">
                                 </a>
                                 <a href="{{ config('settings.social.site_instagram') }}" class="social-link" title="Instagram">
-                                    <img src="https://img.icons8.com/color/24/000000/instagram.png" alt="Instagram Icon" class="social-img">
+                                    <img src="https://img.icons8.com/color/28/000000/instagram.png" alt="Instagram Icon" class="social-img">
                                 </a>
                                 <a href="{{ config('settings.social.site_linkedin') }}" class="social-link" title="LinkedIn">
-                                    <img src="https://img.icons8.com/color/24/000000/linkedin.png" alt="LinkedIn Icon" class="social-img">
+                                    <img src="https://img.icons8.com/color/28/000000/linkedin.png" alt="LinkedIn Icon" class="social-img">
                                 </a>
                                 <a href="{{ config('settings.social.site_youtube') }}" class="social-link" title="YouTube">
-                                    <img src="https://img.icons8.com/color/24/000000/youtube-play.png" alt="YouTube Icon" class="social-img">
+                                    <img src="https://img.icons8.com/color/28/000000/youtube-play.png" alt="YouTube Icon" class="social-img">
                                 </a>
                             </div>
                         </div>

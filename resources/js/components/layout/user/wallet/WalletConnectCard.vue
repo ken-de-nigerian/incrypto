@@ -1,7 +1,6 @@
 <script setup lang="ts">
     import { computed, ref, onMounted, onUnmounted, watch } from 'vue';
-    import { WalletIcon, CheckCircleIcon, PlusCircleIcon, XCircleIcon, ArrowRightIcon, InfoIcon, ShieldCheckIcon, TrendingUpIcon, LockIcon, ZapIcon, AlertTriangleIcon, ExternalLinkIcon, CopyIcon, CheckIcon, Loader2Icon, SearchIcon, ArrowUpDownIcon, SortAscIcon, SortDescIcon, FilterIcon, XIcon } from 'lucide-vue-next';
-    import { router } from '@inertiajs/vue3';
+    import { WalletIcon, CheckCircleIcon, PlusCircleIcon, ArrowRightIcon, InfoIcon, ShieldCheckIcon, TrendingUpIcon, LockIcon, ZapIcon, ExternalLinkIcon, CopyIcon, CheckIcon, Loader2Icon, SearchIcon, ArrowUpDownIcon, SortAscIcon, SortDescIcon, FilterIcon, XIcon } from 'lucide-vue-next';
     import TextLink from '@/components/TextLink.vue';
 
     const props = defineProps({
@@ -30,11 +29,6 @@
     });
 
     const copiedAddress = ref<string | null>(null);
-    const disconnectingWallet = ref<number | null>(null);
-
-    // Modal state
-    const showDisconnectModal = ref(false);
-    const walletToDisconnect = ref<{ id: number; wallet_name: string } | null>(null);
 
     // Search and filter state
     const searchQuery = ref('');
@@ -80,7 +74,7 @@
         if (sortOrder.value === 'asc') {
             filtered = [...filtered].sort((a, b) => a.name.localeCompare(b.name));
         } else if (sortOrder.value === 'desc') {
-            filtered = [...filtered].sort((a, b) => b.name.localeCompare(a.name));
+            filtered = [...filtered].sort((a, b) => b.name.localeCompare(b.name));
         } else {
             // Default: popular first, then alphabetically
             filtered = [...filtered].sort((a, b) => {
@@ -110,33 +104,6 @@
         { icon: ZapIcon, text: 'Instant deposits and withdrawals' },
         { icon: LockIcon, text: 'Non-custodial - you control your assets' }
     ];
-
-    // --- Modal and Disconnect Logic ---
-    const openDisconnectModal = (wallet: { id: number; wallet_name: string }) => {
-        walletToDisconnect.value = wallet;
-        showDisconnectModal.value = true;
-    };
-
-    const closeDisconnectModal = () => {
-        showDisconnectModal.value = false;
-        // Delay clearing to allow modal to fade out
-        setTimeout(() => {
-            walletToDisconnect.value = null;
-        }, 300);
-    };
-
-    const confirmDisconnect = () => {
-        if (!walletToDisconnect.value) return;
-
-        disconnectingWallet.value = walletToDisconnect.value.id;
-        router.delete(route('user.wallet.disconnect', { connection: walletToDisconnect.value.id }), {
-            onFinish: () => {
-                disconnectingWallet.value = null;
-                closeDisconnectModal();
-            }
-        });
-    };
-    // --- End Modal and Disconnect Logic ---
 
     const copyAddress = (id: string) => {
         navigator.clipboard.writeText(id);
@@ -195,8 +162,6 @@
         }, 500);
     };
 
-
-
     // Scroll handler for infinite scroll
     const handleScroll = (event: Event) => {
         const target = event.target as HTMLElement;
@@ -241,7 +206,6 @@
 
         // Reset refs
         scrollContainer.value = null;
-        disconnectingWallet.value = null;
 
         // Clear search and filters
         searchQuery.value = '';
@@ -321,8 +285,8 @@
 
                         <div v-else class="grid gap-4">
                             <div v-for="wallet in connectedWallets"
-                                :key="wallet.id"
-                                class="group bg-muted/30 hover:bg-muted/50 border border-border rounded-xl p-5 transition-all duration-200 hover:shadow-md">
+                                 :key="wallet.id"
+                                 class="group bg-muted/30 hover:bg-muted/50 border border-border rounded-xl p-5 transition-all duration-200 hover:shadow-md">
                                 <div class="flex flex-col sm:flex-row items-stretch sm:items-start justify-between gap-4">
                                     <div class="flex items-start gap-4 flex-1">
                                         <div class="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0 border border-border">
@@ -360,13 +324,6 @@
                                             </div>
                                         </div>
                                     </div>
-
-                                    <button
-                                        @click="openDisconnectModal(wallet)"
-                                        class="w-full sm:w-auto mt-4 sm:mt-0 px-4 py-2 bg-destructive/10 border border-border hover:bg-destructive/20 text-destructive rounded-lg text-sm font-medium transition-colors flex items-center justify-center sm:justify-start gap-2 cursor-pointer">
-                                        <XCircleIcon class="w-4 h-4" />
-                                        <span>Disconnect</span>
-                                    </button>
                                 </div>
                             </div>
                         </div>
@@ -538,7 +495,7 @@
 
                 <div class="bg-warning/5 border border-warning/20 rounded-2xl p-6">
                     <h5 class="text-sm font-semibold text-warning mb-3 flex items-center gap-2">
-                        <AlertTriangleIcon class="w-5 h-5" />
+                        <ZapIcon class="w-5 h-5" />
                         Important Notice
                     </h5>
                     <p class="text-xs text-muted-foreground leading-relaxed">
@@ -563,56 +520,6 @@
                 </div>
             </div>
         </div>
-
-        <Teleport to="body">
-            <Transition
-                enter-active-class="transition-opacity duration-300 ease-out"
-                enter-from-class="opacity-0"
-                enter-to-class="opacity-100"
-                leave-active-class="transition-opacity duration-200 ease-in"
-                leave-from-class="opacity-100"
-                leave-to-class="opacity-0">
-                <div v-if="showDisconnectModal" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-                    <Transition
-                        enter-active-class="transition-all duration-300 ease-out"
-                        enter-from-class="opacity-0 scale-95 -translate-y-4"
-                        enter-to-class="opacity-100 scale-100 translate-y-0"
-                        leave-active-class="transition-all duration-200 ease-in"
-                        leave-from-class="opacity-100 scale-100 translate-y-0"
-                        leave-to-class="opacity-0 scale-95 -translate-y-4"
-                    >
-                        <div v-if="showDisconnectModal" class="relative bg-card border border-border rounded-2xl shadow-xl w-full max-w-md mx-auto" @click.stop>
-                            <div class="p-6 text-center">
-                                <div class="w-12 h-12 rounded-full bg-destructive/10 flex items-center justify-center flex-shrink-0 mx-auto mb-4">
-                                    <AlertTriangleIcon class="w-6 h-6 text-destructive" />
-                                </div>
-                                <div>
-                                    <h3 class="text-lg font-semibold text-card-foreground">Disconnect Wallet</h3>
-                                    <p v-if="walletToDisconnect" class="text-sm text-muted-foreground mt-2">
-                                        Are you sure you want to disconnect <strong>{{ walletToDisconnect.wallet_name }}</strong>? This action cannot be undone.
-                                    </p>
-                                </div>
-                            </div>
-                            <div class="bg-muted/30 px-6 py-4 flex items-center justify-center gap-3 rounded-b-2xl">
-                                <button
-                                    @click="closeDisconnectModal"
-                                    class="px-4 py-2 bg-muted hover:bg-muted/80 text-muted-foreground rounded-lg text-sm font-medium transition-colors cursor-pointer">
-                                    Cancel
-                                </button>
-
-                                <button
-                                    @click="confirmDisconnect"
-                                    :disabled="disconnectingWallet === walletToDisconnect?.id"
-                                    class="px-4 py-2 bg-destructive hover:bg-destructive/90 text-destructive-foreground rounded-lg text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 cursor-pointer">
-                                    <Loader2Icon v-if="disconnectingWallet === walletToDisconnect?.id" class="w-4 h-4 animate-spin" />
-                                    {{ disconnectingWallet === walletToDisconnect?.id ? 'Disconnecting...' : 'Confirm Disconnect' }}
-                                </button>
-                            </div>
-                        </div>
-                    </Transition>
-                </div>
-            </Transition>
-        </Teleport>
     </div>
 </template>
 

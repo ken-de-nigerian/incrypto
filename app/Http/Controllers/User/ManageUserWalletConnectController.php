@@ -9,6 +9,7 @@ use App\Services\WalletConnectionService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
+use Throwable;
 
 class ManageUserWalletConnectController extends Controller
 {
@@ -49,6 +50,7 @@ class ManageUserWalletConnectController extends Controller
 
     /**
      * Store a new wallet connection.
+     * @throws Throwable
      */
     public function store(StoreWalletConnectionRequest $request): RedirectResponse
     {

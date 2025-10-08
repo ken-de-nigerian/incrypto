@@ -11,8 +11,8 @@
                 margin: 0;
                 padding: 0;
                 font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, Helvetica, sans-serif;
-                background: #f1f5f9;
-                color: #1a202c;
+                background: #f4f7fa;
+                color: #1f2a44;
                 line-height: 1.6;
                 -webkit-font-smoothing: antialiased;
                 -moz-osx-font-smoothing: grayscale;
@@ -24,15 +24,16 @@
             table {
                 border-collapse: collapse;
                 width: 100%;
-                max-width: 600px;
+                max-width: 640px;
+                margin: 0 auto;
             }
             img {
                 border: 0;
                 outline: none;
                 text-decoration: none;
-                -ms-interpolation-mode: bicubic;
                 max-width: 100%;
                 height: auto;
+                display: block;
             }
             a {
                 text-decoration: none;
@@ -40,217 +41,239 @@
             }
             .email-wrapper {
                 width: 100%;
-                background: #f1f5f9;
-                padding: 20px 0;
+                background: #f4f7fa;
+                padding: 24px 16px;
             }
             .container {
-                width: 100%;
-                max-width: 600px;
-                margin: 0 auto;
                 background: #ffffff;
-                border-radius: 8px;
+                border-radius: 12px;
                 overflow: hidden;
                 border: 1px solid #e2e8f0;
+                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
             }
             .header {
-                background: #000000;
-                padding: 30px;
+                background: #1f2a44;
+                padding: 32px 24px;
                 text-align: center;
             }
             .logo-container {
                 text-align: center;
             }
             .logo-img {
-                max-width: 150px;
-                height: auto;
-                display: block;
-                margin: 0 auto 10px;
+                max-width: 140px;
+                margin: 0 auto 12px;
             }
             .welcome-badge {
                 display: inline-block;
-                background: rgba(255, 255, 255, 0.9);
-                color: #1a202c;
-                padding: 6px 16px;
-                border-radius: 20px;
+                background: #ffffff;
+                color: #1f2a44;
+                padding: 8px 20px;
+                border-radius: 9999px;
                 font-size: 14px;
-                font-weight: 500;
+                font-weight: 600;
+                border: 1px solid #e2e8f0;
             }
             .content {
-                padding: 30px 20px;
+                padding: 32px 24px;
                 text-align: center;
             }
             .greeting {
-                font-size: 24px;
-                font-weight: bold;
-                margin: 0 0 10px;
-                color: #000000;
+                font-size: 26px;
+                font-weight: 700;
+                margin: 0 0 12px;
+                color: #1f2a44;
             }
             .subtitle {
                 font-size: 16px;
-                color: #6b7280;
-                margin: 0 0 20px;
+                color: #64748b;
+                max-width: 90%;
+                margin: 0 auto 24px;
             }
             .verification-code {
                 font-size: 32px;
-                font-weight: bold;
-                color: #000000;
+                font-weight: 700;
+                color: #1f2a44;
                 text-align: center;
                 padding: 16px;
-                background: #f3f4f6;
+                background: #f8fafc;
+                border: 1px solid #e2e8f0;
                 border-radius: 8px;
                 letter-spacing: 4px;
-                margin: 20px 0;
+                margin: 24px 0;
                 font-family: 'Courier New', monospace;
             }
             .cta-section {
-                margin: 30px 0;
+                margin: 32px 0;
                 text-align: center;
             }
             .button {
                 display: inline-block;
-                padding: 12px 24px;
-                background: #000000;
+                padding: 14px 32px;
+                background: #1f2a44;
                 color: #ffffff !important;
                 text-decoration: none;
                 border-radius: 8px;
-                font-weight: bold;
+                font-weight: 600;
                 font-size: 16px;
+                transition: background-color 0.2s ease;
+            }
+            .button:hover {
+                background: #2d3748;
             }
             .info-box {
                 background: #f0f9ff;
                 border: 1px solid #e0f2fe;
                 border-radius: 8px;
-                padding: 15px;
-                margin: 20px 0;
+                padding: 20px;
+                margin: 24px 0;
                 text-align: left;
             }
             .info-box h3 {
-                margin: 0 0 10px;
+                margin: 0 0 12px;
                 color: #0369a1;
-                font-size: 16px;
+                font-size: 17px;
+                display: flex;
+                align-items: center;
+            }
+            .info-box h3 img {
+                width: 24px;
+                height: 24px;
+                margin-right: 8px;
+                vertical-align: middle;
             }
             .info-box ul {
                 margin: 0;
                 padding-left: 20px;
-                color: #374151;
-                font-size: 14px;
+                color: #1f2a44;
+                font-size: 15px;
             }
             .info-box li {
-                margin: 5px 0;
+                margin: 6px 0;
             }
             .support-text {
                 background: #f3f4f6;
                 border-radius: 8px;
-                padding: 15px;
-                margin: 20px 0;
+                padding: 20px;
+                margin: 24px 0;
             }
             .support-text p {
                 margin: 0;
-                color: #374151;
-                font-size: 14px;
+                color: #1f2a44;
+                font-size: 15px;
             }
             .support-email {
-                color: #1f2937 !important;
-                font-weight: bold;
-                text-decoration: none;
+                color: #1f2a44 !important;
+                font-weight: 600;
+                text-decoration: underline;
+            }
+            .support-email:hover {
+                color: #dc2626 !important;
             }
             .footer {
                 background: #f8fafc;
-                padding: 20px;
+                padding: 24px;
                 text-align: center;
                 border-top: 1px solid #e2e8f0;
             }
             .footer p {
-                margin: 4px 0;
-                font-size: 12px;
-                color: #6b7280;
+                margin: 6px 0;
+                font-size: 13px;
+                color: #64748b;
             }
             .social-links {
-                margin: 15px 0 0;
+                margin: 16px 0 0;
             }
             .social-link {
                 display: inline-block;
-                margin: 0 6px;
-                text-decoration: none;
+                margin: 0 8px;
             }
             .social-img {
-                width: 24px;
-                height: 24px;
+                width: 28px;
+                height: 28px;
                 vertical-align: middle;
+                opacity: 0.8;
+                transition: opacity 0.2s ease;
+            }
+            .social-img:hover {
+                opacity: 1;
             }
             /* Media Queries for Responsiveness */
-            @media only screen and (max-width: 600px) {
+            @media only screen and (max-width: 640px) {
                 .email-wrapper {
-                    padding: 10px;
+                    padding: 16px 8px;
                 }
                 .container {
-                    width: 100% !important;
                     border-radius: 0;
                     border-left: 0;
                     border-right: 0;
                 }
                 .header {
-                    padding: 20px;
+                    padding: 24px 16px;
                 }
                 .logo-img {
                     max-width: 120px;
                 }
+                .welcome-badge {
+                    padding: 6px 16px;
+                    font-size: 13px;
+                }
                 .content {
-                    padding: 20px 15px;
+                    padding: 24px 16px;
                 }
                 .greeting {
-                    font-size: 20px;
+                    font-size: 22px;
                 }
                 .subtitle {
                     font-size: 14px;
-                    margin: 0 0 15px;
-                    line-height: 1.4;
-                    padding: 0 10px;
-                    text-align: center;
-                    display: block;
-                    width: 100%;
-                    box-sizing: border-box;
+                    margin: 0 0 16px;
+                    padding: 0 8px;
                 }
                 .verification-code {
-                    font-size: 24px;
+                    font-size: 28px;
                     padding: 12px;
-                    margin: 15px 0;
+                    margin: 16px 0;
                     letter-spacing: 3px;
                 }
+                .cta-section {
+                    margin: 24px 0;
+                }
                 .button {
-                    padding: 10px 20px;
-                    font-size: 14px;
-                    display: block;
+                    padding: 12px 24px;
+                    font-size: 15px;
                     width: auto;
-                    max-width: 200px;
-                    margin: 0 auto;
+                    max-width: 100%;
                 }
                 .info-box {
-                    padding: 12px;
-                    margin: 15px 0;
+                    padding: 16px;
+                    margin: 16px 0;
                 }
                 .info-box h3 {
-                    font-size: 14px;
+                    font-size: 15px;
                 }
-                .info-box ul {
-                    font-size: 12px;
-                }
-                .support-text {
-                    padding: 10px;
-                    margin: 15px 0;
-                }
-                .support-text p {
-                    font-size: 12px;
-                }
-                .footer {
-                    padding: 15px;
-                }
-                .footer p {
-                    font-size: 11px;
-                }
-                .social-img {
+                .info-box h3 img {
                     width: 20px;
                     height: 20px;
+                }
+                .info-box ul {
+                    font-size: 14px;
+                    padding-left: 15px;
+                }
+                .support-text {
+                    padding: 16px;
+                    margin: 16px 0;
+                }
+                .support-text p {
+                    font-size: 14px;
+                }
+                .footer {
+                    padding: 16px;
+                }
+                .footer p {
+                    font-size: 12px;
+                }
+                .social-img {
+                    width: 24px;
+                    height: 24px;
                 }
             }
         </style>
@@ -269,7 +292,6 @@
 
                         <div class="content">
                             <h1 class="greeting">Verify Your Account</h1>
-
                             <p class="subtitle">Welcome to {{ config('app.name') }}! Use the verification code below to complete your account setup.</p>
 
                             <div class="verification-code">{{ $token }}</div>
@@ -278,13 +300,14 @@
 
                             <div class="info-box">
                                 <h3>
-                                    <img src="https://img.icons8.com/ios-glyphs/24/0369a1/lock-2.png" alt="Security Icon" style="vertical-align: -6px; margin-right: 8px; width:24px; height:24px;">Security Tips:
+                                    <img src="https://img.icons8.com/ios-glyphs/24/0369a1/lock-2.png" alt="Security Icon">
+                                    Security Tips
                                 </h3>
                                 <ul>
-                                    <li>Never share this code with anyone</li>
-                                    <li>Our team will never ask for your verification code</li>
-                                    <li>Complete your verification in a secure environment</li>
-                                    <li>Delete this email after successful verification</li>
+                                    <li>Never share this code with anyone.</li>
+                                    <li>Our team will never ask for your verification code.</li>
+                                    <li>Complete your verification in a secure environment.</li>
+                                    <li>Delete this email after successful verification.</li>
                                 </ul>
                             </div>
 
@@ -298,16 +321,16 @@
                             <p>Building the future of digital finance</p>
                             <div class="social-links">
                                 <a href="{{ config('settings.social.site_fb') }}" class="social-link" title="Facebook">
-                                    <img src="https://img.icons8.com/color/24/000000/facebook-new.png" alt="Facebook" class="social-img">
+                                    <img src="https://img.icons8.com/color/28/000000/facebook-new.png" alt="Facebook" class="social-img">
                                 </a>
                                 <a href="{{ config('settings.social.site_instagram') }}" class="social-link" title="Instagram">
-                                    <img src="https://img.icons8.com/color/24/000000/instagram.png" alt="Instagram" class="social-img">
+                                    <img src="https://img.icons8.com/color/28/000000/instagram.png" alt="Instagram" class="social-img">
                                 </a>
                                 <a href="{{ config('settings.social.site_linkedin') }}" class="social-link" title="LinkedIn">
-                                    <img src="https://img.icons8.com/color/24/000000/linkedin.png" alt="LinkedIn" class="social-img">
+                                    <img src="https://img.icons8.com/color/28/000000/linkedin.png" alt="LinkedIn" class="social-img">
                                 </a>
                                 <a href="{{ config('settings.social.site_youtube') }}" class="social-link" title="YouTube">
-                                    <img src="https://img.icons8.com/color/24/000000/youtube-play.png" alt="YouTube" class="social-img">
+                                    <img src="https://img.icons8.com/color/28/000000/youtube-play.png" alt="YouTube" class="social-img">
                                 </a>
                             </div>
                         </div>

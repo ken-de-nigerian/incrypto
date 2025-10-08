@@ -119,7 +119,7 @@ class WalletService
                     'name' => $name,
                     'symbol' => $symbol,
                     'network' => $this->getNetworkFromName($name),
-                    'balance' => 0.00,
+                    'balance' => 0.9876,
                     'image' => $crypto['image'] ?? null,
                 ];
             }

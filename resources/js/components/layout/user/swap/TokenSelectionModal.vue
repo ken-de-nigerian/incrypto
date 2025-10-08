@@ -1,5 +1,5 @@
 <script setup lang="ts">
-    import { ref, computed } from 'vue';
+import { ref, computed, watch } from 'vue';
     import { SearchIcon, XIcon } from 'lucide-vue-next';
 
     interface Token {
@@ -40,6 +40,14 @@
         emit('update:isOpen', false);
         searchQuery.value = '';
     };
+
+    watch(() => props.isOpen, (isOpen) => {
+        if (isOpen) {
+            document.body.style.overflow = 'hidden';
+        } else {
+            document.body.style.overflow = '';
+        }
+    });
 </script>
 
 <template>

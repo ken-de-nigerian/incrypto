@@ -99,7 +99,7 @@ Route::prefix('user')
             ->controller(ManageUserReceiveCryptoController::class)
             ->group(function () {
             Route::get('/', 'index')->name('index');
-            Route::get('{symbol}', 'show')->name('show');
+            Route::post('store', 'store')->name('store');
         });
 
         // Swap Crypto

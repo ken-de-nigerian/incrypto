@@ -7,7 +7,9 @@ use Illuminate\Validation\Rule;
 
 class UpdateProfileRequest extends FormRequest
 {
-    public function authorize(): bool { return true; }
+    public function authorize(): bool {
+        return auth()->check();
+    }
 
     /**
      * Prepare the data for validation.

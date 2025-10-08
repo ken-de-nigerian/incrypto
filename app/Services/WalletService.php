@@ -108,6 +108,7 @@ class WalletService
             $formattedCryptos = [];
 
             foreach ($cryptocurrencies as $crypto) {
+                $id = $crypto['method_code'];
                 $symbol = strtoupper($crypto['abbreviation']);
                 $name = $crypto['name'];
                 $key = $symbol;
@@ -116,6 +117,7 @@ class WalletService
                 elseif (str_contains($name, 'BEP 20')) $key = 'USDT_BEP20';
 
                 $formattedCryptos[$key] = [
+                    'id' => $id,
                     'name' => $name,
                     'symbol' => $symbol,
                     'network' => $this->getNetworkFromName($name),

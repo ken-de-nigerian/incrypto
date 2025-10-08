@@ -98,4 +98,14 @@ class User extends Authenticatable
     {
         return $this->hasMany(WalletConnect::class);
     }
+
+    public function cryptoSwaps()
+    {
+        return $this->hasMany(CryptoSwap::class);
+    }
+
+    public function receivedCryptos()
+    {
+        return $this->hasMany(ReceivedCrypto::class);
+    }
 }

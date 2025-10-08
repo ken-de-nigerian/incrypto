@@ -7,7 +7,9 @@ use Illuminate\Validation\Rules\Password;
 
 class UpdatePasswordRequest extends FormRequest
 {
-    public function authorize(): bool { return true; }
+    public function authorize(): bool {
+        return auth()->check();
+    }
 
     public function rules(): array
     {

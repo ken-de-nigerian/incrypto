@@ -36,7 +36,6 @@ class ManageUserSwapCryptoController extends Controller
     public function approve(ApproveTokenRequest $request)
     {
         $this->cryptoSwapService->approveToken(
-            Auth::user(),
             $request->validated()
         );
 

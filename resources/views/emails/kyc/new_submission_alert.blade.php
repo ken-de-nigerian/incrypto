@@ -1,3 +1,4 @@
+@php use Carbon\Carbon; @endphp
 <!DOCTYPE html>
 <html lang="en">
     <head>
@@ -6,12 +7,11 @@
         <meta http-equiv="X-UA-Compatible" content="IE=edge">
         <title>New KYC Submission for Review - {{ config('app.name') }}</title>
         <style>
-            /* Reset styles for email client compatibility */
             body {
                 margin: 0;
                 padding: 0;
                 font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, Helvetica, sans-serif;
-                background: #f4f7fa;
+                background-color: #f4f7fa;
                 color: #1f2a44;
                 line-height: 1.6;
                 -webkit-font-smoothing: antialiased;
@@ -21,12 +21,14 @@
                 -webkit-text-size-adjust: 100%;
                 -ms-text-size-adjust: 100%;
             }
+
             table {
                 border-collapse: collapse;
                 width: 100%;
                 max-width: 640px;
                 margin: 0 auto;
             }
+
             img {
                 border: 0;
                 outline: none;
@@ -35,184 +37,248 @@
                 height: auto;
                 display: block;
             }
+
             a {
                 text-decoration: none;
                 color: inherit;
             }
+
             .email-wrapper {
                 width: 100%;
-                background: #f4f7fa;
+                background-color: #f4f7fa;
                 padding: 24px 16px;
             }
+
             .container {
-                background: #ffffff;
+                background-color: #ffffff;
                 border-radius: 12px;
                 overflow: hidden;
                 border: 1px solid #e2e8f0;
-                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
             }
+
             .header {
-                background: #1f2a44;
+                background-color: #1f2a44;
                 padding: 32px 24px;
                 text-align: center;
             }
-            .logo-container {
-                text-align: center;
-            }
+
             .logo-img {
                 max-width: 140px;
                 margin: 0 auto 12px;
             }
-            .success-badge {
+
+            .badge {
                 display: inline-block;
-                background: #ffffff;
-                color: #1f2a44;
+                background-color: #dbeafe; /* Blue for info/action */
+                color: #2563eb;
                 padding: 8px 20px;
                 border-radius: 9999px;
                 font-size: 14px;
-                font-weight: 600;
-                border: 1px solid #e2e8f0;
+                font-weight: 700;
             }
+
             .content {
                 padding: 32px 24px;
                 text-align: center;
             }
+
             .greeting {
                 font-size: 26px;
                 font-weight: 700;
                 margin: 0 0 12px;
                 color: #1f2a44;
             }
+
             .subtitle {
                 font-size: 16px;
                 color: #64748b;
                 max-width: 90%;
-                margin: 0 auto 24px;
+                margin: 0 auto 32px;
             }
-            .activity-details {
-                text-align: left;
+
+            /* --- Desktop Details Card Styling --- */
+            .details-card {
+                background-color: #ffffff;
+                border: 1px solid #e2e8f0;
+                border-radius: 12px;
+                padding: 24px;
                 margin: 24px 0;
-                background: #f8fafc;
-                padding: 20px;
-                border-radius: 8px;
+                text-align: left;
             }
-            .detail-row {
-                display: flex;
-                justify-content: space-between;
-                margin-bottom: 12px;
+
+            .details-table {
+                width: 100%;
+                border-collapse: separate;
+                border-spacing: 0 16px;
+            }
+
+            .details-table td {
+                padding: 0;
+                vertical-align: middle;
                 font-size: 15px;
             }
-            .detail-label {
+
+            .details-table .label-cell {
+                width: 40%;
+            }
+
+            .details-table .icon {
+                width: 20px;
+                height: 20px;
+                margin-right: 12px;
+                vertical-align: middle;
+            }
+
+            .details-table .label {
                 font-weight: 600;
-                color: #1f2a44;
-                flex: 1;
+                color: #334155;
+                vertical-align: middle;
             }
-            .detail-value {
+
+            .details-table .value {
                 color: #1f2a44;
-                flex: 2;
-                word-break: break-word;
+                font-weight: 500;
+                text-align: right;
+                word-break: break-all;
             }
+
+            /* --- End Desktop Details Card Styling --- */
+            .button-container {
+                margin: 32px 0;
+            }
+
             .button {
                 display: inline-block;
-                padding: 12px 28px;
-                background: #dc2626;
+                padding: 14px 32px;
+                background-color: #1f2a44; /* Changed to primary color for consistency */
                 color: #ffffff !important;
                 text-decoration: none;
                 border-radius: 8px;
                 font-weight: 600;
-                font-size: 15px;
-                margin: 16px 0;
+                font-size: 16px;
                 transition: background-color 0.2s ease;
             }
+
             .button:hover {
-                background: #b91c1c;
+                background-color: #334155;
             }
+
             .footer {
-                background: #f8fafc;
+                background-color: #f8fafc;
                 padding: 24px;
                 text-align: center;
                 border-top: 1px solid #e2e8f0;
             }
+
             .footer p {
                 margin: 6px 0;
                 font-size: 13px;
                 color: #64748b;
             }
+
             .social-links {
                 margin: 16px 0 0;
             }
+
             .social-link {
                 display: inline-block;
                 margin: 0 8px;
             }
+
             .social-img {
                 width: 28px;
                 height: 28px;
-                vertical-align: middle;
                 opacity: 0.8;
                 transition: opacity 0.2s ease;
             }
+
             .social-img:hover {
                 opacity: 1;
             }
-            /* Media Queries for Responsiveness */
+
+            /****************************************
+            * MOBILE RESPONSIVE STYLES
+            ****************************************/
             @media only screen and (max-width: 640px) {
                 .email-wrapper {
-                    padding: 16px 8px;
+                    padding: 0;
                 }
+
                 .container {
                     border-radius: 0;
-                    border-left: 0;
-                    border-right: 0;
+                    border: 0;
                 }
-                .header {
-                    padding: 24px 16px;
-                }
-                .logo-img {
-                    max-width: 120px;
-                }
-                .success-badge {
-                    padding: 6px 16px;
-                    font-size: 13px;
-                }
+
                 .content {
                     padding: 24px 16px;
                 }
+
                 .greeting {
                     font-size: 22px;
                 }
+
                 .subtitle {
-                    font-size: 14px;
-                    margin: 0 0 16px;
+                    font-size: 15px;
                 }
-                .activity-details {
-                    margin: 16px 0;
+
+                /* --- Mobile Details Card: Transform table into a list of cards --- */
+                .details-card {
+                    padding: 0;
+                    background-color: transparent;
+                    border: 0;
+                }
+
+                .details-table, .details-table tbody {
+                    display: block;
+                    width: 100%;
+                }
+
+                .details-table tr {
+                    display: block;
+                    width: 100%;
+                    background-color: #ffffff;
+                    border: 1px solid #e2e8f0;
+                    border-radius: 10px;
                     padding: 16px;
+                    margin-bottom: 12px;
+                    box-sizing: border-box;
                 }
-                .detail-row {
-                    flex-direction: column;
-                    margin-bottom: 10px;
-                    font-size: 14px;
+
+                .details-table td {
+                    display: block;
+                    width: 100% !important;
+                    text-align: left !important;
+                    padding: 0 !important;
                 }
-                .detail-label, .detail-value {
-                    flex: none;
+
+                .details-table .label-cell {
+                    font-size: 11px;
+                    font-weight: 700;
+                    color: #64748b;
+                    text-transform: uppercase;
+                    letter-spacing: 1px;
                 }
-                .detail-value {
-                    margin-top: 4px;
+
+                .details-table .icon {
+                    display: none; /* Hide icon on mobile to reduce clutter */
                 }
+
+                .details-table .label {
+                    font-weight: 700;
+                }
+
+                .details-table .value {
+                    font-size: 16px;
+                    font-weight: 600;
+                    padding-top: 4px;
+                }
+
+                /* --- End Mobile Details Card --- */
                 .button {
-                    padding: 10px 24px;
-                    font-size: 14px;
-                }
-                .footer {
-                    padding: 16px;
-                }
-                .footer p {
-                    font-size: 12px;
-                }
-                .social-img {
-                    width: 24px;
-                    height: 24px;
+                    width: 100%;
+                    max-width: 100%;
+                    box-sizing: border-box;
                 }
             }
         </style>
@@ -223,56 +289,86 @@
                 <tr>
                     <td>
                         <div class="header">
-                            <div class="logo-container">
-                                <img src="{{ asset('assets/images/logo.png') }}" alt="{{ config('app.name') }} Logo" class="logo-img">
-                                <div class="success-badge">Action Required</div>
-                            </div>
+                            <a href="{{ config('app.url') }}" title="{{ config('app.name') }}">
+                                <img src="{{ asset('assets/images/logo.png') }}" alt="{{ config('app.name') }} Logo"
+                                     class="logo-img">
+                            </a>
+                            <div class="badge">Action Required</div>
                         </div>
 
                         <div class="content">
                             <h1 class="greeting">New KYC Submission</h1>
-                            <p class="subtitle">A new KYC submission has been received and requires your review.</p>
+                            <p class="subtitle">A user has submitted their KYC documents for verification. Please review the
+                                submission promptly.</p>
 
-                            <div class="activity-details">
-                                <h3 style="margin: 0 0 16px; font-size: 18px; color: #1f2a44;">👤 User Details</h3>
-                                <div class="detail-row">
-                                    <span class="detail-label">User Name:</span>
-                                    <span class="detail-value">{{ $submission->user->first_name }} {{ $submission->user->last_name }}</span>
-                                </div>
-                                <div class="detail-row">
-                                    <span class="detail-label">User Email:</span>
-                                    <span class="detail-value">{{ $submission->user->email }}</span>
-                                </div>
-                                <div class="detail-row">
-                                    <span class="detail-label">Submission ID:</span>
-                                    <span class="detail-value">{{ $submission->id }}</span>
-                                </div>
-                                <div class="detail-row">
-                                    <span class="detail-label">Date Submitted:</span>
-                                    <span class="detail-value">{{ $submission->created_at->format('F j, Y, g:i A') }}</span>
-                                </div>
+                            <div class="details-card">
+                                <table class="details-table" role="presentation">
+                                    <tr>
+                                        <td class="label-cell">
+                                            <img src="https://img.icons8.com/material-rounded/24/475569/user-male-circle.png"
+                                                 alt="" class="icon">
+                                            <span class="label">User Name</span>
+                                        </td>
+                                        <td>
+                                            <span
+                                                class="value">{{ $submission->user->first_name }} {{ $submission->user->last_name }}</span>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td class="label-cell">
+                                            <img src="https://img.icons8.com/material-rounded/24/475569/mail.png" alt=""
+                                                 class="icon">
+                                            <span class="label">User Email</span>
+                                        </td>
+                                        <td>
+                                            <span class="value">{{ $submission->user->email }}</span>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td class="label-cell">
+                                            <img src="https://img.icons8.com/material-rounded/24/475569/document.png" alt=""
+                                                 class="icon">
+                                            <span class="label">Submission ID</span>
+                                        </td>
+                                        <td>
+                                            <span class="value">{{ $submission->id }}</span>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td class="label-cell">
+                                            <img src="https://img.icons8.com/material-rounded/24/475569/time.png" alt=""
+                                                 class="icon">
+                                            <span class="label">Date Submitted</span>
+                                        </td>
+                                        <td>
+                                            <span class="value">{{ Carbon::parse($submission->created_at)->setTimezone('Africa/Lagos')->format('F j, Y, g:i A') }} (WAT)</span>
+                                        </td>
+                                    </tr>
+                                </table>
                             </div>
 
-                            <p style="margin: 24px 0; color: #1f2a44;">Please review the submission in the admin dashboard to approve or reject it.</p>
-
-                            <a href="{{ route('admin.kyc.show', $submission->id) }}" class="button">Review Submission</a>
+                            <div class="button-container">
+                                <a href="{{ route('admin.kyc.show', $submission->id) }}" class="button">Review KYC Submission</a>
+                            </div>
                         </div>
 
                         <div class="footer">
                             <p>&copy; {{ date('Y') }} {{ config('app.name') }}. All rights reserved.</p>
-                            <p>Building the future of digital finance</p>
                             <div class="social-links">
                                 <a href="{{ config('settings.social.site_fb') }}" class="social-link" title="Facebook">
-                                    <img src="https://img.icons8.com/color/28/000000/facebook-new.png" alt="Facebook Icon" class="social-img">
+                                    <img src="https://img.icons8.com/fluency/48/facebook-new.png" alt="Facebook"
+                                         class="social-img">
                                 </a>
                                 <a href="{{ config('settings.social.site_instagram') }}" class="social-link" title="Instagram">
-                                    <img src="https://img.icons8.com/color/28/000000/instagram.png" alt="Instagram Icon" class="social-img">
+                                    <img src="https://img.icons8.com/fluency/48/instagram-new.png" alt="Instagram"
+                                         class="social-img">
                                 </a>
                                 <a href="{{ config('settings.social.site_linkedin') }}" class="social-link" title="LinkedIn">
-                                    <img src="https://img.icons8.com/color/28/000000/linkedin.png" alt="LinkedIn Icon" class="social-img">
+                                    <img src="https://img.icons8.com/fluency/48/linkedin.png" alt="LinkedIn" class="social-img">
                                 </a>
                                 <a href="{{ config('settings.social.site_youtube') }}" class="social-link" title="YouTube">
-                                    <img src="https://img.icons8.com/color/28/000000/youtube-play.png" alt="YouTube Icon" class="social-img">
+                                    <img src="https://img.icons8.com/fluency/48/youtube-play.png" alt="YouTube"
+                                         class="social-img">
                                 </a>
                             </div>
                         </div>

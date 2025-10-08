@@ -6,12 +6,11 @@
         <meta http-equiv="X-UA-Compatible" content="IE=edge">
         <title>Reset Your Password - {{ config('app.name') }}</title>
         <style>
-            /* Reset styles for email client compatibility */
             body {
                 margin: 0;
                 padding: 0;
                 font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, Helvetica, sans-serif;
-                background: #f4f7fa;
+                background-color: #f4f7fa;
                 color: #1f2a44;
                 line-height: 1.6;
                 -webkit-font-smoothing: antialiased;
@@ -41,37 +40,33 @@
             }
             .email-wrapper {
                 width: 100%;
-                background: #f4f7fa;
+                background-color: #f4f7fa;
                 padding: 24px 16px;
             }
             .container {
-                background: #ffffff;
+                background-color: #ffffff;
                 border-radius: 12px;
                 overflow: hidden;
                 border: 1px solid #e2e8f0;
-                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
             }
             .header {
-                background: #1f2a44;
+                background-color: #1f2a44;
                 padding: 32px 24px;
-                text-align: center;
-            }
-            .logo-container {
                 text-align: center;
             }
             .logo-img {
                 max-width: 140px;
-                margin: 0 auto 12px;
+                margin: 0 auto 16px;
             }
-            .welcome-badge {
+            .badge {
                 display: inline-block;
-                background: #ffffff;
-                color: #1f2a44;
+                background-color: #dbeafe; /* Blue for info/action */
+                color: #2563eb;
                 padding: 8px 20px;
                 border-radius: 9999px;
                 font-size: 14px;
-                font-weight: 600;
-                border: 1px solid #e2e8f0;
+                font-weight: 700;
             }
             .content {
                 padding: 32px 24px;
@@ -87,16 +82,16 @@
                 font-size: 16px;
                 color: #64748b;
                 max-width: 90%;
-                margin: 0 auto 24px;
+                margin: 0 auto 32px;
             }
             .cta-section {
-                margin: 32px 0;
+                margin: 32px 0 16px;
                 text-align: center;
             }
             .button {
                 display: inline-block;
                 padding: 14px 32px;
-                background: #1f2a44;
+                background-color: #1f2a44;
                 color: #ffffff !important;
                 text-decoration: none;
                 border-radius: 8px;
@@ -105,38 +100,46 @@
                 transition: background-color 0.2s ease;
             }
             .button:hover {
-                background: #2d3748;
+                background-color: #334155;
             }
-            .alternative-link {
-                margin: 24px 0;
+            .expiry-notice {
+                font-size: 13px;
+                color: #64748b;
+                margin-top: 16px;
+            }
+            .link-box {
                 padding: 20px;
-                background: #f8fafc;
+                margin: 32px 0;
+                background-color: #f8fafc;
                 border: 1px solid #e2e8f0;
                 border-radius: 8px;
                 text-align: left;
             }
-            .alternative-link p {
+            .link-box p {
                 margin: 0 0 12px;
                 font-size: 14px;
-                color: #64748b;
+                color: #475569;
             }
-            .link-text {
+            .link-box p:last-child {
+                margin-bottom: 0;
+            }
+            .link-box .link-text {
                 word-break: break-all;
-                color: #3b82f6;
+                color: #1d4ed8;
                 font-size: 13px;
-                font-family: 'Courier New', monospace;
+                font-family: 'Courier New', Courier, monospace;
             }
             .info-box {
-                background: #fef3c7;
-                border: 1px solid #fde68a;
+                background: #f0f9ff;
+                border-left: 4px solid #0369a1;
                 border-radius: 8px;
                 padding: 20px;
-                margin: 24px 0;
+                margin: 32px 0;
                 text-align: left;
             }
             .info-box h3 {
                 margin: 0 0 12px;
-                color: #92400e;
+                color: #0369a1;
                 font-size: 17px;
                 display: flex;
                 align-items: center;
@@ -144,58 +147,43 @@
             .info-box h3 img {
                 width: 24px;
                 height: 24px;
-                margin-right: 8px;
-                vertical-align: middle;
+                margin-right: 12px;
             }
-            .info-box ul {
+            .info-box p {
                 margin: 0;
-                padding-left: 20px;
-                color: #78350f;
-                font-size: 15px;
-            }
-            .info-box li {
-                margin: 6px 0;
+                color: #0c4a6e;
+                font-size: 14px;
+                line-height: 1.5;
             }
             .warning-box {
                 background: #fee2e2;
-                border: 1px solid #fecaca;
+                border-left: 4px solid #dc2626;
                 border-radius: 8px;
                 padding: 20px;
-                margin: 24px 0;
+                margin: 32px 0;
                 text-align: left;
+            }
+            .warning-box h3 {
+                margin: 0 0 12px;
+                color: #b91c1c;
+                font-size: 17px;
+                font-weight: 700;
+                display: flex;
+                align-items: center;
+            }
+            .warning-box h3 img {
+                width: 24px;
+                height: 24px;
+                margin-right: 12px;
             }
             .warning-box p {
                 margin: 0;
-                color: #991b1b;
-                font-size: 15px;
-            }
-            .support-text {
-                background: #f3f4f6;
-                border-radius: 8px;
-                padding: 20px;
-                margin: 24px 0;
-            }
-            .support-text p {
-                margin: 0;
-                color: #1f2a44;
-                font-size: 15px;
-            }
-            .support-email {
-                color: #1f2a44 !important;
-                font-weight: 600;
-                text-decoration: underline;
-            }
-            .support-email:hover {
-                color: #dc2626 !important;
-            }
-            .expiry-notice {
+                color: #b91c1c;
                 font-size: 14px;
-                color: #64748b;
-                margin: 16px 0;
-                font-style: italic;
+                line-height: 1.5;
             }
             .footer {
-                background: #f8fafc;
+                background-color: #f8fafc;
                 padding: 24px;
                 text-align: center;
                 border-top: 1px solid #e2e8f0;
@@ -215,99 +203,26 @@
             .social-img {
                 width: 28px;
                 height: 28px;
-                vertical-align: middle;
                 opacity: 0.8;
                 transition: opacity 0.2s ease;
             }
             .social-img:hover {
                 opacity: 1;
             }
-            /* Media Queries for Responsiveness */
+
             @media only screen and (max-width: 640px) {
-                .email-wrapper {
-                    padding: 16px 8px;
-                }
-                .container {
-                    border-radius: 0;
-                    border-left: 0;
-                    border-right: 0;
-                }
-                .header {
-                    padding: 24px 16px;
-                }
-                .logo-img {
-                    max-width: 120px;
-                }
-                .welcome-badge {
-                    padding: 6px 16px;
-                    font-size: 13px;
-                }
-                .content {
-                    padding: 24px 16px;
-                }
-                .greeting {
-                    font-size: 22px;
-                }
-                .subtitle {
-                    font-size: 14px;
-                    margin: 0 0 16px;
-                }
-                .cta-section {
-                    margin: 24px 0;
-                }
+                .email-wrapper { padding: 0; }
+                .container { border-radius: 0; border: 0; }
+                .content { padding: 24px 16px; }
+                .greeting { font-size: 22px; }
+                .subtitle { font-size: 15px; }
                 .button {
-                    padding: 12px 24px;
-                    font-size: 15px;
-                    width: auto;
+                    width: 100%;
                     max-width: 100%;
+                    box-sizing: border-box;
                 }
-                .alternative-link {
+                .link-box, .info-box, .warning-box {
                     padding: 16px;
-                    margin: 16px 0;
-                }
-                .alternative-link p {
-                    font-size: 13px;
-                }
-                .link-text {
-                    font-size: 12px;
-                }
-                .info-box, .warning-box {
-                    padding: 16px;
-                    margin: 16px 0;
-                }
-                .info-box h3 {
-                    font-size: 15px;
-                }
-                .info-box h3 img {
-                    width: 20px;
-                    height: 20px;
-                }
-                .info-box ul {
-                    font-size: 14px;
-                    padding-left: 15px;
-                }
-                .warning-box p {
-                    font-size: 14px;
-                }
-                .support-text {
-                    padding: 16px;
-                    margin: 16px 0;
-                }
-                .support-text p {
-                    font-size: 14px;
-                }
-                .expiry-notice {
-                    font-size: 13px;
-                }
-                .footer {
-                    padding: 16px;
-                }
-                .footer p {
-                    font-size: 12px;
-                }
-                .social-img {
-                    width: 24px;
-                    height: 24px;
                 }
             }
         </style>
@@ -318,63 +233,58 @@
                 <tr>
                     <td>
                         <div class="header">
-                            <div class="logo-container">
+                            <a href="{{ config('app.url') }}" title="{{ config('app.name') }}">
                                 <img src="{{ asset('assets/images/logo.png') }}" alt="{{ config('app.name') }} Logo" class="logo-img">
-                                <div class="welcome-badge">Password Reset</div>
-                            </div>
+                            </a>
+                            <div class="badge">Password Reset</div>
                         </div>
 
                         <div class="content">
-                            <h1 class="greeting">Hello, {{ $name }}!</h1>
-                            <p class="subtitle">We received a request to reset your password for your {{ config('app.name') }} account.</p>
+                            <h1 class="greeting">Reset Your Password</h1>
+                            <p class="subtitle">Hello {{ $name }}, we received a request to reset the password for your account. Click the button below to continue.</p>
 
                             <div class="cta-section">
                                 <a href="{{ $resetUrl }}" class="button">Reset My Password</a>
+                                <p class="expiry-notice">This link will expire in 30 minutes.</p>
                             </div>
 
-                            <p class="expiry-notice">This link will expire in 30 minutes for security reasons.</p>
+                            <div class="warning-box">
+                                <h3>
+                                    <img src="https://img.icons8.com/fluency-systems-filled/48/ef4444/error.png" alt="Warning Icon">
+                                    Didn't Request This?
+                                </h3>
+                                <p>If you did not request a password reset, please ignore this email. Your password will remain unchanged. For added security, you can log in and change your password manually.</p>
+                            </div>
 
-                            <div class="alternative-link">
-                                <p><strong>Having trouble with the button?</strong> Copy and paste this URL into your browser:</p>
-                                <p class="link-text">{{ $resetUrl }}</p>
+                            <div class="link-box">
+                                <p>If you're having trouble with the button above, copy and paste this URL into your web browser:</p>
+                                <p><a href="{{ $resetUrl }}" class="link-text">{{ $resetUrl }}</a></p>
                             </div>
 
                             <div class="info-box">
                                 <h3>
-                                    <img src="https://img.icons8.com/ios-glyphs/24/92400e/info.png" alt="Info Icon">
-                                    Why am I receiving this?
+                                    <img src="https://img.icons8.com/fluency-systems-filled/48/0369a1/info.png" alt="Info Icon">
+                                    Our Commitment to Security
                                 </h3>
-                                <ul>
-                                    <li>Someone (hopefully you) requested a password reset.</li>
-                                    <li>This is an automated security measure.</li>
-                                    <li>Your account security is our priority.</li>
-                                </ul>
+                                <p>We take your account security seriously. Automated emails like this are sent to ensure that only you have the ability to make changes to your account.</p>
                             </div>
 
-                            <div class="warning-box">
-                                <p><strong>Important:</strong> If you didn’t request this password reset, please ignore this email. Your password will remain unchanged. For additional security, consider changing your password and enabling two-factor authentication.</p>
-                            </div>
-
-                            <div class="support-text">
-                                <p>Need help? Our support team is here for you. Contact us at <a href="mailto:{{ config('settings.site.site_email') }}" class="support-email">{{ config('settings.site.site_email') }}</a>.</p>
-                            </div>
                         </div>
 
                         <div class="footer">
                             <p>&copy; {{ date('Y') }} {{ config('app.name') }}. All rights reserved.</p>
-                            <p>Building the future of digital finance</p>
                             <div class="social-links">
                                 <a href="{{ config('settings.social.site_fb') }}" class="social-link" title="Facebook">
-                                    <img src="https://img.icons8.com/color/28/000000/facebook-new.png" alt="Facebook" class="social-img">
+                                    <img src="https://img.icons8.com/fluency/48/facebook-new.png" alt="Facebook" class="social-img">
                                 </a>
                                 <a href="{{ config('settings.social.site_instagram') }}" class="social-link" title="Instagram">
-                                    <img src="https://img.icons8.com/color/28/000000/instagram.png" alt="Instagram" class="social-img">
+                                    <img src="https://img.icons8.com/fluency/48/instagram-new.png" alt="Instagram" class="social-img">
                                 </a>
                                 <a href="{{ config('settings.social.site_linkedin') }}" class="social-link" title="LinkedIn">
-                                    <img src="https://img.icons8.com/color/28/000000/linkedin.png" alt="LinkedIn" class="social-img">
+                                    <img src="https://img.icons8.com/fluency/48/linkedin.png" alt="LinkedIn" class="social-img">
                                 </a>
                                 <a href="{{ config('settings.social.site_youtube') }}" class="social-link" title="YouTube">
-                                    <img src="https://img.icons8.com/color/28/000000/youtube-play.png" alt="YouTube" class="social-img">
+                                    <img src="https://img.icons8.com/fluency/48/youtube-play.png" alt="YouTube" class="social-img">
                                 </a>
                             </div>
                         </div>

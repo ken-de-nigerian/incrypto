@@ -7,7 +7,6 @@ use App\Models\User;
 use App\Notifications\SwapSuccessfulNotification;
 use Exception;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Notification;
 use Throwable;
 
@@ -107,14 +106,12 @@ class CryptoSwapService
     /**
      * @throws Exception
      */
-    public function approveToken(User $user, array $validatedData): void
+    public function approveToken(array $validatedData): void
     {
         $baseToken = $this->marketDataService->getBaseSymbol($validatedData['token']);
         if (!$this->marketDataService->isValidToken($baseToken)) {
             throw new Exception('Token not found for approval.');
         }
-
-        Log::info('Token approval', array_merge($validatedData, ['user_id' => $user->id]));
     }
 
     private function getTransactionHistory(User $user): array

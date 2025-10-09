@@ -62,7 +62,7 @@
     const assetSearchQuery = ref('');
     const selectedSpeed = ref<'slow' | 'average' | 'fast'>('average');
     const showTransactionHistory = ref(true);
-    const message = ref<{ type: 'success' | 'error'; text: string; transactionHash?: string } | null>(null);
+    const message = ref<{ type: 'error'; text: string; } | null>(null);
 
     // Form validation states
     const addressError = ref('');
@@ -286,7 +286,7 @@
         message.value = null;
 
         try {
-            const response = await axios.post(route('user.send.store'), {
+            await axios.post(route('user.send.store'), {
                 token_symbol: selectedAssetToSend.value.symbol,
                 recipient_address: recipientAddress.value,
                 amount: sendAmount.value,
@@ -294,18 +294,8 @@
                 speed: selectedSpeed.value
             });
 
-            message.value = {
-                type: 'success',
-                text: 'Transaction submitted successfully! It is being processed.',
-                transactionHash: response.data.transaction_hash || ''
-            };
-
-            setTimeout(() => {
-                message.value = null;
-                router.reload({ only: ['userBalances', 'sentTransactions'] });
-                closeConfirmModal();
-            }, 5000);
-
+            router.reload({ only: ['userBalances', 'sentTransactions'] });
+            closeConfirmModal();
         } catch (error) {
             message.value = {
                 type: 'error',
@@ -747,7 +737,7 @@
                                                 To: {{ tx.recipient_address.slice(0, 10) }}...{{ tx.recipient_address.slice(-8) }}
                                             </div>
                                             <div v-if="tx.fee" class="text-xs text-muted-foreground">
-                                                Fee: ${{ parseFloat(tx.fee).toFixed(2) }}
+                                                Fee: ${{ parseFloat(tx.fee).toFixed(4) }}
                                             </div>
                                             <a
                                                 v-if="tx.transaction_hash && tx.status === 'completed'"
@@ -774,7 +764,7 @@
                     <div class="w-full max-w-lg bg-card border border-border rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
                         <div class="p-6 border-b border-border">
                             <div class="flex items-center justify-between mb-2">
-                                <h3 class="text-xl font-bold text-card-foreground">{{ message ? (message.type === 'success' ? 'Transaction Submitted' : 'Transaction Failed') : 'Confirm Transaction' }}</h3>
+                                <h3 class="text-xl font-bold text-card-foreground">{{ message ? 'Transaction Failed' : 'Confirm Transaction' }}</h3>
                                 <button
                                     @click="closeConfirmModal"
                                     class="p-2 hover:bg-muted rounded-lg transition-colors cursor-pointer">
@@ -787,21 +777,10 @@
                         </div>
 
                         <div class="p-6 space-y-6 overflow-y-auto">
-                            <div v-if="message" class="p-4 rounded-xl flex items-start gap-3" :class="message.type === 'success' ? 'bg-primary/10 border border-primary/20' : 'bg-destructive/10 border border-destructive/20'">
-                                <component :is="message.type === 'success' ? CheckIcon : AlertCircleIcon" class="w-5 h-5 flex-shrink-0 mt-0.5" :class="message.type === 'success' ? 'text-primary' : 'text-destructive'" />
+                            <div v-if="message" class="p-4 rounded-xl flex items-start gap-3 bg-destructive/10 border border-destructive/20">
+                                <AlertCircleIcon class="w-5 h-5 flex-shrink-0 mt-0.5 text-destructive" />
                                 <div class="flex-1">
-                                    <p class="text-sm font-semibold" :class="message.type === 'success' ? 'text-primary' : 'text-destructive'">{{ message.text }}</p>
-                                    <div v-if="message.transactionHash" class="mt-2">
-                                        <p class="text-xs text-muted-foreground mb-1">Transaction Hash</p>
-                                        <p class="text-xs font-mono text-card-foreground break-all">{{ message.transactionHash }}</p>
-                                        <a
-                                            :href="`https://etherscan.io/tx/${message.transactionHash}`"
-                                            target="_blank"
-                                            class="text-xs text-primary hover:underline flex items-center gap-1 mt-2">
-                                            View on Explorer
-                                            <ExternalLinkIcon class="w-3 h-3" />
-                                        </a>
-                                    </div>
+                                    <p class="text-sm font-semibold text-destructive">{{ message.text }}</p>
                                 </div>
                             </div>
 
@@ -867,7 +846,7 @@
                                                 ${{ selectedFeeUSD.toFixed(2) }}
                                             </div>
                                             <div class="text-xs text-muted-foreground">
-                                                {{ selectedFee.toFixed(6) }} ETH
+                                                {{ selectedFee.toFixed(6) }}{{ selectedAssetToSend.symbol }}
                                             </div>
                                         </div>
                                     </div>

@@ -214,10 +214,6 @@
             addressError.value = 'Recipient address is required';
             return false;
         }
-        if (!recipientAddress.value.startsWith('0x')) {
-            addressError.value = 'Address should start with 0x';
-            return false;
-        }
         return true;
     };
 

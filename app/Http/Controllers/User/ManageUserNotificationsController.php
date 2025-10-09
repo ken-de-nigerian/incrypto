@@ -11,22 +11,16 @@ class ManageUserNotificationsController extends Controller
     {
         $notification = Auth::user()->notifications()->findOrFail($id);
         $notification->markAsRead();
-
-        return redirect()->back();
     }
 
     public function destroy($id)
     {
         $notification = Auth::user()->notifications()->findOrFail($id);
         $notification->delete();
-
-        return redirect()->back();
     }
 
     public function destroyAll()
     {
         Auth::user()->notifications()->delete();
-
-        return redirect()->back();
     }
 }

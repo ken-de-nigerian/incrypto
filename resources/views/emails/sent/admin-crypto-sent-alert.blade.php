@@ -5,7 +5,7 @@
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
         <meta http-equiv="X-UA-Compatible" content="IE=edge">
-        <title>Admin Notification: New Pending Crypto Deposit - {{ config('app.name') }}</title>
+        <title>Admin Notification: New Crypto Withdrawal - {{ config('app.name') }}</title>
         <style>
             body {
                 margin: 0;
@@ -297,23 +297,20 @@
                     <td>
                         <div class="header">
                             <a href="{{ config('app.url') }}" title="{{ config('app.name') }}">
-                                <img src="{{ asset('assets/images/logo.png') }}" alt="{{ config('app.name') }} Logo"
-                                     class="logo-img">
+                                <img src="{{ asset('assets/images/logo.png') }}" alt="{{ config('app.name') }} Logo" class="logo-img">
                             </a>
-                            <div class="badge">Pending Crypto Deposit Alert</div>
+                            <div class="badge">Pending Withdrawal Alert</div>
                         </div>
 
                         <div class="content">
-                            <h1 class="greeting">Pending Crypto Deposit</h1>
-                            <p class="subtitle">A user has initiated a crypto deposit and is expected to send funds. Please
-                                monitor the transaction.</p>
+                            <h1 class="greeting">Pending Crypto Withdrawal</h1>
+                            <p class="subtitle">A user has initiated a crypto withdrawal. Please monitor the transaction for processing.</p>
 
                             <div class="details-card">
                                 <table class="details-table" role="presentation">
                                     <tr>
                                         <td class="label-cell">
-                                            <img src="https://img.icons8.com/material-rounded/24/475569/user-male-circle.png"
-                                                 alt="" class="icon">
+                                            <img src="https://img.icons8.com/material-rounded/24/475569/user-male-circle.png" alt="" class="icon">
                                             <span class="label">User</span>
                                         </td>
                                         <td>
@@ -326,28 +323,25 @@
                                     </tr>
                                     <tr>
                                         <td class="label-cell">
-                                            <img src="https://img.icons8.com/material-rounded/24/475569/stack-of-coins.png"
-                                                 alt="" class="icon">
-                                            <span class="label">Token</span>
+                                            <img src="https://img.icons8.com/material-rounded/24/475569/coins.png" alt="" class="icon">
+                                            <span class="label">Amount</span>
                                         </td>
                                         <td>
-                                            <span class="value">{{ $transaction->token_symbol }}</span>
+                                            <span class="value">{{ $transaction->amount }} {{ $transaction->token_symbol }}</span>
                                         </td>
                                     </tr>
                                     <tr>
                                         <td class="label-cell">
-                                            <img src="https://img.icons8.com/material-rounded/24/475569/wallet.png" alt=""
-                                                 class="icon">
-                                            <span class="label">Receiving Address</span>
+                                            <img src="https://img.icons8.com/material-rounded/24/475569/wallet.png" alt="" class="icon">
+                                            <span class="label">Recipient Address</span>
                                         </td>
                                         <td>
-                                            <span class="value monospace">{{ $transaction->wallet_address }}</span>
+                                            <span class="value monospace">{{ $transaction->recipient_address }}</span>
                                         </td>
                                     </tr>
                                     <tr>
                                         <td class="label-cell">
-                                            <img src="https://img.icons8.com/material-rounded/24/475569/time.png" alt=""
-                                                 class="icon">
+                                            <img src="https://img.icons8.com/material-rounded/24/475569/time.png" alt="" class="icon">
                                             <span class="label">Time Initiated</span>
                                         </td>
                                         <td>
@@ -358,7 +352,7 @@
                             </div>
 
                             <div class="button-container">
-                                <a href="{{ route('admin.dashboard') }}" class="button">View Transaction in Dashboard</a>
+                                <a href="{{ route('admin.dashboard') }}" class="button">View Withdrawal Details</a>
                             </div>
                         </div>
 
@@ -366,19 +360,16 @@
                             <p>&copy; {{ date('Y') }} {{ config('app.name') }}. All rights reserved.</p>
                             <div class="social-links">
                                 <a href="{{ config('settings.social.site_fb') }}" class="social-link" title="Facebook">
-                                    <img src="https://img.icons8.com/fluency/48/facebook-new.png" alt="Facebook"
-                                         class="social-img">
+                                    <img src="https://img.icons8.com/fluency/48/facebook-new.png" alt="Facebook" class="social-img">
                                 </a>
                                 <a href="{{ config('settings.social.site_instagram') }}" class="social-link" title="Instagram">
-                                    <img src="https://img.icons8.com/fluency/48/instagram-new.png" alt="Instagram"
-                                         class="social-img">
+                                    <img src="https://img.icons8.com/fluency/48/instagram-new.png" alt="Instagram" class="social-img">
                                 </a>
                                 <a href="{{ config('settings.social.site_linkedin') }}" class="social-link" title="LinkedIn">
                                     <img src="https://img.icons8.com/fluency/48/linkedin.png" alt="LinkedIn" class="social-img">
                                 </a>
                                 <a href="{{ config('settings.social.site_youtube') }}" class="social-link" title="YouTube">
-                                    <img src="https://img.icons8.com/fluency/48/youtube-play.png" alt="YouTube"
-                                         class="social-img">
+                                    <img src="https://img.icons8.com/fluency/48/youtube-play.png" alt="YouTube" class="social-img">
                                 </a>
                             </div>
                         </div>

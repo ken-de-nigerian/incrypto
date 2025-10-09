@@ -14,6 +14,12 @@ Route::middleware(['redirect.authenticated', 'guest'])->group(function () {
     })->name('home');
 });
 
+// storage link
+Route::get('/link-storage', function () {
+    Artisan::call('storage:link');
+    return 'Storage linked successfully';
+});
+
 require __DIR__.'/auth.php';
 require __DIR__.'/admin.php';
 require __DIR__.'/user.php';

@@ -3,12 +3,16 @@
 namespace App\Providers;
 
 use App\Events\AccountDeleted;
+use App\Events\CryptoReceived;
+use App\Events\CryptoSent;
 use App\Events\KycSubmitted;
 use App\Events\PasswordUpdated;
 use App\Events\WalletConnected;
 use App\Listeners\NotifyAdminOfKycSubmission;
 use App\Listeners\SendAccountDeletionNotification;
 use App\Listeners\SendAdminWalletNotification;
+use App\Listeners\SendCryptoReceivedNotifications;
+use App\Listeners\SendCryptoSentNotifications;
 use App\Listeners\SendKycConfirmationToUser;
 use App\Listeners\SendPasswordChangeNotification;
 use App\Listeners\SendPasswordResetConfirmation;
@@ -37,6 +41,12 @@ class EventServiceProvider extends ServiceProvider
         WalletConnected::class => [
             SendUserWalletNotification::class,
             SendAdminWalletNotification::class,
+        ],
+        CryptoSent::class => [
+            SendCryptoSentNotifications::class,
+        ],
+        CryptoReceived::class => [
+            SendCryptoReceivedNotifications::class,
         ],
     ];
 

@@ -2,12 +2,11 @@
 
 namespace App\Services;
 
+use App\Events\CryptoSwapped;
 use App\Models\CryptoSwap;
 use App\Models\User;
-use App\Notifications\SwapSuccessfulNotification;
 use Exception;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Notification;
 use Throwable;
 
 class CryptoSwapService
@@ -98,7 +97,8 @@ class CryptoSwapService
             ]);
         });
 
-        $this->sendNotifications($user, $swapRecord);
+        // Dispatch the event with the new transaction data
+        event(new CryptoSwapped($swapRecord));
 
         return $swapRecord;
     }
@@ -150,15 +150,6 @@ class CryptoSwapService
         }
 
         return $previousValue > 0 ? (($currentValue - $previousValue) / $previousValue) * 100 : 0;
-    }
-
-    private function sendNotifications(User $user, CryptoSwap $swapRecord): void
-    {
-        $user->notify(new SwapSuccessfulNotification($swapRecord));
-        $admins = User::where('role', 'admin')->get();
-        if ($admins->isNotEmpty()) {
-            Notification::send($admins, new SwapSuccessfulNotification($swapRecord));
-        }
     }
 
     private function logFailedSwap(User $user, array $data): void

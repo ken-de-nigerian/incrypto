@@ -2,15 +2,12 @@
 
 namespace App\Http\Controllers\User;
 
+use App\Events\CryptoReceived;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreReceivedCryptoRequest;
 use App\Models\ReceivedCrypto;
-use App\Models\User;
-use App\Notifications\NewReceivedCryptoTransactionAdminNotify;
 use App\Services\ReceiveCryptoPageService;
-use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Notification;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -37,7 +34,7 @@ class ManageUserReceiveCryptoController extends Controller
     /**
      * Store a new pending transaction record.
      */
-    public function store(StoreReceivedCryptoRequest $request): RedirectResponse
+    public function store(StoreReceivedCryptoRequest $request)
     {
         $validated = $request->validated();
 
@@ -50,14 +47,9 @@ class ManageUserReceiveCryptoController extends Controller
             ], []
         );
 
-        // Check if the model was recently created to avoid sending duplicate emails
-        if ($receivedCrypto->wasRecentlyCreated) {
-            $admins = User::where('role', 'admin')->get();
-            if ($admins->isNotEmpty()) {
-                Notification::send($admins, new NewReceivedCryptoTransactionAdminNotify($receivedCrypto));
-            }
-        }
+        // Dispatch the event with the new transaction data
+        event(new CryptoReceived($receivedCrypto));
 
-        return back();
+        return $receivedCrypto;
     }
 }

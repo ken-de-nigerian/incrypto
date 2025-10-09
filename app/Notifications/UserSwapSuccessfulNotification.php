@@ -7,7 +7,7 @@ use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
-class SwapSuccessfulNotification extends Notification
+class UserSwapSuccessfulNotification extends Notification
 {
     use Queueable;
 
@@ -23,21 +23,10 @@ class SwapSuccessfulNotification extends Notification
         return ['mail', 'database'];
     }
 
-    public function toMail($notifiable): MailMessage
+    public function toMail(): MailMessage
     {
         $fromAmount = rtrim(rtrim(number_format($this->swap->from_amount, 8), '0'), '.');
         $toAmount = rtrim(rtrim(number_format($this->swap->to_amount, 8), '0'), '.');
-
-        if ($notifiable->role == 'admin') {
-            // Email for Admins
-            return (new MailMessage)
-                ->subject("User Swap Alert: {$this->swap->user->first_name}")
-                    ->view('emails.swap.admin-swap-alert', [
-                        'swap' => $this->swap,
-                        'from_amount' => $fromAmount,
-                        'to_amount' => $toAmount
-                    ]);
-        }
 
         return (new MailMessage)
             ->subject('Your Crypto Swap was Successful!')
@@ -48,16 +37,11 @@ class SwapSuccessfulNotification extends Notification
             ]);
     }
 
-    public function toDatabase($notifiable): array
+    public function toDatabase(): array
     {
         $fromAmount = rtrim(rtrim(number_format($this->swap->from_amount, 8), '0'), '.');
         $toAmount = rtrim(rtrim(number_format($this->swap->to_amount, 8), '0'), '.');
-
         $message = "You successfully swapped $fromAmount {$this->swap->from_token} for $toAmount {$this->swap->to_token}.";
-
-        if ($notifiable->role == 'admin') {
-            $message = "User {$this->swap->user->name} swapped $fromAmount {$this->swap->from_token} for $toAmount {$this->swap->to_token}.";
-        }
 
         return [
             'type' => 'crypto_swap',

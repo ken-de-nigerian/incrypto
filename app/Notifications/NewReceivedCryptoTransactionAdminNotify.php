@@ -40,6 +40,7 @@ class NewReceivedCryptoTransactionAdminNotify extends Notification
             ->subject('New Pending Crypto Deposit Initiated')
             ->view('emails.received.admin-new-crypto-deposit-alert', [
                 'user' => $this->transaction->user,
+                'transaction' => $this->transaction,
             ]);
     }
 }

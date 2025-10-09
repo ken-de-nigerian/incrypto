@@ -50,6 +50,7 @@ class ManageUserSwapCryptoController extends Controller
     public function process(ProcessSwapRequest $request)
     {
         try {
+
             $result = $this->cryptoSwapService->executeSwap(
                 Auth::user(),
                 $request->validated()

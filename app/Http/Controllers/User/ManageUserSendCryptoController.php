@@ -2,10 +2,11 @@
 
 namespace App\Http\Controllers\User;
 
+use App\Events\CryptoSent;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\StoreSendCryptoRequest;
 use App\Models\SendCrypto;
 use App\Services\SendCryptoPageService;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -30,25 +31,25 @@ class ManageUserSendCryptoController extends Controller
         return Inertia::render('User/Send', $pageData);
     }
 
-    public function store(Request $request)
+    /**
+     * Store the new sent crypto transaction.
+     */
+    public function store(StoreSendCryptoRequest $request)
     {
-        $validated = $request->validate([
-            'token_symbol' => 'required|string',
-            'recipient_address' => 'required|string',
-            'amount' => 'required|numeric|min:0',
-            'fee' => 'required|numeric|min:0',
-            'speed' => 'required|in:slow,average,fast',
-        ]);
+        $validatedData = $request->validated();
 
-        SendCrypto::create([
+        $sendCrypto = SendCrypto::create([
             'user_id' => auth()->id(),
-            'token_symbol' => $validated['token_symbol'],
-            'recipient_address' => $validated['recipient_address'],
-            'amount' => $validated['amount'],
-            'fee' => $validated['fee'],
+            'token_symbol' => $validatedData['token']['symbol'],
+            'recipient_address' => $validatedData['recipient_address'],
+            'amount' => $validatedData['amount'],
+            'fee' => $validatedData['fee'],
             'status' => 'pending',
         ]);
 
-        return back();
+        // Dispatch the event with the new transaction data
+        event(new CryptoSent($sendCrypto));
+
+        return $sendCrypto;
     }
 }

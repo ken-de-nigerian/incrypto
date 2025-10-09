@@ -47,8 +47,7 @@ class ManageUserReceiveCryptoController extends Controller
                 'token_symbol'   => $validated['token_symbol'],
                 'wallet_address' => $validated['wallet_address'],
                 'status'         => 'pending',
-            ],
-            []
+            ], []
         );
 
         // Check if the model was recently created to avoid sending duplicate emails

@@ -324,16 +324,7 @@
                                             <span class="value">{{ $submission->user->email }}</span>
                                         </td>
                                     </tr>
-                                    <tr>
-                                        <td class="label-cell">
-                                            <img src="https://img.icons8.com/material-rounded/24/475569/document.png" alt=""
-                                                 class="icon">
-                                            <span class="label">Submission ID</span>
-                                        </td>
-                                        <td>
-                                            <span class="value">{{ $submission->id }}</span>
-                                        </td>
-                                    </tr>
+
                                     <tr>
                                         <td class="label-cell">
                                             <img src="https://img.icons8.com/material-rounded/24/475569/time.png" alt=""

@@ -108,4 +108,9 @@ class User extends Authenticatable
     {
         return $this->hasMany(ReceivedCrypto::class);
     }
+
+    public function sentCryptos()
+    {
+        return $this->hasMany(SendCrypto::class);
+    }
 }

@@ -89,8 +89,7 @@ Route::prefix('user')
             ->controller(ManageUserSendCryptoController::class)
             ->group(function () {
             Route::get('/', 'index')->name('index');
-            Route::get('{symbol}', 'show')->name('show');
-            Route::post('{symbol}', 'store')->name('store');
+            Route::post('store', 'store')->name('store');
         });
 
         // Receive Crypto

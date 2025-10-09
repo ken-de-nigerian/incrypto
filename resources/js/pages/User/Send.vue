@@ -275,6 +275,12 @@
 
     const closeConfirmModal = () => {
         isConfirmModalOpen.value = false;
+        message.value = null;
+        recipientAddress.value = '';
+        sendAmount.value = '';
+        selectedAssetToSend.value = null;
+        addressError.value = '';
+        amountError.value = '';
     };
 
     const handleSendCrypto = async () => {
@@ -298,17 +304,10 @@
                 transactionHash: response.data.transaction_hash || ''
             };
 
-            isConfirmModalOpen.value = false;
-
             setTimeout(() => {
-                recipientAddress.value = '';
-                sendAmount.value = '';
-                selectedAssetToSend.value = null;
-                addressError.value = '';
-                amountError.value = '';
                 message.value = null;
-
                 router.reload({ only: ['userBalances', 'sentTransactions'] });
+                closeConfirmModal();
             }, 5000);
 
         } catch (error) {
@@ -316,13 +315,8 @@
                 type: 'error',
                 text: error
             };
-        } finally {
             isSending.value = false;
         }
-    };
-
-    const closeMessage = () => {
-        message.value = null;
     };
 
     const getStatusColor = (status: string) => {
@@ -407,27 +401,6 @@
                 @open-notifications="openNotificationsModal"
             />
 
-            <div v-if="message" class="mb-6 p-4 rounded-xl flex items-start gap-3" :class="message.type === 'success' ? 'bg-primary/10 border border-primary/20' : 'bg-destructive/10 border border-destructive/20'">
-                <component :is="message.type === 'success' ? CheckIcon : AlertCircleIcon" class="w-5 h-5 flex-shrink-0 mt-0.5" :class="message.type === 'success' ? 'text-primary' : 'text-destructive'" />
-                <div class="flex-1">
-                    <p class="text-sm font-semibold" :class="message.type === 'success' ? 'text-primary' : 'text-destructive'">{{ message.text }}</p>
-                    <div v-if="message.transactionHash" class="mt-2">
-                        <p class="text-xs text-muted-foreground mb-1">Transaction Hash</p>
-                        <p class="text-xs font-mono text-card-foreground break-all">{{ message.transactionHash }}</p>
-                        <a
-                            :href="`https://etherscan.io/tx/${message.transactionHash}`"
-                            target="_blank"
-                            class="text-xs text-primary hover:underline flex items-center gap-1 mt-2">
-                            View on Explorer
-                            <ExternalLinkIcon class="w-3 h-3" />
-                        </a>
-                    </div>
-                </div>
-                <button @click="closeMessage" class="p-1 hover:bg-muted rounded-lg">
-                    <XIcon class="w-5 h-5 text-muted-foreground" />
-                </button>
-            </div>
-
             <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 mt-6">
                 <div class="lg:col-span-3 space-y-4">
                     <div class="bg-gradient-to-br from-primary/10 to-primary/5 border border-border rounded-2xl p-6">
@@ -508,7 +481,7 @@
                             <div class="relative" ref="dropdownRef">
                                 <button
                                     @click="showAssetDropdown = !showAssetDropdown"
-                                    class="w-full p-4 bg-muted border border-border rounded-lg flex items-center justify-between hover:bg-muted/80 transition-colors">
+                                    class="w-full p-4 bg-muted border border-border rounded-lg flex items-center justify-between hover:bg-muted/80 transition-colors cursor-pointer">
                                     <div v-if="selectedAssetToSend" class="flex items-center gap-3">
                                         <img :src="selectedAssetToSend.logo" :alt="selectedAssetToSend.symbol" class="w-8 h-8 rounded-full" />
                                         <div class="text-left">
@@ -540,7 +513,7 @@
                                             v-for="asset in filteredAssets"
                                             :key="asset.symbol"
                                             @click="selectAsset(asset)"
-                                            class="w-full p-3 hover:bg-muted/50 transition-colors flex items-center justify-between">
+                                            class="w-full p-3 hover:bg-muted/50 transition-colors flex items-center justify-between cursor-pointer">
                                             <div class="flex items-center gap-3">
                                                 <img :src="asset.logo" :alt="asset.symbol" class="w-8 h-8 rounded-full" />
                                                 <div class="text-left">
@@ -587,7 +560,7 @@
                                 <button
                                     @click="setMaxAmount"
                                     :disabled="!selectedAssetToSend"
-                                    class="absolute right-3 top-1/2 -translate-y-1/2 px-3 py-1.5 bg-primary text-primary-foreground rounded-md text-sm font-semibold hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed">
+                                    class="absolute right-3 top-1/2 -translate-y-1/2 px-3 py-1.5 bg-primary text-primary-foreground rounded-md text-sm font-semibold hover:opacity-90 transition-opacity disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed">
                                     MAX
                                 </button>
                             </div>
@@ -627,7 +600,7 @@
                                     :key="speed"
                                     @click="selectedSpeed = speed as typeof selectedSpeed"
                                     :class="[
-                                        'p-4 border-2 rounded-lg transition-all',
+                                        'p-4 border-2 rounded-lg transition-all cursor-pointer',
                                         selectedSpeed === speed
                                             ? 'border-primary bg-primary/10'
                                             : 'border-border hover:border-primary/50'
@@ -660,7 +633,7 @@
                         <button
                             @click="openConfirmModal"
                             :disabled="!isFormValid"
-                            class="w-full py-4 bg-primary text-primary-foreground rounded-lg font-semibold text-lg flex items-center justify-center gap-2 hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed">
+                            class="w-full py-4 bg-primary text-primary-foreground rounded-lg font-semibold text-lg flex items-center justify-center gap-2 hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer">
                             <SendIcon class="w-5 h-5" />
                             Review Transaction
                         </button>
@@ -805,114 +778,134 @@
                     <div class="w-full max-w-lg bg-card border border-border rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
                         <div class="p-6 border-b border-border">
                             <div class="flex items-center justify-between mb-2">
-                                <h3 class="text-xl font-bold text-card-foreground">Confirm Transaction</h3>
+                                <h3 class="text-xl font-bold text-card-foreground">{{ message ? (message.type === 'success' ? 'Transaction Submitted' : 'Transaction Failed') : 'Confirm Transaction' }}</h3>
                                 <button
                                     @click="closeConfirmModal"
-                                    class="p-2 hover:bg-muted rounded-lg transition-colors">
+                                    class="p-2 hover:bg-muted rounded-lg transition-colors cursor-pointer">
                                     <XIcon class="w-5 h-5 text-muted-foreground" />
                                 </button>
                             </div>
-                            <p class="text-sm text-muted-foreground">
+                            <p v-if="!message" class="text-sm text-muted-foreground">
                                 Please review the transaction details carefully before confirming
                             </p>
                         </div>
 
                         <div class="p-6 space-y-6 overflow-y-auto">
-                            <div class="p-4 bg-yellow-500/10 border border-yellow-500/30 rounded-xl flex items-start gap-3">
-                                <AlertCircleIcon class="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5" />
-                                <div class="text-sm">
-                                    <p class="font-semibold text-yellow-700 mb-1">Transaction Cannot Be Reversed</p>
-                                    <p class="text-muted-foreground">
-                                        Once confirmed, this transaction cannot be cancelled or reversed.
-                                        Please verify all details are correct.
-                                    </p>
-                                </div>
-                            </div>
-
-                            <div class="text-center py-4">
-                                <div class="text-sm text-muted-foreground mb-2">You're sending</div>
-                                <div class="flex items-center justify-center gap-3 mb-2">
-                                    <img
-                                        :src="selectedAssetToSend.logo"
-                                        :alt="selectedAssetToSend.symbol"
-                                        class="w-12 h-12 rounded-full"
-                                    />
-                                    <div class="text-3xl font-bold text-card-foreground">
-                                        {{ sendAmount }}
-                                    </div>
-                                    <div class="text-2xl font-semibold text-muted-foreground">
-                                        {{ selectedAssetToSend.symbol }}
-                                    </div>
-                                </div>
-                                <div class="text-lg text-muted-foreground">
-                                    ≈ ${{ amountInUSD.toFixed(2) }} USD
-                                </div>
-                            </div>
-
-                            <div class="flex justify-center">
-                                <div class="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
-                                    <ArrowRightIcon class="w-5 h-5 text-primary" />
-                                </div>
-                            </div>
-
-                            <div class="p-4 bg-muted/50 border border-border rounded-xl">
-                                <div class="text-xs text-muted-foreground mb-2 font-semibold uppercase">
-                                    Recipient Address
-                                </div>
-                                <div class="text-sm font-mono text-card-foreground break-all leading-relaxed">
-                                    {{ recipientAddress }}
-                                </div>
-                            </div>
-
-                            <div class="space-y-3">
-                                <div class="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
-                                    <span class="text-sm text-muted-foreground">Speed</span>
-                                    <span class="text-sm font-semibold text-card-foreground capitalize">
-                                        {{ selectedSpeed }} ({{ selectedFeeTime }})
-                                    </span>
-                                </div>
-
-                                <div class="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
-                                    <span class="text-sm text-muted-foreground">Network Fee</span>
-                                    <div class="text-right">
-                                        <div class="text-sm font-semibold text-card-foreground">
-                                            ${{ selectedFeeUSD.toFixed(2) }}
-                                        </div>
-                                        <div class="text-xs text-muted-foreground">
-                                            {{ selectedFee.toFixed(6) }} ETH
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div class="flex items-center justify-between p-4 bg-primary/10 border border-primary/20 rounded-lg">
-                                    <span class="text-sm font-semibold text-card-foreground">Total Cost</span>
-                                    <div class="text-right">
-                                        <div class="text-lg font-bold text-card-foreground">
-                                            ${{ totalCostUSD.toFixed(2) }}
-                                        </div>
-                                        <div class="text-xs text-muted-foreground">
-                                            {{ totalCost.toFixed(6) }} {{ selectedAssetToSend.symbol }}
-                                        </div>
+                            <div v-if="message" class="p-4 rounded-xl flex items-start gap-3" :class="message.type === 'success' ? 'bg-primary/10 border border-primary/20' : 'bg-destructive/10 border border-destructive/20'">
+                                <component :is="message.type === 'success' ? CheckIcon : AlertCircleIcon" class="w-5 h-5 flex-shrink-0 mt-0.5" :class="message.type === 'success' ? 'text-primary' : 'text-destructive'" />
+                                <div class="flex-1">
+                                    <p class="text-sm font-semibold" :class="message.type === 'success' ? 'text-primary' : 'text-destructive'">{{ message.text }}</p>
+                                    <div v-if="message.transactionHash" class="mt-2">
+                                        <p class="text-xs text-muted-foreground mb-1">Transaction Hash</p>
+                                        <p class="text-xs font-mono text-card-foreground break-all">{{ message.transactionHash }}</p>
+                                        <a
+                                            :href="`https://etherscan.io/tx/${message.transactionHash}`"
+                                            target="_blank"
+                                            class="text-xs text-primary hover:underline flex items-center gap-1 mt-2">
+                                            View on Explorer
+                                            <ExternalLinkIcon class="w-3 h-3" />
+                                        </a>
                                     </div>
                                 </div>
                             </div>
 
-                            <div class="p-4 bg-blue-500/10 border border-blue-500/30 rounded-xl">
-                                <div class="flex items-center justify-between">
-                                    <span class="text-sm text-muted-foreground">Balance After Transaction</span>
-                                    <span class="text-sm font-semibold text-card-foreground">
-                                        {{ (selectedBalance - totalCost).toFixed(6) }} {{ selectedAssetToSend.symbol }}
-                                    </span>
+                            <div v-else>
+                                <div class="p-4 bg-yellow-500/10 border border-yellow-500/30 rounded-xl flex items-start gap-3">
+                                    <AlertCircleIcon class="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5" />
+                                    <div class="text-sm">
+                                        <p class="font-semibold text-yellow-700 mb-1">Transaction Cannot Be Reversed</p>
+                                        <p class="text-muted-foreground">
+                                            Once confirmed, this transaction cannot be cancelled or reversed.
+                                            Please verify all details are correct.
+                                        </p>
+                                    </div>
+                                </div>
+
+                                <div class="text-center py-4">
+                                    <div class="text-sm text-muted-foreground mb-2">You're sending</div>
+                                    <div class="flex items-center justify-center gap-3 mb-2">
+                                        <img
+                                            :src="selectedAssetToSend.logo"
+                                            :alt="selectedAssetToSend.symbol"
+                                            class="w-12 h-12 rounded-full"
+                                        />
+                                        <div class="text-3xl font-bold text-card-foreground">
+                                            {{ sendAmount }}
+                                        </div>
+                                        <div class="text-2xl font-semibold text-muted-foreground">
+                                            {{ selectedAssetToSend.symbol }}
+                                        </div>
+                                    </div>
+                                    <div class="text-lg text-muted-foreground">
+                                        ≈ ${{ amountInUSD.toFixed(2) }} USD
+                                    </div>
+                                </div>
+
+                                <div class="flex justify-center">
+                                    <div class="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
+                                        <ArrowRightIcon class="w-5 h-5 text-primary" />
+                                    </div>
+                                </div>
+
+                                <div class="p-4 bg-muted/50 border border-border rounded-xl">
+                                    <div class="text-xs text-muted-foreground mb-2 font-semibold uppercase">
+                                        Recipient Address
+                                    </div>
+                                    <div class="text-sm font-mono text-card-foreground break-all leading-relaxed">
+                                        {{ recipientAddress }}
+                                    </div>
+                                </div>
+
+                                <div class="space-y-3">
+                                    <div class="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
+                                        <span class="text-sm text-muted-foreground">Speed</span>
+                                        <span class="text-sm font-semibold text-card-foreground capitalize">
+                                            {{ selectedSpeed }} ({{ selectedFeeTime }})
+                                        </span>
+                                    </div>
+
+                                    <div class="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
+                                        <span class="text-sm text-muted-foreground">Network Fee</span>
+                                        <div class="text-right">
+                                            <div class="text-sm font-semibold text-card-foreground">
+                                                ${{ selectedFeeUSD.toFixed(2) }}
+                                            </div>
+                                            <div class="text-xs text-muted-foreground">
+                                                {{ selectedFee.toFixed(6) }} ETH
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="flex items-center justify-between p-4 bg-primary/10 border border-primary/20 rounded-lg">
+                                        <span class="text-sm font-semibold text-card-foreground">Total Cost</span>
+                                        <div class="text-right">
+                                            <div class="text-lg font-bold text-card-foreground">
+                                                ${{ totalCostUSD.toFixed(2) }}
+                                            </div>
+                                            <div class="text-xs text-muted-foreground">
+                                                {{ totalCost.toFixed(6) }} {{ selectedAssetToSend.symbol }}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="p-4 bg-blue-500/10 border border-blue-500/30 rounded-xl">
+                                    <div class="flex items-center justify-between">
+                                        <span class="text-sm text-muted-foreground">Balance After Transaction</span>
+                                        <span class="text-sm font-semibold text-card-foreground">
+                                            {{ (selectedBalance - totalCost).toFixed(6) }} {{ selectedAssetToSend.symbol }}
+                                        </span>
+                                    </div>
                                 </div>
                             </div>
                         </div>
 
-                        <div class="p-6 border-t border-border bg-muted/30">
+                        <div v-if="!message" class="p-6 border-t border-border bg-muted/30">
                             <div class="grid grid-cols-2 gap-3">
                                 <button
                                     @click="closeConfirmModal"
                                     :disabled="isSending"
-                                    class="py-3 px-4 bg-muted hover:bg-muted/80 border border-border text-card-foreground rounded-lg font-semibold transition-colors disabled:opacity-50">
+                                    class="py-3 px-4 bg-muted hover:bg-muted/80 border border-border text-card-foreground rounded-lg font-semibold transition-colors disabled:opacity-50 cursor-pointer">
                                     Cancel
                                 </button>
                                 <button
@@ -924,6 +917,13 @@
                                     {{ isSending ? 'Sending...' : 'Confirm & Send' }}
                                 </button>
                             </div>
+                        </div>
+                        <div v-else class="p-6 border-t border-border bg-muted/30">
+                            <button
+                                @click="closeConfirmModal"
+                                class="w-full py-3 px-4 bg-muted hover:bg-muted/80 border border-border text-card-foreground rounded-lg font-semibold transition-colors cursor-pointer">
+                                Close
+                            </button>
                         </div>
                     </div>
                 </div>

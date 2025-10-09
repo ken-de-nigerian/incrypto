@@ -69,7 +69,7 @@
         <div v-if="showTransactionHistory" class="border-t border-border">
             <div v-if="recentTransactions.length === 0" class="p-8 text-center">
                 <div class="w-12 h-12 bg-muted rounded-full flex items-center justify-center mx-auto mb-3"><ClockIcon class="w-6 h-6 text-muted-foreground" /></div>
-                <p class="text-sm text-muted-foreground">No received cryptos</p>
+                <p class="text-sm text-muted-foreground">No received transactions</p>
                 <p class="text-xs text-muted-foreground mt-1">Your received cryptos history will appear here</p>
             </div>
             <div v-else>

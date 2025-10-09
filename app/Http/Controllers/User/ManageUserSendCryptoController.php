@@ -40,7 +40,7 @@ class ManageUserSendCryptoController extends Controller
             'speed' => 'required|in:slow,average,fast',
         ]);
 
-        $transaction = SendCrypto::create([
+        SendCrypto::create([
             'user_id' => auth()->id(),
             'token_symbol' => $validated['token_symbol'],
             'recipient_address' => $validated['recipient_address'],
@@ -49,9 +49,6 @@ class ManageUserSendCryptoController extends Controller
             'status' => 'pending',
         ]);
 
-        // Process transaction (e.g., interact with blockchain)
-        // Update transaction_hash and status as needed
-
-        return response()->json(['transaction_hash' => $transaction->transaction_hash]);
+        return back();
     }
 }

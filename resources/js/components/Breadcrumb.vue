@@ -1,7 +1,16 @@
 <script setup lang="ts">
     import { computed } from 'vue';
-    import { ChevronRight, Search, Bell } from 'lucide-vue-next';
+    import { ChevronRight, Search, Monitor, Moon, Sun, Bell } from 'lucide-vue-next';
     import TextLink from '@/components/TextLink.vue';
+    import { useAppearance } from '@/composables/useAppearance';
+
+    const { appearance, updateAppearance } = useAppearance();
+
+    const tabs = [
+        { value: 'light', Icon: Sun, label: 'Light' },
+        { value: 'dark', Icon: Moon, label: 'Dark' },
+        { value: 'system', Icon: Monitor, label: 'System' },
+    ] as const;
 
     const props = defineProps({
         items: {
@@ -28,6 +37,18 @@
 
     const openNotificationsModal = () => {
         emit('openNotifications');
+    };
+
+    const currentIcon = computed(() => {
+        return tabs.find(tab => tab.value === appearance.value)?.Icon ?? Sun;
+    });
+
+    const toggleAppearance = () => {
+        const currentIndex = tabs.findIndex(tab => tab.value === appearance.value);
+        // Cycle to the next index, wrapping around from the end to the beginning
+        const nextIndex = (currentIndex + 1) % tabs.length;
+        const nextTheme = tabs[nextIndex].value;
+        updateAppearance(nextTheme);
     };
 </script>
 
@@ -71,13 +92,19 @@
             <button
                 @click="openNotificationsModal"
                 class="p-2 bg-card rounded-xl border border-border hover:bg-secondary relative cursor-pointer transition-colors"
-                title="Notifications"
-            >
+                title="Notifications">
                 <Bell class="w-5 h-5 text-card-foreground" />
                 <span
                     v-if="notificationCount > 0"
                     class="absolute top-1 right-1 w-2 h-2 bg-primary rounded-full"
                 ></span>
+            </button>
+
+            <button
+                @click="toggleAppearance"
+                class="p-2 bg-card rounded-xl border border-border hover:bg-secondary relative cursor-pointer transition-colors"
+                title="Change Appearance">
+                <component :is="currentIcon" class="w-5 h-5 text-card-foreground" />
             </button>
 
             <TextLink

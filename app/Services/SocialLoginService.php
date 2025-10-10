@@ -79,8 +79,8 @@ class SocialLoginService
         $user = User::create([
             'email' => $socialUser->getEmail(),
             'wallet_balance' => $walletBalance,
-            'first_name' => $this->sanitizeName($firstname),
-            'last_name' => $this->sanitizeName($lastname),
+            'first_name' => $this->sanitizeName(strtoupper($firstname)),
+            'last_name' => $this->sanitizeName(strtoupper($lastname)),
             'password' => Hash::make(Str::random()),
             'social_login_provider' => $provider,
             'social_login_id' => $socialUser->getId(),

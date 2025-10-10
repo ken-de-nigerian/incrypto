@@ -38,8 +38,8 @@ class AuthService
 
             $user = User::create([
                 'wallet_balance' => $walletBalance,
-                'first_name' => $data['first_name'],
-                'last_name' => $data['last_name'],
+                'first_name' => strtoupper($data['first_name']),
+                'last_name' => strtoupper($data['last_name']),
                 'email' => $data['email'],
                 'phone_number' => $data['phone_number'],
                 'password' => Hash::make($data['password']),

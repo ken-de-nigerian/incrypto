@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use Exception;
+use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
@@ -14,24 +15,20 @@ class GatewayHandlerService
      * Cache lifetimes in seconds
      */
     private const CACHE_TTL = [
-        'PRICE_DATA' => 300,       // 5 minutes for real-time price data
-        'GAS_PRICE_DATA' => 120,   // 2 minutes for gas price data
-        'COIN_LIST' => 120,        // 2 minutes for currency conversion data
-        'WALLET_DATA' => 43200,    // 12 hours for wallet data
+        'PRICE_DATA' => 300,       // 5 minutes
+        'GAS_PRICE_DATA' => 120,   // 2 minutes
+        'WALLET_DATA' => 43200,    // 12 hours
     ];
 
     /**
-     * Maximum number of retries for API calls.
+     * Retry logic constants
      */
     private const MAX_RETRIES = 3;
-
-    /**
-     * Base delay between retries in seconds (exponential backoff).
-     */
     private const RETRY_BASE_DELAY = 1;
+    private const RATE_LIMIT_RETRY_DELAY = 10;
 
     /**
-     * Chain ID mapping for supported chains
+     * Chain ID mapping
      */
     private const CHAIN_IDS = [
         'Ethereum' => 1,
@@ -49,17 +46,15 @@ class GatewayHandlerService
     public function getGateways(): array
     {
         try {
-            // Get wallet addresses from config
+
             $wallets = config('gateways.wallet_addresses');
 
-            // Ensure it's an array
             if (!is_array($wallets)) {
                 return [];
             }
 
-            // Use Laravel Collection to filter and sort
             return collect($wallets)
-                ->filter(fn($wallet) => $wallet['status'] == 1)
+                ->where('status', '1')
                 ->sortBy('status')
                 ->values()
                 ->toArray();
@@ -101,7 +96,7 @@ class GatewayHandlerService
                     "Failed to fetch Etherscan V2 Gas Oracle data for chain $chain"
                 );
 
-                if ($response['status'] !== '1' || !isset($response['result'])) {
+                if (($response['status'] ?? '0') !== '1' || !isset($response['result'])) {
                     throw new Exception('Invalid response from Etherscan V2 Gas Oracle API: ' . ($response['message'] ?? 'Unknown error'));
                 }
 
@@ -173,7 +168,6 @@ class GatewayHandlerService
         $cacheKey = 'coingecko_eth_price';
         $url = 'https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=usd';
 
-        // Use the existing fetchData helper for simple API calls
         $response = $this->fetchData(
             $cacheKey,
             $url,
@@ -181,31 +175,21 @@ class GatewayHandlerService
             'Failed to fetch ETH price from CoinGecko'
         );
 
-        // Return the price or a reasonable fallback value
         return $response['ethereum']['usd'] ?? 2000.0;
     }
 
     /**
-     * Fetch CoinGecko coin list with caching
-     */
-    public function fetchCoinGeckoCoinList(): array
-    {
-        $cacheKey = 'coinGecko_coin_list';
-        $url = 'https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&sparkline=false';
-
-        return $this->fetchData(
-            $cacheKey,
-            $url,
-            self::CACHE_TTL['COIN_LIST'],
-            'Failed to fetch CoinGecko coin list'
-        );
-    }
-
-    /**
-     * Fetch CoinGecko market data for specific coin IDs
+     * Fetch CoinGecko market data for specific coin IDs.
+     *
+     * @param array $coinIds
+     * @return array
      */
     private function fetchCoinGeckoMarketData(array $coinIds): array
     {
+        if (empty($coinIds)) {
+            return [];
+        }
+
         $cacheKey = "coinGeckoSpecificCoins_" . implode('_', $coinIds);
         $ids = implode(',', $coinIds);
         $url = "https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=$ids&order=market_cap_desc&sparkline=false";
@@ -214,78 +198,47 @@ class GatewayHandlerService
             $cacheKey,
             $url,
             self::CACHE_TTL['PRICE_DATA'],
-            'Failed to fetch CoinGecko market data'
+            'Failed to fetch CoinGecko market data for specific IDs'
         );
     }
 
     /**
-     * Fetch crypto data for active gateways using CoinGecko,
-     * dynamically resolving CoinGecko IDs by symbol.
+     * Fetch crypto data for active gateways efficiently.
+     * This now makes only ONE API call instead of two.
      *
      * @return array
      */
     public function fetchGatewaysCrypto(): array
     {
         $gateways = $this->getGateways();
-
         if (empty($gateways)) {
             return [];
         }
 
-        // Step 1: Get all coins from CoinGecko
-        $coinList = $this->fetchCoinGeckoCoinList();
-
-        if (empty($coinList)) {
-            Log::warning('Failed to fetch CoinGecko coin list');
-            return [];
-        }
-
-        // Build a map: symbol (lowercase) => CoinGecko ID
-        $symbolToId = collect($coinList)
-            ->mapWithKeys(fn($coin) => [strtoupper($coin['symbol']) => $coin['id']])
-            ->toArray();
-
-        // Step 2: Map gateway symbols to CoinGecko IDs
         $coinIds = collect($gateways)
-            ->pluck('abbreviation')
-            ->map(fn($symbol) => $symbolToId[strtoupper($symbol)] ?? null)
+            ->pluck('coingecko_id')
             ->filter()
             ->unique()
-            ->values()
-            ->toArray();
+            ->all();
 
         if (empty($coinIds)) {
-            Log::debug('No matching CoinGecko IDs found for gateways', ['gateways' => $gateways]);
+            Log::warning('No CoinGecko IDs found in gateway configuration.');
             return [];
         }
 
-        // Step 3: Fetch market data for those CoinGecko IDs
         $coinData = $this->fetchCoinGeckoMarketData($coinIds);
-
         if (empty($coinData)) {
+            Log::warning('Received empty market data from CoinGecko.', ['ids' => $coinIds]);
             return [];
         }
 
-        // Reindex by CoinGecko ID
-        $coinDataById = collect($coinData)
-            ->keyBy(fn($coin) => strtolower($coin['id']))
-            ->toArray();
+        $coinDataById = collect($coinData)->keyBy('id')->all();
 
-        // Step 4: Merge with gateways
         $result = [];
-
         foreach ($gateways as $gateway) {
-            $symbol = strtoupper($gateway['abbreviation']);
-            $coinId = $symbolToId[$symbol] ?? null;
-
+            $coinId = $gateway['coingecko_id'] ?? null;
             if ($coinId && isset($coinDataById[$coinId])) {
                 $result[] = array_merge($gateway, ['coin' => $coinDataById[$coinId]]);
-            } else {
-                Log::debug('No matching CoinGecko data found for gateway', [
-                    'gateway' => $gateway,
-                    'symbol' => $symbol,
-                    'coinId' => $coinId
-                ]);
             }
         }
 
@@ -321,6 +274,9 @@ class GatewayHandlerService
 
     /**
      * Sort wallet data by name
+     *
+     * @param array $wallets
+     * @return array
      */
     private function sortWalletData(array $wallets): array
     {
@@ -358,14 +314,18 @@ class GatewayHandlerService
     private function fetchData(string $cacheKey, string $apiUrl, int $ttl, string $errorContext = ''): array
     {
         return Cache::remember($cacheKey, $ttl, function () use ($apiUrl, $errorContext) {
-            $data = $this->fetchFromAPIWithRetry($apiUrl);
+            $response = $this->fetchFromAPIWithRetry($apiUrl);
 
-            if (empty($data)) {
-                Log::warning("Empty response from API", ['context' => $errorContext, 'url' => $apiUrl]);
+            if ($response['error'] ?? false) {
+                Log::warning("API fetch failed after all retries.", [
+                    'context' => $errorContext,
+                    'url' => $apiUrl,
+                    'final_status' => $response['status'] ?? 'N/A'
+                ]);
                 return [];
             }
 
-            return $data;
+            return $response['data'] ?? [];
         });
     }
 
@@ -378,25 +338,33 @@ class GatewayHandlerService
     private function fetchFromAPIWithRetry(string $apiUrl): array
     {
         $retries = 0;
+        $response = [];
 
         while ($retries < self::MAX_RETRIES) {
-            if ($retries > 0) {
-                $delay = self::RETRY_BASE_DELAY * pow(2, $retries - 1);
-                sleep($delay);
-                Log::debug("Retrying API request after delay", ['url' => $apiUrl, 'delay' => $delay]);
-            }
-
             $response = $this->makeApiRequest($apiUrl);
 
-            if (!empty($response)) {
-                return $response;
+            if ($response['status'] >= 200 && $response['status'] < 300) {
+                return ['error' => false, 'data' => $response['data']];
             }
 
+            Log::warning("API request attempt failed", [
+                'url' => $apiUrl,
+                'attempt' => $retries + 1,
+                'status' => $response['status']
+            ]);
+
             $retries++;
-            Log::warning("API request attempt failed", ['url' => $apiUrl, 'attempt' => $retries]);
+            if ($retries < self::MAX_RETRIES) {
+                $delay = ($response['status'] === 429)
+                    ? self::RATE_LIMIT_RETRY_DELAY
+                    : self::RETRY_BASE_DELAY * pow(2, $retries - 1);
+
+                Log::debug("Retrying API request after delay.", ['url' => $apiUrl, 'delay' => $delay]);
+                sleep($delay);
+            }
         }
 
-        return [];
+        return ['error' => true, 'status' => $response['status'] ?? 500, 'data' => []];
     }
 
     /**
@@ -413,34 +381,18 @@ class GatewayHandlerService
                 ? $apiUrl . (str_contains($apiUrl, '?') ? '&' : '?') . 'x_cg_api_key=' . $apiKey
                 : $apiUrl;
 
-            $response = Http::withHeaders([
-                'User-Agent' => 'Mozilla/5.0'
-            ])->timeout(10)->get($urlWithKey);
+            $response = Http::timeout(20)->get($urlWithKey);
 
-            if ($response->status() === 429) {
-                Log::warning("API rate limit exceeded", ['url' => $apiUrl]);
-                return [];
-            }
-
-            if ($response->failed()) {
-                Log::warning("API request failed", [
-                    'url' => $apiUrl,
-                    'status' => $response->status(),
-                    'response' => $response->body()
-                ]);
-                return [];
-            }
-
-            $data = $response->json();
-
-            return $data ?? [];
-
+            return [
+                'status' => $response->status(),
+                'data' => $response->json() ?? [],
+            ];
+        } catch (ConnectionException $e) {
+            Log::error("API request connection exception", ['url' => $apiUrl, 'error' => $e->getMessage()]);
+            return ['status' => 504, 'data' => []];
         } catch (Exception $e) {
-            Log::error("API request exception", [
-                'url' => $apiUrl,
-                'error' => $e->getMessage()
-            ]);
-            return [];
+            Log::error("Generic API request exception", ['url' => $apiUrl, 'error' => $e->getMessage()]);
+            return ['status' => 500, 'data' => []];
         }
     }
 }

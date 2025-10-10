@@ -119,22 +119,20 @@
                             </div>
                         </div>
                     </div>
-
-                    <div v-if="walletAddress" class="p-4 bg-blue-500/10 border border-blue-500/30 rounded-xl">
-                        <div class="flex items-start gap-3">
-                            <AlertCircleIcon class="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
-                            <div class="text-xs text-muted-foreground">
-                                <p class="font-semibold text-blue-700 mb-1">Processing Time</p>
-                                <p>Deposits are usually credited within 10-30 minutes depending on network congestion. You can track your transaction status in the "Received Cryptos" section.</p>
-                            </div>
-                        </div>
-                    </div>
                 </div>
 
                 <div class="p-6 border-t border-border bg-muted/30">
                     <div class="flex items-center gap-3">
                         <div class="flex-1">
-                            <button @click="$emit('close')" class="w-full py-3 px-4 bg-muted hover:bg-muted/80 border border-border text-card-foreground rounded-lg font-semibold text-sm transition-colors">Close</button>
+                            <div v-if="walletAddress" class="p-4 bg-blue-500/10 border border-blue-500/30 rounded-xl">
+                                <div class="flex items-start gap-3">
+                                    <AlertCircleIcon class="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                                    <div class="text-xs text-muted-foreground">
+                                        <p class="font-semibold text-blue-700 mb-1">Processing Time</p>
+                                        <p>Deposits are usually credited within 10-30 minutes depending on network congestion. You can track your transaction status in the "Received Cryptos" section.</p>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>

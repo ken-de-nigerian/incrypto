@@ -311,7 +311,7 @@
                 @click="executeSwap"
                 :disabled="!canSwap"
                 :class="[
-                    'w-full mt-6 py-4 rounded-xl font-bold text-lg',
+                    'w-full mt-6 py-4 rounded-xl font-bold text-lg cursor-pointer',
                     canSwap
                         ? 'bg-primary hover:opacity-90 text-primary-foreground'
                         : 'bg-muted text-muted-foreground cursor-not-allowed',

@@ -46,6 +46,17 @@
         { value: 'system', Icon: Monitor, label: 'System' },
     ] as const;
 
+    const currentIcon = computed(() => {
+        return tabs.find(tab => tab.value === appearance.value)?.Icon ?? Sun;
+    });
+
+    const toggleAppearance = () => {
+        const currentIndex = tabs.findIndex(tab => tab.value === appearance.value);
+        const nextIndex = (currentIndex + 1) % tabs.length;
+        const nextTheme = tabs[nextIndex].value;
+        updateAppearance(nextTheme);
+    };
+
     const notificationCount = computed(() => page.props.auth.notification_count);
     const user = computed(() => page.props.auth.user);
 
@@ -140,9 +151,7 @@
 </script>
 
 <template>
-    <!-- Mobile Header - Responsive for all screen sizes -->
     <div class="lg:hidden sticky top-0 inset-x-0 z-40 px-3 xs:px-4 py-3 xs:py-4 flex items-center gap-2 xs:gap-3 bg-background border-b border-border">
-        <!-- Menu Button -->
         <button
             class="w-8 h-8 xs:w-9 xs:h-9 flex items-center justify-center rounded-md bg-accent text-accent-foreground flex-shrink-0"
             aria-label="Menu"
@@ -151,7 +160,6 @@
             <Menu class="w-5 h-5 xs:w-6 xs:h-6" />
         </button>
 
-        <!-- Search Bar -->
         <div class="flex items-center flex-1 min-w-0 bg-secondary rounded-lg xs:rounded-xl px-2 xs:px-3 py-2 xs:py-3">
             <Search class="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
             <input
@@ -168,7 +176,6 @@
             />
         </div>
 
-        <!-- Notifications Button -->
         <button
             @click="isNotificationsModalOpen = true"
             class="p-1.5 xs:p-2 bg-card rounded-lg xs:rounded-xl border border-border hover:bg-secondary relative cursor-pointer transition-colors flex-shrink-0"
@@ -181,7 +188,14 @@
             ></span>
         </button>
 
-        <!-- Profile Button -->
+        <button
+            @click="toggleAppearance"
+            class="p-1.5 xs:p-2 bg-card rounded-lg xs:rounded-xl border border-border hover:bg-secondary relative cursor-pointer transition-colors flex-shrink-0"
+            title="Change Appearance"
+        >
+            <component :is="currentIcon" class="w-4 h-4 xs:w-5 xs:h-5 text-card-foreground" />
+        </button>
+
         <TextLink
             :href="route('user.profile.index')"
             class="w-8 h-8 xs:w-9 xs:h-9 bg-accent rounded-lg xs:rounded-xl relative cursor-pointer overflow-hidden flex items-center justify-center flex-shrink-0"
@@ -202,7 +216,6 @@
         </TextLink>
     </div>
 
-    <!-- Account Modal - Full screen on mobile, centered on larger screens -->
     <Transition
         enter-active-class="transition-opacity duration-200"
         enter-from-class="opacity-0"
@@ -229,7 +242,6 @@
                     class="bg-card text-card-foreground w-full h-full lg:w-[80%] lg:max-w-md lg:rounded-lg flex flex-col rounded-none shadow-lg overflow-y-auto no-scrollbar border border-border relative"
                     @click.stop
                 >
-                    <!-- Modal Header -->
                     <div class="sticky top-0 bg-card z-10 px-4 xs:px-5 pt-4 xs:pt-6 pb-3 xs:pb-4 border-b border-border">
                         <div class="flex items-start justify-between gap-2">
                             <div class="flex-1 min-w-0">
@@ -246,7 +258,6 @@
                         </div>
                     </div>
 
-                    <!-- User Profile Card -->
                     <div class="px-4 xs:px-5 pt-4 xs:pt-6 pb-3 xs:pb-4">
                         <div class="flex items-start gap-3 xs:gap-4 p-3 xs:p-4 rounded-xl xs:rounded-2xl bg-gradient-to-br from-primary/10 via-primary/5 to-transparent border border-border">
                             <div class="relative flex-shrink-0">
@@ -297,9 +308,7 @@
                         </div>
                     </div>
 
-                    <!-- Modal Content -->
                     <div class="px-4 xs:px-5 pb-4 xs:pb-6 space-y-4 xs:space-y-6 flex-1">
-                        <!-- Quick Actions -->
                         <div>
                             <h3 class="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 xs:mb-3 px-1">Quick Actions</h3>
                             <div class="grid grid-cols-3 gap-1.5 xs:gap-2.5">
@@ -318,7 +327,6 @@
                             </div>
                         </div>
 
-                        <!-- Account Settings -->
                         <div>
                             <h3 class="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 xs:mb-3 px-1">Account Settings</h3>
                             <div class="space-y-0.5 xs:space-y-1">
@@ -341,11 +349,9 @@
                             </div>
                         </div>
 
-                        <!-- Preferences -->
                         <div>
                             <h3 class="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 xs:mb-3 px-1">Preferences</h3>
                             <div class="space-y-0.5 xs:space-y-1">
-                                <!-- Theme Switcher -->
                                 <div class="p-2.5 xs:p-3">
                                     <div class="flex items-center gap-1 xs:gap-1.5 p-1 rounded-lg bg-secondary">
                                         <button
@@ -365,7 +371,6 @@
                                     </div>
                                 </div>
 
-                                <!-- Language -->
                                 <button class="w-full flex items-center gap-2.5 xs:gap-3 p-2.5 xs:p-3 rounded-lg xs:rounded-xl hover:bg-secondary active:bg-secondary/80 transition-all group">
                                     <div class="w-8 h-8 xs:w-10 xs:h-10 rounded-lg bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors flex-shrink-0">
                                         <Globe class="w-4 h-4 xs:w-5 xs:h-5 text-primary" />
@@ -379,7 +384,6 @@
                             </div>
                         </div>
 
-                        <!-- Support & Legal -->
                         <div>
                             <h3 class="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 xs:mb-3 px-1">Support & Legal</h3>
                             <div class="space-y-0.5 xs:space-y-1">
@@ -397,7 +401,6 @@
                             </div>
                         </div>
 
-                        <!-- Logout Button -->
                         <TextLink
                             :href="route('logout')"
                             method="post"
@@ -408,7 +411,6 @@
                             <span class="font-semibold text-sm xs:text-base text-destructive">Logout</span>
                         </TextLink>
 
-                        <!-- Version -->
                         <div class="text-center pt-2 pb-2 xs:pb-4">
                             <p class="text-[10px] xs:text-xs text-muted-foreground/50">Version 2.1.0</p>
                         </div>

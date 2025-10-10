@@ -1,5 +1,5 @@
 <script setup lang="ts">
-    import { SearchIcon, BellIcon } from 'lucide-vue-next';
+    import { Sun, Moon, Monitor, SearchIcon, BellIcon } from 'lucide-vue-next';
     import WalletCard from '@/components/layout/user/dashboard/WalletCard.vue';
     import ChartCard from '@/components/layout/user/dashboard/ChartCard.vue';
     import CryptoListCard from '@/components/layout/user/dashboard/CryptoListCard.vue';
@@ -12,6 +12,26 @@
     import { Head, usePage } from '@inertiajs/vue3';
     import AppLayout from '@/components/layout/user/dashboard/AppLayout.vue';
     import TextLink from '@/components/TextLink.vue';
+    import { useAppearance } from '@/composables/useAppearance';
+
+    const { appearance, updateAppearance } = useAppearance();
+
+    const tabs = [
+        { value: 'light', Icon: Sun, label: 'Light' },
+        { value: 'dark', Icon: Moon, label: 'Dark' },
+        { value: 'system', Icon: Monitor, label: 'System' },
+    ] as const;
+
+    const currentIcon = computed(() => {
+        return tabs.find(tab => tab.value === appearance.value)?.Icon ?? Sun;
+    });
+
+    const toggleAppearance = () => {
+        const currentIndex = tabs.findIndex(tab => tab.value === appearance.value);
+        const nextIndex = (currentIndex + 1) % tabs.length;
+        const nextTheme = tabs[nextIndex].value;
+        updateAppearance(nextTheme);
+    };
 
     // Define reactive state
     const page = usePage();
@@ -80,6 +100,13 @@
                     <button @click="openNotificationsModal" class="p-2 bg-card rounded-xl border border-border hover:bg-secondary relative cursor-pointer transition-colors" title="Notifications">
                         <BellIcon class="w-5 h-5 text-card-foreground" />
                         <span v-if="notificationCount > 0" class="absolute top-1 right-1 w-2 h-2 bg-primary rounded-full"></span>
+                    </button>
+
+                    <button
+                        @click="toggleAppearance"
+                        class="p-2 bg-card rounded-xl border border-border hover:bg-secondary relative cursor-pointer transition-colors"
+                        title="Change Appearance">
+                        <component :is="currentIcon" class="w-5 h-5 text-card-foreground" />
                     </button>
 
                     <TextLink :href="route('user.profile.index')" class="w-9 h-9 bg-accent rounded-xl relative cursor-pointer overflow-hidden flex items-center justify-center" title="My Profile">

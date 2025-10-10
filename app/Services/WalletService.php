@@ -26,7 +26,12 @@ class WalletService
     private function decodeFullWalletData(): array
     {
         try {
-            return json_decode($this->user->wallet_balance ?? '{}', true, 512, JSON_THROW_ON_ERROR);
+            $allWallets = json_decode($this->user->wallet_balance ?? '{}', true, 512, JSON_THROW_ON_ERROR);
+
+            return collect($allWallets)
+                ->where('status', '1')
+                ->all();
+
         } catch (JsonException $e) {
             Log::error("Wallet Balance JSON Decode Error for User ID {$this->user->id}: " . $e->getMessage());
             return [];
@@ -112,6 +117,7 @@ class WalletService
                 $symbol = strtoupper($crypto['abbreviation']);
                 $name = $crypto['name'];
                 $key = $symbol;
+                $status = $crypto['status'];
 
                 if (str_contains($name, 'TRC 20')) $key = 'USDT_TRC20';
                 elseif (str_contains($name, 'BEP 20')) $key = 'USDT_BEP20';
@@ -123,6 +129,7 @@ class WalletService
                     'network' => $this->getNetworkFromName($name),
                     'balance' => 0.9876,
                     'image' => $crypto['image'] ?? null,
+                    'status' => $status
                 ];
             }
 

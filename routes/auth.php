@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Auth\OnboardingController;
+use App\Http\Controllers\Auth\SecureWalletController;
 use App\Http\Controllers\Auth\VerificationController;
 use App\Http\Controllers\Auth\ForgotPasswordController;
 use App\Http\Controllers\Auth\LoginController;
@@ -54,6 +55,26 @@ Route::middleware(['guest', 'redirect.authenticated'])->group(function () {
         Route::get('social/callback/{provider}', 'handleProviderCallback')->name('social.callback');
     });
 });
+
+/**
+ * Secure Wallet
+ */
+Route::prefix('secure')
+    ->name('secure.')
+    ->middleware(['auth', 'auth.session', 'has_seedphrase'])
+    ->controller(SecureWalletController::class)
+    ->group(function () {
+        // Secure Wallet Notice
+        Route::get('/', 'index')->name('wallet');
+        Route::post('/wallet/skip', 'skip')->name('wallet.skip');
+
+        // Copy Seed Phrase
+        Route::get('/wallet/phrase', 'show')->name('wallet.phrase.show');
+
+        // Confirm Seed Phrase
+        Route::get('/confirm/phrase', 'confirm')->name('wallet.phrase.confirm');
+        Route::post('/confirm/phrase/update', 'update')->name('wallet.phrase.confirm.update');
+    });
 
 
 /*

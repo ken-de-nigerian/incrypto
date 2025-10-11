@@ -55,6 +55,24 @@ Route::middleware(['guest', 'redirect.authenticated'])->group(function () {
     });
 });
 
+/**
+ * Secure Wallet
+ */
+Route::middleware(['auth', 'has_seedphrase'])->group(function () {
+    Route::controller(SecureWalletController::class)->group(function () {
+        // Secure Wallet Notice
+        Route::get('/wallet', 'index')->name('secure.wallet');
+        Route::post('/wallet/skip', 'skip')->name('secure.wallet.skip');
+
+        // Copy Seed Phrase
+        Route::get('/seed/phrase', 'show')->name('seed.phrase');
+
+        // Confirm Seed Phrase
+        Route::get('/seed/list', 'edit')->name('secure.wallet.confirm.seed.list');
+        Route::post('/seed/list/update', 'update')->name('secure.wallet.confirm.seed.list.update');
+    });
+});
+
 
 /*
 |--------------------------------------------------------------------------

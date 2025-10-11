@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use App\Events\AccountDeleted;
+use App\Events\AccountFunded;
 use App\Events\CryptoReceived;
 use App\Events\CryptoSent;
 use App\Events\KycSubmitted;
@@ -18,6 +19,7 @@ use App\Listeners\SendPasswordChangeNotification;
 use App\Listeners\SendPasswordResetConfirmation;
 use App\Listeners\SendUserWalletNotification;
 use App\Listeners\SendWelcomeEmailNotification;
+use App\Mail\AccountFundedConfirmation;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Support\ServiceProvider;
 
@@ -48,6 +50,9 @@ class EventServiceProvider extends ServiceProvider
         CryptoReceived::class => [
             SendCryptoReceivedNotifications::class,
         ],
+        AccountFunded::class => [
+            AccountFundedConfirmation::class,
+        ]
     ];
 
     /**

@@ -8,6 +8,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\DeleteAccountRequest;
 use App\Http\Requests\UpdatePasswordRequest;
 use App\Http\Requests\UpdateProfileRequest;
+use App\Http\Requests\UpdateTradingStatusRequest;
 use App\Services\ProfileService;
 use App\Services\UserSessionService;
 use Illuminate\Http\Request;
@@ -48,6 +49,17 @@ class ManageUserProfileController extends Controller
         event(new PasswordUpdated($user));
 
         return back()->with('success', 'Your password has been updated successfully.');
+    }
+
+    public function updateTradingStatus(UpdateTradingStatusRequest $request)
+    {
+        $user = $request->user();
+
+        $user->profile->update([
+            'trading_status' => $request->status
+        ]);
+
+        return back();
     }
 
     public function destroy(DeleteAccountRequest $request)

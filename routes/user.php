@@ -34,6 +34,7 @@ Route::prefix('user')
                 Route::get('/', 'index')->name('index');
                 Route::post('/update/profile', 'updateProfile')->name('update.profile');
                 Route::put('/reset/password', 'resetPassword')->name('reset.password');
+                Route::put('/update/trading/status', 'updateTradingStatus')->name('update.trading.status');
                 Route::delete('/delete/profile', 'destroy')->name('destroy');
             });
 
@@ -76,11 +77,8 @@ Route::prefix('user')
             ->controller(ManageUserTradeController::class)
             ->group(function () {
             Route::get('/', 'index')->name('index');
-            Route::get('{symbol}/{type}', 'show')->name('show');
-            Route::post('{symbol}/{type}', 'process')->name('submit');
-            Route::post('confirm-buy-payment', 'buyCoin')->name('confirm.payment.buy');
-            Route::post('confirm-sell-payment', 'sellCoin')->name('confirm.payment.sell');
-            Route::post('convert-amount', 'convert')->name('convert.amount');
+            Route::post('/fund', 'fundAccount')->name('fund.account');
+            Route::post('/withdraw', 'withdrawAccount')->name('withdraw.account');
         });
 
         // Send Crypto

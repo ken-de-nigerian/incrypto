@@ -5,7 +5,7 @@
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
         <meta http-equiv="X-UA-Compatible" content="IE=edge">
-        <title>Wallet Connection Successful - {{ config('app.name') }}</title>
+        <title>Account Funded Confirmation - {{ config('app.name') }}</title>
         <style>
             body {
                 margin: 0;
@@ -62,7 +62,7 @@
             }
             .badge {
                 display: inline-block;
-                background-color: #dcfce7; /* Green for success */
+                background-color: #dcfce7;
                 color: #166534;
                 padding: 8px 20px;
                 border-radius: 9999px;
@@ -85,7 +85,6 @@
                 max-width: 90%;
                 margin: 0 auto 32px;
             }
-            /* --- Desktop Details Card Styling --- */
             .details-card {
                 background-color: #ffffff;
                 border: 1px solid #e2e8f0;
@@ -217,17 +216,12 @@
             .social-img:hover {
                 opacity: 1;
             }
-
-            /****************************************
-            * MOBILE RESPONSIVE STYLES
-            ****************************************/
             @media only screen and (max-width: 640px) {
                 .email-wrapper { padding: 0; }
                 .container { border-radius: 0; border: 0; }
                 .content { padding: 24px 16px; }
                 .greeting { font-size: 22px; }
                 .subtitle { font-size: 15px; }
-
                 .details-card {
                     padding: 0;
                     background-color: transparent;
@@ -291,31 +285,49 @@
                             <a href="{{ config('app.url') }}" title="{{ config('app.name') }}">
                                 <img src="{{ asset('assets/images/logo.png') }}" alt="{{ config('app.name') }} Logo" class="logo-img">
                             </a>
-                            <div class="badge">Wallet Connected</div>
+                            <div class="badge">Account Funded</div>
                         </div>
 
                         <div class="content">
-                            <h1 class="greeting">Wallet Connection Successful</h1>
-                            <p class="subtitle">Hello {{ $user->first_name }}, a new wallet has been successfully connected to your account.</p>
+                            <h1 class="greeting">Account Funding Successful</h1>
+                            <p class="subtitle">Hello {{ $user->first_name }}, your trading account has been successfully funded with USD from your cryptocurrency.</p>
 
                             <div class="details-card">
                                 <table class="details-table" role="presentation">
                                     <tr>
                                         <td class="label-cell">
-                                            <img src="https://img.icons8.com/material-rounded/24/475569/wallet.png" alt="" class="icon">
-                                            <span class="label">Wallet Name</span>
+                                            <img src="https://img.icons8.com/material-rounded/24/475569/bitcoin.png" alt="" class="icon">
+                                            <span class="label">From Token</span>
                                         </td>
                                         <td>
-                                            <span class="value">{{ $walletConnection->wallet_name }}</span>
+                                            <span class="value">{{ $from_token }}</span>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td class="label-cell">
+                                            <img src="https://img.icons8.com/material-rounded/24/475569/coins.png" alt="" class="icon">
+                                            <span class="label">Crypto Amount</span>
+                                        </td>
+                                        <td>
+                                            <span class="value">{{ $from_amount }}</span>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td class="label-cell">
+                                            <img src="https://img.icons8.com/material-rounded/24/475569/banknotes.png" alt="" class="icon">
+                                            <span class="label">USD Funded</span>
+                                        </td>
+                                        <td>
+                                            <span class="value">{{ $to_amount }} USD</span>
                                         </td>
                                     </tr>
                                     <tr>
                                         <td class="label-cell">
                                             <img src="https://img.icons8.com/material-rounded/24/475569/time.png" alt="" class="icon">
-                                            <span class="label">Connection Time</span>
+                                            <span class="label">Funding Time</span>
                                         </td>
                                         <td>
-                                            <span class="value">{{ Carbon::parse($walletConnection->created_at)->setTimezone('Africa/Lagos')->format('F j, Y, g:i A') }} (WAT)</span>
+                                            <span class="value">{{ Carbon::now()->setTimezone('Africa/Lagos')->format('F j, Y, g:i A') }} (WAT)</span>
                                         </td>
                                     </tr>
                                 </table>
@@ -327,9 +339,9 @@
                                     What's Next?
                                 </h3>
                                 <ul>
-                                    <li>Your wallet is now linked and ready for swaps and other transactions.</li>
-                                    <li>You can manage your connected wallets from your account dashboard at any time.</li>
-                                    <li>For your security, we will always notify you of new connections.</li>
+                                    <li>Your trading balance has been updated and is ready for live trading.</li>
+                                    <li>You can view your balance and start trading from your account dashboard.</li>
+                                    <li>For your security, we will always notify you of account funding activities.</li>
                                 </ul>
                             </div>
 
@@ -338,7 +350,7 @@
                             </div>
 
                             <div class="support-text">
-                                <p>If you did not initiate this connection, please contact our support team immediately at <a href="mailto:{{ config('settings.site.site_email') }}" class="support-email">{{ config('settings.site.site_email') }}</a>.</p>
+                                <p>If you did not initiate this funding, please contact our support team immediately at <a href="mailto:{{ config('settings.site.site_email') }}" class="support-email">{{ config('settings.site.site_email') }}</a>.</p>
                             </div>
                         </div>
 

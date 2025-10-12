@@ -7,9 +7,8 @@ use App\Http\Requests\ConfirmSeedPhraseRequest;
 use Carbon\Carbon;
 use Exception;
 use FurqanSiddiqui\BIP39\BIP39;
-use FurqanSiddiqui\BIP39\Exception\MnemonicException;
 use FurqanSiddiqui\BIP39\Exception\WordListException;
-use FurqanSiddiqui\BIP39\Wordlist;
+use FurqanSiddiqui\BIP39\WordList;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -72,18 +71,24 @@ class SecureWalletController extends Controller
     /**
      * Show the page where the user is asked to write down their seed phrase.
      * @param Request $request
-     * @return Response
-     * @throws WordListException
-     * @throws MnemonicException
+     * @return RedirectResponse|Response
      */
-    public function show(Request $request)
+    public function show(Request $request): RedirectResponse|Response
     {
         // Check if the phrase is already stored in session
         if (!$request->session()->has('seed_phrase_words')) {
-            $mnemonic = BIP39::Generate(
-                12,
-                Wordlist::English()
-            );
+
+            try {
+                $wordlist = Wordlist::English();
+                $bip39 = new BIP39(12, $wordlist);
+                $mnemonic = $bip39->Generate();
+            } catch (WordListException $e) {
+                Log::error('BIP39 Wordlist failed to load/read: ' . $e->getMessage());
+                return redirect()->back()->with('error', 'Critical wallet generation error: Wordlist failed to load. Please contact support.');
+            } catch (Exception $e) {
+                Log::error('BIP39 Mnemonic generation failed: ' . $e->getMessage());
+                return redirect()->back()->with('error', 'Critical wallet generation error. Please contact support.');
+            }
 
             // Store the phrase in the session
             $request->session()->put('seed_phrase_words', $mnemonic->words);

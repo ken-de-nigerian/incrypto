@@ -48,7 +48,7 @@
 
             <p class="text-muted-foreground text-xs mb-2 sm:mb-3">Share this link with friends to build your passive income stream.</p>
 
-            <button class="btn-crypto w-full py-2.5 sm:py-3 text-sm sm:text-base"
+            <button class="btn-crypto w-full py-2.5 sm:py-3 text-sm sm:text-base cursor-pointer"
                     :class="{ 'bg-green-500 hover:bg-green-600': copied }"
                     @click="copyLink">
                 {{ copied ? 'Link Copied!' : 'Copy Link' }}

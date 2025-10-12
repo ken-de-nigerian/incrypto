@@ -277,7 +277,7 @@
 
                             <div class="button-container">
                                 <p class="cta-title">Check your progress and share your link!</p>
-                                <a href="{{ route('user.dashboard', ['tab' => 'referrals']) }}" class="button">View Your Referrals Dashboard</a>
+                                <a href="{{ route('user.dashboard') }}" class="button">View Your Referrals Dashboard</a>
                             </div>
 
                         </div>

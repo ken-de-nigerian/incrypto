@@ -21,7 +21,14 @@ class UserDashboardController extends Controller
     public function __invoke(Request $request) {
         return Inertia::render('User/Dashboard', [
             'wallet_balances' => Inertia::defer(fn () => $this->walletBalances()),
+            'referred_users' => Inertia::defer(fn () => $this->referredUsers())
         ]);
+    }
+
+    public function referredUsers()
+    {
+        $user = Auth::user();
+        return $user->referrals->select(['id', 'first_name', 'last_name', 'created_at']);
     }
 
     private function walletBalances()

@@ -119,4 +119,9 @@ class User extends Authenticatable
         $referralCode = optional($this->profile)->referral_code ?? '';
         return route('register', ['ref' => $referralCode]);
     }
+
+    public function referrals()
+    {
+        return $this->hasMany(User::class, 'ref_by', 'id');
+    }
 }

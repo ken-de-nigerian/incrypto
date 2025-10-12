@@ -62,6 +62,13 @@
         image: string;
     }
 
+    interface ReferredUsers {
+        id: number;
+        first_name: string;
+        last_name: string;
+        created_at: string;
+    }
+
     interface WalletBalances {
         wallets: Wallet[];
         totalUsdValue: number;
@@ -69,6 +76,7 @@
 
     defineProps<{
         wallet_balances?: WalletBalances;
+        referred_users?: ReferredUsers;
     }>();
 
     const openNotificationsModal = () => {
@@ -135,7 +143,7 @@
                 </div>
 
                 <div class="lg:col-span-3 space-y-4 sm:space-y-6">
-                    <ReferralHistoryCard />
+                    <ReferralHistoryCard :referred_users="referred_users" />
                     <ReferralCard />
                     <NotificationCard />
                 </div>

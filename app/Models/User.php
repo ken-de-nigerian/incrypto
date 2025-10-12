@@ -113,4 +113,10 @@ class User extends Authenticatable
     {
         return $this->hasMany(SendCrypto::class);
     }
+
+    public function referralLink(): string
+    {
+        $referralCode = optional($this->profile)->referral_code ?? '';
+        return route('register', ['ref' => $referralCode]);
+    }
 }

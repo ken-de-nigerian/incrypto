@@ -33,7 +33,7 @@ class MailPasswordResetConfirmation extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'Password Changed Successfully - ' . config('app.name'),
+            subject: 'Password Changed Successfully',
         );
     }
 

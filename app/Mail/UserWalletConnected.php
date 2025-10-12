@@ -32,7 +32,7 @@ class UserWalletConnected extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'A New Wallet Has Been Connected to Your Account - ' . config('app.name'),
+            subject: 'A New Wallet Has Been Connected to Your Account',
         );
     }
 

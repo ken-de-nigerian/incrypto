@@ -2,6 +2,8 @@
 
 use App\Http\Middleware\HandleInertiaRequests;
 use App\Http\Middleware\RedirectAuthenticated;
+use App\Http\Middleware\RedirectIfHasNoSeedPhrase;
+use App\Http\Middleware\RedirectIfHasSeedPhrase;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -24,6 +26,8 @@ return Application::configure(basePath: dirname(__DIR__))
         // Middleware aliases
         $middleware->alias([
             'redirect.authenticated' => RedirectAuthenticated::class,
+            'no.seedphrase' => RedirectIfHasNoSeedPhrase::class,
+            'has.seedphrase' => RedirectIfHasSeedPhrase::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {

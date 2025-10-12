@@ -50,6 +50,7 @@ return [
     */
     'site' => [
         'site_email' => env('SITE_EMAIL', 'nwanerick14489@gmail.com'),
+        'referral_bonus' => env('REFERRAL_BONUS', '5'),
     ],
 
     /*

@@ -91,6 +91,7 @@ class SocialLoginService
         UserProfile::create([
             'user_id' => $user->id,
             'profile_photo_path' => $socialUser->getAvatar(),
+            'referral_code' => $this->generateUniqueReferralCode(),
         ]);
 
         // Fire the Registered event so a listener can handle the welcome email
@@ -111,5 +112,23 @@ class SocialLoginService
     protected function sanitizeName(string $name): string
     {
         return trim(preg_replace('/\s+/', ' ', $name)) ?: 'Unknown';
+    }
+
+    /**
+     * Generate a unique referral code.
+     *
+     * @param int $length The desired length of the code.
+     * @return string
+     */
+    function generateUniqueReferralCode(int $length = 8): string
+    {
+        do {
+            // Generate a random, mixed-case alphanumeric string
+            $code = Str::random($length);
+
+            // Check if the code already exists in the database
+        } while (UserProfile::where('referral_code', $code)->exists());
+
+        return $code;
     }
 }

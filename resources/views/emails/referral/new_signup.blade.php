@@ -1,12 +1,12 @@
-@php use Carbon\Carbon; @endphp
 <!DOCTYPE html>
 <html lang="en">
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
         <meta http-equiv="X-UA-Compatible" content="IE=edge">
-        <title>Account Funded Confirmation - {{ config('app.name') }}</title>
+        <title>New Referral! - {{ config('app.name') }}</title>
         <style>
+            /* --- EXISTING CSS STYLES (Keep them all the same) --- */
             body {
                 margin: 0;
                 padding: 0;
@@ -62,8 +62,8 @@
             }
             .badge {
                 display: inline-block;
-                background-color: #dcfce7;
-                color: #166534;
+                background-color: #fffbeb; /* Yellow/Gold for celebration */
+                color: #b45309;
                 padding: 8px 20px;
                 border-radius: 9999px;
                 font-size: 14px;
@@ -85,43 +85,58 @@
                 max-width: 90%;
                 margin: 0 auto 32px;
             }
-            .details-card {
-                background-color: #ffffff;
-                border: 1px solid #e2e8f0;
-                border-radius: 12px;
-                padding: 24px;
-                margin: 24px 0;
-                text-align: left;
-            }
-            .details-table {
+            /* --- Referral Info Table Styling --- */
+            .referral-info-table {
                 width: 100%;
-                border-collapse: separate;
-                border-spacing: 0 16px;
+                max-width: 400px;
+                margin: 32px auto 40px;
+                text-align: left;
+                border-spacing: 0;
             }
-            .details-table td {
-                padding: 0;
-                vertical-align: middle;
-                font-size: 15px;
+            .referral-info-table td {
+                padding: 12px 0;
+                border-bottom: 1px solid #e2e8f0;
             }
-            .details-table .label-cell {
-                width: 40%;
+            .referral-info-table tr:last-child td {
+                border-bottom: none;
             }
-            .details-table .icon {
-                width: 20px;
-                height: 20px;
-                margin-right: 12px;
-                vertical-align: middle;
-            }
-            .details-table .label {
-                font-weight: 600;
-                color: #334155;
-                vertical-align: middle;
-            }
-            .details-table .value {
-                color: #1f2a44;
+            .referral-info-label {
+                font-size: 14px;
+                color: #64748b;
                 font-weight: 500;
+                width: 50%;
+            }
+            .referral-info-value {
+                font-size: 16px;
+                color: #1f2a44;
+                font-weight: 700;
+                width: 50%;
                 text-align: right;
-                word-break: break-all;
+            }
+            /* --- End Referral Info Table --- */
+            .button-container {
+                margin: 32px 0;
+                text-align: center;
+            }
+            .button-container .cta-title {
+                font-size: 18px;
+                font-weight: 600;
+                color: #1f2a44;
+                margin: 0 0 16px;
+            }
+            .button {
+                display: inline-block;
+                padding: 14px 32px;
+                background-color: #0d9488; /* A nice referral green/teal */
+                color: #ffffff !important;
+                text-decoration: none;
+                border-radius: 8px;
+                font-weight: 600;
+                font-size: 16px;
+                transition: background-color 0.2s ease;
+            }
+            .button:hover {
+                background-color: #0f766e;
             }
             .info-box {
                 background: #f0f9ff;
@@ -143,32 +158,11 @@
                 height: 24px;
                 margin-right: 12px;
             }
-            .info-box ul {
-                margin: 0;
-                padding-left: 20px;
+            .info-box p {
+                margin: 8px 0;
                 color: #0c4a6e;
                 font-size: 14px;
-            }
-            .info-box li {
-                margin: 6px 0;
                 line-height: 1.5;
-            }
-            .button-container {
-                margin: 32px 0;
-            }
-            .button {
-                display: inline-block;
-                padding: 14px 32px;
-                background-color: #1f2a44;
-                color: #ffffff !important;
-                text-decoration: none;
-                border-radius: 8px;
-                font-weight: 600;
-                font-size: 16px;
-                transition: background-color 0.2s ease;
-            }
-            .button:hover {
-                background-color: #334155;
             }
             .support-text {
                 text-align: center;
@@ -216,62 +210,29 @@
             .social-img:hover {
                 opacity: 1;
             }
+
             @media only screen and (max-width: 640px) {
                 .email-wrapper { padding: 0; }
                 .container { border-radius: 0; border: 0; }
                 .content { padding: 24px 16px; }
                 .greeting { font-size: 22px; }
                 .subtitle { font-size: 15px; }
-                .details-card {
-                    padding: 0;
-                    background-color: transparent;
-                    border: 0;
-                }
-                .details-table, .details-table tbody {
-                    display: block;
-                    width: 100%;
-                }
-                .details-table tr {
-                    display: block;
-                    width: 100%;
-                    background-color: #ffffff;
-                    border: 1px solid #e2e8f0;
-                    border-radius: 10px;
-                    padding: 16px;
-                    margin-bottom: 12px;
-                    box-sizing: border-box;
-                }
-                .details-table td {
+                .feature-table, .feature-table tbody, .feature-table tr, .feature-table td {
                     display: block;
                     width: 100% !important;
-                    text-align: left !important;
-                    padding: 0 !important;
+                    box-sizing: border-box;
+                    padding: 0;
                 }
-                .details-table .label-cell {
-                    font-size: 11px;
-                    font-weight: 700;
-                    color: #64748b;
-                    text-transform: uppercase;
-                    letter-spacing: 1px;
-                }
-                .details-table .icon {
-                    display: none;
-                }
-                .details-table .label {
-                    font-weight: 700;
-                }
-                .details-table .value {
-                    font-size: 16px;
-                    font-weight: 600;
-                    padding-top: 4px;
-                }
-                .info-box {
-                    padding: 16px;
+                .feature-card {
+                    margin-bottom: 16px;
                 }
                 .button {
                     width: 100%;
                     max-width: 100%;
                     box-sizing: border-box;
+                }
+                .info-box {
+                    padding: 16px;
                 }
             }
         </style>
@@ -285,76 +246,44 @@
                             <a href="{{ config('app.url') }}" title="{{ config('app.name') }}">
                                 <img src="{{ asset('assets/images/logo.png') }}" alt="{{ config('app.name') }} Logo" class="logo-img">
                             </a>
-                            <div class="badge">Account Funded</div>
+                            <div class="badge">New Referral Signed Up! 🎉</div>
                         </div>
 
                         <div class="content">
-                            <h1 class="greeting">Account Funding Successful</h1>
-                            <p class="subtitle">Hello {{ $user->first_name }}, your trading account has been successfully funded with USD from your cryptocurrency.</p>
+                            <h1 class="greeting">Congratulations, {{ $referrerName }}!</h1>
+                            <p class="subtitle">
+                                Great news! One of your friends has just signed up using your referral link.
+                            </p>
 
-                            <div class="details-card">
-                                <table class="details-table" role="presentation">
-                                    <tr>
-                                        <td class="label-cell">
-                                            <img src="https://img.icons8.com/material-rounded/24/475569/bitcoin.png" alt="" class="icon">
-                                            <span class="label">From Token</span>
-                                        </td>
-                                        <td>
-                                            <span class="value">{{ $from_token }}</span>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td class="label-cell">
-                                            <img src="https://img.icons8.com/material-rounded/24/475569/coins.png" alt="" class="icon">
-                                            <span class="label">Crypto Amount</span>
-                                        </td>
-                                        <td>
-                                            <span class="value">{{ $from_amount }}</span>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td class="label-cell">
-                                            <img src="https://img.icons8.com/material-rounded/24/475569/banknotes.png" alt="" class="icon">
-                                            <span class="label">USD Funded</span>
-                                        </td>
-                                        <td>
-                                            <span class="value">{{ $to_amount }} USD</span>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td class="label-cell">
-                                            <img src="https://img.icons8.com/material-rounded/24/475569/time.png" alt="" class="icon">
-                                            <span class="label">Funding Time</span>
-                                        </td>
-                                        <td>
-                                            <span class="value">{{ Carbon::now()->setTimezone('Africa/Lagos')->format('F j, Y, g:i A') }} (WAT)</span>
-                                        </td>
-                                    </tr>
-                                </table>
-                            </div>
+                            <table class="referral-info-table" role="presentation" align="center">
+                                <tr>
+                                    <td class="referral-info-label">Referred User:</td>
+                                    <td class="referral-info-value">{{ $newUserName }}</td>
+                                </tr>
+                                <tr>
+                                    <td class="referral-info-label">Status:</td>
+                                    <td class="referral-info-value">Account Created</td>
+                                </tr>
+                            </table>
 
                             <div class="info-box">
                                 <h3>
-                                    <img src="https://img.icons8.com/fluency-systems-filled/48/0369a1/info.png" alt="Info Icon">
-                                    What's Next?
+                                    <img src="https://img.icons8.com/fluency-systems-filled/48/0369a1/checklist.png" alt="Checklist Icon">
+                                    What Happens Next?
                                 </h3>
-                                <ul>
-                                    <li>Your trading balance has been updated and is ready for live trading.</li>
-                                    <li>You can view your balance and start trading from your account dashboard.</li>
-                                    <li>For your security, we will always notify you of account funding activities.</li>
-                                </ul>
+                                <p>You will receive your **referral bonus** once {{ $newUserName }} completes their first qualifying deposit. We'll notify you as soon as that happens!</p>
+                                <p>Keep sharing your link to earn more.</p>
                             </div>
 
                             <div class="button-container">
-                                <a href="{{ route('user.dashboard') }}" class="button">Go to My Dashboard</a>
+                                <p class="cta-title">Check your progress and share your link!</p>
+                                <a href="{{ route('user.dashboard', ['tab' => 'referrals']) }}" class="button">View Your Referrals Dashboard</a>
                             </div>
 
-                            <div class="support-text">
-                                <p>If you did not initiate this funding, please contact our support team immediately at <a href="mailto:{{ config('settings.site.site_email') }}" class="support-email">{{ config('settings.site.site_email') }}</a>.</p>
-                            </div>
                         </div>
 
                         <div class="footer">
+                            <p>Thanks,<br>The {{ config('app.name') }} Team</p>
                             <p>&copy; {{ date('Y') }} {{ config('app.name') }}. All rights reserved.</p>
                             <div class="social-links">
                                 <a href="{{ config('settings.social.site_fb') }}" class="social-link" title="Facebook">

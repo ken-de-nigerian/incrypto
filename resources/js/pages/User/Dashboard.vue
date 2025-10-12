@@ -4,7 +4,7 @@
     import ChartCard from '@/components/layout/user/dashboard/ChartCard.vue';
     import CryptoListCard from '@/components/layout/user/dashboard/CryptoListCard.vue';
     import QuickActionsCard from '@/components/layout/user/dashboard/QuickActionsCard.vue';
-    import LeaderboardCard from '@/components/layout/user/dashboard/LeaderboardCard.vue';
+    import ReferralHistoryCard from '@/components/layout/user/dashboard/ReferralHistoryCard.vue';
     import ReferralCard from '@/components/layout/user/dashboard/ReferralCard.vue';
     import NotificationCard from '@/components/layout/user/dashboard/NotificationCard.vue';
     import NotificationsModal from '@/components/utilities/NotificationsModal.vue';
@@ -135,7 +135,7 @@
                 </div>
 
                 <div class="lg:col-span-3 space-y-4 sm:space-y-6">
-                    <LeaderboardCard />
+                    <ReferralHistoryCard />
                     <ReferralCard />
                     <NotificationCard />
                 </div>

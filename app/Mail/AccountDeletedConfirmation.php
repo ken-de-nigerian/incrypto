@@ -29,7 +29,7 @@ class AccountDeletedConfirmation extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'Account Deletion Confirmation - ' . config('app.name'),
+            subject: 'Account Deletion Confirmation',
         );
     }
 

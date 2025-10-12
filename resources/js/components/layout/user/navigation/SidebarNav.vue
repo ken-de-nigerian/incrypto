@@ -2,7 +2,6 @@
     import { usePage } from '@inertiajs/vue3';
     import {
         LayoutDashboard,
-        CandlestickChart,
         Wallet,
         LifeBuoy,
         Bell,
@@ -11,7 +10,7 @@
         LogOut,
         Send,
         Download,
-        Repeat,
+        Repeat, Users
     } from 'lucide-vue-next';
     import { route } from 'ziggy-js';
     import TextLink from '@/components/TextLink.vue';
@@ -27,11 +26,11 @@
 
     const navigation = [
         { name: "Dashboard", href: "user.dashboard", icon: LayoutDashboard },
-        { name: "Trade", href: "user.trade.index", icon: CandlestickChart },
         { name: "Send", href: "user.send.index", icon: Send },
         { name: "Receive", href: "user.receive.index", icon: Download },
         { name: "Swap", href: "user.swap.index", icon: Repeat },
         { name: "Wallet Connect", href: "user.wallet.index", icon: Wallet },
+        { name: "Referrals", href: "user.rewards.index", icon: Users },
     ];
 
     const bottomNavigation = [

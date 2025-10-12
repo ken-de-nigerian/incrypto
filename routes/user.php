@@ -7,7 +7,6 @@ use App\Http\Controllers\User\ManageUserReceiveCryptoController;
 use App\Http\Controllers\User\ManageUserRewardsController;
 use App\Http\Controllers\User\ManageUserSendCryptoController;
 use App\Http\Controllers\User\ManageUserSwapCryptoController;
-use App\Http\Controllers\User\ManageUserTradeController;
 use App\Http\Controllers\User\ManageUserTransactionController;
 use App\Http\Controllers\User\ManageUserWalletConnectController;
 use App\Http\Controllers\User\UserDashboardController;
@@ -20,7 +19,7 @@ use Illuminate\Support\Facades\Route;
 */
 Route::prefix('user')
     ->name('user.')
-    ->middleware(['auth', 'auth.session', 'can:access-user-dashboard'])
+    ->middleware(['auth', 'auth.session', 'no.seedphrase', 'can:access-user-dashboard'])
     ->group(function () {
 
         // Dashboard
@@ -69,16 +68,6 @@ Route::prefix('user')
             Route::get('/', 'index')->name('index');
             Route::get('create', 'create')->name('create');
             Route::post('store', 'store')->name('store');
-        });
-
-        // Trade Management
-        Route::prefix('trade')
-            ->name('trade.')
-            ->controller(ManageUserTradeController::class)
-            ->group(function () {
-            Route::get('/', 'index')->name('index');
-            Route::post('/fund', 'fundAccount')->name('fund.account');
-            Route::post('/withdraw', 'withdrawAccount')->name('withdraw.account');
         });
 
         // Send Crypto

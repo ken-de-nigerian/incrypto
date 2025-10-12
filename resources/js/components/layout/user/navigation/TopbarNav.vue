@@ -5,7 +5,6 @@
         Menu,
         Search,
         X,
-        CandlestickChart,
         Wallet,
         LifeBuoy,
         Settings,
@@ -27,7 +26,7 @@
         Copy,
         Check,
         Monitor,
-        Sun
+        Sun, Users
     } from 'lucide-vue-next';
     import TextLink from '@/components/TextLink.vue';
     import NotificationsModal from '@/components/utilities/NotificationsModal.vue';
@@ -74,8 +73,8 @@
         { name: "Send", href: "user.send.index", icon: Send },
         { name: "Receive", href: "user.receive.index", icon: Download },
         { name: "Swap", href: "user.swap.index", icon: Repeat },
-        { name: "Trade", href: "user.trade.index", icon: CandlestickChart },
         { name: "Wallet Connect", href: "user.wallet.index", icon: Wallet },
+        { name: "Referrals", href: "user.rewards.index", icon: Users },
     ];
 
     const accountLinks = [

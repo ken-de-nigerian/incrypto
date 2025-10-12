@@ -10,15 +10,16 @@
     "license": "MIT",
     "require": {
         "php": "^8.2",
+        "furqansiddiqui/bip39-mnemonic-php": "^0.1.7",
         "inertiajs/inertia-laravel": "^2.0",
+        "intervention/image-laravel": "^1.5",
+        "jenssegers/agent": "^2.6",
         "laravel/framework": "^12.0",
+        "laravel/socialite": "^5.19",
         "laravel/tinker": "^2.10.1",
-        "tightenco/ziggy": "^2.4",
         "mailjet/laravel-mailjet": "^3.1",
         "phpmailer/phpmailer": "^6.9",
-        "laravel/socialite": "^5.19",
-        "intervention/image-laravel": "^1.5",
-        "jenssegers/agent": "^2.6"
+        "tightenco/ziggy": "^2.4"
     },
     "require-dev": {
         "fakerphp/faker": "^1.23",

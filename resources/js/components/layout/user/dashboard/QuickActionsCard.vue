@@ -13,16 +13,15 @@
 </template>
 
 <script setup lang="ts">
-    import {
-        Send,
-        Download,
-        Repeat,
-        CandlestickChart,
-        Wallet,
-        Users,
-        CreditCard,
-        ShieldCheck
-    } from 'lucide-vue-next';
+import {
+    Send,
+    Download,
+    Repeat,
+    Wallet,
+    Users,
+    CreditCard,
+    ShieldCheck, SettingsIcon
+} from 'lucide-vue-next';
     import TextLink from '@/components/TextLink.vue';
     import { route } from 'ziggy-js';
 
@@ -30,10 +29,10 @@
         { name: "Send", href: "user.send.index", icon: Send },
         { name: "Receive", href: "user.receive.index", icon: Download },
         { name: "Swap", href: "user.swap.index", icon: Repeat },
-        { name: "Trade", href: "user.trade.index", icon: CandlestickChart },
         { name: "Connect", href: "user.wallet.index", icon: Wallet },
         { name: "Referrals", href: "user.rewards.index", icon: Users },
         { name: "Payments", href: "user.transactions.index", icon: CreditCard },
         { name: "KYC", href: "user.kyc.index", icon: ShieldCheck },
+        { name: "Settings", href: "user.profile.index", icon: SettingsIcon },
     ];
 </script>

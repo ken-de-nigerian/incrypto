@@ -3,27 +3,26 @@
 namespace App\Mail;
 
 use App\Models\User;
-use App\Models\WalletConnect;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
 
-class AdminWalletConnected extends Mailable
+class ReferralNotificationMail extends Mailable
 {
     use Queueable, SerializesModels;
 
-    public User $user;
-    public WalletConnect $walletConnection;
+    public User $referrer;
+    public User $newUser;
 
     /**
      * Create a new message instance.
      */
-    public function __construct(User $user, WalletConnect $walletConnection)
+    public function __construct(User $referrer, User $newUser)
     {
-        $this->user = $user;
-        $this->walletConnection = $walletConnection;
+        $this->referrer = $referrer;
+        $this->newUser = $newUser;
     }
 
     /**
@@ -32,7 +31,7 @@ class AdminWalletConnected extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'A New Wallet Was Connected',
+            subject: 'You have a new referred user!',
         );
     }
 
@@ -42,11 +41,11 @@ class AdminWalletConnected extends Mailable
     public function content(): Content
     {
         return new Content(
-            view: 'emails.wallet-connect.admin-wallet-connected',
+            view: 'emails.referral.new_signup',
             with: [
-                'user' => $this->user,
-                'walletConnection' => $this->walletConnection,
-            ]
+                'referrerName' => $this->referrer->first_name,
+                'newUserName' => $this->newUser->first_name ?? $this->newUser->email,
+            ],
         );
     }
 }

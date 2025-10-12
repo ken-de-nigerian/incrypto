@@ -54,6 +54,8 @@ class HandleInertiaRequests extends Middleware
                     'user' => $user,
                     'notifications' => $user ? $user->notifications()->latest()->get() : [],
                     'notification_count' => $user ? $user->unreadNotifications()->count() : 0,
+                    'referral_link' => $user ? $user->referralLink() : null,
+                    'referral_bonus' => config('settings.site.referral_bonus'),
                 ];
             },
             'ziggy' => [

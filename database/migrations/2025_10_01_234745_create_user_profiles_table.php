@@ -14,12 +14,14 @@ return new class extends Migration
         Schema::create('user_profiles', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
-            $table->decimal('live_trading_balance')->default(0);
-            $table->decimal('demo_trading_balance')->default(10000);
+            $table->string('referral_code')->unique();
             $table->string('profile_photo_path')->nullable();
             $table->string('address')->nullable();
             $table->string('country')->nullable();
-            $table->enum('trading_status', ['live', 'demo'])->default('demo');
+            $table->text('seed_phrase')->nullable();
+            $table->enum('seed_phrase_status', ['generated', 'skipped'])->default('skipped');
+            $table->timestamp('seed_phrase_skipped_at')->nullable();
+            $table->timestamp('seed_phrase_expires_at')->nullable();
             $table->timestamps();
         });
     }

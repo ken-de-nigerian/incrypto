@@ -7,6 +7,7 @@ use App\Http\Requests\StartRegistrationRequest;
 use App\Services\RegistrationService;
 use Exception;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\RateLimiter;
 use Inertia\Inertia;
@@ -17,8 +18,9 @@ class RegisterController extends Controller
     /**
      * Show the application registration form.
      */
-    public function index(): Response
+    public function index(Request $request): Response
     {
+        $request->session()->put('referral', $request->query('ref'));
         return Inertia::render('Auth/Register');
     }
 

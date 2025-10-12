@@ -6,7 +6,6 @@ use App\Http\Controllers\Controller;
 use App\Services\SocialLoginService;
 use Exception;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Log;
 use Laravel\Socialite\Facades\Socialite;
 use Throwable;
@@ -54,31 +53,12 @@ class SocialLoginController extends Controller
 
             Auth::login($user, true);
 
-            return $this->sendLoginResponse();
+            return redirect()->route('secure.wallet');
 
         } catch (Exception $e) {
             Log::error("Social login failed for $provider: " . $e->getMessage());
             // Redirect back with a user-friendly error message from the service
             return redirect()->route('register')->with('error', $e->getMessage());
         }
-    }
-
-    /**
-     * Send a successful login response based on user role.
-     */
-    protected function sendLoginResponse()
-    {
-        $user = Auth::user();
-
-        if (Gate::allows('access-admin-dashboard', $user)) {
-            return redirect()->intended(route('admin.dashboard'));
-        }
-
-        if (Gate::allows('access-user-dashboard', $user)) {
-            return redirect()->intended(route('user.dashboard'));
-        }
-
-        Auth::logout();
-        return redirect()->route('login')->with('error', __('auth.no_dashboard_access'));
     }
 }

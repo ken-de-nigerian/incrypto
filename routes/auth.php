@@ -61,21 +61,15 @@ Route::middleware(['guest', 'redirect.authenticated'])->group(function () {
  */
 Route::prefix('secure')
     ->name('secure.')
-    ->middleware(['auth', 'auth.session', 'has_seedphrase'])
+    ->middleware(['auth', 'auth.session', 'has.seedphrase'])
     ->controller(SecureWalletController::class)
     ->group(function () {
-        // Secure Wallet Notice
         Route::get('/', 'index')->name('wallet');
         Route::post('/wallet/skip', 'skip')->name('wallet.skip');
-
-        // Copy Seed Phrase
         Route::get('/wallet/phrase', 'show')->name('wallet.phrase.show');
-
-        // Confirm Seed Phrase
         Route::get('/confirm/phrase', 'confirm')->name('wallet.phrase.confirm');
         Route::post('/confirm/phrase/update', 'update')->name('wallet.phrase.confirm.update');
     });
-
 
 /*
 |--------------------------------------------------------------------------

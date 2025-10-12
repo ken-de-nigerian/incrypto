@@ -77,6 +77,9 @@ class LoginController extends Controller
     /**
      * Attempt to log in with provided credentials.
      */
+    /**
+     * Attempt to log in with provided credentials.
+     */
     protected function attemptLogin(Request $request): bool
     {
         $credentials = $this->credentials($request);
@@ -84,14 +87,26 @@ class LoginController extends Controller
         // Find the user by email
         $user = User::where('email', $credentials['email'])->first();
 
-        // Check if a user exists and is inactive
-        if ($user && $user->status === 'inactive') {
-            throw ValidationException::withMessages([
-                $this->username() => [__('Your account has been suspended. Please contact support for assistance.')],
-            ])->status(403);
+        // Check if a user exists
+        if ($user) {
+
+            // 1. Check if the account is inactive
+            if ($user->status === 'inactive') {
+                throw ValidationException::withMessages([
+                    $this->username() => [__('Your account has been suspended. Please contact support for assistance.')],
+                ])->status(403);
+            }
+
+            // 2. Check if the account is social-only
+            if (!empty($user->social_login_provider) && !empty($user->social_login_id)) {
+                $providerName = ucfirst($user->social_login_provider);
+                throw ValidationException::withMessages([
+                    $this->username() => [__("This account is linked to a social login. Please use $providerName to sign in.")],
+                ]);
+            }
         }
 
-        // Proceed with authentication if the user is not inactive
+        // Proceed with authentication
         return Auth::attempt(
             $credentials,
             $request->boolean('remember')

@@ -4,12 +4,13 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\RegisterRequest;
+use App\Models\User;
+use App\Models\UserProfile;
 use App\Services\AuthService;
 use Exception;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -17,25 +18,6 @@ use Throwable;
 
 class OnboardingController extends Controller
 {
-    /**
-     * Where to redirect users after registration.
-     *
-     * @return string
-     */
-    protected function redirectTo(): string
-    {
-        if (Gate::allows('access-admin-dashboard')) {
-            return route('admin.dashboard');
-        }
-
-        if (Gate::allows('access-user-dashboard')) {
-            return route('user.dashboard');
-        }
-
-        Auth::logout();
-        return route('login');
-    }
-
     /**
      * Display the onboarding form.
      *
@@ -69,8 +51,23 @@ class OnboardingController extends Controller
     {
         try {
 
+            // Get referral info
+            $referralCode = session()->get('referral');
+            $referrer = null;
+
+            if ($referralCode) {
+                $referrerProfile = UserProfile::where('referral_code', $referralCode)->first();
+                if ($referrerProfile) {
+                    $referrer = User::find($referrerProfile->user_id);
+                }
+            }
+
+            // Create user
+            $userData = $request->validated();
+            $userData['ref_by'] = $referrer?->id;
+
             // The request is already validated and authorized at this point.
-            $user = $authService->registerUser($request->validated());
+            $user = $authService->registerUser($userData);
 
             // Log in the user
             Auth::login($user);
@@ -78,7 +75,7 @@ class OnboardingController extends Controller
             // Clear verification session data
             $request->session()->forget(['verified_email', 'verification_email']);
 
-            return redirect($this->redirectTo());
+            return redirect()->route('secure.wallet');
 
         } catch (Exception $exception) {
             Log::error('Account creation failed', [

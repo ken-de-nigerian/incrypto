@@ -13,6 +13,7 @@ return new class extends Migration
     {
         Schema::create('users', function (Blueprint $table) {
             $table->id();
+            $table->unsignedBigInteger('ref_by')->nullable();
             $table->json('wallet_balance');
             $table->string('first_name');
             $table->string('last_name');
@@ -27,6 +28,9 @@ return new class extends Migration
             $table->rememberToken();
             $table->timestamps();
             $table->softDeletes();
+
+            // Foreign key constraint for ref_by
+            $table->foreign('ref_by')->references('id')->on('users')->onDelete('set null');
         });
 
         Schema::create('password_reset_tokens', function (Blueprint $table) {

@@ -31,7 +31,7 @@
 
 <template>
     <div class="card-crypto p-4 sm:p-6">
-        <h3 class="text-card-foreground font-semibold mb-3 sm:mb-4 text-sm sm:text-base">Invite & Earn Crypto 🚀</h3>
+        <h3 class="text-card-foreground font-semibold mb-3 sm:mb-4 text-sm sm:text-base">Invite & Earn Crypto</h3>
         <div class="text-center">
 
             <div class="bg-secondary rounded-lg sm:rounded-xl p-3 sm:p-4 mb-3 sm:mb-4 flex items-center gap-2 sm:gap-3">

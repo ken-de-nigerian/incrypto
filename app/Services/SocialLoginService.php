@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Events\UserReferred;
 use App\Models\User;
 use App\Models\UserProfile;
 use Exception;
@@ -25,9 +26,9 @@ class SocialLoginService
      * Find an existing user or create a new one.
      * @throws Exception|Throwable
      */
-    public function findOrCreateUser(string $provider, SocialiteUser $socialUser): User
+    public function findOrCreateUser(string $provider, SocialiteUser $socialUser, string $referrerData): User
     {
-        return DB::transaction(function () use ($provider, $socialUser) {
+        return DB::transaction(function () use ($provider, $socialUser, $referrerData) {
             $user = User::where('social_login_id', $socialUser->getId())
                 ->where('social_login_provider', $provider)
                 ->first();
@@ -50,7 +51,7 @@ class SocialLoginService
 
             return $user
                 ? $this->updateUserProvider($user, $provider, $socialUser)
-                : $this->createUser($provider, $socialUser);
+                : $this->createUser($provider, $socialUser, $referrerData);
         });
     }
 
@@ -67,7 +68,7 @@ class SocialLoginService
     /**
      * @throws Exception
      */
-    protected function createUser(string $provider, SocialiteUser $socialUser): User
+    protected function createUser(string $provider, SocialiteUser $socialUser, string $referrerData): User
     {
         $walletBalance = $this->walletService->initializeNewUserWallet();
         if ($walletBalance === false) {
@@ -77,6 +78,7 @@ class SocialLoginService
         [$firstname, $lastname] = $this->extractNames($socialUser);
 
         $user = User::create([
+            'ref_by' => $referrerData ?: null,
             'email' => $socialUser->getEmail(),
             'wallet_balance' => $walletBalance,
             'first_name' => $this->sanitizeName(strtoupper($firstname)),
@@ -96,6 +98,12 @@ class SocialLoginService
 
         // Fire the Registered event so a listener can handle the welcome email
         event(new Registered($user));
+
+        $referrerId = $referrerData;
+        if ($referrerId && $referrer = User::find($referrerId)) {
+            // Dispatch the event ONLY if a referrer exists
+            event(new UserReferred($user, $referrer));
+        }
 
         return $user;
     }

@@ -62,7 +62,7 @@ class OnboardingController extends Controller
                 }
             }
 
-            // Create user
+            // Get referrer data
             $userData = $request->validated();
             $userData['ref_by'] = $referrer?->id;
 
@@ -73,7 +73,7 @@ class OnboardingController extends Controller
             Auth::login($user);
 
             // Clear verification session data
-            $request->session()->forget(['verified_email', 'verification_email']);
+            $request->session()->forget(['verified_email', 'verification_email', 'referral']);
 
             return redirect()->route('secure.wallet');
 

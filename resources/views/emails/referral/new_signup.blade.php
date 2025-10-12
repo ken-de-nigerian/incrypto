@@ -6,7 +6,7 @@
         <meta http-equiv="X-UA-Compatible" content="IE=edge">
         <title>New Referral! - {{ config('app.name') }}</title>
         <style>
-            /* --- EXISTING CSS STYLES (Keep them all the same) --- */
+            /* --- EXISTING CSS STYLES --- */
             body {
                 margin: 0;
                 padding: 0;
@@ -246,7 +246,7 @@
                             <a href="{{ config('app.url') }}" title="{{ config('app.name') }}">
                                 <img src="{{ asset('assets/images/logo.png') }}" alt="{{ config('app.name') }} Logo" class="logo-img">
                             </a>
-                            <div class="badge">New Referral Signed Up! 🎉</div>
+                            <div class="badge">New Referral Signed Up</div>
                         </div>
 
                         <div class="content">
@@ -258,7 +258,7 @@
                             <table class="referral-info-table" role="presentation" align="center">
                                 <tr>
                                     <td class="referral-info-label">Referred User:</td>
-                                    <td class="referral-info-value">{{ $newUserName }}</td>
+                                    <td class="referral-info-value">{{ $newUserFirstName }} {{ $newUserLastName }}</td>
                                 </tr>
                                 <tr>
                                     <td class="referral-info-label">Status:</td>
@@ -271,7 +271,7 @@
                                     <img src="https://img.icons8.com/fluency-systems-filled/48/0369a1/checklist.png" alt="Checklist Icon">
                                     What Happens Next?
                                 </h3>
-                                <p>You will receive your **referral bonus** once {{ $newUserName }} completes their first qualifying deposit. We'll notify you as soon as that happens!</p>
+                                <p>You will receive your **referral bonus** once {{ $newUserFirstName }} {{ $newUserLastName }} completes their first qualifying deposit. We'll notify you as soon as that happens!</p>
                                 <p>Keep sharing your link to earn more.</p>
                             </div>
 

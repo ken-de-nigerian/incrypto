@@ -72,22 +72,32 @@
     const selectWord = (word: string, indexInPool: number) => {
         if (isPhraseComplete.value) return;
 
-        if (word !== props.phrase[selectedPhrase.value.length]) {
-            validationError.value = "Incorrect word selected. Try again.";
+        // Allow selection of any word from the pool.
+        selectedPhrase.value.push(word);
+        wordPool.value.splice(indexInPool, 1);
+
+        // Check for immediate correctness after selection
+        if (selectedPhrase.value.length <= props.phrase.length && selectedPhrase.value[selectedPhrase.value.length - 1] !== props.phrase[selectedPhrase.value.length - 1]) {
+            // Mark error only if the last selected word is incorrect
+            validationError.value = "Incorrect word selected. Review your phrase order.";
         } else {
             validationError.value = null;
         }
 
-        selectedPhrase.value.push(word);
-        wordPool.value.splice(indexInPool, 1);
+        // If phrase is complete and incorrect, set a persistent error
+        if (isPhraseComplete.value && !isCorrect.value) {
+            validationError.value = "Phrase completed, but the order is incorrect. Please reset.";
+        }
     };
 
     const deselectLastWord = () => {
         if (selectedPhrase.value.length > 0) {
             const lastWord = selectedPhrase.value.pop() as string;
-            wordPool.value.push(lastWord);
-            wordPool.value.sort((a, b) => a.localeCompare(b));
+            // Re-shuffle the wordPool to put the word back in a random location
+            const tempPool = [...wordPool.value, lastWord];
+            wordPool.value = shuffleArray(tempPool);
 
+            // Clear validation error on deselect
             validationError.value = null;
         }
     };
@@ -129,27 +139,30 @@
         <div class="w-full max-w-md mx-auto pt-10 pb-10">
 
             <header class="text-center mb-8">
-                <CheckCheck class="w-12 h-12 text-primary mx-auto mb-4" />
+                <CheckCheck class="w-12 h-12 text-accent mx-auto mb-4" />
                 <h2 class="text-2xl font-bold text-foreground">Confirm Seed Phrase</h2>
                 <p class="text-sm text-muted-foreground mt-2">
                     Tap the words in the correct order to prove you have backed up your phrase.
                 </p>
             </header>
 
-            <div v-if="validationError" class="p-3 mb-4 text-sm text-red-700 bg-red-100 rounded-lg dark:bg-red-900 dark:text-red-300 transition-all duration-300" role="alert">
+            <div v-if="validationError"
+                 class="p-3 mb-4 text-sm bg-destructive/10 border border-destructive/50 rounded-lg text-destructive transition-all duration-300"
+                 role="alert">
                 <div class="flex items-center gap-2 font-medium">
                     <XCircle class="w-4 h-4" />
                     {{ validationError }}
                 </div>
             </div>
 
-            <div class="p-4 bg-card border border-border rounded-xl shadow-lg mb-6">
+            <div class="p-4 bg-card border border-border rounded-xl shadow-card mb-6">
                 <p class="text-sm font-semibold text-muted-foreground mb-3">Your Recovery Phrase ({{ selectedPhrase.length }}/12)</p>
                 <div
                     class="min-h-[100px] grid grid-cols-4 sm:grid-cols-4 gap-2 p-2 border-2 rounded-lg transition-colors"
                     :class="{
-                        'border-red-500 bg-red-50/50': isIncorrect,
-                        'border-green-500 bg-green-50/50': isCorrect,
+                        // MODIFIED: Used destructive/success colors instead of hardcoded red/green
+                        'border-destructive bg-destructive/10': isIncorrect,
+                        'border-success bg-success/10': isCorrect,
                         'border-dashed border-border': !isIncorrect && !isCorrect
                     }">
 
@@ -162,8 +175,9 @@
                         :disabled="form.processing">
                         <span class="text-xs text-muted-foreground font-medium mr-1">{{ index + 1 }}.</span>
                         <span class="truncate">{{ word }}</span>
-                        <span class="absolute right-0 top-0 h-full w-4 flex items-center justify-end pr-1 text-red-500 opacity-0 group-hover:opacity-100 transition-opacity text-lg">&times;</span>
+                        <span class="absolute right-0 top-0 h-full w-4 flex items-center justify-end pr-1 text-destructive opacity-0 group-hover:opacity-100 transition-opacity text-lg">&times;</span>
                     </button>
+
                     <div v-for="i in (12 - selectedPhrase.length)" :key="`placeholder-${i}`" class="flex items-center justify-center text-xs text-muted-foreground/50 border border-dashed border-border/50 rounded-md py-2">
                         {{ selectedPhrase.length + i }}.
                     </div>
@@ -181,7 +195,7 @@
 
             <div
                 v-if="!isPhraseComplete"
-                class="p-4 bg-card border border-border rounded-xl shadow-lg">
+                class="p-4 bg-card border border-border rounded-xl shadow-card">
                 <p class="text-sm font-semibold text-muted-foreground mb-3">Word Pool</p>
                 <div class="grid grid-cols-4 sm:grid-cols-4 gap-2">
                     <button
@@ -214,6 +228,7 @@
             <div
                 class="w-full mx-auto shadow-2xl overflow-hidden animate-slide-up sm:w-auto sm:max-w-md sm:rounded-xl sm:animate-fade-in"
                 :class="{
+                    // Ensure the modal remains visually distinct (optional but good for mobile)
                     'absolute bottom-0 rounded-t-3xl': isModalOpen,
                     'sm:relative': isModalOpen
                 }">
@@ -229,7 +244,7 @@
                     </h1>
 
                     <div class="flex justify-start items-start gap-3 bg-secondary/50 rounded-xl p-4 mt-4">
-                        <div class="bg-secondary flex justify-center items-center p-2 rounded-md text-primary">
+                        <div class="bg-secondary flex justify-center items-center p-2 rounded-md text-accent">
                             <Lock class="w-5 h-5" />
                         </div>
 
@@ -268,34 +283,34 @@
 </template>
 
 <style scoped>
-    .fade-enter-active, .fade-leave-active {
-        transition: opacity 0.3s ease;
-    }
-    .fade-enter-from, .fade-leave-to {
-        opacity: 0;
-    }
+.fade-enter-active, .fade-leave-active {
+    transition: opacity 0.3s ease;
+}
+.fade-enter-from, .fade-leave-to {
+    opacity: 0;
+}
 
-    /* Mobile slide-up keyframes */
-    @keyframes slideUp {
-        from { transform: translateY(100%); }
-        to { transform: translateY(0); }
-    }
-    /* Desktop fade-in keyframes */
-    @keyframes fadeIn {
-        from { opacity: 0; transform: scale(0.95); }
-        to { opacity: 1; transform: scale(1); }
-    }
+/* Mobile slide-up keyframes */
+@keyframes slideUp {
+    from { transform: translateY(100%); }
+    to { transform: translateY(0); }
+}
+/* Desktop fade-in keyframes */
+@keyframes fadeIn {
+    from { opacity: 0; transform: scale(0.95); }
+    to { opacity: 1; transform: scale(1); }
+}
 
-    /* The modal content container animation logic */
+/* The modal content container animation logic */
+.animate-slide-up {
+    animation: slideUp 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+/* Apply fade-in for desktop view only */
+@media (min-width: 640px) {
     .animate-slide-up {
-        animation: slideUp 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        /* Override the slide up for desktop */
+        animation: fadeIn 0.3s ease-out;
+        transform: none !important;
     }
-    /* Apply fade-in for desktop view only */
-    @media (min-width: 640px) {
-        .animate-slide-up {
-            /* Override the slide up for desktop */
-            animation: fadeIn 0.3s ease-out;
-            transform: none !important;
-        }
-    }
+}
 </style>

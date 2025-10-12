@@ -18,6 +18,7 @@ class GatewayHandlerService
         'PRICE_DATA' => 300,       // 5 minutes
         'GAS_PRICE_DATA' => 120,   // 2 minutes
         'WALLET_DATA' => 43200,    // 12 hours
+        'CHART_DATA' => 300,       // 5 minutes
     ];
 
     /**
@@ -46,7 +47,6 @@ class GatewayHandlerService
     public function getGateways(): array
     {
         try {
-
             $wallets = config('gateways.wallet_addresses');
 
             if (!is_array($wallets)) {
@@ -62,6 +62,92 @@ class GatewayHandlerService
             Log::error('Error in getGateways(): ' . $e->getMessage());
             return [];
         }
+    }
+
+    /**
+     * Fetch chart data for a specific cryptocurrency symbol.
+     *
+     * @param string $symbol CoinGecko ID (e.g., 'bitcoin', 'ethereum')
+     * @param float $days Number of days (0.01 to 365)
+     * @return array
+     */
+    public function fetchChartData(string $symbol, float $days = 1): array
+    {
+        if ($days < 0.01 || $days > 365) {
+            Log::warning('Invalid days parameter for chart data', ['days' => $days]);
+            return ['error' => 'Days must be between 0.01 and 365'];
+        }
+
+        $cacheKey = "chart_{$symbol}_$days";
+
+        return Cache::remember($cacheKey, self::CACHE_TTL['CHART_DATA'], function () use ($symbol, $days) {
+            try {
+                $apiKey = config('services.coingecko.key', '');
+                $url = "https://api.coingecko.com/api/v3/coins/$symbol/market_chart";
+
+                $params = [
+                    'vs_currency' => 'usd',
+                    'days' => $days,
+                ];
+
+                if ($apiKey) {
+                    $params['x_cg_api_key'] = $apiKey;
+                }
+
+                $response = Http::timeout(10)
+                    ->get($url, $params);
+
+                if ($response->successful()) {
+                    $data = $response->json();
+
+                    // Validate response structure
+                    if (!isset($data['prices']) || !is_array($data['prices'])) {
+                        throw new Exception('Invalid chart data structure received');
+                    }
+
+                    return [
+                        'success' => true,
+                        'data' => $data
+                    ];
+                }
+
+                Log::warning('Failed to fetch chart data from CoinGecko', [
+                    'symbol' => $symbol,
+                    'status' => $response->status(),
+                    'body' => $response->body()
+                ]);
+
+                return [
+                    'success' => false,
+                    'error' => 'Failed to fetch chart data',
+                    'message' => $response->body(),
+                    'status' => $response->status()
+                ];
+
+            } catch (ConnectionException $e) {
+                Log::error('Connection error fetching chart data', [
+                    'symbol' => $symbol,
+                    'error' => $e->getMessage()
+                ]);
+
+                return [
+                    'success' => false,
+                    'error' => 'Connection timeout',
+                    'message' => $e->getMessage()
+                ];
+            } catch (Throwable $e) {
+                Log::error('Error fetching chart data', [
+                    'symbol' => $symbol,
+                    'error' => $e->getMessage()
+                ]);
+
+                return [
+                    'success' => false,
+                    'error' => 'API request failed',
+                    'message' => $e->getMessage()
+                ];
+            }
+        });
     }
 
     /**
@@ -84,10 +170,7 @@ class GatewayHandlerService
 
         return Cache::remember($cacheKey, self::CACHE_TTL['GAS_PRICE_DATA'], function () use ($apiKey, $chain, $chainId) {
             try {
-                // Fetch current ETH price (uses its own caching)
                 $ethPrice = $this->fetchEthPrice();
-
-                // Fetch gas oracle data from Etherscan V2 using fetchData helper
                 $url = "https://api.etherscan.io/v2/api?module=gastracker&action=gasoracle&chainid=$chainId&apikey=$apiKey";
                 $response = $this->fetchData(
                     "etherscan_gas_oracle_$chain",
@@ -101,8 +184,6 @@ class GatewayHandlerService
                 }
 
                 $result = $response['result'];
-
-                // Validate required fields (V2 may use camelCase or PascalCase)
                 $safeGasPrice = $result['safeGasPrice'] ?? $result['SafeGasPrice'] ?? null;
                 $proposeGasPrice = $result['proposeGasPrice'] ?? $result['ProposeGasPrice'] ?? null;
                 $fastGasPrice = $result['fastGasPrice'] ?? $result['FastGasPrice'] ?? null;
@@ -111,10 +192,8 @@ class GatewayHandlerService
                     throw new Exception('Missing gas price fields in Etherscan V2 response');
                 }
 
-                // Define the calculation logic for USD conversion
                 $gweiToUsd = fn($gwei) => ($gwei * 21000 * $ethPrice) / 1e9;
 
-                // Structure and return the data
                 return [
                     'low' => [
                         'gwei' => (float) $safeGasPrice,
@@ -137,7 +216,6 @@ class GatewayHandlerService
                     'api_key' => substr($apiKey, 0, 4) . '****',
                     'chain' => $chain,
                     'chainid' => $chainId,
-                    'response' => $response ?? null,
                 ]);
                 return $this->getFallbackGasPrices();
             }
@@ -204,7 +282,6 @@ class GatewayHandlerService
 
     /**
      * Fetch crypto data for active gateways efficiently.
-     * This now makes only ONE API call instead of two.
      *
      * @return array
      */

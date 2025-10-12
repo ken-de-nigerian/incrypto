@@ -3,7 +3,10 @@
 namespace App\Http\Controllers\User;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\TokenResource;
+use App\Models\User;
 use App\Services\GatewayHandlerService;
+use App\Services\MarketDataService;
 use App\Services\WalletService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -12,23 +15,31 @@ use Inertia\Inertia;
 class UserDashboardController extends Controller
 {
     protected GatewayHandlerService $gatewayHandler;
+    protected MarketDataService $marketDataService;
 
-    public function __construct(GatewayHandlerService $gatewayHandler)
+    public function __construct(GatewayHandlerService $gatewayHandler, MarketDataService $marketDataService)
     {
         $this->gatewayHandler = $gatewayHandler;
+        $this->marketDataService = $marketDataService;
     }
 
     public function __invoke(Request $request) {
+        $cryptoListData = $this->getData(Auth::user());
         return Inertia::render('User/Dashboard', [
             'wallet_balances' => Inertia::defer(fn () => $this->walletBalances()),
-            'referred_users' => Inertia::defer(fn () => $this->referredUsers())
+            'referred_users' => Inertia::defer(fn () => $this->referredUsers()),
+            ...$cryptoListData
         ]);
     }
 
     public function referredUsers()
     {
         $user = Auth::user();
-        return $user->referrals->select(['id', 'first_name', 'last_name', 'created_at']);
+        return $user->referrals()
+            ->select(['id', 'first_name', 'last_name', 'created_at'])
+            ->latest()
+            ->limit(5)
+            ->get();
     }
 
     private function walletBalances()
@@ -89,5 +100,55 @@ class UserDashboardController extends Controller
         }
 
         return $prices;
+    }
+
+    public function getData(User $user): array
+    {
+        $walletService = new WalletService($user, $this->gatewayHandler);
+        $marketData = $this->marketDataService->getMarketDataBySymbol();
+        $userBalances = $walletService->getBalances();
+        $fullWalletData = $walletService->getFullWalletData();
+        $gatewaysByCode = collect($this->gatewayHandler->getGateways())->keyBy('method_code');
+
+        // Use a Resource Collection to format the token array cleanly
+        $tokens = TokenResource::collection(
+            collect($userBalances)->map(function ($balance, $symbol) use ($marketData, $fullWalletData, $gatewaysByCode) {
+                return [
+                    'symbol' => $symbol,
+                    'balance' => $balance,
+                    'market_data' => $marketData[$this->marketDataService->getBaseSymbol($symbol)] ?? [],
+                    'wallet_data' => $fullWalletData[$symbol] ?? [],
+                    'gateway' => isset($fullWalletData[$symbol]['id']) ? $gatewaysByCode->get($fullWalletData[$symbol]['id']) : null,
+                ];
+            })->values()
+        );
+
+        return [
+            'tokens' => $tokens->resolve(),
+            'userBalances' => (object) $userBalances,
+            'prices' => (object) $this->marketDataService->getPrices(),
+            'portfolioChange24h' => $this->calculatePortfolioChange($userBalances, $marketData),
+        ];
+    }
+
+    private function calculatePortfolioChange(array $userBalances, array $marketDataBySymbol): float
+    {
+        $currentValue = 0;
+        $previousValue = 0;
+
+        foreach ($userBalances as $symbol => $balance) {
+            $baseSymbol = $this->marketDataService->getBaseSymbol($symbol);
+            $coin = $marketDataBySymbol[$baseSymbol] ?? [];
+            $currentPrice = $coin['current_price'] ?? 0;
+            $priceChange = $coin['price_change_percentage_24h'] ?? 0;
+
+            if ($currentPrice > 0) {
+                $currentValue += $balance * $currentPrice;
+                $previousPrice = $currentPrice / (1 + ($priceChange / 100));
+                $previousValue += $balance * $previousPrice;
+            }
+        }
+
+        return $previousValue > 0 ? (($currentValue - $previousValue) / $previousValue) * 100 : 0;
     }
 }

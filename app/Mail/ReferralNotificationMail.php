@@ -44,7 +44,8 @@ class ReferralNotificationMail extends Mailable
             view: 'emails.referral.new_signup',
             with: [
                 'referrerName' => $this->referrer->first_name,
-                'newUserName' => $this->newUser->first_name ?? $this->newUser->email,
+                'newUserFirstName' => $this->newUser->first_name,
+                'newUserLastName' => $this->newUser->last_name,
             ],
         );
     }

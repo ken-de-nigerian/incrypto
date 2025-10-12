@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\User\ChartDataController;
 use App\Http\Controllers\User\ManageUserKycController;
 use App\Http\Controllers\User\ManageUserNotificationsController;
 use App\Http\Controllers\User\ManageUserProfileController;
@@ -24,6 +25,7 @@ Route::prefix('user')
 
         // Dashboard
         Route::get('/dashboard', UserDashboardController::class)->name('dashboard');
+        Route::get('/chart/data', ChartDataController::class)->name('chart.data');
 
         // Profile Management
         Route::prefix('profile')

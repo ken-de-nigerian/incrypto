@@ -74,10 +74,38 @@
         totalUsdValue: number;
     }
 
+    interface Token {
+        symbol: string;
+        name: string;
+        logo: string;
+        decimals: number;
+        price_change_24h: number;
+    }
+
+    interface ChartToken {
+        symbol: string;
+        name: string;
+        logo: string;
+        decimals: number;
+        price_change_24h: number;
+        price: number;
+        balance: number;
+        value: number;
+    }
+
     defineProps<{
         wallet_balances?: WalletBalances;
         referred_users?: ReferredUsers;
+        tokens?: Token;
+        userBalances: Record<string, number>;
+        prices: Record<string, number>;
+        portfolioChange24h: number;
     }>();
+
+    const selectedToken = ref<ChartToken | null>(null);
+    const handleTokenSelect = (token: ChartToken) => {
+        selectedToken.value = token;
+    };
 
     const openNotificationsModal = () => {
         isNotificationsModalOpen.value = true;
@@ -138,8 +166,14 @@
                 </div>
 
                 <div class="lg:col-span-6 space-y-4 sm:space-y-6">
-                    <ChartCard />
-                    <CryptoListCard />
+                    <ChartCard :selected-token="selectedToken" />
+                    <CryptoListCard
+                        :portfolio-change24h="portfolioChange24h"
+                        :prices="prices"
+                        :tokens="tokens"
+                        :user-balances="userBalances"
+                        @select-token="handleTokenSelect"
+                    />
                 </div>
 
                 <div class="lg:col-span-3 space-y-4 sm:space-y-6">

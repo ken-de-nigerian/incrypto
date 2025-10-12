@@ -43,18 +43,19 @@
             <header class="text-center mb-8">
                 <Shield class="w-12 h-12 text-accent mx-auto mb-4" />
                 <h2 class="text-2xl font-bold text-foreground">Backup Your Phrase</h2>
-                <p class="text-sm text-red-500 font-semibold mt-2">
-                    NEVER share this phrase with anyone. 🔒
+
+                <p class="text-sm text-destructive font-semibold mt-2">
+                    NEVER share this phrase with anyone.
                 </p>
                 <p class="text-sm text-muted-foreground mt-2">
                     Write down these 12 words in order and keep them in a secure, offline location.
                 </p>
             </header>
 
-            <div class="p-4 bg-card border border-border rounded-xl shadow-lg relative">
+            <div class="p-4 bg-card border border-border rounded-xl shadow-card relative">
 
                 <div v-if="!isPhraseVisible"
-                    class="absolute inset-0 bg-card/95 backdrop-blur-sm flex flex-col justify-center items-center rounded-xl z-10 p-4 transition-opacity duration-300">
+                     class="absolute inset-0 bg-card/95 backdrop-blur-sm flex flex-col justify-center items-center rounded-xl z-10 p-4 transition-opacity duration-300">
                     <h3 class="font-semibold text-foreground">Tap to open your Seed Phrase</h3>
                     <p class="text-muted-foreground text-sm pt-3">
                         Make sure nobody is watching your screen
@@ -72,7 +73,7 @@
                     <div
                         v-for="(word, index) in phrase"
                         :key="index"
-                        class="flex items-center space-x-2 bg-secondary bg-opacity-5 p-3 rounded-sm">
+                        class="flex items-center space-x-2 bg-muted/20 p-3 rounded-sm">
                         <span class="text-xs text-muted-foreground font-semibold w-4 text-left">{{ index + 1 }}.</span>
                         <span class="truncate">{{ word }}</span>
                     </div>
@@ -80,8 +81,8 @@
             </div>
 
             <div class="mt-8 text-center">
-                <p class="text-xs text-muted-foreground bg-yellow-900/20 p-3 rounded-lg border border-yellow-700/50">
-                    <span class="font-bold">Note:</span> We will ask you to confirm this phrase on the next screen.
+                <p class="text-xs text-muted-foreground bg-warning/20 p-3 rounded-lg border border-warning/50">
+                    <span class="font-bold text-foreground">Note:</span> We will ask you to confirm this phrase on the next screen.
                 </p>
             </div>
 
@@ -90,7 +91,7 @@
                 <button
                     v-if="!isPhraseVisible"
                     @click="toggleVisibility"
-                    class="flex-1 border text-muted-foreground border-border font-semibold text-center py-3 rounded-lg w-full text-nowrap hover:bg-secondary transition-colors cursor-pointer flex items-center justify-center gap-2 cursor-pointer"
+                    class="flex-1 border text-muted-foreground border-border font-semibold text-center py-3 rounded-lg w-full text-nowrap hover:bg-secondary transition-colors cursor-pointer flex items-center justify-center gap-2"
                     aria-label="View seed phrase">
                     <Eye class="w-5 h-5" /> View Phrase
                 </button>

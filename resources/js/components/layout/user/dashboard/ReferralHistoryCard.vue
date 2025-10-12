@@ -84,7 +84,11 @@
 
         <div v-if="props.referred_users && props.referred_users.length > 0" class="mx-[-1rem] sm:mx-[-1.5rem] mt-4 pt-4 border-t border-secondary bg-transparent">
             <div class="text-center">
-                <TextLink :href="route('user.rewards.index')" class="text-primary text-sm font-medium hover:underline px-4 sm:px-6 py-2 block">
+                <TextLink
+                    :href="route('user.rewards.index')"
+                    class="bg-secondary text-secondary-foreground rounded-lg sm:rounded-xl hover:bg-muted transition-colors
+                   py-1.5 sm:py-2 cursor-pointer text-sm sm:text-base font-medium
+                   inline-flex items-center justify-center gap-2 px-6">
                     Referrals List →
                 </TextLink>
             </div>

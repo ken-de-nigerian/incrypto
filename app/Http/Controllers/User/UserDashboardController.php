@@ -38,7 +38,7 @@ class UserDashboardController extends Controller
         return $user->referrals()
             ->select(['id', 'first_name', 'last_name', 'created_at'])
             ->latest()
-            ->limit(5)
+            ->limit(3)
             ->get();
     }
 

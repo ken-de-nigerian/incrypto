@@ -128,7 +128,7 @@
                         </div>
 
                         <div class="text-center">
-                            <button type="button" @click="toggleEmailForm" :disabled="form.processing || throttleTimeLeft > 0" class="text-muted-foreground hover:text-foreground transition-colors cursor-pointer" :class="{ 'opacity-50 cursor-not-allowed': form.processing || throttleTimeLeft > 0 }">
+                            <button type="button" @click="toggleEmailForm" :disabled="form.processing || throttleTimeLeft > 0" class="text-muted-foreground hover:text-foreground cursor-pointer" :class="{ 'opacity-50 cursor-not-allowed': form.processing || throttleTimeLeft > 0 }">
                                 Go back
                             </button>
                         </div>

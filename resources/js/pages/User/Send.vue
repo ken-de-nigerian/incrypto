@@ -140,7 +140,7 @@
                 @open-notifications="isNotificationsModalOpen = true"
             />
 
-            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 mt-6">
+            <div class="grid grid-cols-1 lg:grid-cols-12 lg:gap-6 mt-6">
                 <div class="lg:col-span-3 space-y-4">
                     <PortfolioSummary
                         :total-portfolio-value="totalPortfolioValue"

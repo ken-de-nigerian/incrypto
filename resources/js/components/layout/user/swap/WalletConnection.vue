@@ -45,7 +45,7 @@
             <button
                 v-if="!isWalletConnected"
                 @click="connectWallet"
-                class="flex items-center gap-2 px-3 py-2 bg-primary hover:opacity-90 text-primary-foreground rounded-lg font-semibold text-xs sm:text-sm">
+                class="flex items-center gap-2 px-3 py-2 bg-primary hover:opacity-90 text-primary-foreground rounded-lg font-semibold text-xs sm:text-sm cursor-pointer">
                 <WalletIcon class="w-4 h-4" />
                 Connect
             </button>
@@ -54,7 +54,7 @@
                 <div class="px-3 py-2 bg-card border border-border rounded-lg flex items-center gap-2">
                     <div class="w-2 h-2 bg-primary rounded-full"></div>
                     <span class="text-xs sm:text-sm font-mono text-card-foreground truncate max-w-[120px] sm:max-w-[150px]">{{ walletAddress }}</span>
-                    <button @click="copyAddress" class="p-1 hover:bg-muted rounded">
+                    <button @click="copyAddress" class="p-1 hover:bg-muted rounded cursor-pointer">
                         <CheckIcon v-if="copiedAddress" class="w-3 h-3 text-primary" />
                         <CopyIcon v-else class="w-3 h-3 text-muted-foreground" />
                     </button>

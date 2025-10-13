@@ -142,12 +142,12 @@
             </div>
 
             <div class="flex items-center gap-2">
-                <button @click="toggleBalanceVisibility" class="p-2 bg-secondary hover:bg-muted rounded-lg transition-colors cursor-pointer" :title="isBalanceHidden ? 'Show balance' : 'Hide balance'">
+                <button @click="toggleBalanceVisibility" class="p-2 bg-secondary hover:bg-muted rounded-lg cursor-pointer" :title="isBalanceHidden ? 'Show balance' : 'Hide balance'">
                     <EyeOff v-if="isBalanceHidden" class="w-4 h-4 sm:w-5 sm:h-5 text-muted-foreground" />
                     <Eye v-else class="w-4 h-4 sm:w-5 sm:h-5 text-muted-foreground" />
                 </button>
 
-                <button @click="refreshWalletData" :disabled="isRefreshing || isLoading" class="p-2 bg-secondary hover:bg-muted rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer" title="Refresh wallet data">
+                <button @click="refreshWalletData" :disabled="isRefreshing || isLoading" class="p-2 bg-secondary hover:bg-muted rounded-lg disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer" title="Refresh wallet data">
                     <RefreshCw
                         :class="[
                             'w-4 h-4 sm:w-5 sm:h-5 text-muted-foreground transition-transform',

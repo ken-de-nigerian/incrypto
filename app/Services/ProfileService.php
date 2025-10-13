@@ -44,6 +44,6 @@ class ProfileService
         $image->resize(124, 124);
         $image->save();
 
-        return Storage::url($path);
+        return asset('storage/' . $path);
     }
 }

@@ -25,27 +25,41 @@
             .sort((a, b) => b.value - a.value)
             .slice(0, 5);
     });
+
+    // Function to format the token symbol
+    const formatSymbol = (symbol: string): string => {
+        if (!symbol) return '';
+
+        // Regex to find USDT_ followed by BEP20, ERC20, or TRC20 (case-insensitive)
+        const formatted = symbol.replace(/USDT_(BEP20|ERC20|TRC20)/i, (match) => {
+            // Replace the underscore with a space only in the matched segment
+            return match.replace('_', ' ');
+        });
+
+        return formatted.toUpperCase();
+    };
 </script>
 
 <template>
-    <!-- Top Holdings -->
-    <div class="bg-card border border-border rounded-2xl p-4">
-        <h3 class="text-xs sm:text-sm font-semibold text-card-foreground mb-3 flex items-center gap-2">
-            <BarChart3Icon class="w-4 h-4" />
-            Top Holdings
-        </h3>
+    <div class="hidden sm:block">
+        <div class="bg-card border border-border rounded-2xl p-4">
+            <h3 class="text-xs sm:text-sm font-semibold text-card-foreground mb-3 flex items-center gap-2">
+                <BarChart3Icon class="w-4 h-4" />
+                Top Holdings
+            </h3>
 
-        <div class="space-y-3">
-            <div v-for="token in topTokens" :key="token.symbol" class="flex items-center justify-between">
-                <div class="flex items-center gap-2">
-                    <img :src="token.logo" :alt="token.symbol" class="w-6 h-6 rounded-full" />
-                    <div>
-                        <div class="text-xs sm:text-sm font-medium text-card-foreground">{{ token.symbol }}</div>
-                        <div class="text-xs text-muted-foreground">{{ token.balance.toFixed(4) }}</div>
+            <div class="space-y-3">
+                <div v-for="token in topTokens" :key="token.symbol" class="flex items-center justify-between">
+                    <div class="flex items-center gap-2">
+                        <img :src="token.logo" :alt="token.symbol" class="w-6 h-6 rounded-full" />
+                        <div>
+                            <div class="text-xs sm:text-sm font-medium text-card-foreground">{{ formatSymbol(token.symbol) }}</div>
+                            <div class="text-xs text-muted-foreground">{{ token.balance.toFixed(4) }}</div>
+                        </div>
                     </div>
-                </div>
-                <div class="text-right">
-                    <div class="text-xs sm:text-sm font-semibold text-card-foreground">${{ token.value.toFixed(2) }}</div>
+                    <div class="text-right">
+                        <div class="text-xs sm:text-sm font-semibold text-card-foreground">${{ token.value.toFixed(2) }}</div>
+                    </div>
                 </div>
             </div>
         </div>

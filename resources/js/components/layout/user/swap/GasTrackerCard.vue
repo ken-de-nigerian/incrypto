@@ -11,7 +11,7 @@
 </script>
 
 <template>
-    <div class="bg-card border border-border rounded-2xl p-4">
+    <div class="bg-card border border-border rounded-2xl p-4 margin-bottom">
         <h3 class="text-sm font-semibold text-card-foreground mb-3 flex items-center gap-2">
             <ZapIcon class="w-4 h-4" />
             Gas Tracker
@@ -29,3 +29,11 @@
         </div>
     </div>
 </template>
+
+<style scoped>
+    @media (max-width: 640px) {
+        .margin-bottom {
+            margin-bottom: 50px;
+        }
+    }
+</style>

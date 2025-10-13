@@ -95,7 +95,7 @@
             </div>
         </div>
 
-        <div class="xl:col-span-1 space-y-6">
+        <div class="xl:col-span-1 space-y-6 margin-bottom">
             <div class="bg-card border border-border rounded-2xl p-6">
                 <h5 class="text-sm font-semibold text-card-foreground mb-4 flex items-center gap-2">
                     <InfoIcon class="w-5 h-5 text-primary" />
@@ -111,3 +111,11 @@
         </div>
     </div>
 </template>
+
+<style scoped>
+    @media (max-width: 640px) {
+        .margin-bottom {
+            margin-bottom: 50px;
+        }
+    }
+</style>

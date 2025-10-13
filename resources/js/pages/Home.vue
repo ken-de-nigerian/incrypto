@@ -173,7 +173,7 @@
                 </button>
 
                 <div class="text-center">
-                    <button @click="handleSkip" class="text-muted-foreground hover:text-foreground transition-colors bg-transparent border-none cursor-pointer">
+                    <button @click="handleSkip" class="text-muted-foreground hover:text-foreground bg-transparent border-none cursor-pointer">
                         Skip
                     </button>
                 </div>

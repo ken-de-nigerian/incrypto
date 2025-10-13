@@ -26,7 +26,7 @@ const clearError = (field: keyof typeof form.errors) => {
 </script>
 
 <template>
-    <div class="space-y-6">
+    <div class="space-y-6 margin-bottom">
         <div class="rounded-lg border bg-card text-card-foreground shadow-sm">
             <div class="flex flex-col space-y-1.5 p-6">
                 <div class="text-2xl font-semibold leading-none tracking-tight flex items-center space-x-2">
@@ -68,3 +68,11 @@ const clearError = (field: keyof typeof form.errors) => {
         </div>
     </div>
 </template>
+
+<style scoped>
+    @media (max-width: 640px) {
+        .margin-bottom {
+            margin-bottom: 50px;
+        }
+    }
+</style>

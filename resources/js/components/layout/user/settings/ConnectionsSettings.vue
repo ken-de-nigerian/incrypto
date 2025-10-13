@@ -24,7 +24,7 @@
 </script>
 
 <template>
-    <div class="space-y-6 px-4 sm:px-6">
+    <div class="space-y-6 margin-bottom">
         <div role="alert" class="relative w-full rounded-lg border p-4 sm:p-6 [&>svg~*]:pl-7 [&>svg+div]:translate-y-[-3px] [&>svg]:absolute [&>svg]:left-4 [&>svg]:top-4 [&>svg]:text-foreground bg-background text-foreground">
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-triangle-alert h-4 w-4" aria-hidden="true">
                 <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"></path>
@@ -161,3 +161,11 @@
         </div>
     </div>
 </template>
+
+<style scoped>
+    @media (max-width: 640px) {
+        .margin-bottom {
+            margin-bottom: 50px;
+        }
+    }
+</style>

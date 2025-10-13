@@ -177,7 +177,7 @@
 
         <button
             @click="isNotificationsModalOpen = true"
-            class="p-1.5 xs:p-2 bg-card rounded-lg xs:rounded-xl border border-border hover:bg-secondary relative cursor-pointer transition-colors flex-shrink-0"
+            class="p-1.5 xs:p-2 bg-card rounded-lg xs:rounded-xl border border-border hover:bg-secondary relative cursor-pointer flex-shrink-0"
             title="Notifications"
         >
             <BellIcon class="w-4 h-4 xs:w-5 xs:h-5 text-card-foreground" />
@@ -189,7 +189,7 @@
 
         <button
             @click="toggleAppearance"
-            class="p-1.5 xs:p-2 bg-card rounded-lg xs:rounded-xl border border-border hover:bg-secondary relative cursor-pointer transition-colors flex-shrink-0"
+            class="p-1.5 xs:p-2 bg-card rounded-lg xs:rounded-xl border border-border hover:bg-secondary relative cursor-pointer flex-shrink-0"
             title="Change Appearance"
         >
             <component :is="currentIcon" class="w-4 h-4 xs:w-5 xs:h-5 text-card-foreground" />
@@ -249,7 +249,7 @@
                             </div>
                             <button
                                 @click="closeAccountModal"
-                                class="p-1.5 xs:p-2 hover:bg-muted rounded-lg transition-colors flex-shrink-0 cursor-pointer"
+                                class="p-1.5 xs:p-2 hover:bg-muted rounded-lg flex-shrink-0 cursor-pointer"
                                 title="Close"
                             >
                                 <X class="h-4 w-4 xs:h-5 xs:w-5 text-muted-foreground" />
@@ -285,7 +285,7 @@
                                     <p class="text-xs xs:text-sm text-muted-foreground truncate">{{ user.email }}</p>
                                     <button
                                         @click="copyEmail"
-                                        class="p-1 hover:bg-secondary rounded transition-colors flex-shrink-0"
+                                        class="p-1 hover:bg-secondary rounded flex-shrink-0"
                                         :title="emailCopied ? 'Copied!' : 'Copy email'"
                                     >
                                         <Check v-if="emailCopied" class="w-3 h-3 xs:w-3.5 xs:h-3.5 text-success" />
@@ -299,7 +299,7 @@
 
                             <TextLink
                                 :href="route('user.profile.index')"
-                                class="p-1.5 xs:p-2 hover:bg-secondary rounded-lg transition-colors flex-shrink-0"
+                                class="p-1.5 xs:p-2 hover:bg-secondary rounded-lg flex-shrink-0"
                                 title="Edit Profile"
                             >
                                 <Settings class="w-4 h-4 xs:w-5 xs:h-5 text-muted-foreground" />
@@ -318,7 +318,7 @@
                                     @click="closeAccountModal"
                                     class="flex flex-col items-center justify-center p-2 xs:p-3 rounded-lg xs:rounded-xl bg-secondary/50 hover:bg-secondary active:scale-95 border border-border hover:border-border/60 transition-all group"
                                 >
-                                    <div class="w-8 h-8 xs:w-10 xs:h-10 rounded-lg xs:rounded-xl bg-primary/10 flex items-center justify-center mb-1.5 xs:mb-2 group-hover:bg-primary/20 transition-colors">
+                                    <div class="w-8 h-8 xs:w-10 xs:h-10 rounded-lg xs:rounded-xl bg-primary/10 flex items-center justify-center mb-1.5 xs:mb-2 group-hover:bg-primary/20">
                                         <component :is="item.icon" class="w-4 h-4 xs:w-5 xs:h-5 text-primary" />
                                     </div>
                                     <span class="text-[10px] xs:text-xs font-medium text-center leading-tight">{{ item.name }}</span>
@@ -336,14 +336,14 @@
                                     @click="closeAccountModal"
                                     class="flex items-center gap-2.5 xs:gap-3 p-2.5 xs:p-3 rounded-lg xs:rounded-xl hover:bg-secondary active:bg-secondary/80 transition-all group"
                                 >
-                                    <div class="w-8 h-8 xs:w-10 xs:h-10 rounded-lg bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors flex-shrink-0">
+                                    <div class="w-8 h-8 xs:w-10 xs:h-10 rounded-lg bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 flex-shrink-0">
                                         <component :is="item.icon" class="w-4 h-4 xs:w-5 xs:h-5 text-primary" />
                                     </div>
                                     <div class="flex-1 min-w-0">
                                         <p class="font-medium text-xs xs:text-sm">{{ item.name }}</p>
                                         <p class="text-[10px] xs:text-xs text-muted-foreground truncate">{{ item.description }}</p>
                                     </div>
-                                    <ChevronRight class="w-3.5 h-3.5 xs:w-4 xs:h-4 text-muted-foreground/50 group-hover:text-muted-foreground transition-colors flex-shrink-0" />
+                                    <ChevronRight class="w-3.5 h-3.5 xs:w-4 xs:h-4 text-muted-foreground/50 group-hover:text-muted-foreground flex-shrink-0" />
                                 </TextLink>
                             </div>
                         </div>
@@ -358,7 +358,7 @@
                                             :key="value"
                                             @click="updateAppearance(value as 'light' | 'dark' | 'system')"
                                             :class="[
-                                                'flex-1 flex items-center justify-center gap-1 xs:gap-2 rounded-md px-2 xs:px-3 py-1.5 text-xs xs:text-sm transition-colors',
+                                                'flex-1 flex items-center justify-center gap-1 xs:gap-2 rounded-md px-2 xs:px-3 py-1.5 text-xs xs:text-sm',
                                                 appearance === value
                                                     ? 'bg-primary text-primary-foreground shadow'
                                                     : 'text-muted-foreground hover:bg-muted hover:text-foreground',
@@ -371,14 +371,14 @@
                                 </div>
 
                                 <button class="w-full flex items-center gap-2.5 xs:gap-3 p-2.5 xs:p-3 rounded-lg xs:rounded-xl hover:bg-secondary active:bg-secondary/80 transition-all group">
-                                    <div class="w-8 h-8 xs:w-10 xs:h-10 rounded-lg bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors flex-shrink-0">
+                                    <div class="w-8 h-8 xs:w-10 xs:h-10 rounded-lg bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 flex-shrink-0">
                                         <Globe class="w-4 h-4 xs:w-5 xs:h-5 text-primary" />
                                     </div>
                                     <div class="flex-1 text-left min-w-0">
                                         <p class="font-medium text-xs xs:text-sm">Language</p>
                                         <p class="text-[10px] xs:text-xs text-muted-foreground">English (US)</p>
                                     </div>
-                                    <ChevronRight class="w-3.5 h-3.5 xs:w-4 xs:h-4 text-muted-foreground/50 group-hover:text-muted-foreground transition-colors flex-shrink-0" />
+                                    <ChevronRight class="w-3.5 h-3.5 xs:w-4 xs:h-4 text-muted-foreground/50 group-hover:text-muted-foreground flex-shrink-0" />
                                 </button>
                             </div>
                         </div>
@@ -395,7 +395,7 @@
                                 >
                                     <component :is="item.icon" class="w-4 h-4 xs:w-5 xs:h-5 text-muted-foreground flex-shrink-0" />
                                     <span class="font-medium text-xs xs:text-sm flex-1 text-left">{{ item.name }}</span>
-                                    <ChevronRight class="w-3.5 h-3.5 xs:w-4 xs:h-4 text-muted-foreground/50 group-hover:text-muted-foreground transition-colors flex-shrink-0" />
+                                    <ChevronRight class="w-3.5 h-3.5 xs:w-4 xs:h-4 text-muted-foreground/50 group-hover:text-muted-foreground flex-shrink-0" />
                                 </TextLink>
                             </div>
                         </div>

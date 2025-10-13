@@ -48,6 +48,19 @@ import { ref, computed, watch } from 'vue';
             document.body.style.overflow = '';
         }
     });
+
+    // Function to format the token symbol
+    const formatSymbol = (symbol: string): string => {
+        if (!symbol) return '';
+
+        // Regex to find USDT_ followed by BEP20, ERC20, or TRC20 (case-insensitive)
+        const formatted = symbol.replace(/USDT_(BEP20|ERC20|TRC20)/i, (match) => {
+            // Replace the underscore with a space only in the matched segment
+            return match.replace('_', ' ');
+        });
+
+        return formatted.toUpperCase();
+    };
 </script>
 
 <template>
@@ -97,7 +110,7 @@ import { ref, computed, watch } from 'vue';
                         <div class="flex items-center gap-3">
                             <img :src="token.logo" :alt="token.symbol" class="w-8 h-8 rounded-full" />
                             <div>
-                                <div class="font-semibold text-card-foreground">{{ token.symbol }}</div>
+                                <div class="font-semibold text-card-foreground">{{ formatSymbol(token.symbol) }}</div>
                                 <div class="text-xs text-muted-foreground">{{ token.name }}</div>
                             </div>
                         </div>

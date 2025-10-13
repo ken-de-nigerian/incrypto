@@ -86,7 +86,7 @@
             <div class="text-center">
                 <TextLink
                     :href="route('user.rewards.index')"
-                    class="bg-secondary text-secondary-foreground rounded-lg sm:rounded-xl hover:bg-muted transition-colors
+                    class="bg-secondary text-secondary-foreground rounded-lg sm:rounded-xl hover:bg-muted
                    py-1.5 sm:py-2 cursor-pointer text-sm sm:text-base font-medium
                    inline-flex items-center justify-center gap-2 px-6">
                     Referrals List →

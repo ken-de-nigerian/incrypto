@@ -1,8 +1,9 @@
 <script setup lang="ts">
     import { Head, useForm } from '@inertiajs/vue3';
     import { route } from 'ziggy-js';
-    import { CheckCheck, RefreshCw, XCircle, Lock } from 'lucide-vue-next';
+    import { RefreshCw, XCircle, Lock } from 'lucide-vue-next';
     import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
+    import MobileHeader from '@/components/layout/auth/wallet-phrase/MobileHeader.vue';
 
     const props = defineProps<{
         phrase: string[];
@@ -84,7 +85,7 @@
             validationError.value = null;
         }
 
-        // If phrase is complete and incorrect, set a persistent error
+        // If the phrase is complete and incorrect, set a persistent error
         if (isPhraseComplete.value && !isCorrect.value) {
             validationError.value = "Phrase completed, but the order is incorrect. Please reset.";
         }
@@ -135,11 +136,11 @@
 <template>
     <Head title="Confirm Seed Phrase" />
 
-    <div class="min-h-screen bg-gradient-to-br from-background via-background to-muted/20 flex flex-col items-center justify-start p-6">
-        <div class="w-full max-w-md mx-auto pt-10 pb-10">
+    <MobileHeader />
 
+    <div class="min-h-screen bg-gradient-to-br from-background via-background to-muted/20 flex flex-col items-center justify-center p-4 pt-20">
+        <div class="w-full max-w-md mx-auto p-4">
             <header class="text-center mb-8">
-                <CheckCheck class="w-12 h-12 text-accent mx-auto mb-4" />
                 <h2 class="text-2xl font-bold text-foreground">Confirm Seed Phrase</h2>
                 <p class="text-sm text-muted-foreground mt-2">
                     Tap the words in the correct order to prove you have backed up your phrase.
@@ -158,7 +159,7 @@
             <div class="p-4 bg-card border border-border rounded-xl shadow-card mb-6">
                 <p class="text-sm font-semibold text-muted-foreground mb-3">Your Recovery Phrase ({{ selectedPhrase.length }}/12)</p>
                 <div
-                    class="min-h-[100px] grid grid-cols-4 sm:grid-cols-4 gap-2 p-2 border-2 rounded-lg transition-colors"
+                    class="min-h-[100px] grid grid-cols-4 sm:grid-cols-4 gap-2 p-2 border-2 rounded-lg"
                     :class="{
                         // MODIFIED: Used destructive/success colors instead of hardcoded red/green
                         'border-destructive bg-destructive/10': isIncorrect,
@@ -171,7 +172,7 @@
                         :key="`selected-${index}`"
                         @click="deselectLastWord"
                         type="button"
-                        class="flex items-center justify-center space-x-1 bg-accent/10 text-accent font-semibold text-xs py-2 px-1 rounded-md transition-colors hover:bg-accent/20 cursor-pointer relative group"
+                        class="flex items-center justify-center space-x-1 bg-accent/10 text-accent font-semibold text-xs py-2 px-1 rounded-md hover:bg-accent/20 cursor-pointer relative group"
                         :disabled="form.processing">
                         <span class="text-xs text-muted-foreground font-medium mr-1">{{ index + 1 }}.</span>
                         <span class="truncate">{{ word }}</span>
@@ -187,7 +188,7 @@
                     @click="deselectLastWord"
                     :disabled="selectedPhrase.length === 0 || form.processing"
                     type="button"
-                    class="mt-3 text-xs text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50">
+                    class="mt-3 text-xs text-muted-foreground hover:text-foreground disabled:opacity-50">
                     &larr; Backspace (Remove Last Word)
                 </button>
             </div>
@@ -203,7 +204,7 @@
                         :key="`pool-${word}`"
                         @click="selectWord(word, index)"
                         type="button"
-                        class="bg-secondary text-secondary-foreground font-medium text-sm py-2 px-1 rounded-md transition-colors hover:bg-secondary/80 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                        class="bg-secondary text-secondary-foreground font-medium text-sm py-2 px-1 rounded-md hover:bg-secondary/80 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                         :disabled="form.processing">
                         {{ word }}
                     </button>
@@ -215,7 +216,7 @@
                     @click="resetConfirmation"
                     :disabled="form.processing"
                     type="button"
-                    class="text-sm text-muted-foreground hover:text-accent flex items-center justify-center gap-2 transition-colors cursor-pointer">
+                    class="text-sm text-muted-foreground hover:text-accent flex items-center justify-center gap-2 cursor-pointer">
                     <RefreshCw class="w-4 h-4" /> Reset Selection
                 </button>
             </div>
@@ -271,7 +272,7 @@
                         <button
                             @click="submitConfirmation"
                             :disabled="form.processing"
-                            class="block bg-accent text-accent-foreground font-semibold text-center py-3 rounded-lg w-full hover:bg-accent/90 transition-colors cursor-pointer disabled:opacity-50">
+                            class="block bg-accent text-accent-foreground font-semibold text-center py-3 rounded-lg w-full hover:bg-accent/90 cursor-pointer disabled:opacity-50">
                             <span v-if="form.processing">Submitting...</span>
                             <span v-else>I Agree</span>
                         </button>

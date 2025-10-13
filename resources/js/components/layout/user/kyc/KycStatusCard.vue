@@ -222,7 +222,7 @@
                 </div>
             </div>
 
-            <div class="lg:col-span-2 xl:col-span-3 order-first lg:order-none">
+            <div class="lg:col-span-2 xl:col-span-3 order-first lg:order-none lg:mt-0 mt-8">
                 <div class="bg-background rounded-xl sm:rounded-2xl border border-border overflow-hidden shadow-sm h-full">
                     <div class="bg-card px-4 sm:px-6 py-4 border-b border-border flex flex-wrap items-center justify-between gap-2">
                         <div class="flex items-center gap-3">
@@ -288,12 +288,12 @@
                 </div>
             </div>
 
-            <div class="lg:col-span-1 xl:col-span-1 space-y-6">
+            <div class="lg:col-span-1 xl:col-span-1 space-y-6 margin-bottom">
                 <div v-if="status !== 'unverified'" class="bg-card border border-border rounded-xl p-5">
                     <p class="text-xs text-muted-foreground mb-2 font-medium">Submission ID</p>
                     <div class="flex items-center gap-2 p-2 bg-muted rounded-md">
                         <code class="text-sm text-card-foreground font-mono flex-1 truncate">{{ submissionId }}</code>
-                        <button @click="copySubmissionId" class="p-1.5 hover:bg-background rounded-md transition-colors" :title="copiedId ? 'Copied!' : 'Copy ID'">
+                        <button @click="copySubmissionId" class="p-1.5 hover:bg-background rounded-md" :title="copiedId ? 'Copied!' : 'Copy ID'">
                             <CheckIcon v-if="copiedId" class="w-4 h-4 text-primary" />
                             <CopyIcon v-else class="w-4 h-4 text-muted-foreground" />
                         </button>
@@ -333,7 +333,14 @@
                     </ul>
                 </div>
             </div>
-
         </div>
     </div>
 </template>
+
+<style scoped>
+    @media (max-width: 640px) {
+        .margin-bottom {
+            margin-bottom: 50px;
+        }
+    }
+</style>

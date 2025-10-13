@@ -133,14 +133,14 @@
                         <input type="text" placeholder="Search" class="input-crypto pl-10 pr-4 py-2" />
                     </div>
 
-                    <button @click="openNotificationsModal" class="p-2 bg-card rounded-xl border border-border hover:bg-secondary relative cursor-pointer transition-colors" title="Notifications">
+                    <button @click="openNotificationsModal" class="p-2 bg-card rounded-xl border border-border hover:bg-secondary relative cursor-pointer" title="Notifications">
                         <BellIcon class="w-5 h-5 text-card-foreground" />
                         <span v-if="notificationCount > 0" class="absolute top-1 right-1 w-2 h-2 bg-primary rounded-full"></span>
                     </button>
 
                     <button
                         @click="toggleAppearance"
-                        class="p-2 bg-card rounded-xl border border-border hover:bg-secondary relative cursor-pointer transition-colors"
+                        class="p-2 bg-card rounded-xl border border-border hover:bg-secondary relative cursor-pointer"
                         title="Change Appearance">
                         <component :is="currentIcon" class="w-5 h-5 text-card-foreground" />
                     </button>

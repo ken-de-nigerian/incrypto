@@ -3,13 +3,16 @@
     import { route } from 'ziggy-js';
     import TextLink from '@/components/TextLink.vue';
     import { Shield } from 'lucide-vue-next';
+    import MobileHeader from '@/components/layout/auth/wallet-phrase/MobileHeader.vue';
 </script>
 
 <template>
     <Head title="Secure Wallet" />
 
-    <div class="min-h-screen bg-gradient-to-br from-background via-background to-muted/20 flex flex-col items-center justify-center p-6">
-        <div class="w-full max-w-md mx-auto p-8">
+    <MobileHeader />
+
+    <div class="min-h-screen bg-gradient-to-br from-background via-background to-muted/20 flex flex-col items-center justify-center p-4 pt-20">
+        <div class="w-full max-w-md mx-auto p-4">
             <div class="flex justify-center items-center pt-2 mb-8">
                 <Shield class="w-24 h-24 text-accent" />
             </div>
@@ -29,19 +32,13 @@
                 </p>
             </div>
 
-            <div class="w-full pt-10 flex justify-between items-center gap-4">
-                <TextLink
-                    :href="route('secure.wallet.skip')"
-                    method="post"
-                    as="button"
-                    class="border text-accent border-accent font-semibold text-center py-3 rounded-lg w-full text-nowrap hover:bg-accent/10 transition-colors cursor-pointer">
-                    Remind Me Later
+            <div class="w-full pt-10 flex flex-col items-center gap-4">
+                <TextLink :href="route('secure.wallet.phrase.show')" class="bg-accent text-accent-foreground font-semibold text-center py-3 rounded-lg w-full hover:bg-accent/90">
+                    Next
                 </TextLink>
 
-                <TextLink
-                    :href="route('secure.wallet.phrase.show')"
-                    class="bg-accent text-accent-foreground font-semibold text-center py-3 rounded-lg w-full hover:bg-accent/90 transition-colors">
-                    Next
+                <TextLink :href="route('secure.wallet.skip')" method="post" as="button" class="text-muted-foreground hover:text-foreground bg-transparent border-none cursor-pointer">
+                    Remind Me Later
                 </TextLink>
             </div>
         </div>

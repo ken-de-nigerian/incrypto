@@ -6,6 +6,19 @@
         toToken: { symbol: string; price_change_24h: number } | null;
         prices: Record<string, number>;
     }>();
+
+    // Function to format the token symbol
+    const formatSymbol = (symbol: string): string => {
+        if (!symbol) return '';
+
+        // Regex to find USDT_ followed by BEP20, ERC20, or TRC20 (case-insensitive)
+        const formatted = symbol.replace(/USDT_(BEP20|ERC20|TRC20)/i, (match) => {
+            // Replace the underscore with a space only in the matched segment
+            return match.replace('_', ' ');
+        });
+
+        return formatted.toUpperCase();
+    };
 </script>
 
 <template>
@@ -17,7 +30,7 @@
 
         <div class="space-y-3" v-if="fromToken && toToken">
             <div>
-                <div class="text-xs text-muted-foreground mb-1">{{ fromToken.symbol }} Price</div>
+                <div class="text-xs text-muted-foreground mb-1">{{ formatSymbol(fromToken.symbol) }} Price</div>
                 <div class="text-lg font-bold text-card-foreground">
                     ${{ (prices[fromToken.symbol] || 0).toFixed(2) }}
                 </div>
@@ -28,7 +41,7 @@
                 </div>
             </div>
             <div class="border-t border-border pt-3">
-                <div class="text-xs text-muted-foreground mb-1">{{ toToken.symbol }} Price</div>
+                <div class="text-xs text-muted-foreground mb-1">{{ formatSymbol(toToken.symbol) }} Price</div>
                 <div class="text-lg font-bold text-card-foreground">
                     ${{ (prices[toToken.symbol] || 0).toFixed(2) }}
                 </div>

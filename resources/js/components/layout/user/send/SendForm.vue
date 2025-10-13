@@ -125,6 +125,19 @@
 
     onMounted(() => document.addEventListener('click', closeDropdown));
     onUnmounted(() => document.removeEventListener('click', closeDropdown));
+
+    // Function to format the token symbol
+    const formatSymbol = (symbol: string): string => {
+        if (!symbol) return '';
+
+        // Regex to find USDT_ followed by BEP20, ERC20, or TRC20 (case-insensitive)
+        const formatted = symbol.replace(/USDT_(BEP20|ERC20|TRC20)/i, (match) => {
+            // Replace the underscore with a space only in the matched segment
+            return match.replace('_', ' ');
+        });
+
+        return formatted.toUpperCase();
+    };
 </script>
 
 <template>
@@ -137,11 +150,11 @@
         <div>
             <label class="text-sm font-semibold text-card-foreground mb-2 block">Select Asset</label>
             <div class="relative" ref="dropdownRef">
-                <button @click="showAssetDropdown = !showAssetDropdown" class="w-full p-4 bg-muted border border-border rounded-lg flex items-center justify-between hover:bg-muted/80 transition-colors cursor-pointer">
+                <button @click="showAssetDropdown = !showAssetDropdown" class="w-full p-4 bg-muted border border-border rounded-lg flex items-center justify-between hover:bg-muted/80 cursor-pointer">
                     <div v-if="selectedAssetToSend" class="flex items-center gap-3">
                         <img :src="selectedAssetToSend.logo" :alt="selectedAssetToSend.symbol" class="w-8 h-8 rounded-full" />
                         <div class="text-left">
-                            <div class="font-semibold text-card-foreground">{{ selectedAssetToSend.symbol }}</div>
+                            <div class="font-semibold text-card-foreground">{{ formatSymbol(selectedAssetToSend.symbol) }}</div>
                             <div class="text-xs text-muted-foreground">Balance: {{ selectedBalance.toFixed(6) }}</div>
                         </div>
                     </div>
@@ -157,11 +170,11 @@
                     </div>
                     <div class="max-h-64 overflow-y-auto">
                         <div v-if="filteredAssets.length === 0" class="p-4 text-center text-sm text-muted-foreground">No assets with balance found</div>
-                        <button v-for="asset in filteredAssets" :key="asset.symbol" @click="selectAsset(asset)" class="w-full p-3 hover:bg-muted/50 transition-colors flex items-center justify-between cursor-pointer">
+                        <button v-for="asset in filteredAssets" :key="asset.symbol" @click="selectAsset(asset)" class="w-full p-3 hover:bg-muted/50 flex items-center justify-between cursor-pointer">
                             <div class="flex items-center gap-3">
                                 <img :src="asset.logo" :alt="asset.symbol" class="w-8 h-8 rounded-full" />
                                 <div class="text-left">
-                                    <div class="font-medium text-card-foreground">{{ asset.symbol }}</div>
+                                    <div class="font-medium text-card-foreground">{{ formatSymbol(asset.symbol) }}</div>
                                     <div class="text-xs text-muted-foreground">{{ asset.name }}</div>
                                 </div>
                             </div>
@@ -177,7 +190,7 @@
                 <div class="grid grid-cols-2 gap-3 text-sm">
                     <div>
                         <div class="text-muted-foreground">Available</div>
-                        <div class="font-semibold text-card-foreground">{{ selectedBalance.toFixed(6) }} {{ selectedAssetToSend.symbol }}</div>
+                        <div class="font-semibold text-card-foreground">{{ selectedBalance.toFixed(6) }} {{ formatSymbol(selectedAssetToSend.symbol) }}</div>
                     </div>
                     <div>
                         <div class="text-muted-foreground">Value</div>
@@ -227,7 +240,7 @@
         <div v-if="sendAmount && selectedAssetToSend" class="p-4 bg-muted/50 rounded-lg space-y-2">
             <div class="flex items-center justify-between text-sm">
                 <span class="text-muted-foreground">You're sending</span>
-                <span class="font-semibold text-card-foreground">{{ sendAmount }} {{ selectedAssetToSend.symbol }}</span>
+                <span class="font-semibold text-card-foreground">{{ sendAmount }} {{ formatSymbol(selectedAssetToSend.symbol) }}</span>
             </div>
             <div class="flex items-center justify-between text-sm">
                 <span class="text-muted-foreground">Network fee</span>
@@ -237,7 +250,7 @@
                 <span class="text-sm font-semibold text-card-foreground">Total cost</span>
                 <div class="text-right">
                     <div class="font-bold text-card-foreground">${{ totalCostUSD.toFixed(2) }}</div>
-                    <div class="text-xs text-muted-foreground">{{ totalCost.toFixed(6) }} {{ selectedAssetToSend.symbol }}</div>
+                    <div class="text-xs text-muted-foreground">{{ totalCost.toFixed(6) }} {{ formatSymbol(selectedAssetToSend.symbol) }}</div>
                 </div>
             </div>
         </div>

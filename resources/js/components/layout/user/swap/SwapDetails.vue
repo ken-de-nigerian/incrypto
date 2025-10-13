@@ -52,14 +52,27 @@
     const swapRoute = computed(() => {
         if (!props.fromToken || !props.toToken) return { primary: '', pools: [], alternatives: [] };
         return {
-            primary: `${props.fromToken.symbol} → ${props.toToken.symbol} via Uniswap V3`,
+            primary: `${formatSymbol(props.fromToken.symbol)} → ${formatSymbol(props.toToken.symbol)} via Uniswap V3`,
             pools: ['Uniswap V3 Pool', '0.3% fee'],
             alternatives: [
-                `${props.fromToken.symbol} → ${props.toToken.symbol} via SushiSwap (0.2% worse)`,
-                `${props.fromToken.symbol} → USDC → ${props.toToken.symbol} via Curve (0.5% worse)`,
+                `${formatSymbol(props.fromToken.symbol)} → ${formatSymbol(props.toToken.symbol)} via SushiSwap (0.2% worse)`,
+                `${formatSymbol(props.fromToken.symbol)} → USDC → ${formatSymbol(props.toToken.symbol)} via Curve (0.5% worse)`,
             ],
         };
     });
+
+    // Function to format the token symbol
+    const formatSymbol = (symbol: string): string => {
+        if (!symbol) return '';
+
+        // Regex to find USDT_ followed by BEP20, ERC20, or TRC20 (case-insensitive)
+        const formatted = symbol.replace(/USDT_(BEP20|ERC20|TRC20)/i, (match) => {
+            // Replace the underscore with a space only in the matched segment
+            return match.replace('_', ' ');
+        });
+
+        return formatted.toUpperCase();
+    };
 </script>
 
 <template>
@@ -67,7 +80,7 @@
         <div class="flex items-center justify-between">
             <span class="text-muted-foreground">Rate</span>
             <span class="font-medium text-card-foreground">
-        1 {{ fromToken.symbol }} = {{ exchangeRate.toFixed(6) }} {{ toToken.symbol }}
+        1 {{ formatSymbol(fromToken.symbol) }} = {{ exchangeRate.toFixed(6) }} {{ formatSymbol(toToken.symbol) }}
       </span>
         </div>
         <div class="flex items-center justify-between">
@@ -80,7 +93,7 @@
         </div>
         <div class="flex items-center justify-between">
             <span class="text-muted-foreground">Minimum Received</span>
-            <span class="font-medium text-card-foreground">{{ minimumReceived }} {{ toToken.symbol }}</span>
+            <span class="font-medium text-card-foreground">{{ minimumReceived }} {{ formatSymbol(toToken.symbol) }}</span>
         </div>
         <div class="flex items-center justify-between">
             <span class="text-muted-foreground">Est. Gas Fee</span>
@@ -88,12 +101,12 @@
         </div>
         <button
             @click="showRouteDetails = !showRouteDetails"
-            class="w-full flex items-center justify-between py-2 text-left hover:opacity-70"
+            class="w-full flex items-center justify-between py-2 text-left hover:opacity-70 cursor-pointer"
         >
-      <span class="text-muted-foreground flex items-center gap-2">
-        <LayersIcon class="w-4 h-4" />
-        Route
-      </span>
+          <span class="text-muted-foreground flex items-center gap-2">
+            <LayersIcon class="w-4 h-4" />
+            Route
+          </span>
             <ChevronDownIcon :class="['w-4 h-4 text-muted-foreground transition-transform', showRouteDetails && 'rotate-180']" />
         </button>
         <div v-if="showRouteDetails" class="pl-4 sm:pl-6 space-y-2 pt-2 border-t border-border">

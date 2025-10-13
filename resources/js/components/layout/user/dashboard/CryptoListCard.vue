@@ -144,12 +144,12 @@
 <template>
     <div class="card-crypto p-4 sm:p-6">
         <div class="flex items-center justify-between text-xs sm:text-sm text-muted-foreground mb-3 sm:mb-4 px-1">
-            <button @click="sortBy('name')" class="flex items-center gap-1 hover:text-card-foreground transition-colors">
+            <button @click="sortBy('name')" class="flex items-center gap-1 hover:text-card-foreground">
                 <span>Name</span>
                 <span v-if="sortKey === 'name'" class="text-xs">{{ sortOrder === 'asc' ? '↑' : '↓' }}</span>
             </button>
 
-            <button @click="sortBy('change')" class="flex items-center gap-1 hover:text-card-foreground transition-colors">
+            <button @click="sortBy('change')" class="flex items-center gap-1 hover:text-card-foreground">
                 <span class="hidden sm:inline">Change 24h</span>
                 <span class="sm:hidden">Change</span>
                 <span v-if="sortKey === 'change'" class="text-xs">{{ sortOrder === 'asc' ? '↑' : '↓' }}</span>
@@ -162,7 +162,7 @@
                      :key="token.symbol"
                      @click="selectToken(token)"
                      :class="[
-                    'flex items-center gap-2 rounded-lg border p-2 transition-colors cursor-pointer',
+                    'flex items-center gap-2 rounded-lg border p-2 cursor-pointer',
                         selectedTokenSymbol === token.symbol
                         ? 'bg-primary/10 border-primary text-primary ring-primary'
                         : 'bg-secondary border-border text-muted-foreground hover:border-primary',
@@ -204,7 +204,7 @@
             <button
                 @click="loadMore"
                 :disabled="isLoading"
-                class="bg-secondary text-secondary-foreground rounded-lg sm:rounded-xl hover:bg-muted transition-colors py-2 sm:py-2.5 cursor-pointer text-sm sm:text-base disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 px-6">
+                class="bg-secondary text-secondary-foreground rounded-lg sm:rounded-xl hover:bg-muted py-2 sm:py-2.5 cursor-pointer text-sm sm:text-base disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 px-6">
 
                 <template v-if="isLoading">
                     <Loader2 class="w-4 h-4 animate-spin" />

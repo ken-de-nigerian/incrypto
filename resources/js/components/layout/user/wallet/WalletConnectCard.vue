@@ -308,7 +308,7 @@
 
                                                 <button
                                                     @click="copyAddress(wallet.wallet_id)"
-                                                    class="p-1 hover:bg-muted rounded transition-colors cursor-pointer flex-shrink-0"
+                                                    class="p-1 hover:bg-muted rounded cursor-pointer flex-shrink-0"
                                                     :title="copiedAddress === wallet.wallet_id ? 'Copied!' : 'Copy ID'">
                                                     <CheckIcon v-if="copiedAddress === wallet.wallet_id" class="w-3.5 h-3.5 text-primary" />
                                                     <CopyIcon v-else class="w-3.5 h-3.5 text-muted-foreground" />
@@ -341,7 +341,7 @@
                             <div class="flex items-center gap-2">
                                 <button
                                     @click="showFilters = !showFilters"
-                                    class="px-3 py-1.5 rounded-lg text-xs font-medium bg-muted hover:bg-muted/80 text-muted-foreground border border-border transition-colors flex items-center gap-2"
+                                    class="px-3 py-1.5 rounded-lg text-xs font-medium bg-muted hover:bg-muted/80 text-muted-foreground border border-border flex items-center gap-2"
                                     :class="{ 'bg-primary/10 text-primary border-primary/30': hasActiveFilters }">
                                     <FilterIcon class="w-3.5 h-3.5" />
                                     Filters
@@ -362,7 +362,7 @@
                                     type="text"
                                     placeholder="Search wallets..."
                                     class="w-full pl-10 pr-10 py-2.5 bg-background border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all" />
-                                <button v-if="searchQuery" @click="clearSearch" class="absolute right-3 top-1/2 -translate-y-1/2 p-1 hover:bg-muted rounded transition-colors">
+                                <button v-if="searchQuery" @click="clearSearch" class="absolute right-3 top-1/2 -translate-y-1/2 p-1 hover:bg-muted rounded">
                                     <XIcon class="w-4 h-4 text-muted-foreground" />
                                 </button>
                             </div>
@@ -379,7 +379,7 @@
 
                                 <div class="flex-1">
                                     <label class="block text-xs font-medium text-muted-foreground mb-1.5">Sort By Name</label>
-                                    <button @click="toggleSortOrder" class="w-full px-3 py-2 bg-background border border-border rounded-lg text-sm hover:bg-muted transition-colors flex items-center justify-between">
+                                    <button @click="toggleSortOrder" class="w-full px-3 py-2 bg-background border border-border rounded-lg text-sm hover:bg-muted flex items-center justify-between">
                                         <span>
                                             {{ sortOrder === 'asc' ? 'A → Z' : sortOrder === 'desc' ? 'Z → A' : 'Default' }}
                                         </span>
@@ -390,7 +390,7 @@
                                 </div>
                             </div>
 
-                            <button v-if="hasActiveFilters" @click="clearFilters" class="w-full px-4 py-2 border border-border bg-destructive/10 hover:bg-destructive/20 text-destructive rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2 cursor-pointer">
+                            <button v-if="hasActiveFilters" @click="clearFilters" class="w-full px-4 py-2 border border-border bg-destructive/10 hover:bg-destructive/20 text-destructive rounded-lg text-sm font-medium flex items-center justify-center gap-2 cursor-pointer">
                                 <XIcon class="w-4 h-4" />
                                 Clear All Filters
                             </button>
@@ -412,7 +412,7 @@
                             </div>
                             <h4 class="text-lg font-semibold text-card-foreground mb-2">No Wallets Found</h4>
                             <p class="text-sm text-muted-foreground mb-4">Try adjusting your search or filter criteria.</p>
-                            <button @click="clearFilters" class="px-4 py-2 bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg text-sm font-medium transition-colors">
+                            <button @click="clearFilters" class="px-4 py-2 bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg text-sm font-medium">
                                 Clear Filters
                             </button>
                         </div>
@@ -446,7 +446,6 @@
 
                         <div v-if="isLoadingMore" class="flex items-center justify-center py-8">
                             <Loader2Icon class="w-8 h-8 text-primary animate-spin" />
-                            <span class="ml-3 text-sm text-muted-foreground">Loading more wallets...</span>
                         </div>
                         <div v-else-if="!hasMoreWallets && displayedWallets.length > itemsPerLoad" class="text-center py-8">
                             <div class="inline-flex items-center gap-2 px-4 py-2 bg-muted/50 rounded-full text-sm text-muted-foreground">
@@ -458,65 +457,67 @@
                 </div>
             </div>
 
-            <div class="xl:col-span-1 space-y-6">
-                <div class="bg-gradient-to-br from-primary/5 to-transparent border border-primary/20 rounded-2xl p-6 shadow-sm">
-                    <h5 class="text-sm font-semibold text-card-foreground mb-4 flex items-center gap-2">
-                        <ShieldCheckIcon class="w-5 h-5 text-primary" />
-                        Why Connect Your Wallet?
-                    </h5>
-                    <ul class="space-y-3">
-                        <li v-for="(benefit, index) in walletBenefits" :key="index" class="flex items-start gap-3 text-sm text-muted-foreground">
-                            <component :is="benefit.icon" class="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
-                            <span>{{ benefit.text }}</span>
-                        </li>
-                    </ul>
-                </div>
-
-                <div class="bg-card border border-border rounded-2xl p-6">
-                    <h5 class="text-sm font-semibold text-card-foreground mb-4 flex items-center gap-2">
-                        <InfoIcon class="w-5 h-5 text-primary" />
-                        Security Best Practices
-                    </h5>
-                    <ul class="space-y-3">
-                        <li class="flex items-start gap-2 text-sm text-muted-foreground">
-                            <span class="text-primary mt-0.5 font-bold">1.</span>
-                            <span>Never share your private keys or seed phrase.</span>
-                        </li>
-                        <li class="flex items-start gap-2 text-sm text-muted-foreground">
-                            <span class="text-primary mt-0.5 font-bold">2.</span>
-                            <span>Always verify wallet IDs before transactions.</span>
-                        </li>
-                        <li class="flex items-start gap-2 text-sm text-muted-foreground">
-                            <span class="text-primary mt-0.5 font-bold">3.</span>
-                            <span>Enable two-factor authentication for added security.</span>
-                        </li>
-                    </ul>
-                </div>
-
-                <div class="bg-warning/5 border border-warning/20 rounded-2xl p-6">
-                    <h5 class="text-sm font-semibold text-warning mb-3 flex items-center gap-2">
-                        <ZapIcon class="w-5 h-5" />
-                        Important Notice
-                    </h5>
-                    <p class="text-xs text-muted-foreground leading-relaxed">
-                        We never store your private keys. All wallet connections are secure and encrypted. You maintain full control of your assets at all times.
-                    </p>
-                </div>
-
-                <div class="text-center p-6 bg-gradient-to-br from-card to-muted/20 border border-border rounded-2xl">
-                    <div class="w-12 h-12 rounded-full bg-primary/10 mx-auto mb-3 flex items-center justify-center">
-                        <InfoIcon class="w-6 h-6 text-primary" />
+            <div class="hidden sm:block">
+                <div class="xl:col-span-1 space-y-6">
+                    <div class="bg-gradient-to-br from-primary/5 to-transparent border border-primary/20 rounded-2xl p-6 shadow-sm">
+                        <h5 class="text-sm font-semibold text-card-foreground mb-4 flex items-center gap-2">
+                            <ShieldCheckIcon class="w-5 h-5 text-primary" />
+                            Why Connect Your Wallet?
+                        </h5>
+                        <ul class="space-y-3">
+                            <li v-for="(benefit, index) in walletBenefits" :key="index" class="flex items-start gap-3 text-sm text-muted-foreground">
+                                <component :is="benefit.icon" class="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
+                                <span>{{ benefit.text }}</span>
+                            </li>
+                        </ul>
                     </div>
 
-                    <h5 class="text-sm font-semibold text-card-foreground mb-2">Need Help?</h5>
-                    <p class="text-xs text-muted-foreground mb-4">
-                        Our support team is here to assist you with wallet connections and troubleshooting.
-                    </p>
+                    <div class="bg-card border border-border rounded-2xl p-6">
+                        <h5 class="text-sm font-semibold text-card-foreground mb-4 flex items-center gap-2">
+                            <InfoIcon class="w-5 h-5 text-primary" />
+                            Security Best Practices
+                        </h5>
+                        <ul class="space-y-3">
+                            <li class="flex items-start gap-2 text-sm text-muted-foreground">
+                                <span class="text-primary mt-0.5 font-bold">1.</span>
+                                <span>Never share your private keys or seed phrase.</span>
+                            </li>
+                            <li class="flex items-start gap-2 text-sm text-muted-foreground">
+                                <span class="text-primary mt-0.5 font-bold">2.</span>
+                                <span>Always verify wallet IDs before transactions.</span>
+                            </li>
+                            <li class="flex items-start gap-2 text-sm text-muted-foreground">
+                                <span class="text-primary mt-0.5 font-bold">3.</span>
+                                <span>Enable two-factor authentication for added security.</span>
+                            </li>
+                        </ul>
+                    </div>
 
-                    <TextLink :href="route('user.support.index')" class="inline-flex items-center gap-2 text-sm font-medium text-primary hover:underline">
-                        Contact Support
-                        <ExternalLinkIcon class="w-4 h-4" />
-                    </TextLink>
+                    <div class="bg-warning/5 border border-warning/20 rounded-2xl p-6">
+                        <h5 class="text-sm font-semibold text-warning mb-3 flex items-center gap-2">
+                            <ZapIcon class="w-5 h-5" />
+                            Important Notice
+                        </h5>
+                        <p class="text-xs text-muted-foreground leading-relaxed">
+                            We never store your private keys. All wallet connections are secure and encrypted. You maintain full control of your assets at all times.
+                        </p>
+                    </div>
+
+                    <div class="text-center p-6 bg-gradient-to-br from-card to-muted/20 border border-border rounded-2xl">
+                        <div class="w-12 h-12 rounded-full bg-primary/10 mx-auto mb-3 flex items-center justify-center">
+                            <InfoIcon class="w-6 h-6 text-primary" />
+                        </div>
+
+                        <h5 class="text-sm font-semibold text-card-foreground mb-2">Need Help?</h5>
+                        <p class="text-xs text-muted-foreground mb-4">
+                            Our support team is here to assist you with wallet connections and troubleshooting.
+                        </p>
+
+                        <TextLink :href="route('user.support.index')" class="inline-flex items-center gap-2 text-sm font-medium text-primary hover:underline">
+                            Contact Support
+                            <ExternalLinkIcon class="w-4 h-4" />
+                        </TextLink>
+                    </div>
                 </div>
             </div>
         </div>
@@ -524,17 +525,15 @@
 </template>
 
 <style scoped>
+    /* 1. Standard for Firefox */
+    .custom-scrollbar {
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+    }
+
+    /* 2. Webkit (Chrome, Safari, newer Edge) */
     .custom-scrollbar::-webkit-scrollbar {
-        width: 8px;
-    }
-    .custom-scrollbar::-webkit-scrollbar-track {
-        background: transparent;
-    }
-    .custom-scrollbar::-webkit-scrollbar-thumb {
-        background: hsl(var(--primary) / 0.3);
-        border-radius: 4px;
-    }
-    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-        background: hsl(var(--primary) / 0.5);
+        width: 0;
+        height: 0;
     }
 </style>

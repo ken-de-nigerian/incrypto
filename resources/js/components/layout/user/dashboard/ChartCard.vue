@@ -320,7 +320,7 @@
 
 <template>
     <div class="card-crypto text-card-foreground rounded-xl p-4 sm:p-6" v-if="selectedToken">
-        <div class="flex flex-wrap items-start justify-between gap-3 sm:gap-4 mb-4">
+        <div class="flex flex-col sm:flex-row items-start justify-between gap-3 sm:gap-4 mb-4 w-full">
             <div class="flex items-center gap-3">
                 <img :src="selectedToken.logo" :alt="`${selectedToken.symbol} logo`" class="w-7 h-7 sm:w-8 sm:h-8 rounded-full" />
                 <div>
@@ -329,11 +329,16 @@
                 </div>
             </div>
 
-            <div class="flex flex-col items-end">
-                <span :class="['inline-flex items-center px-2 py-1 rounded-md text-sm font-semibold transition-colors duration-300', isPositiveChange ? 'btn-crypto' : 'bg-red-500/20 text-red-400']">
+            <div class="flex flex-col w-full sm:w-auto sm:items-end">
+                <span :class="[
+                    'inline-flex items-center justify-center sm:justify-end px-2 py-1 rounded-md text-sm font-semibold duration-300',
+                    'w-full sm:w-auto',
+                    isPositiveChange ? 'btn-crypto' : 'bg-red-500/20 text-red-400'
+                ]">
                     {{ isPositiveChange ? '+' : '' }}{{ displayPriceChange }}% (24h)
                 </span>
-                <div class="text-xs text-muted-foreground mt-2 space-y-0.5">
+
+                <div class="text-xs text-muted-foreground mt-2 space-y-0.5 flex flex-row justify-between w-full sm:flex-col sm:w-auto sm:justify-start">
                     <p class="flex justify-between gap-2 sm:gap-4"><span class="text-muted-foreground">24h H:</span> <span class="font-medium text-card-foreground">{{ high24h }}</span></p>
                     <p class="flex justify-between gap-2 sm:gap-4"><span class="text-muted-foreground">24h L:</span> <span class="font-medium text-card-foreground">{{ low24h }}</span></p>
                 </div>
@@ -446,11 +451,11 @@
         </div>
 
         <div class="grid grid-cols-2 gap-4 text-center">
-            <TextLink :href="route('user.send.index')" class="bg-secondary text-secondary-foreground py-3 rounded-xl text-base font-semibold hover:bg-muted transition-colors duration-200">
+            <TextLink :href="route('user.send.index')" class="bg-secondary text-secondary-foreground py-3 rounded-xl text-base font-semibold hover:bg-muted duration-200">
                 SEND
             </TextLink>
 
-            <TextLink :href="route('user.receive.index')" class="bg-primary text-primary-foreground py-3 rounded-xl text-base font-semibold hover:bg-primary/90 transition-colors duration-200">
+            <TextLink :href="route('user.receive.index')" class="bg-primary text-primary-foreground py-3 rounded-xl text-base font-semibold hover:bg-primary/90 duration-200">
                 RECEIVE
             </TextLink>
         </div>

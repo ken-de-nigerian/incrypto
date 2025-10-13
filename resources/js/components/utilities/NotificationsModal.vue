@@ -76,7 +76,7 @@
                                 <h3 class="text-xl font-semibold text-card-foreground">Notifications</h3>
                                 <p class="text-sm text-muted-foreground mt-1">Stay updated with your latest activities</p>
                             </div>
-                            <button @click="handleClose" class="p-2 hover:bg-muted rounded-lg transition-colors flex-shrink-0 cursor-pointer" title="Close">
+                            <button @click="handleClose" class="p-2 hover:bg-muted rounded-lg flex-shrink-0 cursor-pointer" title="Close">
                                 <X class="h-5 w-5 text-muted-foreground" />
                             </button>
                         </div>
@@ -96,7 +96,7 @@
                                         </span>
 
                                         <div class="flex gap-2">
-                                            <button v-if="!notification.read_at" @click="markAsRead(notification.id)" class="text-muted-foreground hover:text-card-foreground cursor-pointer transition-colors" title="Mark as read">
+                                            <button v-if="!notification.read_at" @click="markAsRead(notification.id)" class="text-muted-foreground hover:text-card-foreground cursor-pointer" title="Mark as read">
                                                 <CheckCircle class="h-4 w-4" />
                                             </button>
 

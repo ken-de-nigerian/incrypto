@@ -19,6 +19,19 @@
     const formatTxTime = (dateString: string) => {
         return formatDistanceToNow(new Date(dateString), { addSuffix: true });
     };
+
+    // Function to format the token symbol
+    const formatSymbol = (symbol: string): string => {
+        if (!symbol) return '';
+
+        // Regex to find USDT_ followed by BEP20, ERC20, or TRC20 (case-insensitive)
+        const formatted = symbol.replace(/USDT_(BEP20|ERC20|TRC20)/i, (match) => {
+            // Replace the underscore with a space only in the matched segment
+            return match.replace('_', ' ');
+        });
+
+        return formatted.toUpperCase();
+    };
 </script>
 
 <template>
@@ -50,7 +63,7 @@
 
                     <div class="flex-1 min-w-0">
                         <div class="text-sm font-medium text-card-foreground truncate">
-                            {{ tx.amount }} {{ tx.from }} → {{ tx.to }}
+                            {{ tx.amount }} {{ formatSymbol(tx.from) }} → {{ formatSymbol(tx.to) }}
                         </div>
                         <div class="text-xs text-muted-foreground mt-1">
                             {{ formatTxTime(tx.date) }}

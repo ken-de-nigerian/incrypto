@@ -81,7 +81,7 @@
                 @open-notifications="openNotificationsModal"
             />
 
-            <div class="flex-1">
+            <div class="flex-1 lg:mt-0 mt-8">
                 <div class="grid grid-cols-1 lg:grid-cols-4 gap-6 mx-auto">
                     <div class="lg:col-span-1 space-y-6">
                         <div class="bg-card border border-border rounded-xl p-5 top-6">

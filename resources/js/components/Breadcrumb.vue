@@ -53,7 +53,7 @@
 </script>
 
 <template>
-    <header class="flex flex-col lg:flex-row lg:items-start lg:justify-between mb-6 lg:mb-8 p-2">
+    <header class="flex flex-col lg:flex-row lg:items-start lg:justify-between lg:mb-8 lg:p-2">
         <div>
             <nav aria-label="breadcrumb">
                 <ol class="flex items-center space-x-2 text-sm text-muted-foreground">
@@ -91,7 +91,7 @@
 
             <button
                 @click="openNotificationsModal"
-                class="p-2 bg-card rounded-xl border border-border hover:bg-secondary relative cursor-pointer transition-colors"
+                class="p-2 bg-card rounded-xl border border-border hover:bg-secondary relative cursor-pointer"
                 title="Notifications">
                 <Bell class="w-5 h-5 text-card-foreground" />
                 <span
@@ -102,7 +102,7 @@
 
             <button
                 @click="toggleAppearance"
-                class="p-2 bg-card rounded-xl border border-border hover:bg-secondary relative cursor-pointer transition-colors"
+                class="p-2 bg-card rounded-xl border border-border hover:bg-secondary relative cursor-pointer"
                 title="Change Appearance">
                 <component :is="currentIcon" class="w-5 h-5 text-card-foreground" />
             </button>

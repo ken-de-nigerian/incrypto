@@ -40,6 +40,19 @@
     const selectToken = (token: any) => {
         emit('token-selected', token);
     };
+
+    // Function to format the token symbol
+    const formatSymbol = (symbol: string): string => {
+        if (!symbol) return '';
+
+        // Regex to find USDT_ followed by BEP20, ERC20, or TRC20 (case-insensitive)
+        const formatted = symbol.replace(/USDT_(BEP20|ERC20|TRC20)/i, (match) => {
+            // Replace the underscore with a space only in the matched segment
+            return match.replace('_', ' ');
+        });
+
+        return formatted.toUpperCase();
+    };
 </script>
 
 <template>
@@ -89,14 +102,14 @@
                 v-for="token in displayedTokens"
                 :key="token.symbol"
                 @click="selectToken(token)"
-                class="p-4 border-b border-border last:border-b-0 hover:bg-muted/50 cursor-pointer transition-colors"
+                class="p-4 border-b border-border last:border-b-0 hover:bg-muted/50 cursor-pointer"
             >
                 <div class="flex items-center justify-between">
                     <div class="flex items-center gap-3 flex-1 min-w-0">
                         <img :src="token.logo" :alt="token.symbol" class="w-10 h-10 rounded-full flex-shrink-0" />
                         <div class="min-w-0 flex-1">
                             <div class="flex items-center gap-2">
-                                <div class="font-semibold text-card-foreground">{{ token.symbol }}</div>
+                                <div class="font-semibold text-card-foreground">{{ formatSymbol(token.symbol) }}</div>
                             </div>
                             <div class="text-xs text-muted-foreground truncate">{{ token.name }}</div>
                             <div v-if="token.address" class="text-xs text-muted-foreground font-mono truncate mt-0.5">

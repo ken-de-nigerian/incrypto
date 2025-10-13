@@ -141,7 +141,7 @@
 
     const handleSelectFromToken = (token: Token) => {
         if (token.symbol === props.toToken?.symbol) {
-            // If selected token is the same as `toToken`, swap them
+            // If the selected token is the same as `toToken`, swap them
             emit('update:toToken', props.fromToken);
         }
         emit('update:fromToken', token);
@@ -151,7 +151,7 @@
 
     const handleSelectToToken = (token: Token) => {
         if (token.symbol === props.fromToken?.symbol) {
-            // If selected token is the same as `fromToken`, swap them
+            // If the selected token is the same as `fromToken`, swap them
             emit('update:fromToken', props.toToken);
         }
         emit('update:toToken', token);
@@ -184,7 +184,7 @@
 
         if (props.needsApproval) {
             await approveToken();
-            return; // After approval, user must click swap again
+            return; // After approval, the user must click swap again
         }
 
         emit('update:isSwapping', true);
@@ -280,7 +280,7 @@
             <div class="flex justify-center -my-3 relative z-10">
                 <button
                     @click="reverseTokens"
-                    class="p-2 bg-card border-2 border-border hover:border-primary rounded-full hover:rotate-180 duration-300">
+                    class="p-2 bg-card border-2 border-border hover:border-primary rounded-full hover:rotate-180 duration-300 cursor-pointer">
                     <ArrowDownIcon class="w-5 h-5 text-muted-foreground" />
                 </button>
             </div>

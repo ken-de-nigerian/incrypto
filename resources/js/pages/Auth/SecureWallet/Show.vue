@@ -2,8 +2,9 @@
     import { Head } from '@inertiajs/vue3';
     import { route } from 'ziggy-js';
     import TextLink from '@/components/TextLink.vue';
-    import { ClipboardCopy, Shield, Check, Eye } from 'lucide-vue-next';
+    import { ClipboardCopy, Check, Eye } from 'lucide-vue-next';
     import { ref } from 'vue';
+    import MobileHeader from '@/components/layout/auth/wallet-phrase/MobileHeader.vue';
 
     const props = defineProps<{
         phrase: string[];
@@ -37,11 +38,11 @@
 <template>
     <Head title="Write Down Seed Phrase" />
 
-    <div class="min-h-screen bg-gradient-to-br from-background via-background to-muted/20 flex flex-col items-center justify-start p-6">
-        <div class="w-full max-w-md mx-auto pt-10">
+    <MobileHeader />
 
+    <div class="min-h-screen bg-gradient-to-br from-background via-background to-muted/20 flex flex-col items-center justify-center p-4 pt-20">
+        <div class="w-full max-w-md mx-auto p-4">
             <header class="text-center mb-8">
-                <Shield class="w-12 h-12 text-accent mx-auto mb-4" />
                 <h2 class="text-2xl font-bold text-foreground">Backup Your Phrase</h2>
 
                 <p class="text-sm text-destructive font-semibold mt-2">
@@ -63,7 +64,7 @@
 
                     <button
                         @click="toggleVisibility"
-                        class="bg-secondary text-accent py-2 px-4 rounded-md flex justify-center items-center gap-1 mt-5 hover:bg-secondary/80 transition-colors cursor-pointer">
+                        class="bg-secondary text-accent py-2 px-4 rounded-md flex justify-center items-center gap-1 mt-5 hover:bg-secondary/80 cursor-pointer">
                         <Eye class="w-5 h-5" />
                         View Phrase
                     </button>
@@ -91,7 +92,7 @@
                 <button
                     v-if="!isPhraseVisible"
                     @click="toggleVisibility"
-                    class="flex-1 border text-muted-foreground border-border font-semibold text-center py-3 rounded-lg w-full text-nowrap hover:bg-secondary transition-colors cursor-pointer flex items-center justify-center gap-2"
+                    class="flex-1 border text-muted-foreground border-border font-semibold text-center py-3 rounded-lg w-full text-nowrap hover:bg-secondary cursor-pointer flex items-center justify-center gap-2"
                     aria-label="View seed phrase">
                     <Eye class="w-5 h-5" /> View Phrase
                 </button>
@@ -100,7 +101,7 @@
                     v-else
                     @click="copyPhrase"
                     :disabled="!isPhraseVisible"
-                    class="flex-1 border text-accent border-accent font-semibold text-center py-3 rounded-lg w-full text-nowrap hover:bg-accent/10 transition-colors cursor-pointer flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                    class="flex-1 border text-accent border-accent font-semibold text-center py-3 rounded-lg w-full text-nowrap hover:bg-accent/10 cursor-pointer flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                     aria-label="Copy seed phrase to clipboard">
                     <span v-if="isCopied" class="flex items-center gap-2">
                         <Check class="w-5 h-5" /> Copied
@@ -111,7 +112,7 @@
                 </button>
 
 
-                <TextLink :href="route('secure.wallet.phrase.confirm')" class="flex-1 bg-accent text-accent-foreground font-semibold text-center py-3 rounded-lg w-full hover:bg-accent/90 transition-colors flex items-center justify-center">
+                <TextLink :href="route('secure.wallet.phrase.confirm')" class="flex-1 bg-accent text-accent-foreground font-semibold text-center py-3 rounded-lg w-full hover:bg-accent/90 flex items-center justify-center">
                     Continue
                 </TextLink>
             </div>

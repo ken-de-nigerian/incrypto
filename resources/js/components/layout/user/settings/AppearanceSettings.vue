@@ -12,7 +12,7 @@
 </script>
 
 <template>
-    <div class="space-y-6">
+    <div class="space-y-6 margin-bottom">
         <div class="rounded-lg border bg-card text-card-foreground shadow-sm">
             <div class="flex flex-col space-y-1.5 p-6">
                 <div class="text-2xl font-semibold leading-none tracking-tight flex items-center space-x-2">
@@ -39,7 +39,7 @@
                             :key="value"
                             @click="updateAppearance(value as 'light' | 'dark' | 'system')"
                             :class="[
-                                'flex flex-col items-center justify-center gap-2 rounded-lg border-2 p-6 transition-colors',
+                                'flex flex-col items-center justify-center gap-2 rounded-lg border-2 p-6',
                                 appearance === value
                                     ? 'bg-primary/10 border-primary text-primary ring-2 ring-primary'
                                     : 'bg-secondary border-border text-muted-foreground hover:border-primary',
@@ -53,3 +53,11 @@
         </div>
     </div>
 </template>
+
+<style scoped>
+    @media (max-width: 640px) {
+        .margin-bottom {
+            margin-bottom: 50px;
+        }
+    }
+</style>

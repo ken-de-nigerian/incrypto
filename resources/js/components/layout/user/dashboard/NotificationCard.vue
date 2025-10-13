@@ -36,7 +36,7 @@
 </script>
 
 <template>
-    <div class="card-crypto p-4 sm:p-6">
+    <div class="card-crypto p-4 sm:p-6 margin-bottom">
         <div v-if="notifications.length > 0" class="flex justify-between items-center mb-8">
             <h3 class="text-card-foreground font-semibold text-sm sm:text-base">Your Notifications</h3>
             <button @click="deleteAllNotifications" class="text-sm text-destructive hover:opacity-80 flex items-center gap-2 cursor-pointer transition-opacity">
@@ -51,7 +51,7 @@
                         {{ formatTimeAgo(notification.created_at) }}
                     </span>
                     <div class="flex gap-2">
-                        <button v-if="!notification.read_at" @click="markAsRead(notification.id)" class="text-muted-foreground hover:text-card-foreground cursor-pointer transition-colors" title="Mark as read">
+                        <button v-if="!notification.read_at" @click="markAsRead(notification.id)" class="text-muted-foreground hover:text-card-foreground cursor-pointer" title="Mark as read">
                             <CheckCircle class="h-4 w-4" />
                         </button>
 
@@ -81,3 +81,11 @@
         </div>
     </div>
 </template>
+
+<style scoped>
+    @media (max-width: 640px) {
+        .margin-bottom {
+            margin-bottom: 50px;
+        }
+    }
+</style>

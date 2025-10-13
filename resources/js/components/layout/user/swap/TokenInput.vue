@@ -1,31 +1,44 @@
 <script setup lang="ts">
-import { ChevronDownIcon } from 'lucide-vue-next';
+    import { ChevronDownIcon } from 'lucide-vue-next';
 
-defineProps<{
-    label: string;
-    token: { symbol: string; logo: string } | null;
-    balance: number;
-    amount: string;
-    price: number;
-    readonly?: boolean;
-}>();
+    defineProps<{
+        label: string;
+        token: { symbol: string; logo: string } | null;
+        balance: number;
+        amount: string;
+        price: number;
+        readonly?: boolean;
+    }>();
 
-// FIX: Assigned the result of defineEmits to the 'emit' constant
-const emit = defineEmits(['update:amount', 'open-modal', 'set-max']);
+    // FIX: Assigned the result of defineEmits to the 'emit' constant
+    const emit = defineEmits(['update:amount', 'open-modal', 'set-max']);
+
+    // Function to format the token symbol
+    const formatSymbol = (symbol: string): string => {
+        if (!symbol) return '';
+
+        // Regex to find USDT_ followed by BEP20, ERC20, or TRC20 (case-insensitive)
+        const formatted = symbol.replace(/USDT_(BEP20|ERC20|TRC20)/i, (match) => {
+            // Replace the underscore with a space only in the matched segment
+            return match.replace('_', ' ');
+        });
+
+        return formatted.toUpperCase();
+    };
 </script>
 
 <template>
     <div class="bg-muted/50 rounded-xl p-3 sm:p-4 border border-border">
         <div class="flex items-center justify-between mb-2">
             <span class="text-xs font-medium text-muted-foreground">{{ label }}</span>
-            <span class="text-xs text-muted-foreground">Balance: {{ balance.toFixed(4) }} {{ token?.symbol }}</span>
+            <span class="text-xs text-muted-foreground">Balance: {{ balance.toFixed(4) }} {{ formatSymbol(token?.symbol) }}</span>
         </div>
         <div class="flex items-center gap-2 sm:gap-3">
             <button
                 @click="emit('open-modal')"
                 class="flex items-center gap-2 px-2 sm:px-3 py-1 sm:py-2 bg-background hover:bg-muted border border-border rounded-lg">
                 <img v-if="token" :src="token.logo" :alt="token.symbol" class="w-6 h-6 rounded-full" />
-                <span class="font-semibold text-card-foreground text-xs sm:text-sm">{{ token?.symbol || 'Select' }}</span>
+                <span class="font-semibold text-card-foreground text-xs sm:text-sm">{{ formatSymbol(token?.symbol) || 'Select' }}</span>
                 <ChevronDownIcon class="w-4 h-4 text-muted-foreground" />
             </button>
 

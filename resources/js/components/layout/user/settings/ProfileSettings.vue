@@ -91,7 +91,7 @@
 </script>
 
 <template>
-    <div class="space-y-6">
+    <div class="space-y-6 margin-bottom">
         <div class="rounded-lg border bg-card text-card-foreground shadow-sm">
             <div class="flex flex-col space-y-1.5 p-6">
                 <div class="text-2xl font-semibold">Profile Picture</div>
@@ -272,5 +272,11 @@
 
     .vue-tel-input-custom .vti__dropdown-list::-webkit-scrollbar-thumb:hover {
         background: hsl(var(--accent) / 0.8);
+    }
+
+    @media (max-width: 640px) {
+        .margin-bottom {
+            margin-bottom: 50px;
+        }
     }
 </style>

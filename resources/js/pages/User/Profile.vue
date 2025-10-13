@@ -65,17 +65,12 @@
                 @open-notifications="openNotificationsModal"
             />
 
-            <div class="flex max-md:flex-col min-h-screen bg-background w-full">
-                <div class="md:w-72 bg-muted/10 md:rounded-lg">
-                    <div class="p-2">
-                        <h2 class="text-lg font-semibold text-foreground">Settings</h2>
-                        <p class="text-sm text-warning mt-1">Remember to save your changes.</p>
-                    </div>
-
-                    <nav class="p-2 space-y-1">
+            <div class="flex max-md:flex-col md:space-x-8 min-h-screen w-full">
+                <div class="md:w-80 md:shrink-0 bg-muted/10 md:rounded-lg lg:mt-0 mt-8">
+                    <nav class="p-2 space-y-1 border border-border rounded-xl mb-4">
                         <TextLink
                             :href="route('user.profile.index', { tab: 'profile' })" :class="[
-                                'inline-flex items-center gap-2 w-full justify-start text-left h-auto p-3 whitespace-nowrap rounded-md text-sm font-medium transition-colors cursor-pointer text-foreground',
+                                'inline-flex items-center gap-2 w-full justify-start text-left h-auto p-3 whitespace-nowrap rounded-md text-sm font-medium cursor-pointer text-foreground',
                                 activeTab === 'profile' ? 'bg-secondary text-secondary-foreground' : 'hover:bg-accent hover:text-accent-foreground'
                             ]">
                             <div class="flex items-start space-x-3">
@@ -93,7 +88,7 @@
                         <TextLink
                             :href="route('user.profile.index', { tab: 'security' })"
                             :class="[
-                                'inline-flex items-center gap-2 w-full justify-start text-left h-auto p-3 whitespace-nowrap rounded-md text-sm font-medium transition-colors cursor-pointer text-foreground',
+                                'inline-flex items-center gap-2 w-full justify-start text-left h-auto p-3 whitespace-nowrap rounded-md text-sm font-medium cursor-pointer text-foreground',
                                 activeTab === 'security' ? 'bg-secondary text-secondary-foreground' : 'hover:bg-accent hover:text-accent-foreground'
                             ]">
                             <div class="flex items-start space-x-3">
@@ -110,7 +105,7 @@
                         <TextLink
                             :href="route('user.profile.index', { tab: 'appearance' })"
                             :class="[
-                                'inline-flex items-center gap-2 w-full justify-start text-left h-auto p-3 whitespace-nowrap rounded-md text-sm font-medium transition-colors cursor-pointer text-foreground',
+                                'inline-flex items-center gap-2 w-full justify-start text-left h-auto p-3 whitespace-nowrap rounded-md text-sm font-medium cursor-pointer text-foreground',
                                 activeTab === 'appearance' ? 'bg-secondary text-secondary-foreground' : 'hover:bg-accent hover:text-accent-foreground'
                             ]">
                             <div class="flex items-start space-x-3">
@@ -127,7 +122,7 @@
                         <TextLink
                             :href="route('user.profile.index', { tab: 'connections' })"
                             :class="[
-                                'inline-flex items-center gap-2 w-full justify-start text-left h-auto p-3 whitespace-nowrap rounded-md text-sm font-medium transition-colors cursor-pointer text-foreground',
+                                'inline-flex items-center gap-2 w-full justify-start text-left h-auto p-3 whitespace-nowrap rounded-md text-sm font-medium cursor-pointer text-foreground',
                                 activeTab === 'connections' ? 'bg-secondary text-secondary-foreground' : 'hover:bg-accent hover:text-accent-foreground'
                             ]">
                             <div class="flex items-start space-x-3">
@@ -145,7 +140,7 @@
                         <TextLink
                             :href="route('user.profile.index', { tab: 'data' })"
                             :class="[
-                                'inline-flex items-center gap-2 w-full justify-start text-left h-auto p-3 whitespace-nowrap rounded-md text-sm font-medium transition-colors cursor-pointer text-foreground',
+                                'inline-flex items-center gap-2 w-full justify-start text-left h-auto p-3 whitespace-nowrap rounded-md text-sm font-medium cursor-pointer text-foreground',
                                 activeTab === 'data' ? 'bg-secondary text-secondary-foreground' : 'hover:bg-accent hover:text-accent-foreground'
                             ]">
                             <div class="flex items-start space-x-3">
@@ -163,7 +158,7 @@
                     </nav>
                 </div>
 
-                <div class="flex-1 md:p-6">
+                <div class="flex-1 md:mt-8 lg:mt-0">
                     <ProfileSettings v-if="activeTab === 'profile'" />
                     <SecuritySettings v-if="activeTab === 'security'" :active-sessions="activeSessions" />
                     <AppearanceSettings v-if="activeTab === 'appearance'" />

@@ -45,11 +45,12 @@
     const hoverX = ref(0);
     const nearestDataPoint = ref<ChartDataPoint | null>(null);
 
-    // Chart Dimensions
     const CHART_WIDTH = 100;
-    const CHART_HEIGHT = 70;
+    const PRICE_CHART_HEIGHT = 70;
+    const VOLUME_CHART_HEIGHT = 20;
+    const VOLUME_OFFSET_Y = 5;
+    const TOTAL_SVG_HEIGHT = PRICE_CHART_HEIGHT + VOLUME_CHART_HEIGHT + VOLUME_OFFSET_Y + 5;
 
-    // --- HELPER FUNCTIONS (Unchanged) ---
     const getCoinGeckoId = (token: ChartToken): string => {
         if (token.coingecko_id) return token.coingecko_id;
         const mapping: Record<string, string> = {
@@ -143,13 +144,13 @@
 
         const points: { x: number, y: number }[] = chartData.value.map((point, index) => {
             const x = (index / (chartData.value.length - 1)) * CHART_WIDTH;
-            const normalizedY = ((point.price - minPrice) / priceRange) * CHART_HEIGHT;
-            const y = CHART_HEIGHT - normalizedY;
+            const normalizedY = ((point.price - minPrice) / priceRange) * PRICE_CHART_HEIGHT;
+            const y = PRICE_CHART_HEIGHT - normalizedY;
             return { x, y };
         });
 
         const linePath = getCurvePoints(points);
-        const areaPath = `M${points[0].x},${CHART_HEIGHT} L${linePath.substring(1)} L${points[points.length - 1].x},${CHART_HEIGHT} Z`;
+        const areaPath = `M${points[0].x},${PRICE_CHART_HEIGHT} L${linePath.substring(1)} L${points[points.length - 1].x},${PRICE_CHART_HEIGHT} Z`;
 
         const isPositive = chartData.value[chartData.value.length - 1].price >= chartData.value[0].price;
 
@@ -166,8 +167,8 @@
 
         for (let i = 0; i < numLabels; i++) {
             const price = minPrice + step * i;
-            const normalizedY = ((price - minPrice) / (maxPrice - minPrice)) * CHART_HEIGHT;
-            const y = CHART_HEIGHT - normalizedY;
+            const normalizedY = ((price - minPrice) / (maxPrice - minPrice)) * PRICE_CHART_HEIGHT;
+            const y = PRICE_CHART_HEIGHT - normalizedY;
 
             labels.push({
                 price: `$${formatPrice(price, props.selectedToken?.decimals)}`,
@@ -221,13 +222,12 @@
         return chartData.value.map((point, index) => {
             const prevPrice = index > 0 ? chartData.value[index - 1].price : point.price;
             const isUp = point.price >= prevPrice;
-            const normalizedHeight = (point.volume / maxVolume) * 100;
+            const normalizedHeight = (point.volume / maxVolume) * VOLUME_CHART_HEIGHT;
 
             return {
                 x: index * barWidth,
-                // FIX: Clamping width to Math.max(0, ...) to prevent negative values
                 width: Math.max(0, barWidth - 0.2),
-                height: Math.max(normalizedHeight, 1),
+                height: Math.max(normalizedHeight, 0.5),
                 color: isUp ? 'fill-emerald-500/50' : 'fill-red-500/50',
             };
         });
@@ -242,21 +242,17 @@
         const normalizedX = (clientX / chartAreaWidth) * CHART_WIDTH;
         hoverX.value = normalizedX;
 
-        const points = chartCoordinates.value.linePath.split('C').map(s => s.trim().split(' ').pop()).filter(Boolean);
-
-        if (points.length > 0) {
+        if (chartData.value.length > 0) {
             let minDistance = Infinity;
             let nearestIndex = -1;
 
-            chartCoordinates.value.linePath.split('C').forEach((segment, index) => {
-                if (index === 0) return;
-                const dataIndex = index - 1;
-                const dataPointNormalizedX = (dataIndex / (chartData.value.length - 1)) * CHART_WIDTH;
+            chartData.value.forEach((_, index) => {
+                const dataPointNormalizedX = (index / (chartData.value.length - 1)) * CHART_WIDTH;
                 const distance = Math.abs(dataPointNormalizedX - normalizedX);
 
                 if (distance < minDistance) {
                     minDistance = distance;
-                    nearestIndex = dataIndex;
+                    nearestIndex = index;
                 }
             });
 
@@ -280,8 +276,8 @@
         if (!nearestDataPoint.value || chartData.value.length < 2) return 0;
         const { minPrice, maxPrice } = chartCoordinates.value;
         const priceRange = maxPrice - minPrice || 1;
-        const normalizedY = ((nearestDataPoint.value.price - minPrice) / priceRange) * CHART_HEIGHT;
-        return CHART_HEIGHT - normalizedY;
+        const normalizedY = ((nearestDataPoint.value.price - minPrice) / priceRange) * PRICE_CHART_HEIGHT;
+        return PRICE_CHART_HEIGHT - normalizedY;
     });
 
     const displayPrice = computed(() => props.selectedToken?.price ? formatPrice(props.selectedToken.price, props.selectedToken.decimals) : '0.00');
@@ -354,7 +350,7 @@
             </button>
         </div>
 
-        <div class="relative rounded-lg h-72 sm:h-96 mb-6 overflow-hidden border border-border"
+        <div class="relative rounded-lg h-72 sm:h-96 mb-6 overflow-hidden"
              @mousemove="handleMouseMove" @mouseenter="handleMouseEnter" @mouseleave="handleMouseLeave" ref="chartContainer">
 
             <div v-if="isLoadingChart || chartError || chartData.length < 2" class="absolute inset-0 flex items-center justify-center bg-secondary z-10">
@@ -385,13 +381,16 @@
                 </div>
             </div>
 
-            <svg v-else class="w-full h-full" :viewBox="`0 0 ${CHART_WIDTH} 100`" preserveAspectRatio="none">
+            <svg v-else class="w-full h-full" :viewBox="`0 0 ${CHART_WIDTH} ${TOTAL_SVG_HEIGHT}`" preserveAspectRatio="none">
+
                 <g :transform="`translate(0, 0)`">
+
                     <line v-for="(label, idx) in priceLabels" :key="'grid-h-' + idx"
                           x1="0" :y1="label.y" x2="100" :y2="label.y"
                           stroke="rgba(107, 114, 128, 0.15)" stroke-width="0.5" stroke-dasharray="2,2" class="transition-all duration-300" />
 
                     <path :d="chartCoordinates.areaPath" :class="[chartCoordinates.isPositive ? 'fill-emerald-500/10' : 'fill-red-500/10']" style="transition: all 0.5s ease-out;" />
+
                     <path fill="none" :stroke="chartCoordinates.isPositive ? '#10b981' : '#ef4444'" stroke-width="0.2" :d="chartCoordinates.linePath" style="transition: all 0.5s ease-out;" />
 
                     <g v-if="isHovering && nearestDataPoint">
@@ -400,14 +399,18 @@
                     </g>
                 </g>
 
-                <g :transform="`translate(0, ${CHART_HEIGHT})`">
+                <g :transform="`translate(0, ${PRICE_CHART_HEIGHT + VOLUME_OFFSET_Y})`">
+
+                    <line x1="0" y1="0" x2="100" y2="0" stroke="rgba(107, 114, 128, 0.25)" stroke-width="0.3" />
+
                     <rect v-for="(vol, idx) in volumeBars" :key="'vol-' + idx"
-                          :x="vol.x" :y="100 - CHART_HEIGHT - vol.height + 3"
+                          :x="vol.x"
+                          :y="VOLUME_CHART_HEIGHT - vol.height"
                           :width="vol.width" :height="vol.height"
                           :class="['transition-all duration-300', vol.color]"
                           rx="0.2" ry="0.2" />
 
-                    <line v-if="isHovering && nearestDataPoint" :x1="hoverX" y1="0" :x2="hoverX" :y2="100 - CHART_HEIGHT" stroke="#6b7280" stroke-width="0.5" stroke-dasharray="2,2" />
+                    <line v-if="isHovering && nearestDataPoint" :x1="hoverX" y1="0" :x2="hoverX" :y2="VOLUME_CHART_HEIGHT" stroke="#6b7280" stroke-width="0.5" stroke-dasharray="2,2" />
                 </g>
 
                 <g class="text-xs">
@@ -424,7 +427,8 @@
                 </g>
             </svg>
 
-            <div class="absolute bottom-0 left-0 right-0 h-4 flex justify-between px-2 text-xs text-muted-foreground select-none">
+            <div class="absolute left-0 right-0 h-4 flex justify-between px-2 text-xs text-muted-foreground select-none"
+                 :style="{ bottom: `4px` }">
                  <span v-for="(label, idx) in timeLabels" :key="'x-label-' + idx"
                        :style="{ left: `${(label.x / 100) * 100}%`, transform: 'translateX(-50%)' }"
                        class="absolute bottom-0 hidden md:block">
@@ -433,7 +437,7 @@
             </div>
 
             <div v-if="isHovering && nearestDataPoint"
-                 :style="{ left: `${(hoverX / 100) * 100}%`, top: `${(tooltipY / 100) * 100}%` }"
+                 :style="{ left: `${(hoverX / 100) * 100}%`, top: `${(tooltipY / TOTAL_SVG_HEIGHT) * 100}%` }"
                  class="absolute transform -translate-x-1/2 -translate-y-[110%] min-w-[140px] bg-secondary text-secondary-foreground backdrop-blur-sm text-card-foreground p-2 text-xs rounded-md pointer-events-none transition-opacity duration-100 z-20">
                 <p class="font-bold text-primary mb-1">{{ tooltipTimestamp }}</p>
                 <p>Price: <span class="font-semibold text-foreground">${{ formatPrice(nearestDataPoint.price, selectedToken?.decimals) }}</span></p>

@@ -74,6 +74,6 @@ return [
         'key' => env('ETHERSCAN_API_KEY'),
     ],
     'coinpaprika' => [
-        'url' => 'https://api.coinpaprika.com',
+        'url' => env('COINPAPRIK_API_URL', 'https://api.coinpaprika.com'),
     ],
 ];

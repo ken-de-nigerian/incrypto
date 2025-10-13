@@ -1,48 +1,65 @@
 <script setup lang="ts">
-    import { ref, computed } from 'vue';
-    import { Wallet, Eye, EyeOff, RefreshCw } from 'lucide-vue-next';
+    import { ref, computed, nextTick, watch, onMounted, onUnmounted } from 'vue';
+    import { Wallet, Eye, EyeOff, RefreshCw, Loader2 } from 'lucide-vue-next';
     import { router } from '@inertiajs/vue3';
+
+    interface WalletBalance {
+        name: string;
+        symbol: string;
+        balance: number;
+        usd_value: number;
+        profit_loss: number;
+        price_change_percentage: number;
+        is_profit: boolean;
+        image: string;
+    }
+
+    interface WalletBalances {
+        wallets: WalletBalance[];
+        totalUsdValue: number;
+    }
 
     // Define props
     const props = defineProps<{
-        wallet_balances?: {
-            wallets: {
-                name: string;
-                symbol: string;
-                balance: number;
-                usd_value: number;
-                profit_loss: number;
-                price_change_percentage: number;
-                is_profit: boolean;
-                image: string;
-            }[];
-            totalUsdValue: number;
-        };
+        wallet_balances?: WalletBalances;
         hideBalance?: boolean;
     }>();
 
-    // Define reactive state
+    const WALLETS_PER_PAGE = 5;
+    const observer = ref<IntersectionObserver | null>(null);
+    const sentinelRef = ref<HTMLElement | null>(null);
+
+    const currentPage = ref(1);
+    const isFetchingMore = ref(false);
+
     const hideZeroBalances = ref(false);
     const isBalanceHidden = ref(false);
     const isRefreshing = ref(false);
 
-    // Check if data is loading (an initial load or refreshing)
     const isLoading = computed(() => !props.wallet_balances || isRefreshing.value);
 
-    // Computed property for filtered wallet data
-    const filteredWalletData = computed(() => {
+    const allFilteredWallets = computed<WalletBalance[]>(() => {
         if (!props.wallet_balances) return [];
 
+        let walletsArray = props.wallet_balances.wallets || [];
+
         if (hideZeroBalances.value) {
-            return Object.values(props.wallet_balances.wallets).filter(wallet => wallet.balance > 0);
+            walletsArray = walletsArray.filter(wallet => wallet.balance > 0);
         }
-        return Object.values(props.wallet_balances.wallets);
+        return walletsArray;
     });
 
-    // Skeleton loader count
-    const skeletonCount = 6;
+    const paginatedWalletData = computed<WalletBalance[]>(() => {
+        const limit = currentPage.value * WALLETS_PER_PAGE;
+        return allFilteredWallets.value.slice(0, limit);
+    });
 
-    // Helper function to get the correct symbol for icon
+    const hasMoreWallets = computed(() => {
+        return paginatedWalletData.value.length < allFilteredWallets.value.length;
+    });
+
+    const skeletonCount = 5;
+
     const getIconSymbol = (symbol: string) => {
         const lowerSymbol = symbol.toLowerCase();
         if (lowerSymbol.includes('usdt')) {
@@ -51,22 +68,67 @@
         return lowerSymbol;
     };
 
-    // Toggle balance visibility
     const toggleBalanceVisibility = () => {
         isBalanceHidden.value = !isBalanceHidden.value;
     };
 
-    // Refresh wallet data
     const refreshWalletData = () => {
         isRefreshing.value = true;
+        currentPage.value = 1;
 
         router.reload({
             only: ['wallet_balances'],
             onFinish: () => {
                 isRefreshing.value = false;
+                nextTick(setupObserver);
             }
         });
     };
+
+    const loadMoreWallets = () => {
+        if (!hasMoreWallets.value || isFetchingMore.value) return;
+
+        isFetchingMore.value = true;
+        setTimeout(() => {
+            currentPage.value += 1;
+            isFetchingMore.value = false;
+            nextTick(setupObserver);
+        }, 1000);
+    };
+
+    const setupObserver = () => {
+        if (observer.value) {
+            observer.value.disconnect();
+        }
+
+        if (sentinelRef.value && hasMoreWallets.value) {
+            observer.value = new IntersectionObserver((entries) => {
+                const [entry] = entries;
+                if (entry.isIntersecting) {
+                    loadMoreWallets();
+                }
+            }, {
+                root: sentinelRef.value.parentElement,
+                rootMargin: '0px',
+                threshold: 0.1,
+            });
+
+            observer.value.observe(sentinelRef.value);
+        }
+    };
+
+    watch(allFilteredWallets, () => {
+        currentPage.value = 1;
+        nextTick(setupObserver);
+    });
+
+    onMounted(setupObserver);
+
+    onUnmounted(() => {
+        if (observer.value) {
+            observer.value.disconnect();
+        }
+    });
 </script>
 
 <template>
@@ -129,7 +191,7 @@
             </div>
         </div>
 
-        <div class="space-y-2 sm:space-y-3">
+        <div class="wallet-list-container no-scrollbar space-y-2 sm:space-y-3 max-h-96 overflow-y-auto">
             <template v-if="isLoading">
                 <div v-for="i in skeletonCount" :key="`skeleton-${i}`" class="flex items-center justify-between py-2 sm:py-3 border-b border-border last:border-0">
                     <div class="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
@@ -149,7 +211,7 @@
             </template>
 
             <template v-else>
-                <div v-for="(wallet, idx) in filteredWalletData" :key="idx" class="flex items-center justify-between py-2 sm:py-3 border-b border-border last:border-0">
+                <div v-for="(wallet, idx) in paginatedWalletData" :key="idx" class="flex items-center justify-between py-2 sm:py-3 border-b border-border last:border-0">
                     <div class="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
                         <img :src="`https://cdn.jsdelivr.net/gh/atomiclabs/cryptocurrency-icons@1a63530be6e374711a8554f31b17e4cb92c25fa5/128/color/${getIconSymbol(wallet.symbol)}.png`" :alt="`${wallet.name} icon`" class="w-8 h-8 sm:w-8 sm:h-8 rounded-full flex-shrink-0 object-cover bg-secondary" @error="(e) => (e.target as HTMLImageElement).src = 'https://cdn.jsdelivr.net/gh/atomiclabs/cryptocurrency-icons@1a63530be6e374711a8554f31b17e4cb92c25fa5/128/color/generic.png'" />
                         <div class="min-w-0">
@@ -172,7 +234,41 @@
                         </p>
                     </div>
                 </div>
+
+                <div ref="sentinelRef" v-if="hasMoreWallets" class="flex justify-center py-4">
+                    <Loader2 :class="['w-6 h-6 text-primary', isFetchingMore ? 'animate-spin' : '']" />
+                </div>
+
+                <div v-if="!hasMoreWallets && paginatedWalletData.length > 0 && !isFetchingMore" class="text-center text-sm text-muted-foreground py-4">
+                    End of wallets list.
+                </div>
+                <div v-else-if="paginatedWalletData.length === 0 && !isLoading" class="text-center text-sm text-muted-foreground py-4">
+                    No wallets found. Try adjusting your filters.
+                </div>
             </template>
         </div>
     </div>
 </template>
+
+<style scoped>
+    /* WebKit browsers (Chrome, Safari) */
+    .no-scrollbar::-webkit-scrollbar {
+        display: none;
+    }
+
+    /* MS Edge and Firefox */
+    .no-scrollbar {
+        -ms-overflow-style: none; /* IE and Edge */
+        scrollbar-width: none; /* Firefox */
+    }
+
+    /* Add a max-height to the container to enable scrolling */
+    .max-h-96 {
+        max-height: 24rem; /* 384px */
+    }
+
+    /* Added class for smooth scrolling */
+    .wallet-list-container {
+        scroll-behavior: smooth;
+    }
+</style>

@@ -1,6 +1,6 @@
 <script setup lang="ts">
     import { computed, ref, onMounted, onUnmounted } from 'vue';
-    import { AlertCircleIcon, ChevronDownIcon, SearchIcon, SendIcon, ZapIcon } from 'lucide-vue-next';
+    import { AlertCircleIcon, ChevronDownIcon, SearchIcon, SendIcon, ZapIcon, ClipboardIcon } from 'lucide-vue-next';
 
     const props = defineProps<{
         availableAssets: Array<any>;
@@ -57,6 +57,11 @@
             addressError.value = 'Recipient address is required';
             return false;
         }
+        // Basic length check for an address placeholder
+        if (recipientAddress.value.length < 10) {
+            addressError.value = 'Invalid recipient address format';
+            return false;
+        }
         return true;
     };
 
@@ -96,6 +101,26 @@
         const maxAmount = Math.max(0, selectedBalance.value - selectedFee.value);
         sendAmount.value = maxAmount > 0 ? maxAmount.toFixed(8) : '0';
         validateAmount();
+    };
+
+    // NEW METHOD: Handle pasting from clipboard
+    const pasteFromClipboard = async () => {
+        try {
+            // Check for Clipboard API support and read text
+            if (navigator.clipboard && navigator.clipboard.readText) {
+                const text = await navigator.clipboard.readText();
+                if (text) {
+                    recipientAddress.value = text.trim();
+                    validateAddress(); // Re-validate after pasting
+                }
+            } else {
+                // Fallback for non-secure contexts or older browsers
+                alert('Clipboard access is not supported or permission was denied. Please paste manually.');
+            }
+        } catch (err) {
+            console.error('Failed to read clipboard contents: ', err);
+            addressError.value = 'Failed to read clipboard. Check browser permissions.';
+        }
     };
 
     const reviewTransaction = () => {
@@ -218,7 +243,19 @@
 
         <div>
             <label class="text-sm font-semibold text-card-foreground mb-2 block">Recipient Address</label>
-            <input v-model="recipientAddress" @blur="validateAddress" @input="addressError = ''" type="text" placeholder="0x..." class="w-full p-4 bg-muted border border-border rounded-lg font-mono text-sm focus:outline-none focus:ring-2 focus:ring-primary" />
+            <div class="relative">
+                <input v-model="recipientAddress"
+                    @blur="validateAddress"
+                    @input="addressError = ''"
+                    type="text"
+                    placeholder="0x..."
+                    class="w-full p-4 pr-12 bg-muted border border-border rounded-lg font-mono text-sm focus:outline-none focus:ring-2 focus:ring-primary" />
+                <button @click="pasteFromClipboard"
+                    title="Paste from clipboard"
+                    class="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-card-foreground p-1 transition-colors cursor-pointer">
+                    <ClipboardIcon class="w-5 h-5" />
+                </button>
+            </div>
             <div v-if="addressError" class="mt-2 text-sm text-destructive flex items-center gap-1">
                 <AlertCircleIcon class="w-4 h-4" /> {{ addressError }}
             </div>

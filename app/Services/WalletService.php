@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Events\WalletStatusUpdated;
 use App\Models\User;
 use Exception;
 use Illuminate\Support\Facades\Log;
@@ -99,6 +100,43 @@ class WalletService
 
         $this->user->wallet_balance = json_encode($this->fullWalletData);
         $this->user->save();
+    }
+
+    /**
+     * Update the status (visibility) of a single wallet for the user.
+     *
+     * @param User $user The authenticated user.
+     * @param array $data Contains 'wallet_key' and 'wallet_status'.
+     * @return void
+     * @throws JsonException
+     */
+    public function updateWalletStatus(User $user, array $data): void
+    {
+        $walletKey = $data['wallet_key'];
+        $newStatus = $data['wallet_status'];
+
+        try {
+
+            $walletData = json_decode($user->wallet_balance ?? '{}', true, 512, JSON_THROW_ON_ERROR);
+            if (isset($walletData[$walletKey])) {
+
+                $walletData[$walletKey]['status'] = $newStatus;
+
+                $user->wallet_balance = json_encode($walletData, JSON_THROW_ON_ERROR);
+                $user->save();
+
+                $this->fullWalletData = $this->decodeFullWalletData();
+                $this->balances = $this->extractBalances();
+
+                // Dispatch event
+                event(new WalletStatusUpdated($user, $walletKey, $newStatus));
+            } else {
+                Log::warning("Attempt to update non-existent wallet key: $walletKey for user ID $user->id");
+            }
+        } catch (JsonException $e) {
+            Log::error("Wallet Status Update JSON Error for User ID $user->id: " . $e->getMessage());
+            throw $e;
+        }
     }
 
     /**

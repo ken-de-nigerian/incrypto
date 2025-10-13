@@ -8,12 +8,15 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\DeleteAccountRequest;
 use App\Http\Requests\UpdatePasswordRequest;
 use App\Http\Requests\UpdateProfileRequest;
+use App\Http\Requests\UpdateWalletStatusRequest;
 use App\Services\ProfileService;
 use App\Services\UserSessionService;
+use App\Services\WalletService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Inertia\Inertia;
+use JsonException;
 
 class ManageUserProfileController extends Controller
 {
@@ -48,6 +51,18 @@ class ManageUserProfileController extends Controller
         event(new PasswordUpdated($user));
 
         return back()->with('success', 'Your password has been updated successfully.');
+    }
+
+    /**
+     * @throws JsonException
+     */
+    public function updateWalletStatus(UpdateWalletStatusRequest $request, WalletService $walletService)
+    {
+        $walletService->updateWalletStatus(
+            $request->user(),
+            $request->validated(),
+        );
+        return back();
     }
 
     public function destroy(DeleteAccountRequest $request)

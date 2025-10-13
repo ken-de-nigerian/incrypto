@@ -23,7 +23,7 @@
             <div class="flex items-center space-x-3">
                 <div class="w-10 h-10 rounded-full bg-secondary flex items-center justify-center overflow-hidden">
                     <img v-if="user.profile?.profile_photo_path" :src="user.profile.profile_photo_path" alt="Profile picture" loading="lazy" class="h-full w-full object-cover" />
-                    <span v-else class="text-accent-foreground font-bold text-lg">
+                    <span v-else class="font-semibold text-sm">
                         {{ initials }}
                     </span>
                 </div>

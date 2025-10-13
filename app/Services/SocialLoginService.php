@@ -9,8 +9,11 @@ use Exception;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Laravel\Socialite\Contracts\User as SocialiteUser;
+use Log;
 use Throwable;
 
 class SocialLoginService
@@ -77,6 +80,8 @@ class SocialLoginService
 
         [$firstname, $lastname] = $this->extractNames($socialUser);
 
+        $localAvatarPath = $this->downloadAndStoreAvatar($socialUser);
+
         $user = User::create([
             'ref_by' => $referrerData ?: null,
             'email' => $socialUser->getEmail(),
@@ -92,7 +97,7 @@ class SocialLoginService
 
         UserProfile::create([
             'user_id' => $user->id,
-            'profile_photo_path' => $socialUser->getAvatar(),
+            'profile_photo_path' => $localAvatarPath,
             'referral_code' => $this->generateUniqueReferralCode(),
         ]);
 
@@ -106,6 +111,30 @@ class SocialLoginService
         }
 
         return $user;
+    }
+
+    /**
+     * Downloads the social user's avatar and stores it locally.
+     *
+     * @param SocialiteUser $socialUser
+     * @return string|null The path to the stored file, or null on failure.
+     */
+    protected function downloadAndStoreAvatar(SocialiteUser $socialUser): ?string
+    {
+        $avatarUrl = $socialUser->getAvatar();
+        if (!$avatarUrl) {
+            return null;
+        }
+
+        try {
+            $fileContents = Http::get($avatarUrl)->body();
+            $filename = 'avatars/' . Str::uuid() . '.jpg';
+            Storage::disk('public')->put($filename, $fileContents);
+            return asset('storage/' . $filename);
+        } catch (Throwable $e) {
+            Log::error("Failed to download socialite avatar: " . $e->getMessage(), ['url' => $avatarUrl]);
+            return null;
+        }
     }
 
     protected function extractNames(SocialiteUser $socialUser): array

@@ -35,7 +35,7 @@ Route::prefix('user')
                 Route::get('/', 'index')->name('index');
                 Route::post('/update/profile', 'updateProfile')->name('update.profile');
                 Route::put('/reset/password', 'resetPassword')->name('reset.password');
-                Route::put('/update/trading/status', 'updateTradingStatus')->name('update.trading.status');
+                Route::patch('/update/wallet/status', 'updateWalletStatus')->name('update.wallet.status');
                 Route::delete('/delete/profile', 'destroy')->name('destroy');
             });
 

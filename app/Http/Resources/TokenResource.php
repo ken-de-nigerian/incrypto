@@ -18,10 +18,12 @@ class TokenResource extends JsonResource
         $walletData = $this['wallet_data'];
         $gateway = $this['gateway'];
 
+        $symbol = strtolower($this['symbol']);
+
         return [
             'symbol' => $this['symbol'],
             'name' => $marketData['name'] ?? 'Unknown Token',
-            'logo' => $marketData['image'] ?? asset('assets/images/default-crypto.png'),
+            'logo' => $marketData['image'] ?? "https://cdn.jsdelivr.net/gh/atomiclabs/cryptocurrency-icons@1a63530be6e374711a8554f31b17e4cb92c25fa5/128/color/$symbol.png",
             'address' => $gateway['gateway_parameter'] ?? null,
             'decimals' => $marketData['decimals'] ?? 18,
             'chain' => $walletData['chain'] ?? 'Ethereum',

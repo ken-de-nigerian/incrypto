@@ -158,6 +158,7 @@ class WalletService
                 $status = $crypto['status'];
 
                 if (str_contains($name, 'TRC 20')) $key = 'USDT_TRC20';
+                elseif (str_contains($name, 'ERC 20')) $key = 'USDT_ERC20';
                 elseif (str_contains($name, 'BEP 20')) $key = 'USDT_BEP20';
 
                 $formattedCryptos[$key] = [
@@ -166,7 +167,6 @@ class WalletService
                     'symbol' => $symbol,
                     'network' => $this->getNetworkFromName($name),
                     'balance' => 0.9876,
-                    'image' => $crypto['image'] ?? null,
                     'status' => $status
                 ];
             }

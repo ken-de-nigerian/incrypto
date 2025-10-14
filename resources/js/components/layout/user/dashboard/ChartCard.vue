@@ -2,7 +2,7 @@
     import { computed, ref, watch } from 'vue';
     import axios from 'axios';
     import TextLink from '@/components/TextLink.vue';
-    import { AlertTriangle } from 'lucide-vue-next';
+    import { AlertTriangle, TrendingUp, BarChart3 } from 'lucide-vue-next';
 
     type ChartToken = {
         symbol: string;
@@ -22,13 +22,25 @@
         volume: number;
     };
 
+    type OHLCBar = {
+        timestamp: number;
+        open: number;
+        high: number;
+        low: number;
+        close: number;
+        volume: number;
+        x: number;
+        barWidth: number;
+        rawClose: number;
+    };
+
     const props = defineProps<{
         selectedToken?: ChartToken | null;
     }>();
 
-    const selectedTimeframe = ref('1D');
+    const selectedTimeframe = ref('24H');
     const timeframes = [
-        { label: '1D', days: 1 },
+        { label: '24H', days: 1 },
         { label: '7D', days: 7 },
         { label: '14D', days: 14 },
         { label: '1M', days: 30 },
@@ -40,7 +52,9 @@
     const isLoadingChart = ref(false);
     const chartError = ref<string | null>(null);
 
-    // Interactivity State
+    type ChartType = 'line' | 'candlestick';
+    const chartType = ref<ChartType>('line');
+
     const isHovering = ref(false);
     const hoverX = ref(0);
     const nearestDataPoint = ref<ChartDataPoint | null>(null);
@@ -157,6 +171,40 @@
         return { linePath, areaPath, isPositive, minPrice, maxPrice };
     });
 
+    const ohlcBars = computed<OHLCBar[]>(() => {
+        if (chartData.value.length < 2) return [];
+
+        const { minPrice, maxPrice } = chartCoordinates.value;
+        const priceRange = maxPrice - minPrice || 1;
+        const barWidth = CHART_WIDTH / chartData.value.length;
+
+        const normalizeY = (p: number) => PRICE_CHART_HEIGHT - ((p - minPrice) / priceRange) * PRICE_CHART_HEIGHT;
+
+        return chartData.value.map((point, index) => {
+            const prevPoint = chartData.value[index - 1];
+
+            const openRaw = index === 0 ? point.price : prevPoint.price;
+            const closeRaw = point.price;
+
+            const highRaw = Math.max(openRaw, closeRaw);
+            const lowRaw = Math.min(openRaw, closeRaw);
+
+            const x = index * barWidth + barWidth / 2;
+
+            return {
+                timestamp: point.timestamp,
+                open: normalizeY(openRaw),
+                high: normalizeY(highRaw),
+                low: normalizeY(lowRaw),
+                close: normalizeY(closeRaw),
+                volume: point.volume,
+                x: x,
+                barWidth: barWidth * 0.7,
+                rawClose: closeRaw,
+            };
+        }).filter(d => d.rawClose > 0);
+    });
+
     const priceLabels = computed(() => {
         const { minPrice, maxPrice } = chartCoordinates.value;
         if (minPrice === maxPrice) return [];
@@ -193,7 +241,7 @@
 
             let formatOptions: Intl.DateTimeFormatOptions = {};
             switch (selectedTimeframe.value) {
-                case '1D':
+                case '24H':
                     formatOptions = { hour: 'numeric', minute: 'numeric' };
                     break;
                 case '7D':
@@ -246,8 +294,13 @@
             let minDistance = Infinity;
             let nearestIndex = -1;
 
-            chartData.value.forEach((_, index) => {
-                const dataPointNormalizedX = (index / (chartData.value.length - 1)) * CHART_WIDTH;
+            const referenceData = chartType.value === 'line' ? chartData.value : ohlcBars.value;
+
+            referenceData.forEach((pointOrBar, index) => {
+                const dataPointNormalizedX = chartType.value === 'line'
+                    ? (index / (chartData.value.length - 1)) * CHART_WIDTH
+                    : (pointOrBar as OHLCBar).x;
+
                 const distance = Math.abs(dataPointNormalizedX - normalizedX);
 
                 if (distance < minDistance) {
@@ -256,9 +309,19 @@
                 }
             });
 
-            if (nearestIndex !== -1 && chartData.value[nearestIndex]) {
-                nearestDataPoint.value = chartData.value[nearestIndex];
-                hoverX.value = (nearestIndex / (chartData.value.length - 1)) * CHART_WIDTH;
+            if (nearestIndex !== -1) {
+                if (chartType.value === 'line') {
+                    nearestDataPoint.value = chartData.value[nearestIndex];
+                    hoverX.value = (nearestIndex / (chartData.value.length - 1)) * CHART_WIDTH;
+                } else {
+                    const bar = ohlcBars.value[nearestIndex];
+                    nearestDataPoint.value = {
+                        timestamp: bar.timestamp,
+                        price: bar.rawClose,
+                        volume: bar.volume,
+                    };
+                    hoverX.value = bar.x;
+                }
             }
         }
     };
@@ -272,12 +335,23 @@
         nearestDataPoint.value = null;
     };
 
+    const toggleChartType = () => {
+        chartType.value = chartType.value === 'line' ? 'candlestick' : 'line';
+    };
+
     const tooltipY = computed(() => {
         if (!nearestDataPoint.value || chartData.value.length < 2) return 0;
+
         const { minPrice, maxPrice } = chartCoordinates.value;
         const priceRange = maxPrice - minPrice || 1;
-        const normalizedY = ((nearestDataPoint.value.price - minPrice) / priceRange) * PRICE_CHART_HEIGHT;
-        return PRICE_CHART_HEIGHT - normalizedY;
+
+        if (chartType.value === 'line') {
+            const normalizedY = ((nearestDataPoint.value.price - minPrice) / priceRange) * PRICE_CHART_HEIGHT;
+            return PRICE_CHART_HEIGHT - normalizedY;
+        } else {
+            const bar = ohlcBars.value.find(b => b.timestamp === nearestDataPoint.value?.timestamp);
+            return bar ? bar.close : 0;
+        }
     });
 
     const displayPrice = computed(() => props.selectedToken?.price ? formatPrice(props.selectedToken.price, props.selectedToken.decimals) : '0.00');
@@ -353,6 +427,16 @@
                              selectedTimeframe === tf.label ? 'btn-crypto text-gray-900 scale-[0.98]' : 'bg-secondary text-secondary-foreground active:scale-[0.95]']">
                 {{ tf.label }}
             </button>
+
+            <button @click="toggleChartType"
+                    :class="[
+                        'flex-shrink-0 ml-auto p-2 rounded-md text-sm transition-colors duration-200 focus:outline-none cursor-pointer',
+                        'bg-secondary text-secondary-foreground hover:bg-muted active:scale-[0.95]'
+                    ]"
+                    aria-label="Toggle chart type">
+                <TrendingUp v-if="chartType === 'candlestick'" class="w-4 h-4" />
+                <BarChart3 v-else class="w-4 h-4" />
+            </button>
         </div>
 
         <div class="relative rounded-lg h-72 sm:h-96 mb-6 overflow-hidden"
@@ -394,14 +478,31 @@
                           x1="0" :y1="label.y" x2="100" :y2="label.y"
                           stroke="rgba(107, 114, 128, 0.15)" stroke-width="0.5" stroke-dasharray="2,2" class="transition-all duration-300" />
 
-                    <path :d="chartCoordinates.areaPath" :class="[chartCoordinates.isPositive ? 'fill-emerald-500/10' : 'fill-red-500/10']" style="transition: all 0.5s ease-out;" />
+                    <template v-if="chartType === 'line'">
+                        <path :d="chartCoordinates.areaPath" :class="[chartCoordinates.isPositive ? 'fill-emerald-500/10' : 'fill-red-500/10']" style="transition: all 0.5s ease-out;" />
 
-                    <path fill="none" :stroke="chartCoordinates.isPositive ? '#10b981' : '#ef4444'" stroke-width="0.2" :d="chartCoordinates.linePath" style="transition: all 0.5s ease-out;" />
+                        <path fill="none" :stroke="chartCoordinates.isPositive ? '#10b981' : '#ef4444'" stroke-width="0.2" :d="chartCoordinates.linePath" style="transition: all 0.5s ease-out;" />
 
-                    <g v-if="isHovering && nearestDataPoint">
-                        <line x1="0" :y1="tooltipY" x2="100" :y2="tooltipY" stroke="#6b7280" stroke-width="0.5" stroke-dasharray="2,2" />
-                        <circle :cx="hoverX" :cy="tooltipY" r="0.75" :fill="chartCoordinates.isPositive ? '#10b981' : '#ef4444'" stroke="#fff" stroke-width="0.2" />
-                    </g>
+                        <g v-if="isHovering && nearestDataPoint">
+                            <line x1="0" :y1="tooltipY" x2="100" :y2="tooltipY" stroke="#6b7280" stroke-width="0.5" stroke-dasharray="2,2" />
+                            <circle :cx="hoverX" :cy="tooltipY" r="0.75" :fill="chartCoordinates.isPositive ? '#10b981' : '#ef4444'" stroke="#fff" stroke-width="0.2" />
+                        </g>
+                    </template>
+                    <template v-else>
+                        <g v-for="(bar, idx) in ohlcBars" :key="'candle-' + idx">
+                            <g :class="{'fill-emerald-500 stroke-emerald-500': bar.rawClose >= ohlcBars[idx-1]?.rawClose || idx === 0 && bar.rawClose >= chartData[0].price, 'fill-red-500 stroke-red-500': bar.rawClose < ohlcBars[idx-1]?.rawClose || idx === 0 && bar.rawClose < chartData[0].price}" stroke-width="0.2">
+
+                                <line :x1="bar.x" :y1="bar.high" :x2="bar.x" :y2="bar.low" />
+
+                                <rect :x="bar.x - bar.barWidth / 2"
+                                      :y="Math.min(bar.open, bar.close)"
+                                      :width="bar.barWidth"
+                                      :height="Math.abs(bar.open - bar.close) || 0.2" />
+                            </g>
+                        </g>
+
+                        <line v-if="isHovering && nearestDataPoint" :x1="hoverX" y1="0" :x2="hoverX" :y2="PRICE_CHART_HEIGHT" stroke="#6b7280" stroke-width="0.5" stroke-dasharray="2,2" />
+                    </template>
                 </g>
 
                 <g :transform="`translate(0, ${PRICE_CHART_HEIGHT + VOLUME_OFFSET_Y})`">
@@ -425,10 +526,14 @@
                           class="hidden md:block transition-all duration-300">
                         {{ label.price }}
                     </text>
-                    <rect v-if="isHovering && nearestDataPoint" x="100" :y="tooltipY - 1.5" width="10" height="3" fill="#6b7280" />
-                    <text v-if="isHovering && nearestDataPoint" x="101.5" :y="tooltipY" dy="0.3em" text-anchor="start" class="font-medium text-xs text-card-foreground">
-                        ${{ formatPrice(nearestDataPoint.price, selectedToken?.decimals) }}
-                    </text>
+                    <template v-if="isHovering && nearestDataPoint">
+                        <template v-if="chartType === 'line'">
+                            <rect x="100" :y="tooltipY - 1.5" width="10" height="3" fill="#6b7280" />
+                        </template>
+                        <text x="101.5" :y="tooltipY" dy="0.3em" text-anchor="start" class="font-medium text-xs text-card-foreground">
+                            ${{ formatPrice(nearestDataPoint.price, selectedToken?.decimals) }}
+                        </text>
+                    </template>
                 </g>
             </svg>
 
@@ -460,49 +565,47 @@
             </TextLink>
         </div>
     </div>
-    <div v-else class="flex items-center justify-center p-8 bg-gray-800 rounded-xl text-muted-foreground min-h-[500px] text-lg">
+    <div v-else class="flex items-center justify-center p-8 card-crypto rounded-xl text-muted-foreground min-h-[500px] text-lg">
         Select a token to view its chart.
     </div>
 </template>
 
 <style scoped>
-    /* New styles for dot animation */
-    .dot {
-        width: 8px;
-        height: 8px;
-        border-radius: 50%;
-        animation: dot-pulse 1.2s infinite ease-in-out;
-    }
+.dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    animation: dot-pulse 1.2s infinite ease-in-out;
+}
 
-    .dot-1 {
-        animation-delay: 0s;
-    }
+.dot-1 {
+    animation-delay: 0s;
+}
 
-    .dot-2 {
-        animation-delay: 0.2s;
-    }
+.dot-2 {
+    animation-delay: 0.2s;
+}
 
-    .dot-3 {
-        animation-delay: 0.4s;
-    }
+.dot-3 {
+    animation-delay: 0.4s;
+}
 
-    @keyframes dot-pulse {
-        0%, 100% {
-            transform: translateY(0);
-            opacity: 1;
-        }
-        50% {
-            transform: translateY(-8px);
-            opacity: 0.5;
-        }
+@keyframes dot-pulse {
+    0%, 100% {
+        transform: translateY(0);
+        opacity: 1;
     }
+    50% {
+        transform: translateY(-8px);
+        opacity: 0.5;
+    }
+}
 
-    /* Existing styles */
-    .scrollbar-hide::-webkit-scrollbar {
-        display: none;
-    }
-    .scrollbar-hide {
-        -ms-overflow-style: none;
-        scrollbar-width: none;
-    }
+.scrollbar-hide::-webkit-scrollbar {
+    display: none;
+}
+.scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
 </style>

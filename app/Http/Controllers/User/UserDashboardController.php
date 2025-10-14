@@ -76,6 +76,10 @@ class UserDashboardController extends Controller
             $totalUsdValue += $usdValue;
         }
 
+        usort($processedWallets, function ($a, $b) {
+            return strcmp($a['name'], $b['name']);
+        });
+
         return [
             'wallets' => $processedWallets,
             'totalUsdValue' => number_format($totalUsdValue, 2),
@@ -102,6 +106,9 @@ class UserDashboardController extends Controller
         return $prices;
     }
 
+    /**
+     * Gathers all data needed for the Inertia swap page.
+     */
     public function getData(User $user): array
     {
         $walletService = new WalletService($user, $this->gatewayHandler);
@@ -110,18 +117,22 @@ class UserDashboardController extends Controller
         $fullWalletData = $walletService->getFullWalletData();
         $gatewaysByCode = collect($this->gatewayHandler->getGateways())->keyBy('method_code');
 
-        // Use a Resource Collection to format the token array cleanly
-        $tokens = TokenResource::collection(
-            collect($userBalances)->map(function ($balance, $symbol) use ($marketData, $fullWalletData, $gatewaysByCode) {
-                return [
-                    'symbol' => $symbol,
-                    'balance' => $balance,
-                    'market_data' => $marketData[$this->marketDataService->getBaseSymbol($symbol)] ?? [],
-                    'wallet_data' => $fullWalletData[$symbol] ?? [],
-                    'gateway' => isset($fullWalletData[$symbol]['id']) ? $gatewaysByCode->get($fullWalletData[$symbol]['id']) : null,
-                ];
-            })->values()
-        );
+        // Start building the base collection from user balances.
+        $tokenCollection = collect($userBalances)->map(function ($balance, $symbol) use ($marketData, $fullWalletData, $gatewaysByCode) {
+            return [
+                'symbol' => $symbol,
+                'balance' => $balance,
+                'market_data' => $marketData[$this->marketDataService->getBaseSymbol($symbol)] ?? [],
+                'wallet_data' => $fullWalletData[$symbol] ?? [],
+                'gateway' => isset($fullWalletData[$symbol]['id']) ? $gatewaysByCode->get($fullWalletData[$symbol]['id']) : null,
+            ];
+        });
+
+        // Sort the collection alphabetically
+        $sortedTokens = $tokenCollection->sortBy('symbol')->values();
+
+        // Use Resource Collection to format the token array cleanly
+        $tokens = TokenResource::collection($sortedTokens);
 
         return [
             'tokens' => $tokens->resolve(),

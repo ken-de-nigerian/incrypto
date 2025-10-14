@@ -37,13 +37,17 @@ class CryptoSwapService
             $tokens[] = [
                 'symbol' => $symbol,
                 'name' => $coin['name'] ?? 'Unknown Token',
-                'logo' => $coin['image'] ?? asset('assets/images/default-crypto.png'),
+                'logo' => $coin['image'] ?? "https://cdn.jsdelivr.net/gh/atomiclabs/cryptocurrency-icons@1a63530be6e374711a8554f31b17e4cb92c25fa5/128/color/$symbol.png",
                 'address' => '0x' . substr(md5($symbol), 0, 40),
                 'decimals' => $coin['decimals'] ?? 18,
                 'chain' => $fullWalletData[$symbol]['chain'] ?? 'Ethereum',
                 'price_change_24h' => $coin['price_change_percentage_24h'] ?? 0,
             ];
         }
+
+        usort($tokens, function ($a, $b) {
+            return strcmp($a['name'], $b['name']);
+        });
 
         return [
             'tokens' => $tokens,

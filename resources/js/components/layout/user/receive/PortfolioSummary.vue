@@ -5,6 +5,7 @@
         TrendingDownIcon,
         TrendingUpIcon,
         WalletIcon,
+        Wallet
     } from 'lucide-vue-next';
 
     defineProps<{
@@ -52,26 +53,35 @@
             </div>
         </div>
 
-        <div class="bg-card border border-border rounded-2xl p-4 mb-4"> <h3 class="text-sm font-semibold text-card-foreground mb-3 flex items-center gap-2">
-            <BarChart3Icon class="w-4 h-4" />
-            Top Holdings
-        </h3>
-            <div v-if="topTokens.length > 0" class="space-y-3">
-                <div v-for="token in topTokens" :key="token.symbol" class="flex items-center justify-between">
-                    <div class="flex items-center gap-2">
-                        <img :src="token.logo" :alt="token.symbol" class="w-6 h-6 rounded-full" />
-                        <div>
-                            <div class="text-sm font-medium text-card-foreground">{{ formatSymbol(token.symbol) }}</div>
-                            <div class="text-xs text-muted-foreground">{{ token.balance.toFixed(4) }}</div>
+        <div class="bg-card border border-border rounded-2xl p-4 mb-4">
+            <div v-if="topTokens.length > 0">
+                <h3 class="text-sm font-semibold text-card-foreground mb-3 flex items-center gap-2">
+                    <BarChart3Icon class="w-4 h-4" />
+                    Top Holdings
+                </h3>
+
+                <div class="space-y-3">
+                    <div v-for="token in topTokens" :key="token.symbol" class="flex items-center justify-between">
+                        <div class="flex items-center gap-2">
+                            <img :src="token.logo" :alt="token.symbol" class="w-6 h-6 rounded-full" />
+                            <div>
+                                <div class="text-sm font-medium text-card-foreground">{{ formatSymbol(token.symbol) }}</div>
+                                <div class="text-xs text-muted-foreground">{{ token.balance.toFixed(4) }}</div>
+                            </div>
                         </div>
-                    </div>
-                    <div class="text-right">
-                        <div class="text-sm font-semibold text-card-foreground">${{ token.value.toFixed(2) }}</div>
+                        <div class="text-right">
+                            <div class="text-sm font-semibold text-card-foreground">${{ token.value.toFixed(2) }}</div>
+                        </div>
                     </div>
                 </div>
             </div>
-            <div v-else class="text-center py-4">
-                <p class="text-sm text-muted-foreground">No holdings yet</p>
+
+            <div v-else class="text-center text-sm text-muted-foreground py-8">
+                <div class="flex justify-center mb-3">
+                    <Wallet class="h-10 w-10 text-muted-foreground/60" />
+                </div>
+                <p class="text-base font-medium mb-1 text-card-foreground">No Holdings</p>
+                <p class="text-xs">Your portfolio will be tracked here once you acquire tokens.</p>
             </div>
         </div>
 

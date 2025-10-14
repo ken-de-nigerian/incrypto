@@ -243,7 +243,8 @@
             <div class="text-sm text-destructive">{{ errorMessage }}</div>
         </div>
 
-        <div class="bg-card border border-border rounded-2xl p-6 shadow-lg">
+        <div v-if="props.tokens && props.tokens.length > 0" class="bg-card border border-border rounded-2xl p-6">
+
             <div class="flex items-center justify-between mb-4">
                 <div class="flex items-center gap-2">
                     <ZapIcon class="w-5 h-5 text-primary" />
@@ -324,21 +325,31 @@
             </button>
         </div>
 
-        <TokenSelectionModal
-            v-model:is-open="isFromModalOpen"
-            :tokens="props.tokens"
-            :popular-tokens="props.popularTokens"
-            :user-balances="props.userBalances"
-            :prices="props.prices"
-            @select="handleSelectFromToken"
-        />
-        <TokenSelectionModal
-            v-model:is-open="isToModalOpen"
-            :tokens="props.tokens"
-            :popular-tokens="props.popularTokens"
-            :user-balances="props.userBalances"
-            :prices="props.prices"
-            @select="handleSelectToToken"
-        />
+        <div v-else class="text-center text-sm text-muted-foreground py-10 px-4 bg-card border border-border rounded-2xl">
+            <div class="flex justify-center mb-4">
+                <AlertCircleIcon class="h-12 w-12 text-secondary-foreground" />
+            </div>
+            <p class="text-lg font-medium mb-2 text-card-foreground">Swap Service Unavailable</p>
+            <p class="text-sm">We couldn't load any tokens for swapping on the selected chain.</p>
+        </div>
+
+        <template v-if="props.tokens && props.tokens.length > 0">
+            <TokenSelectionModal
+                v-model:is-open="isFromModalOpen"
+                :tokens="props.tokens"
+                :popular-tokens="props.popularTokens"
+                :user-balances="props.userBalances"
+                :prices="props.prices"
+                @select="handleSelectFromToken"
+            />
+            <TokenSelectionModal
+                v-model:is-open="isToModalOpen"
+                :tokens="props.tokens"
+                :popular-tokens="props.popularTokens"
+                :user-balances="props.userBalances"
+                :prices="props.prices"
+                @select="handleSelectToToken"
+            />
+        </template>
     </div>
 </template>

@@ -1,6 +1,6 @@
 <script setup lang="ts">
     import { ref, computed, nextTick, watch, onMounted, onUnmounted } from 'vue';
-    import { Wallet, Eye, EyeOff, RefreshCw, Loader2 } from 'lucide-vue-next';
+    import { Wallet, Eye, EyeOff, RefreshCw, Loader2, Wallet2 } from 'lucide-vue-next';
     import { router } from '@inertiajs/vue3';
 
     interface WalletBalance {
@@ -182,7 +182,7 @@
             </div>
         </div>
 
-        <div v-if="!isLoading" class="flex items-center gap-2 mb-4 text-xs sm:text-sm text-muted-foreground">
+        <div v-if="paginatedWalletData.length > 0 && !isLoading" class="flex items-center gap-2 mb-4 text-xs sm:text-sm text-muted-foreground">
             <div class="flex items-center space-x-2">
                 <input type="checkbox" v-model="hideZeroBalances" id="hideZeroBalances" class="h-4 w-4 shrink-0 rounded-sm border border-primary ring-offset-background cursor-pointer" />
                 <label for="hideZeroBalances" class="text-sm text-muted-foreground leading-relaxed cursor-pointer">
@@ -242,8 +242,12 @@
                 <div v-if="!hasMoreWallets && paginatedWalletData.length > 0 && !isFetchingMore" class="text-center text-sm text-muted-foreground py-4">
                     End of wallets list.
                 </div>
-                <div v-else-if="paginatedWalletData.length === 0 && !isLoading" class="text-center text-sm text-muted-foreground py-4">
-                    No wallets found. Try adjusting your filters.
+                <div v-else-if="paginatedWalletData.length === 0 && !isLoading" class="text-center text-sm text-muted-foreground py-10 px-4">
+                    <div class="flex justify-center mb-4">
+                        <Wallet2 class="h-12 w-12 text-muted-foreground" />
+                    </div>
+                    <p class="text-lg font-medium mb-2 text-card-foreground">No Active Wallets Found</p>
+                    <p class="text-sm">We couldn't find any wallets that match your current visibility settings or filters.</p>
                 </div>
             </template>
         </div>

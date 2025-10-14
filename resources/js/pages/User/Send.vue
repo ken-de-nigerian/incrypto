@@ -64,7 +64,6 @@
                 value: (props.userBalances[token.symbol] || 0) * (props.prices[token.symbol] || 0)
             }))
             .filter(token => token.balance > 0)
-            .sort((a, b) => b.value - a.value)
             .slice(0, 5);
     });
 
@@ -82,8 +81,7 @@
                 balance: props.userBalances[token.symbol] || 0,
                 value: (props.userBalances[token.symbol] || 0) * (props.prices[token.symbol] || 0),
                 price: props.prices[token.symbol] || 0
-            }))
-            .sort((a, b) => b.value - a.value);
+            }));
     });
 
     // Methods to Handle Child Events

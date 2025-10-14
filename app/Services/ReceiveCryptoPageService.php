@@ -23,17 +23,21 @@ class ReceiveCryptoPageService
         $gatewaysByCode = collect($this->gatewayHandler->getGateways())->keyBy('method_code');
 
         // Use a Resource Collection to format the token array cleanly
-        $tokens = TokenResource::collection(
-            collect($userBalances)->map(function ($balance, $symbol) use ($marketData, $fullWalletData, $gatewaysByCode) {
-                return [
-                    'symbol' => $symbol,
-                    'balance' => $balance,
-                    'market_data' => $marketData[$this->marketDataService->getBaseSymbol($symbol)] ?? [],
-                    'wallet_data' => $fullWalletData[$symbol] ?? [],
-                    'gateway' => isset($fullWalletData[$symbol]['id']) ? $gatewaysByCode->get($fullWalletData[$symbol]['id']) : null,
-                ];
-            })->values()
-        );
+        $tokenCollection = collect($userBalances)->map(function ($balance, $symbol) use ($marketData, $fullWalletData, $gatewaysByCode) {
+            return [
+                'symbol' => $symbol,
+                'balance' => $balance,
+                'market_data' => $marketData[$this->marketDataService->getBaseSymbol($symbol)] ?? [],
+                'wallet_data' => $fullWalletData[$symbol] ?? [],
+                'gateway' => isset($fullWalletData[$symbol]['id']) ? $gatewaysByCode->get($fullWalletData[$symbol]['id']) : null,
+            ];
+        });
+
+        // Sort the collection alphabetically
+        $sortedTokens = $tokenCollection->sortBy('symbol')->values();
+
+        // Use Resource Collection to format the token array cleanly
+        $tokens = TokenResource::collection($sortedTokens);
 
         $pendingTransactions = ReceivedCrypto::where('user_id', $user->id)
             ->latest()

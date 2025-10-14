@@ -1,5 +1,5 @@
 <script setup lang="ts">
-    import { TrendingUpIcon, TrendingDownIcon, Loader2, RotateCwIcon } from 'lucide-vue-next'
+import { TrendingUpIcon, TrendingDownIcon, Loader2, RotateCwIcon, Wallet2 } from 'lucide-vue-next';
     import { computed, ref, watch } from 'vue';
 
     type Token = {
@@ -143,7 +143,7 @@
 
 <template>
     <div class="card-crypto p-4 sm:p-6">
-        <div class="flex items-center justify-between text-xs sm:text-sm text-muted-foreground mb-3 sm:mb-4 px-1">
+        <div v-if="displayedTokens.length > 0" class="flex items-center justify-between text-xs sm:text-sm text-muted-foreground mb-3 sm:mb-4 px-1">
             <button @click="sortBy('name')" class="flex items-center gap-1 hover:text-card-foreground">
                 <span>Name</span>
                 <span v-if="sortKey === 'name'" class="text-xs">{{ sortOrder === 'asc' ? '↑' : '↓' }}</span>
@@ -154,6 +154,14 @@
                 <span class="sm:hidden">Change</span>
                 <span v-if="sortKey === 'change'" class="text-xs">{{ sortOrder === 'asc' ? '↑' : '↓' }}</span>
             </button>
+        </div>
+
+        <div v-else class="text-center text-sm text-muted-foreground py-10 px-4">
+            <div class="flex justify-center mb-4">
+                <Wallet2 class="h-12 w-12 text-muted-foreground" />
+            </div>
+            <p class="text-lg font-medium mb-2 text-card-foreground">No Tokens Found</p>
+            <p class="text-sm">We couldn't find any tokens that match your current visibility settings or filters.</p>
         </div>
 
         <div class="no-scrollbar overflow-y-auto max-h-[400px]">

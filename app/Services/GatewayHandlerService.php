@@ -590,22 +590,58 @@ class GatewayHandlerService
     {
         $cacheKey = "cryptoCompareWallets";
         $url = "https://min-api.cryptocompare.com/data/wallets/general";
+        $ttl = self::CACHE_TTL['WALLET_DATA'];
 
         if ($apiKey = config('services.cryptocompare.key')) {
             $url .= "?api_key=" . $apiKey;
         }
 
-        $data = $this->fetchData(
-            $cacheKey,
-            $url,
-            self::CACHE_TTL['WALLET_DATA'],
-            'Failed to fetch wallet data'
-        );
+        $cachedData = Cache::remember($cacheKey, $ttl, function () use ($url) {
+            $response = $this->fetchFromAPIWithRetry($url);
+
+            if ($response['error'] ?? false) {
+                Log::warning("Failed to fetch CryptoCompare wallets data for caching.");
+                return ['Data' => [], 'Message' => 'API fetch failed', 'Type' => 0];
+            }
+
+            $data = $response['data'] ?? [];
+            if (isset($data['Data']) && is_array($data['Data'])) {
+                $reducedData = $this->transformWalletData($data['Data']);
+                return [
+                    'Data' => $reducedData,
+                    'Message' => $data['Message'] ?? ($data['message'] ?? ''),
+                    'Type' => $data['Type'] ?? 100,
+                ];
+            }
+
+            return ['Data' => [], 'Message' => $data['Message'] ?? ($data['message'] ?? 'Invalid API response'), 'Type' => 0];
+        });
 
         return [
-            'Data' => isset($data['Data']) ? $this->sortWalletData($data['Data']) : [],
-            'Message' => $data['Message'] ?? ($data['message'] ?? ''),
+            'Data' => isset($cachedData['Data']) ? $this->sortWalletData($cachedData['Data']) : [],
+            'Message' => $cachedData['Message'] ?? '',
         ];
+    }
+
+    /**
+     * Transforms the raw CryptoCompare wallet data to a reduced set of fields.
+     * This is the crucial step to reduce data size for caching.
+     *
+     * @param array $wallets Raw wallet data array from the CryptoCompare API 'Data' field.
+     * @return array Transformed and reduced wallet data.
+     */
+    private function transformWalletData(array $wallets): array
+    {
+        return array_map(function (array $wallet) {
+            return [
+                'Id' => $wallet['Id'] ?? null,
+                'Name' => $wallet['Name'] ?? 'Unknown Wallet',
+                'Security' => $wallet['Security'] ?? 'N/A',
+                'LogoUrl' => $wallet['LogoUrl'] ?? null,
+                'Platforms' => $wallet['Platforms'] ?? [],
+                'Coins' => $wallet['Coins'] ?? [],
+            ];
+        }, $wallets);
     }
 
     private function sortWalletData(array $wallets): array
@@ -687,6 +723,15 @@ class GatewayHandlerService
             $urlWithKey = $apiKey && !str_contains($apiUrl, 'etherscan') && !str_contains($apiUrl, 'coinpaprika')
                 ? $apiUrl . (str_contains($apiUrl, '?') ? '&' : '?') . 'x_cg_api_key=' . $apiKey
                 : $apiUrl;
+
+            // Special handling for CryptoCompare API Key if not already in URL
+            if (str_contains($apiUrl, 'cryptocompare.com') && !str_contains($apiUrl, 'api_key=')) {
+                $cryptoCompareKey = config('services.cryptocompare.key');
+                if ($cryptoCompareKey) {
+                    $urlWithKey = $apiUrl . (str_contains($apiUrl, '?') ? '&' : '?') . 'api_key=' . $cryptoCompareKey;
+                }
+            }
+
 
             $response = Http::timeout(20)->get($urlWithKey);
 

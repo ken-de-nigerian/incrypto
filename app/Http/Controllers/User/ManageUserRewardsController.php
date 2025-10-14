@@ -58,7 +58,7 @@ class ManageUserRewardsController extends Controller
             'first_name' => $referral->first_name,
             'last_name' => $referral->last_name,
             'email' => $referral->email,
-            'status' => $referral->status ?? ($referral->active ? 'active' : 'inactive'),
+            'status' => $referral->status,
             'created_at' => $referral->created_at,
             'avatar' => $referral->profile->profile_photo_path ?? null,
         ])->toArray();
@@ -74,7 +74,7 @@ class ManageUserRewardsController extends Controller
     protected function getStatisticsData(User $user): array
     {
         $totalReferrals = $user->referrals()->count();
-        $activeReferrals = $user->referrals()->where('active', true)->count();
+        $activeReferrals = $user->referrals()->where('status', 'active')->count();
         $thisMonthReferrals = $user->referrals()->whereMonth('created_at', now()->month)->count();
         $conversionRate = $totalReferrals > 0 ? (float)number_format(($activeReferrals / $totalReferrals) * 100, 2) : 0;
 

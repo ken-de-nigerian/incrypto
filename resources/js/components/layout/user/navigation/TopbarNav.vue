@@ -81,7 +81,7 @@
 
     const accountLinks = [
         { name: "KYC Verification", href: "user.kyc.index", icon: LifeBuoy, description: "Verify your identity" },
-        { name: "Transaction History", href: "user.dashboard", icon: History, description: "View all transactions" },
+        { name: "Transaction History", href: "user.transactions.index", icon: History, description: "View all transactions" },
         { name: "Security", href: "user.profile.index", params: { tab: 'security' }, icon: Shield, description: "Password & 2FA" },
     ];
 

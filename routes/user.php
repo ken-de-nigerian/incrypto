@@ -7,6 +7,7 @@ use App\Http\Controllers\User\ManageUserProfileController;
 use App\Http\Controllers\User\ManageUserReceiveCryptoController;
 use App\Http\Controllers\User\ManageUserRewardsController;
 use App\Http\Controllers\User\ManageUserSendCryptoController;
+use App\Http\Controllers\User\ManageUserSupportController;
 use App\Http\Controllers\User\ManageUserSwapCryptoController;
 use App\Http\Controllers\User\ManageUserTransactionController;
 use App\Http\Controllers\User\ManageUserWalletConnectController;
@@ -121,10 +122,12 @@ Route::prefix('user')
         // Support
         Route::prefix('support')
             ->name('support.')
-            ->controller(ManageUserNotificationsController::class)
+            ->controller(ManageUserSupportController::class)
             ->group(function () {
                 Route::get('/', 'index')->name('index');
                 Route::get('/privacy', 'privacy')->name('privacy');
-                Route::post('/terms', 'terms')->name('terms');
+                Route::get('/aml', 'aml')->name('aml');
+                Route::get('/risk', 'risk')->name('risk');
+                Route::get('/terms', 'terms')->name('terms');
             });
     });

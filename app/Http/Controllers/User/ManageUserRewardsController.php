@@ -29,8 +29,7 @@ class ManageUserRewardsController extends Controller
     }
 
     /**
-     * Fetches the user's referred users list with necessary data.
-     * In a real application, this would join with trades/earnings tables and paginate.
+     * Fetches the user's referred users list with necessary data, including total referral commissions.
      *
      * @param User $user
      * @return array
@@ -40,6 +39,9 @@ class ManageUserRewardsController extends Controller
         $referrals = $user->referrals()
             ->with(['profile' => function ($query) {
                 $query->select('user_id', 'profile_photo_path');
+            }])
+            ->with(['commissionsEarned' => function ($query) {
+                $query->select('from_id', 'amount');
             }])
             ->select([
                 'id',
@@ -61,9 +63,9 @@ class ManageUserRewardsController extends Controller
             'status' => $referral->status,
             'created_at' => $referral->created_at,
             'avatar' => $referral->profile->profile_photo_path ?? null,
+            'total_commission_earned' => (float) $referral->commissionsEarned->sum('amount'),
         ])->toArray();
     }
-
 
     /**
      * Gets the statistics data.

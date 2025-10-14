@@ -74,6 +74,7 @@
             status: referral.status || 'inactive',
             joined_date: referral.created_at,
             avatar: referral.avatar,
+            total_commission_earned: referral.total_commission_earned || 0.00
         }));
     });
 

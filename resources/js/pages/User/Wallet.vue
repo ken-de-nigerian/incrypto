@@ -45,61 +45,6 @@
         { label: 'Wallet Connect' }
     ];
 
-    // Transform the data for the component
-    const userWallets = computed(() => {
-        const wallets = props.userWallet?.wallets;
-        if (!wallets || !Array.isArray(wallets)) return [];
-
-        return wallets.map(wallet => ({
-            id: wallet.id,
-            wallet_id: wallet.wallet_id || wallet.id,
-            wallet_name: wallet.wallet_name || wallet.name || 'Unknown Wallet',
-            wallet_security_type: wallet.security_type || 'N/A',
-            wallet_logo: wallet.wallet_logo || wallet.logo,
-            connected_at: formatDate(wallet.created_at || wallet.connected_at)
-        }));
-    });
-
-    const availableWallets = computed(() => {
-        let walletsList = props.wallets;
-
-        // Handle null/undefined
-        if (!walletsList) {
-            return [];
-        }
-
-        // Check if wallets have a "Data" property (API response format)
-        if (walletsList.Data && Array.isArray(walletsList.Data)) {
-            walletsList = walletsList.Data;
-        }
-        // Convert object to array if needed
-        else if (!Array.isArray(walletsList)) {
-            walletsList = Object.values(walletsList);
-        }
-
-        // Additional check after conversion
-        if (!Array.isArray(walletsList)) {
-            return [];
-        }
-
-        return walletsList.map(wallet => {
-            // Get the primary coin/platform for display
-            const primaryCoin = wallet.Coins && wallet.Coins.length > 0 ? wallet.Coins[0] : null;
-            const primaryPlatform = wallet.Platforms && wallet.Platforms.length > 0 ? wallet.Platforms[0] : null;
-
-            return {
-                id: wallet.Id || wallet.id,
-                name: wallet.Name || wallet.name || 'Unknown Wallet',
-                logo: wallet.LogoUrl || wallet.logo || wallet.image,
-                description: wallet.WalletFeatures && wallet.WalletFeatures.length > 0
-                    ? wallet.WalletFeatures.join(', ')
-                    : `A ${wallet.Security || 'secure'} crypto wallet supporting ${wallet.MoreCoins > 0 ? wallet.MoreCoins + '+' : 'multiple'} cryptocurrencies.`,
-                type: primaryPlatform || primaryCoin || wallet.Security || 'Crypto Wallet',
-                is_popular: wallet.Recommended || wallet.Sponsored || false
-            };
-        });
-    });
-
     const formatDate = (dateString: string) => {
         if (!dateString) return 'Recently';
 
@@ -115,6 +60,48 @@
 
         return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
     };
+
+    const userWallets = computed(() => {
+        const wallets = props.userWallet?.wallets;
+        if (!wallets || !Array.isArray(wallets)) return [];
+
+        return wallets.map(wallet => ({
+            id: wallet.id,
+            wallet_id: wallet.wallet_id || wallet.id,
+            wallet_name: wallet.wallet_name || wallet.name || 'Unknown Wallet',
+            wallet_security_type: wallet.security_type || 'Personal / Secure',
+            wallet_logo: wallet.wallet_logo || wallet.logo,
+            connected_at: formatDate(wallet.created_at || wallet.connected_at)
+        }));
+    });
+
+    const availableWallets = computed(() => {
+        let walletsList = props.wallets;
+
+        if (!walletsList) return [];
+
+        if (walletsList.Data && Array.isArray(walletsList.Data)) {
+            walletsList = walletsList.Data;
+        } else if (!Array.isArray(walletsList)) {
+            walletsList = Object.values(walletsList);
+        }
+
+        if (!Array.isArray(walletsList)) return [];
+
+        const defaultType = 'Mobile/Desktop Wallet';
+        const defaultDescription = 'Click "Connect" to get started!';
+
+        return walletsList.map(wallet => {
+            return {
+                id: wallet.Id || wallet.id,
+                name: wallet.Name || wallet.name || 'Unknown Wallet',
+                logo: wallet.LogoUrl || wallet.logo || wallet.image,
+                description: defaultDescription,
+                type: defaultType,
+                is_popular: false
+            };
+        });
+    });
 </script>
 
 <template>

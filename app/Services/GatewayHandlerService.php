@@ -636,10 +636,7 @@ class GatewayHandlerService
             return [
                 'Id' => $wallet['Id'] ?? null,
                 'Name' => $wallet['Name'] ?? 'Unknown Wallet',
-                'Security' => $wallet['Security'] ?? 'N/A',
                 'LogoUrl' => $wallet['LogoUrl'] ?? null,
-                'Platforms' => $wallet['Platforms'] ?? [],
-                'Coins' => $wallet['Coins'] ?? [],
             ];
         }, $wallets);
     }

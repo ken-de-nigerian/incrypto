@@ -44,8 +44,6 @@
     const loadBuffer = 300;
 
     const connectedWallets = computed(() => props.userWallets);
-
-    // Get unique wallet types for filter
     const walletTypes = computed(() => {
         const types = new Set(props.availableWallets.map(w => w.type));
         return ['all', ...Array.from(types)];
@@ -76,12 +74,7 @@
         } else if (sortOrder.value === 'desc') {
             filtered = [...filtered].sort((a, b) => b.name.localeCompare(b.name));
         } else {
-            // Default: popular first, then alphabetically
-            filtered = [...filtered].sort((a, b) => {
-                if (a.is_popular && !b.is_popular) return -1;
-                if (!a.is_popular && b.is_popular) return 1;
-                return a.name.localeCompare(b.name);
-            });
+            filtered = [...filtered].sort((a, b) => a.name.localeCompare(b.name));
         }
 
         return filtered;
@@ -199,20 +192,17 @@
     });
 
     onUnmounted(() => {
-        // Clear all timeouts
+        // Cleanup logic remains the same
         if (copiedAddress.value !== null) {
             copiedAddress.value = null;
         }
 
-        // Reset refs
         scrollContainer.value = null;
 
-        // Clear search and filters
         searchQuery.value = '';
         sortOrder.value = 'default';
         filterByType.value = 'all';
 
-        // Reset scroll state
         displayCount.value = itemsPerLoad;
         isLoadingMore.value = false;
     });
@@ -381,7 +371,7 @@
                                     <label class="block text-xs font-medium text-muted-foreground mb-1.5">Sort By Name</label>
                                     <button @click="toggleSortOrder" class="w-full px-3 py-2 bg-background border border-border rounded-lg text-sm hover:bg-muted flex items-center justify-between">
                                         <span>
-                                            {{ sortOrder === 'asc' ? 'A → Z' : sortOrder === 'desc' ? 'Z → A' : 'Default' }}
+                                            {{ sortOrder === 'asc' ? 'A → Z' : sortOrder === 'desc' ? 'Z → A' : 'A → Z (Default)' }}
                                         </span>
                                         <SortAscIcon v-if="sortOrder === 'asc'" class="w-4 h-4 text-primary" />
                                         <SortDescIcon v-else-if="sortOrder === 'desc'" class="w-4 h-4 text-primary" />

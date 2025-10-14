@@ -8,6 +8,7 @@
         InfoIcon, SparklesIcon, ZapIcon, TrophyIcon, LinkIcon, Twitter
     } from 'lucide-vue-next';
     import TextLink from '@/components/TextLink.vue';
+    import { usePage } from '@inertiajs/vue3';
 
     const props = defineProps({
         referralLink: {
@@ -26,6 +27,7 @@
                 status: string;
                 joined_date: string;
                 avatar?: string;
+                total_commission_earned?: number
             }>,
             default: () => []
         },
@@ -40,6 +42,7 @@
         }
     });
 
+    const page = usePage();
     const copiedText = ref<string | null>(null);
     const searchQuery = ref('');
     const sortOrder = ref<'asc' | 'desc' | 'default'>('default');
@@ -50,6 +53,7 @@
     const scrollContainer = ref<HTMLElement | null>(null);
     const itemsPerLoad = 8;
     const loadBuffer = 300;
+    const referral_bonus = computed<number>(() => page.props.auth?.referral_bonus || 0);
 
     const copyToClipboard = (text: string, type: string = 'link') => {
         navigator.clipboard.writeText(text);
@@ -183,7 +187,7 @@
 
     // Kept as component constants since they are used in the template and are presentational/static
     const referralBenefits = [
-        { icon: DollarSignIcon, title: 'Earn Commission', description: 'Get 10% commission on every trade your referrals make' },
+        { icon: DollarSignIcon, title: 'Earn Commission', description: `Get ${referral_bonus.value}% commission on every trade your referrals make` },
         { icon: TrendingUpIcon, title: 'Passive Income', description: 'Build a steady stream of passive income from your network' },
         { icon: GiftIcon, title: 'Bonus Rewards', description: 'Unlock special bonuses when you reach referral milestones' },
         { icon: TrophyIcon, title: 'Leaderboard Prizes', description: 'Compete for top spots and win exclusive prizes monthly' }
@@ -431,7 +435,7 @@
 
                                                 <div class="bg-muted/50 rounded-lg p-2">
                                                     <p class="text-xs text-muted-foreground mb-0.5">Commission Earned</p>
-                                                    <p class="text-sm font-bold text-primary">$0.00</p>
+                                                    <p class="text-sm font-bold text-primary">${{ user.total_commission_earned.toFixed(2) }}</p>
                                                 </div>
                                             </div>
                                         </div>

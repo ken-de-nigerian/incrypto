@@ -124,4 +124,9 @@ class User extends Authenticatable
     {
         return $this->hasMany(User::class, 'ref_by', 'id');
     }
+
+    public function commissionsEarned(): HasMany
+    {
+         return $this->hasMany(ReferralCommission::class, 'from_id', 'id');
+    }
 }

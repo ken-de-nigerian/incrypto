@@ -15,8 +15,6 @@ use Illuminate\Support\Str;
  */
 class UserFactory extends Factory
 {
-    // NO $walletService property is needed here.
-
     /**
      * Define the model's default state.
      *
@@ -27,16 +25,11 @@ class UserFactory extends Factory
     {
         $firstName = $this->faker->firstName();
         $lastName = $this->faker->lastName();
-
-        // CHANGE: Call the method directly on $this (the Factory instance)
         $walletBalance = $this->initializeNewUserWallet();
 
         if ($walletBalance === false) {
-            // It's better to log the failure and return dummy data in a seeder
-            // rather than throwing an exception and halting the entire seed process.
             Log::error('Seeder: Failed to initialize wallet balance, using dummy data.');
             $walletBalance = json_encode(['USD' => 1000.00, 'BTC' => 0.05, 'ETH' => 0.5]);
-            // Alternatively: throw new Exception(__('Failed to initialize wallet balance.'));
         }
 
         return [

@@ -212,7 +212,7 @@
     <div class="w-full mx-auto">
         <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
             <div class="xl:col-span-2 space-y-6">
-                <div class="bg-gradient-to-br from-primary/10 via-primary/10 to-transparent rounded-2xl border border-primary/20 overflow-hidden shadow-sm">
+                <div class="bg-gradient-to-br from-primary/10 via-primary/10 to-transparent rounded-2xl border border-primary/20 overflow-hidden">
                     <div class="p-6 sm:p-8">
                         <div class="flex items-start gap-4">
                             <div class="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center flex-shrink-0 border border-border">
@@ -253,7 +253,7 @@
                     </div>
                 </div>
 
-                <div class="bg-card rounded-2xl border border-border overflow-hidden shadow-sm">
+                <div class="bg-card rounded-2xl border border-border overflow-hidden">
                     <div class="bg-muted/30 px-6 py-4 border-b border-border flex items-center justify-between">
                         <div class="flex items-center gap-3">
                             <CheckCircleIcon class="w-5 h-5 text-primary" />
@@ -320,7 +320,7 @@
                     </div>
                 </div>
 
-                <div class="bg-card rounded-2xl border border-border overflow-hidden shadow-sm">
+                <div class="bg-card rounded-2xl border border-border overflow-hidden margin-bottom">
                     <div class="bg-muted/30 px-6 py-4 border-b border-border">
                         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                             <div class="flex items-center gap-3">
@@ -449,7 +449,7 @@
 
             <div class="hidden sm:block">
                 <div class="xl:col-span-1 space-y-6">
-                    <div class="bg-gradient-to-br from-primary/10 to-primary/10 border border-primary/20 rounded-2xl p-6 shadow-sm">
+                    <div class="bg-gradient-to-br from-primary/10 to-primary/10 border border-primary/20 rounded-2xl p-6">
                         <h5 class="text-sm font-semibold text-card-foreground mb-4 flex items-center gap-2">
                             <ShieldCheckIcon class="w-5 h-5 text-primary" />
                             Why Connect Your Wallet?
@@ -513,3 +513,21 @@
         </div>
     </div>
 </template>
+
+<style>
+    .custom-scrollbar {
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+    }
+
+    .custom-scrollbar::-webkit-scrollbar {
+        width: 0;
+        height: 0;
+    }
+
+    @media (max-width: 640px) {
+        .margin-bottom {
+            margin-bottom: 50px;
+        }
+    }
+</style>

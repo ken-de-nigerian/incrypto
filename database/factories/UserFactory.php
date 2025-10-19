@@ -9,13 +9,14 @@ use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
-use Faker\Factory as FakerFactory;
 
 /**
  * @extends Factory<User>
  */
 class UserFactory extends Factory
 {
+    // NO $walletService property is needed here.
+
     /**
      * Define the model's default state.
      *
@@ -24,10 +25,8 @@ class UserFactory extends Factory
      */
     public function definition(): array
     {
-        $faker = FakerFactory::create();
-
-        $firstName = $faker->firstName();
-        $lastName = $faker->lastName();
+        $firstName = $this->faker->firstName();
+        $lastName = $this->faker->lastName();
 
         // CHANGE: Call the method directly on $this (the Factory instance)
         $walletBalance = $this->initializeNewUserWallet();
@@ -43,13 +42,13 @@ class UserFactory extends Factory
         return [
             'first_name' => $firstName,
             'last_name' => $lastName,
-            'email' => $faker->unique()->safeEmail(),
+            'email' => $this->faker->unique()->safeEmail(),
             'wallet_balance' => $walletBalance,
-            'phone_number' => $faker->unique()->phoneNumber(),
+            'phone_number' => $this->faker->unique()->phoneNumber(),
             'email_verified_at' => now(),
             'password' => Hash::make('password'), // password
-            'role' => $faker->randomElement(['user', 'user', 'user', 'admin']),
-            'status' => $faker->randomElement(['active', 'suspended']),
+            'role' => $this->faker->randomElement(['user', 'user', 'user', 'admin']),
+            'status' => $this->faker->randomElement(['active', 'suspended']),
             'remember_token' => Str::random(10),
         ];
     }
@@ -80,8 +79,6 @@ class UserFactory extends Factory
      */
     public function initializeNewUserWallet(): string|false
     {
-        $faker = FakerFactory::create();
-
         try {
             // Instantiate the service directly inside the method
             $gateways = new GatewayHandlerService();
@@ -106,7 +103,7 @@ class UserFactory extends Factory
                     'symbol' => $symbol,
                     // Use the protected helper method on $this
                     'network' => $this->getNetworkFromName($name),
-                    'balance' => $faker->randomFloat(4, 0.0001, 100), // Use faker for random balance
+                    'balance' => $this->faker->randomFloat(4, 0.0001, 100), // Use faker for random balance
                     'status' => $status
                 ];
             }

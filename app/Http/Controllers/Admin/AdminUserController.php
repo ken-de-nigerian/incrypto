@@ -33,7 +33,7 @@ class AdminUserController extends Controller
 
         $usersQuery = User::query()
             ->where('role', '!=', 'admin')
-            ->select('id', 'first_name', 'last_name', 'email', 'status', 'avatar')
+            ->select('id', 'first_name', 'last_name', 'email', 'status')
             ->orderBy('id', 'desc');
 
         if ($search) {

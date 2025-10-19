@@ -150,8 +150,8 @@
                     <template v-for="button in group.buttons" :key="button.label">
                         <form v-if="button.form" method="POST" class="w-full">
                             <button type="submit" :class="[
-                                'flex flex-col items-center gap-1.5 sm:gap-2 p-2 sm:p-3 bg-secondary/90 rounded-lg sm:rounded-xl group w-full cursor-pointer']">
-                                <div class="w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center rounded-lg bg-background/90 group-hover:bg-primary/10">
+                                'flex flex-col items-center gap-1.5 sm:gap-2 p-2 sm:p-3 bg-secondary rounded-lg sm:rounded-xl group w-full cursor-pointer']">
+                                <div class="w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center rounded-lg bg-white/10 group-hover:bg-primary/10">
                                     <component :is="button.icon" class="w-4 h-4" :class="button.class" />
                                 </div>
                                 <span class="text-card-foreground text-[10px] text-center leading-tight font-medium">{{ button.label }}</span>
@@ -159,8 +159,8 @@
                         </form>
 
                         <button v-else @click="button.modal ? openModal(button.modal) : null" :class="[
-                            'flex flex-col items-center gap-1.5 sm:gap-2 p-2 sm:p-3 bg-secondary/90 rounded-lg sm:rounded-xl group w-full cursor-pointer']">
-                            <div class="w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center rounded-lg bg-background/90 group-hover:bg-primary/10">
+                            'flex flex-col items-center gap-1.5 sm:gap-2 p-2 sm:p-3 bg-secondary rounded-lg sm:rounded-xl group w-full cursor-pointer']">
+                            <div class="w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center rounded-lg bg-white/10 group-hover:bg-primary/10">
                                 <component :is="button.icon" class="w-4 h-4" :class="button.class" />
                             </div>
                             <span class="text-card-foreground text-[10px] text-center leading-tight font-medium">{{ button.label }}</span>
@@ -178,7 +178,6 @@
         @close="isFundsModalOpen = false">
 
         <form @submit.prevent="handleAction('Adjusted Balance')" class="space-y-4">
-
             <div class="space-y-2">
                 <label class="text-sm font-medium text-muted-foreground uppercase tracking-wider">Select Wallet</label>
                 <CustomSelectDropdown

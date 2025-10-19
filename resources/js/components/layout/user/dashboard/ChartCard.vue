@@ -1,4 +1,4 @@
-<script lang="ts" setup>
+<script setup lang="ts">
     import { computed, ref, watch } from 'vue';
     import axios from 'axios';
     import TextLink from '@/components/TextLink.vue';
@@ -276,7 +276,8 @@
                 x: index * barWidth,
                 width: Math.max(0, barWidth - 0.2),
                 height: Math.max(normalizedHeight, 0.5),
-                color: isUp ? 'fill-emerald-500/50' : 'fill-red-500/50',
+                // Use explicit opacity utility classes
+                color: isUp ? 'fill-success/50' : 'fill-destructive/50',
             };
         });
     });
@@ -407,7 +408,8 @@
                 <span :class="[
                     'inline-flex items-center justify-center sm:justify-end px-2 py-1 rounded-md text-sm font-semibold duration-300',
                     'w-full sm:w-auto',
-                    isPositiveChange ? 'btn-crypto' : 'bg-red-500/20 text-red-400'
+                    // UPDATED: Use explicit utility classes for positive/negative change
+                    isPositiveChange ? 'bg-success/20 text-success' : 'bg-destructive/20 text-destructive'
                 ]">
                     {{ isPositiveChange ? '+' : '' }}{{ displayPriceChange }}% (24h)
                 </span>
@@ -424,14 +426,16 @@
         <div class="flex items-center gap-2 mb-6 overflow-x-auto scrollbar-hide py-1">
             <button v-for="tf in timeframes" :key="tf.label" @click="selectedTimeframe = tf.label"
                     :class="['flex-shrink-0 px-3 py-1.5 rounded-md text-xs font-medium transition-all duration-200 focus:outline-none cursor-pointer',
-                             selectedTimeframe === tf.label ? 'btn-crypto text-gray-900 scale-[0.98]' : 'bg-secondary text-secondary-foreground active:scale-[0.95]']">
+                             // UPDATED: Use explicit utility classes for active/inactive timeframe buttons
+                             selectedTimeframe === tf.label ? 'bg-primary text-primary-foreground hover:bg-primary/90 scale-[0.98]' : 'bg-secondary/50 text-secondary-foreground hover:bg-secondary/70 active:scale-[0.95]']">
                 {{ tf.label }}
             </button>
 
             <button @click="toggleChartType"
                     :class="[
                         'flex-shrink-0 ml-auto p-2 rounded-md text-sm transition-colors duration-200 focus:outline-none cursor-pointer',
-                        'bg-secondary text-secondary-foreground hover:bg-muted active:scale-[0.95]'
+                        // UPDATED: Use explicit utility classes for chart toggle button
+                        'bg-secondary/50 text-secondary-foreground hover:bg-muted/70 active:scale-[0.95]'
                     ]"
                     aria-label="Toggle chart type">
                 <TrendingUp v-if="chartType === 'candlestick'" class="w-4 h-4" />
@@ -442,7 +446,7 @@
         <div class="relative rounded-lg h-72 sm:h-96 mb-6 overflow-hidden"
              @mousemove="handleMouseMove" @mouseenter="handleMouseEnter" @mouseleave="handleMouseLeave" ref="chartContainer">
 
-            <div v-if="isLoadingChart || chartError || chartData.length < 2" class="absolute inset-0 flex items-center justify-center bg-secondary z-10">
+            <div v-if="isLoadingChart || chartError || chartData.length < 2" class="absolute inset-0 flex items-center justify-center bg-secondary/50 z-10">
                 <div v-if="isLoadingChart" class="flex flex-col items-center gap-3">
                     <div class="flex space-x-2">
                         <div class="dot dot-1 bg-primary"></div>
@@ -453,7 +457,7 @@
                 </div>
 
                 <div v-else-if="chartError" class="text-center p-6">
-                    <div class="flex flex-col items-center mb-4 text-red-500">
+                    <div class="flex flex-col items-center mb-4 text-destructive">
                         <AlertTriangle class="w-10 h-10 mb-2" />
                         <span class="text-base font-semibold">{{ chartError }}</span>
                     </div>
@@ -479,18 +483,18 @@
                           stroke="rgba(107, 114, 128, 0.15)" stroke-width="0.5" stroke-dasharray="2,2" class="transition-all duration-300" />
 
                     <template v-if="chartType === 'line'">
-                        <path :d="chartCoordinates.areaPath" :class="[chartCoordinates.isPositive ? 'fill-emerald-500/10' : 'fill-red-500/10']" style="transition: all 0.5s ease-out;" />
+                        <path :d="chartCoordinates.areaPath" :class="[chartCoordinates.isPositive ? 'fill-success/10' : 'fill-destructive/10']" style="transition: all 0.5s ease-out;" />
 
-                        <path fill="none" :stroke="chartCoordinates.isPositive ? '#10b981' : '#ef4444'" stroke-width="0.2" :d="chartCoordinates.linePath" style="transition: all 0.5s ease-out;" />
+                        <path fill="none" :stroke="chartCoordinates.isPositive ? 'hsl(var(--success))' : 'hsl(var(--destructive))'" stroke-width="0.2" :d="chartCoordinates.linePath" style="transition: all 0.5s ease-out;" />
 
                         <g v-if="isHovering && nearestDataPoint">
-                            <line x1="0" :y1="tooltipY" x2="100" :y2="tooltipY" stroke="#6b7280" stroke-width="0.5" stroke-dasharray="2,2" />
-                            <circle :cx="hoverX" :cy="tooltipY" r="0.75" :fill="chartCoordinates.isPositive ? '#10b981' : '#ef4444'" stroke="#fff" stroke-width="0.2" />
+                            <line x1="0" :y1="tooltipY" x2="100" :y2="tooltipY" stroke="hsl(var(--muted-foreground))" stroke-width="0.5" stroke-dasharray="2,2" />
+                            <circle :cx="hoverX" :cy="tooltipY" r="0.75" :fill="chartCoordinates.isPositive ? 'hsl(var(--success))' : 'hsl(var(--destructive))'" stroke="#fff" stroke-width="0.2" />
                         </g>
                     </template>
                     <template v-else>
                         <g v-for="(bar, idx) in ohlcBars" :key="'candle-' + idx">
-                            <g :class="{'fill-emerald-500 stroke-emerald-500': bar.rawClose >= ohlcBars[idx-1]?.rawClose || idx === 0 && bar.rawClose >= chartData[0].price, 'fill-red-500 stroke-red-500': bar.rawClose < ohlcBars[idx-1]?.rawClose || idx === 0 && bar.rawClose < chartData[0].price}" stroke-width="0.2">
+                            <g :class="{'fill-success stroke-success': bar.rawClose >= ohlcBars[idx-1]?.rawClose || idx === 0 && bar.rawClose >= chartData[0].price, 'fill-destructive stroke-destructive': bar.rawClose < ohlcBars[idx-1]?.rawClose || idx === 0 && bar.rawClose < chartData[0].price}" stroke-width="0.2">
 
                                 <line :x1="bar.x" :y1="bar.high" :x2="bar.x" :y2="bar.low" />
 
@@ -501,7 +505,7 @@
                             </g>
                         </g>
 
-                        <line v-if="isHovering && nearestDataPoint" :x1="hoverX" y1="0" :x2="hoverX" :y2="PRICE_CHART_HEIGHT" stroke="#6b7280" stroke-width="0.5" stroke-dasharray="2,2" />
+                        <line v-if="isHovering && nearestDataPoint" :x1="hoverX" y1="0" :x2="hoverX" :y2="PRICE_CHART_HEIGHT" stroke="hsl(var(--muted-foreground))" stroke-width="0.5" stroke-dasharray="2,2" />
                     </template>
                 </g>
 
@@ -516,7 +520,7 @@
                           :class="['transition-all duration-300', vol.color]"
                           rx="0.2" ry="0.2" />
 
-                    <line v-if="isHovering && nearestDataPoint" :x1="hoverX" y1="0" :x2="hoverX" :y2="VOLUME_CHART_HEIGHT" stroke="#6b7280" stroke-width="0.5" stroke-dasharray="2,2" />
+                    <line v-if="isHovering && nearestDataPoint" :x1="hoverX" y1="0" :x2="hoverX" :y2="VOLUME_CHART_HEIGHT" stroke="hsl(var(--muted-foreground))" stroke-width="0.5" stroke-dasharray="2,2" />
                 </g>
 
                 <g class="text-xs">
@@ -528,7 +532,7 @@
                     </text>
                     <template v-if="isHovering && nearestDataPoint">
                         <template v-if="chartType === 'line'">
-                            <rect x="100" :y="tooltipY - 1.5" width="10" height="3" fill="#6b7280" />
+                            <rect x="100" :y="tooltipY - 1.5" width="10" height="3" fill="hsl(var(--muted-foreground))" />
                         </template>
                         <text x="101.5" :y="tooltipY" dy="0.3em" text-anchor="start" class="font-medium text-xs text-card-foreground">
                             ${{ formatPrice(nearestDataPoint.price, selectedToken?.decimals) }}
@@ -548,7 +552,7 @@
 
             <div v-if="isHovering && nearestDataPoint"
                  :style="{ left: `${(hoverX / 100) * 100}%`, top: `${(tooltipY / TOTAL_SVG_HEIGHT) * 100}%` }"
-                 class="absolute transform -translate-x-1/2 -translate-y-[110%] min-w-[140px] bg-secondary text-secondary-foreground backdrop-blur-sm text-card-foreground p-2 text-xs rounded-md pointer-events-none transition-opacity duration-100 z-20">
+                 class="absolute transform -translate-x-1/2 -translate-y-[110%] min-w-[140px] bg-secondary/50 text-secondary-foreground backdrop-blur-sm text-card-foreground p-2 text-xs rounded-md pointer-events-none transition-opacity duration-100 z-20">
                 <p class="font-bold text-primary mb-1">{{ tooltipTimestamp }}</p>
                 <p>Price: <span class="font-semibold text-foreground">${{ formatPrice(nearestDataPoint.price, selectedToken?.decimals) }}</span></p>
                 <p>Volume: <span class="font-semibold text-foreground">{{ (nearestDataPoint.volume / 1e6).toFixed(2) }}M</span></p>
@@ -556,7 +560,7 @@
         </div>
 
         <div class="grid grid-cols-2 gap-4 text-center">
-            <TextLink :href="route('user.send.index')" class="bg-secondary text-secondary-foreground py-3 rounded-xl text-base font-semibold hover:bg-muted duration-200">
+            <TextLink :href="route('user.send.index')" class="bg-secondary/50 text-secondary-foreground py-3 rounded-xl text-base font-semibold hover:bg-muted/70 duration-200">
                 SEND
             </TextLink>
 
@@ -571,41 +575,42 @@
 </template>
 
 <style scoped>
-.dot {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    animation: dot-pulse 1.2s infinite ease-in-out;
-}
-
-.dot-1 {
-    animation-delay: 0s;
-}
-
-.dot-2 {
-    animation-delay: 0.2s;
-}
-
-.dot-3 {
-    animation-delay: 0.4s;
-}
-
-@keyframes dot-pulse {
-    0%, 100% {
-        transform: translateY(0);
-        opacity: 1;
+    /* Custom styles remain unchanged */
+    .dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        animation: dot-pulse 1.2s infinite ease-in-out;
     }
-    50% {
-        transform: translateY(-8px);
-        opacity: 0.5;
-    }
-}
 
-.scrollbar-hide::-webkit-scrollbar {
-    display: none;
-}
-.scrollbar-hide {
-    -ms-overflow-style: none;
-    scrollbar-width: none;
-}
+    .dot-1 {
+        animation-delay: 0s;
+    }
+
+    .dot-2 {
+        animation-delay: 0.2s;
+    }
+
+    .dot-3 {
+        animation-delay: 0.4s;
+    }
+
+    @keyframes dot-pulse {
+        0%, 100% {
+            transform: translateY(0);
+            opacity: 1;
+        }
+        50% {
+            transform: translateY(-8px);
+            opacity: 0.5;
+        }
+    }
+
+    .scrollbar-hide::-webkit-scrollbar {
+        display: none;
+    }
+    .scrollbar-hide {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+    }
 </style>

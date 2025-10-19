@@ -1,10 +1,10 @@
 <script setup lang="ts">
+    import { computed, ref } from 'vue';
     import { Head, usePage } from '@inertiajs/vue3';
     import AppLayout from '@/components/layout/user/dashboard/AppLayout.vue';
     import NotificationsModal from '@/components/utilities/NotificationsModal.vue';
     import TransactionsCard from '@/components/layout/user/transactions/TransactionsCard.vue';
     import Breadcrumb from '@/components/Breadcrumb.vue';
-    import { computed, ref } from 'vue';
 
     const props = defineProps({
         crypto_swaps: {
@@ -63,17 +63,14 @@
             (props.received_cryptos?.length || 0) +
             (props.sent_cryptos?.length || 0);
 
-        const completedTransactions = [
+        const allTx = [
             ...(props.crypto_swaps || []),
             ...(props.received_cryptos || []),
             ...(props.sent_cryptos || [])
-        ].filter(tx => tx.status === 'completed' || tx.status === 'success').length;
+        ];
 
-        const pendingTransactions = [
-            ...(props.crypto_swaps || []),
-            ...(props.received_cryptos || []),
-            ...(props.sent_cryptos || [])
-        ].filter(tx => tx.status === 'pending' || tx.status === 'processing').length;
+        const completedTransactions = allTx.filter(tx => tx.status === 'completed' || tx.status === 'success').length;
+        const pendingTransactions = allTx.filter(tx => tx.status === 'pending' || tx.status === 'processing').length;
 
         return {
             total: totalTransactions,

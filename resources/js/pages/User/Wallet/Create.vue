@@ -8,7 +8,7 @@
 
     const props = defineProps({
         userWallet: Object,
-        wallet: Object,
+        wallet: Object as () => { Name: string, [key: string]: any },
     });
 
     const page = usePage();

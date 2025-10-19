@@ -95,7 +95,7 @@
                         <div class="p-6 border-b border-border flex-shrink-0">
                             <div class="flex items-center justify-between mb-4">
                                 <h3 class="text-xl font-bold text-card-foreground">Receive {{ formatSymbol(token.symbol) }}</h3>
-                                <button @click="handleClose" class="p-2 hover:bg-muted rounded-lg"><XIcon class="w-5 h-5 text-muted-foreground" /></button>
+                                <button @click="handleClose" class="p-2 hover:bg-muted/70 rounded-lg"><XIcon class="w-5 h-5 text-muted-foreground" /></button>
                             </div>
                             <div class="flex items-center gap-3">
                                 <img :src="token.logo" :alt="token.symbol" class="w-12 h-12 rounded-full" />
@@ -110,10 +110,10 @@
                         </div>
 
                         <div class="p-6 space-y-6 overflow-y-auto flex-1 no-scrollbar">
-                            <div class="p-4 bg-yellow-500/10 border border-yellow-500/30 rounded-xl flex items-start gap-3">
-                                <AlertCircleIcon class="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5" />
+                            <div class="p-4 bg-warning/10 border border-warning/30 rounded-xl flex items-start gap-3">
+                                <AlertCircleIcon class="w-5 h-5 text-warning flex-shrink-0 mt-0.5" />
                                 <div class="text-sm">
-                                    <p class="font-semibold text-yellow-700 mb-1">Important: Network Warning</p>
+                                    <p class="font-semibold text-warning mb-1">Important: Network Warning</p>
                                     <p class="text-muted-foreground">Only send <span class="font-semibold text-card-foreground">{{ formatSymbol(token.symbol) }}</span> to this address. Sending other assets or using the wrong network may result in permanent loss of funds.</p>
                                 </div>
                             </div>
@@ -130,7 +130,7 @@
                                 <label class="text-sm font-semibold text-card-foreground mb-3 block flex items-center gap-2"><WalletIcon class="w-4 h-4" />Your Wallet Address</label>
                                 <div class="p-4 bg-muted/50 border border-border rounded-xl">
                                     <div class="text-sm font-mono text-card-foreground break-all mb-3 leading-relaxed">{{ walletAddress }}</div>
-                                    <button @click="copyAddress" :class="['w-full py-3 px-4 rounded-lg font-semibold text-sm flex items-center justify-center gap-2 transition-all', copiedAddress ? 'bg-primary/20 text-primary border-2 border-primary' : 'bg-primary hover:opacity-90 text-primary-foreground']">
+                                    <button @click="copyAddress" :class="['w-full py-3 px-4 rounded-lg font-semibold text-sm flex items-center justify-center gap-2 transition-all cursor-pointer', copiedAddress ? 'bg-primary/20 text-primary border-2 border-primary' : 'bg-primary hover:bg-primary/90 text-primary-foreground']">
                                         <CheckIcon v-if="copiedAddress" class="w-5 h-5" />
                                         <CopyIcon v-else class="w-5 h-5" />
                                         {{ copiedAddress ? 'Address Copied to Clipboard!' : 'Copy Address' }}
@@ -139,7 +139,7 @@
                             </div>
 
                             <div v-else class="p-8 text-center">
-                                <div class="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4"><WalletIcon class="w-8 h-8 text-muted-foreground" /></div>
+                                <div class="w-16 h-16 bg-muted/50 rounded-full flex items-center justify-center mx-auto mb-4"><WalletIcon class="w-8 h-8 text-muted-foreground" /></div>
                                 <h3 class="text-lg font-semibold text-card-foreground mb-2">No Wallet Address Available</h3>
                                 <p class="text-sm text-muted-foreground">This token does not have a configured wallet address yet.</p>
                             </div>
@@ -171,11 +171,11 @@
                         <div class="p-6 border-t border-border bg-muted/30 flex-shrink-0">
                             <div class="flex items-center gap-3">
                                 <div class="flex-1">
-                                    <div v-if="walletAddress" class="p-4 bg-blue-500/10 border border-blue-500/30 rounded-xl">
+                                    <div v-if="walletAddress" class="p-4 bg-accent/10 border border-accent/30 rounded-xl">
                                         <div class="flex items-start gap-3">
-                                            <AlertCircleIcon class="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                                            <AlertCircleIcon class="w-5 h-5 text-accent flex-shrink-0 mt-0.5" />
                                             <div class="text-xs text-muted-foreground">
-                                                <p class="font-semibold text-blue-700 mb-1">Processing Time</p>
+                                                <p class="font-semibold text-accent mb-1">Processing Time</p>
                                                 <p>Deposits are usually credited within 10-30 minutes depending on network congestion. You can track your transaction status in the "Received Cryptos" section.</p>
                                             </div>
                                         </div>

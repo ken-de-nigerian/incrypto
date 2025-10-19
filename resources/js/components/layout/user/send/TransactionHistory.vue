@@ -15,9 +15,21 @@
     const getStatusColor = (status: string) => {
         switch (status) {
             case 'completed': return 'text-primary';
-            case 'pending': return 'text-yellow-500';
+            // UPDATED: Replaced hardcoded yellow with semantic warning
+            case 'pending': return 'text-warning';
             case 'failed': return 'text-destructive';
             default: return 'text-muted-foreground';
+        }
+    };
+
+    // Helper to get the background class using explicit opacity utilities
+    const getBgClass = (status: string) => {
+        switch (status) {
+            case 'completed': return 'bg-primary/10';
+            // UPDATED: Replaced hardcoded yellow with semantic warning/10
+            case 'pending': return 'bg-warning/10';
+            case 'failed': return 'bg-destructive/10';
+            default: return 'bg-muted/10';
         }
     };
 
@@ -60,7 +72,7 @@
 
 <template>
     <div class="bg-card border border-border rounded-2xl overflow-hidden margin-bottom">
-        <button @click="showTransactionHistory = !showTransactionHistory" class="w-full flex items-center justify-between p-4 hover:bg-muted">
+        <button @click="showTransactionHistory = !showTransactionHistory" class="w-full flex items-center justify-between p-4 hover:bg-muted/70">
             <span class="font-semibold text-card-foreground flex items-center gap-2">
                 <ClockIcon class="w-4 h-4" />
                 Sent Cryptos
@@ -69,7 +81,7 @@
         </button>
         <div v-if="showTransactionHistory" class="border-t border-border">
             <div v-if="recentTransactions.length === 0" class="p-8 text-center">
-                <div class="w-12 h-12 bg-muted rounded-full flex items-center justify-center mx-auto mb-3">
+                <div class="w-12 h-12 bg-muted/20 rounded-full flex items-center justify-center mx-auto mb-3">
                     <SendIcon class="w-6 h-6 text-muted-foreground" />
                 </div>
                 <p class="text-sm text-muted-foreground">No sent transactions</p>
@@ -78,7 +90,7 @@
             <div v-else>
                 <div v-for="tx in recentTransactions" :key="tx.id" class="p-4 border-b border-border last:border-b-0 hover:bg-muted/50">
                     <div class="flex items-start gap-3">
-                        <div :class="['w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0', tx.status === 'completed' ? 'bg-primary/10' : tx.status === 'pending' ? 'bg-yellow-500/10' : 'bg-destructive/10']">
+                        <div :class="['w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0', getBgClass(tx.status)]">
                             <component :is="getStatusIcon(tx.status)" :class="['w-4 h-4', getStatusColor(tx.status)]" />
                         </div>
                         <div class="flex-1 min-w-0">

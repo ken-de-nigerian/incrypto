@@ -1,5 +1,6 @@
 <script setup lang="ts">
     import { Head, usePage } from '@inertiajs/vue3';
+    import { route } from 'ziggy-js';
     import AppLayout from '@/components/layout/user/dashboard/AppLayout.vue';
     import { computed, ref } from 'vue';
     import {
@@ -94,7 +95,7 @@
                                     <div class="flex flex-col items-center">
                                         <div
                                             class="w-8 h-8 rounded-full flex items-center justify-center border-2 flex-shrink-0"
-                                            :class="step.completed ? 'bg-primary/10 border-primary text-primary' : 'bg-secondary border-border text-muted-foreground'">
+                                            :class="step.completed ? 'bg-primary/10 border-primary text-primary' : 'bg-secondary/20 border-border text-muted-foreground'">
                                             <CheckCircleIcon v-if="step.completed" class="w-4 h-4" />
                                             <span v-else class="text-xs font-semibold">{{ step.step }}</span>
                                         </div>
@@ -121,7 +122,7 @@
                             </ul>
                         </div>
 
-                        <div class="bg-gradient-to-br from-primary/5 to-transparent border border-primary/20 rounded-xl p-5">
+                        <div class="bg-gradient-to-br from-primary/10 to-primary/10 border border-primary/20 rounded-xl p-5">
                             <h3 class="text-base font-semibold text-card-foreground mb-3">Why KYC is Required?</h3>
                             <p class="text-xs text-muted-foreground leading-relaxed mb-3">
                                 KYC (Know Your Customer) verification is a regulatory requirement to prevent fraud, money laundering, and ensure platform security.
@@ -155,7 +156,7 @@
                             </ul>
                         </div>
 
-                        <div class="bg-muted/10 border border-border rounded-xl p-5 text-center">
+                        <div class="bg-muted/30 border border-border rounded-xl p-5 text-center">
                             <InfoIcon class="w-8 h-8 text-muted-foreground mx-auto mb-3" />
                             <h3 class="text-sm font-semibold text-card-foreground mb-2">Need Help?</h3>
                             <p class="text-xs text-muted-foreground mb-3">

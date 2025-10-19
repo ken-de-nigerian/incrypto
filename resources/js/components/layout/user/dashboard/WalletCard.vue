@@ -135,19 +135,19 @@
     <div class="card-crypto p-4 sm:p-6">
         <div class="flex items-center justify-between mb-4">
             <div class="flex items-center gap-2">
-                <div class="w-7 h-7 sm:w-8 sm:h-8 bg-secondary rounded-lg flex items-center justify-center">
+                <div class="w-7 h-7 sm:w-8 sm:h-8 bg-secondary/70 rounded-lg flex items-center justify-center">
                     <Wallet class="w-5 h-5 sm:w-6 sm:h-6 text-card-foreground" />
                 </div>
                 <h3 class="text-base sm:text-lg font-semibold text-card-foreground">Wallets</h3>
             </div>
 
             <div class="flex items-center gap-2">
-                <button @click="toggleBalanceVisibility" class="p-2 bg-secondary hover:bg-muted rounded-lg cursor-pointer" :title="isBalanceHidden ? 'Show balance' : 'Hide balance'">
+                <button @click="toggleBalanceVisibility" class="p-2 bg-secondary/70 hover:bg-muted/90 rounded-lg cursor-pointer" :title="isBalanceHidden ? 'Show balance' : 'Hide balance'">
                     <EyeOff v-if="isBalanceHidden" class="w-4 h-4 sm:w-5 sm:h-5 text-muted-foreground" />
                     <Eye v-else class="w-4 h-4 sm:w-5 sm:h-5 text-muted-foreground" />
                 </button>
 
-                <button @click="refreshWalletData" :disabled="isRefreshing || isLoading" class="p-2 bg-secondary hover:bg-muted rounded-lg disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer" title="Refresh wallet data">
+                <button @click="refreshWalletData" :disabled="isRefreshing || isLoading" class="p-2 bg-secondary/70 hover:bg-muted/90 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer" title="Refresh wallet data">
                     <RefreshCw
                         :class="[
                             'w-4 h-4 sm:w-5 sm:h-5 text-muted-foreground transition-transform',
@@ -158,7 +158,7 @@
             </div>
         </div>
 
-        <div class="relative bg-secondary rounded-lg sm:rounded-xl p-4 sm:p-6 mb-4 overflow-hidden">
+        <div class="relative bg-secondary/50 rounded-lg sm:rounded-xl p-4 sm:p-6 mb-4 overflow-hidden">
             <div class="absolute right-0 bottom-0 opacity-20">
                 <div class="w-24 h-24 sm:w-32 sm:h-32 bg-primary rounded-full blur-3xl"></div>
             </div>
@@ -167,7 +167,7 @@
                 <p class="text-muted-foreground text-xs sm:text-sm mb-2">Total Assets</p>
 
                 <div v-if="isLoading" class="flex items-center gap-2 sm:gap-3 mb-2 flex-wrap">
-                    <div class="h-8 sm:h-12 w-40 sm:w-48 bg-muted rounded-lg animate-pulse"></div>
+                    <div class="h-8 sm:h-12 w-40 sm:w-48 bg-muted/70 rounded-lg animate-pulse"></div>
                 </div>
 
                 <div v-else class="flex items-center gap-2 sm:gap-3 mb-2 flex-wrap">
@@ -175,7 +175,7 @@
                         {{ isBalanceHidden ? '****' : '$' + props.wallet_balances!.totalUsdValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}
                     </span>
 
-                    <span class="bg-secondary text-card-foreground px-2 sm:px-3 py-1 rounded-lg text-xs sm:text-sm border border-border">
+                    <span class="bg-secondary/70 text-card-foreground px-2 sm:px-3 py-1 rounded-lg text-xs sm:text-sm border border-border">
                         USD
                     </span>
                 </div>
@@ -184,7 +184,7 @@
 
         <div v-if="paginatedWalletData.length > 0 && !isLoading" class="flex items-center gap-2 mb-4 text-xs sm:text-sm text-muted-foreground">
             <div class="flex items-center space-x-2">
-                <input type="checkbox" v-model="hideZeroBalances" id="hideZeroBalances" class="h-4 w-4 shrink-0 rounded-sm border border-primary ring-offset-background cursor-pointer" />
+                <input type="checkbox" v-model="hideZeroBalances" id="hideZeroBalances" class="h-4 w-4 shrink-0" />
                 <label for="hideZeroBalances" class="text-sm text-muted-foreground leading-relaxed cursor-pointer">
                     Hide zero balances
                 </label>
@@ -193,19 +193,19 @@
 
         <div class="wallet-list-container no-scrollbar space-y-2 sm:space-y-3 max-h-96 overflow-y-auto">
             <template v-if="isLoading">
-                <div v-for="i in skeletonCount" :key="`skeleton-${i}`" class="flex items-center justify-between py-2 sm:py-3 border-b border-border last:border-0">
+                <div v-for="i in skeletonCount" :key="`skeleton-${i}`" class="flex items-center justify-between py-2 sm:py-3 border-b border-border last:border-0 animate-pulse">
                     <div class="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
-                        <div class="w-8 h-8 sm:w-8 sm:h-8 rounded-full bg-secondary animate-pulse flex-shrink-0"></div>
+                        <div class="w-8 h-8 sm:w-8 sm:h-8 rounded-full bg-secondary/70 flex-shrink-0"></div>
                         <div class="min-w-0 flex-1">
-                            <div class="h-4 w-24 sm:w-32 bg-secondary rounded animate-pulse mb-2"></div>
-                            <div class="h-3 w-16 sm:w-20 bg-secondary rounded animate-pulse"></div>
+                            <div class="h-4 w-24 sm:w-32 bg-secondary/70 rounded mb-2"></div>
+                            <div class="h-3 w-16 sm:w-20 bg-secondary/70 rounded"></div>
                         </div>
                     </div>
 
                     <div class="text-right flex-shrink-0 ml-2">
-                        <div class="h-4 w-20 sm:w-24 bg-secondary rounded animate-pulse mb-2 ml-auto"></div>
-                        <div class="h-3 w-16 sm:w-20 bg-secondary rounded animate-pulse mb-2 ml-auto"></div>
-                        <div class="h-3 w-20 sm:w-24 bg-secondary rounded animate-pulse ml-auto"></div>
+                        <div class="h-4 w-20 sm:w-24 bg-secondary/70 rounded mb-2 ml-auto"></div>
+                        <div class="h-3 w-16 sm:w-20 bg-secondary/70 rounded mb-2 ml-auto"></div>
+                        <div class="h-3 w-20 sm:w-24 bg-secondary/70 rounded ml-auto"></div>
                     </div>
                 </div>
             </template>
@@ -213,7 +213,7 @@
             <template v-else>
                 <div v-for="(wallet, idx) in paginatedWalletData" :key="idx" class="flex items-center justify-between py-2 sm:py-3 border-b border-border last:border-0">
                     <div class="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
-                        <img :src="`https://cdn.jsdelivr.net/gh/atomiclabs/cryptocurrency-icons@1a63530be6e374711a8554f31b17e4cb92c25fa5/128/color/${getIconSymbol(wallet.symbol)}.png`" :alt="`${wallet.name} icon`" class="w-8 h-8 sm:w-8 sm:h-8 rounded-full flex-shrink-0 object-cover bg-secondary" @error="(e) => (e.target as HTMLImageElement).src = 'https://cdn.jsdelivr.net/gh/atomiclabs/cryptocurrency-icons@1a63530be6e374711a8554f31b17e4cb92c25fa5/128/color/generic.png'" />
+                        <img :src="`https://cdn.jsdelivr.net/gh/atomiclabs/cryptocurrency-icons@1a63530be6e374711a8554f31b17e4cb92c25fa5/128/color/${getIconSymbol(wallet.symbol)}.png`" :alt="`${wallet.name} icon`" class="w-8 h-8 sm:w-8 sm:h-8 rounded-full flex-shrink-0 object-cover bg-secondary/70" @error="(e) => (e.target as HTMLImageElement).src = 'https://cdn.jsdelivr.net/gh/atomiclabs/cryptocurrency-icons@1a63530be6e374711a8554f31b17e4cb92c25fa5/128/color/generic.png'" />
                         <div class="min-w-0">
                             <p class="text-card-foreground font-medium text-sm sm:text-base truncate">{{ wallet.name }}</p>
                             <p class="text-muted-foreground text-xs sm:text-sm">{{ wallet.symbol }}</p>

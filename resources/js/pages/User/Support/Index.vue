@@ -1,12 +1,11 @@
 <script setup lang="ts">
-    import { Head } from '@inertiajs/vue3';
+    import { Head, usePage } from '@inertiajs/vue3';
     import AppLayout from '@/components/layout/user/dashboard/AppLayout.vue';
     import NotificationsModal from '@/components/utilities/NotificationsModal.vue';
     import Breadcrumb from '@/components/Breadcrumb.vue';
     import TextLink from '@/components/TextLink.vue';
     import { computed, ref } from 'vue';
-    import { usePage } from '@inertiajs/vue3';
-    import { MessageSquareIcon, MailIcon, MapPinIcon, PhoneIcon, HelpCircleIcon, ExternalLinkIcon, ClockIcon, ZapIcon, ArrowRightIcon, InfoIcon } from 'lucide-vue-next';
+    import { MessageSquareIcon, MailIcon, MapPinIcon, PhoneIcon, HelpCircleIcon, ExternalLinkIcon, ClockIcon, ZapIcon, ArrowRightIcon, AlertTriangleIcon } from 'lucide-vue-next';
 
     const page = usePage();
     const user = computed(() => page.props.auth?.user ?? null);
@@ -38,7 +37,6 @@
         { label: 'Support & Contact' }
     ];
 
-    // Placeholder data for contact channels
     const supportChannels = [
         {
             icon: MailIcon,
@@ -56,9 +54,9 @@
             description: 'Find instant answers, tutorials, and guides in our comprehensive knowledge base.',
             actionLabel: 'Visit Knowledge Base',
             href: "#",
-            color: 'text-green-500',
-            bg: 'bg-green-500/10',
-            border: 'border-green-500/20'
+            color: 'text-success',
+            bg: 'bg-success/10',
+            border: 'border-success/20'
         },
         {
             icon: MessageSquareIcon,
@@ -66,9 +64,9 @@
             description: 'Real-time assistance for urgent, account-specific queries (24/7 coverage).',
             actionLabel: 'Start Chat',
             href: '#',
-            color: 'text-indigo-500',
-            bg: 'bg-indigo-500/10',
-            border: 'border-indigo-500/20'
+            color: 'text-accent',
+            bg: 'bg-accent/10',
+            border: 'border-accent/20'
         },
     ];
 
@@ -95,7 +93,7 @@
                 <div class="w-full mx-auto">
                     <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
                         <div class="xl:col-span-2 space-y-6">
-                            <div class="bg-gradient-to-br from-primary/10 via-primary/5 to-transparent rounded-2xl border border-primary/20 overflow-hidden p-6 sm:p-8">
+                            <div class="bg-gradient-to-br from-primary/10 via-primary/10 to-transparent rounded-2xl border border-primary/20 overflow-hidden p-6 sm:p-8">
                                 <div class="flex items-start gap-4">
                                     <div class="w-12 h-12 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl bg-primary/10 flex items-center justify-center flex-shrink-0 border border-border">
                                         <PhoneIcon class="w-6 h-6 sm:w-7 sm:h-7 text-primary" />
@@ -156,7 +154,7 @@
 
                         <div class="xl:col-span-1 space-y-6">
                             <div class="sticky top-6">
-                                <div class="bg-gradient-to-br from-primary/5 to-transparent border border-primary/20 rounded-2xl p-6">
+                                <div class="bg-gradient-to-br from-primary/10 to-primary/10 border border-primary/20 rounded-2xl p-6">
                                     <h5 class="text-sm font-semibold text-card-foreground mb-4 flex items-center gap-2">
                                         <ClockIcon class="w-5 h-5 text-primary" />
                                         Support Hours
@@ -167,7 +165,7 @@
                                             <span class="font-medium text-card-foreground">24/7</span>
                                         </li>
                                         <li class="flex justify-between items-center">
-                                            <span class="text-muted-foreground">Live Chat (Premium):</span>
+                                            <span class="text-muted-foreground">Live Chat:</span>
                                             <span class="font-medium text-card-foreground">24/7</span>
                                         </li>
                                         <li class="flex justify-between items-center">
@@ -177,9 +175,9 @@
                                     </ul>
                                 </div>
 
-                                <div class="bg-warning/5 border border-warning/20 rounded-2xl p-6 mt-6">
+                                <div class="bg-warning/10 border border-warning/20 rounded-2xl p-6 mt-6">
                                     <h5 class="text-sm font-semibold text-warning mb-3 flex items-center gap-2">
-                                        <InfoIcon class="w-5 h-5" />
+                                        <AlertTriangleIcon class="w-5 h-5" />
                                         Security Reminder
                                     </h5>
                                     <p class="text-xs text-muted-foreground">
@@ -214,11 +212,3 @@
         @close="closeNotificationsModal"
     />
 </template>
-
-<style>
-    @media (max-width: 640px) {
-        .margin-bottom {
-            margin-bottom: 50px;
-        }
-    }
-</style>

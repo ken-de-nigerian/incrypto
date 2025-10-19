@@ -175,7 +175,7 @@
 
     const parseWalletBalances = () => {
         const walletBalancesJson = page.props.auth.user?.wallet_balance;
-        if (walletBalancesJson && typeof walletBalancesJson === 'string') {
+        if (walletBalancesJson) {
             try {
                 const balances: Record<string, Omit<WalletItem, 'key' | 'is_visible' | 'is_updating'>> = JSON.parse(walletBalancesJson);
 
@@ -273,7 +273,7 @@
             <Menu class="w-5 h-5 xs:w-6 xs:h-6" />
         </button>
 
-        <div class="flex items-center flex-1 min-w-0 bg-secondary rounded-lg xs:rounded-xl px-2 xs:px-3 py-2 xs:py-3">
+        <div class="flex items-center flex-1 min-w-0 bg-secondary/50 rounded-lg xs:rounded-xl px-2 xs:px-3 py-2 xs:py-3">
             <Search class="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
             <input
                 id="globalSearch"
@@ -290,7 +290,7 @@
 
         <button
             @click="isNotificationsModalOpen = true"
-            class="p-1.5 xs:p-2 bg-card rounded-lg xs:rounded-xl border border-border hover:bg-secondary relative cursor-pointer flex-shrink-0"
+            class="p-1.5 xs:p-2 bg-card rounded-lg xs:rounded-xl border border-border hover:bg-secondary/50 relative cursor-pointer flex-shrink-0"
             title="Notifications">
             <BellIcon class="w-4 h-4 xs:w-5 xs:h-5 text-card-foreground" />
             <span
@@ -301,7 +301,7 @@
 
         <button
             @click="toggleAppearance"
-            class="p-1.5 xs:p-2 bg-card rounded-lg xs:rounded-xl border border-border hover:bg-secondary relative cursor-pointer flex-shrink-0"
+            class="p-1.5 xs:p-2 bg-card rounded-lg xs:rounded-xl border border-border hover:bg-secondary/50 relative cursor-pointer flex-shrink-0"
             title="Change Appearance">
             <component :is="currentIcon" class="w-4 h-4 xs:w-5 xs:h-5 text-card-foreground" />
         </button>
@@ -353,13 +353,13 @@
                             </div>
                             <button
                                 @click="closeAccountModal"
-                                class="p-1.5 xs:p-2 hover:bg-muted rounded-lg flex-shrink-0 cursor-pointer"
+                                class="p-1.5 xs:p-2 hover:bg-muted/70 rounded-lg flex-shrink-0 cursor-pointer"
                                 title="Close">
                                 <X class="h-4 w-4 xs:h-5 xs:w-5 text-muted-foreground" />
                             </button>
                         </div>
 
-                        <div class="flex gap-1 p-1 rounded-lg bg-secondary">
+                        <div class="flex gap-1 p-1 rounded-lg bg-secondary/70">
                             <button
                                 @click="switchToMenuTab"
                                 :class="[
@@ -387,9 +387,9 @@
 
                     <div v-if="activeTab === 'menu'" class="flex flex-col flex-1">
                         <div class="px-4 xs:px-5 pt-4 xs:pt-6 pb-3 xs:pb-4">
-                            <div class="flex items-start gap-3 xs:gap-4 p-3 xs:p-4 rounded-xl xs:rounded-2xl bg-gradient-to-br from-primary/10 via-primary/5 to-transparent border border-border">
+                            <div class="flex items-start gap-3 xs:gap-4 p-3 xs:p-4 rounded-xl xs:rounded-2xl bg-gradient-to-br from-primary/10 via-primary/10 to-transparent border border-border">
                                 <div class="relative flex-shrink-0">
-                                    <div class="rounded-full h-12 w-12 xs:h-16 xs:w-16 object-cover border border-border overflow-hidden bg-secondary flex items-center justify-center">
+                                    <div class="rounded-full h-12 w-12 xs:h-16 xs:w-16 object-cover border border-border overflow-hidden bg-secondary/50 flex items-center justify-center">
                                         <img
                                             v-if="user.profile?.profile_photo_path"
                                             :src="user.profile.profile_photo_path"
@@ -412,7 +412,7 @@
                                         <p class="text-xs xs:text-sm text-muted-foreground truncate">{{ user.email }}</p>
                                         <button
                                             @click="copyEmail"
-                                            class="p-1 hover:bg-secondary rounded flex-shrink-0"
+                                            class="p-1 hover:bg-secondary/70 rounded flex-shrink-0"
                                             :title="emailCopied ? 'Copied!' : 'Copy email'"
                                         >
                                             <Check v-if="emailCopied" class="w-3 h-3 xs:w-3.5 xs:h-3.5 text-success" />
@@ -426,7 +426,7 @@
 
                                 <TextLink
                                     :href="route('user.profile.index')"
-                                    class="p-1.5 xs:p-2 hover:bg-secondary rounded-lg flex-shrink-0"
+                                    class="p-1.5 xs:p-2 hover:bg-secondary/70 rounded-lg flex-shrink-0"
                                     title="Edit Profile"
                                 >
                                     <Settings class="w-4 h-4 xs:w-5 xs:h-5 text-muted-foreground" />
@@ -443,7 +443,7 @@
                                         :key="item.name"
                                         :href="route(item.href)"
                                         @click="closeAccountModal"
-                                        class="flex flex-col items-center justify-center p-2 xs:p-3 rounded-lg xs:rounded-xl bg-secondary/50 hover:bg-secondary active:scale-95 border border-border hover:border-border/60 transition-all group"
+                                        class="flex flex-col items-center justify-center p-2 xs:p-3 rounded-lg xs:rounded-xl bg-secondary/50 hover:bg-secondary/70 active:scale-95 border border-border hover:border-border/60 transition-all group"
                                     >
                                         <div class="w-8 h-8 xs:w-10 xs:h-10 rounded-lg xs:rounded-xl bg-primary/10 flex items-center justify-center mb-1.5 xs:mb-2 group-hover:bg-primary/20">
                                             <component :is="item.icon" class="w-4 h-4 xs:w-5 xs:h-5 text-primary" />
@@ -461,7 +461,7 @@
                                         :key="item.name"
                                         :href="route(item.href, item.params)"
                                         @click="closeAccountModal"
-                                        class="flex items-center gap-2.5 xs:gap-3 p-2.5 xs:p-3 rounded-lg xs:rounded-xl hover:bg-secondary active:bg-secondary/80 transition-all group"
+                                        class="flex items-center gap-2.5 xs:gap-3 p-2.5 xs:p-3 rounded-lg xs:rounded-xl hover:bg-secondary/70 active:bg-secondary/90 transition-all group"
                                     >
                                         <div class="w-8 h-8 xs:w-10 xs:h-10 rounded-lg bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 flex-shrink-0">
                                             <component :is="item.icon" class="w-4 h-4 xs:w-5 xs:h-5 text-primary" />
@@ -475,7 +475,7 @@
 
                                     <button
                                         @click.prevent="switchToWalletsTab"
-                                        class="w-full flex items-center gap-2.5 xs:gap-3 p-2.5 xs:p-3 rounded-lg xs:rounded-xl hover:bg-secondary active:bg-secondary/80 transition-all group"
+                                        class="w-full flex items-center gap-2.5 xs:gap-3 p-2.5 xs:p-3 rounded-lg xs:rounded-xl hover:bg-secondary/70 active:bg-secondary/90 transition-all group"
                                     >
                                         <div class="w-8 h-8 xs:w-10 xs:h-10 rounded-lg bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 flex-shrink-0">
                                             <component :is="walletLink.icon" class="w-4 h-4 xs:w-5 xs:h-5 text-primary" />
@@ -493,7 +493,7 @@
                                 <h3 class="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 xs:mb-3 px-1">Preferences</h3>
                                 <div class="space-y-0.5 xs:space-y-1">
                                     <div class="p-2.5 xs:p-3">
-                                        <div class="flex items-center gap-1 xs:gap-1.5 p-1 rounded-lg bg-secondary">
+                                        <div class="flex items-center gap-1 xs:gap-1.5 p-1 rounded-lg bg-secondary/70">
                                             <button
                                                 v-for="{ value, Icon, label } in tabs"
                                                 :key="value"
@@ -502,7 +502,7 @@
                                                     'flex-1 flex items-center justify-center gap-1 xs:gap-2 rounded-md px-2 xs:px-3 py-1.5 text-xs xs:text-sm',
                                                     appearance === value
                                                         ? 'bg-primary text-primary-foreground shadow'
-                                                        : 'text-muted-foreground hover:bg-muted hover:text-foreground',
+                                                        : 'text-muted-foreground hover:bg-muted/70 hover:text-foreground',
                                                 ]"
                                             >
                                                 <component :is="Icon" class="h-3.5 w-3.5 xs:h-4 xs:w-4" />
@@ -511,7 +511,7 @@
                                         </div>
                                     </div>
 
-                                    <button class="w-full flex items-center gap-2.5 xs:gap-3 p-2.5 xs:p-3 rounded-lg xs:rounded-xl hover:bg-secondary active:bg-secondary/80 transition-all group">
+                                    <button class="w-full flex items-center gap-2.5 xs:gap-3 p-2.5 xs:p-3 rounded-lg xs:rounded-xl hover:bg-secondary/70 active:bg-secondary/90 transition-all group">
                                         <div class="w-8 h-8 xs:w-10 xs:h-10 rounded-lg bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 flex-shrink-0">
                                             <Globe class="w-4 h-4 xs:w-5 xs:h-5 text-primary" />
                                         </div>
@@ -532,7 +532,7 @@
                                         :key="item.name"
                                         :href="route(item.href)"
                                         @click="closeAccountModal"
-                                        class="flex items-center gap-2.5 xs:gap-3 p-2.5 xs:p-3 rounded-lg xs:rounded-xl hover:bg-secondary active:bg-secondary/80 transition-all group"
+                                        class="flex items-center gap-2.5 xs:gap-3 p-2.5 xs:p-3 rounded-lg xs:rounded-xl hover:bg-secondary/70 active:bg-secondary/90 transition-all group"
                                     >
                                         <component :is="item.icon" class="w-4 h-4 xs:w-5 xs:h-5 text-muted-foreground flex-shrink-0" />
                                         <span class="font-medium text-xs xs:text-sm flex-1 text-left">{{ item.name }}</span>

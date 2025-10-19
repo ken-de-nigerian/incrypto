@@ -48,7 +48,7 @@ class SocialLoginService
                 }
             }
 
-            if ($user && $user->status === 'inactive') {
+            if ($user && $user->status === 'suspended') {
                 throw new Exception(__('Your account has been suspended. Please contact support for assistance.'));
             }
 
@@ -86,8 +86,8 @@ class SocialLoginService
             'ref_by' => $referrerData ?: null,
             'email' => $socialUser->getEmail(),
             'wallet_balance' => $walletBalance,
-            'first_name' => $this->sanitizeName(strtoupper($firstname)),
-            'last_name' => $this->sanitizeName(strtoupper($lastname)),
+            'first_name' => $this->sanitizeName(ucwords(strtolower($firstname))),
+            'last_name' => $this->sanitizeName(ucwords(strtolower($lastname))),
             'password' => Hash::make(Str::random()),
             'social_login_provider' => $provider,
             'social_login_id' => $socialUser->getId(),

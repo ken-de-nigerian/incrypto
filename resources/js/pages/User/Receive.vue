@@ -1,8 +1,8 @@
 <script setup lang="ts">
     import { computed, ref } from 'vue';
-    import { Head, usePage } from '@inertiajs/vue3';
-    import { router } from '@inertiajs/vue3';
+    import { Head, usePage, router } from '@inertiajs/vue3';
     import axios from 'axios';
+    import { route } from 'ziggy-js';
 
     import AppLayout from '@/components/layout/user/dashboard/AppLayout.vue';
     import Breadcrumb from '@/components/Breadcrumb.vue';

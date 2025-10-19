@@ -118,7 +118,7 @@
 
                 <div class="flex items-center justify-between space-x-2">
                     <div class="flex items-center space-x-2">
-                        <input type="checkbox" id="remember" class="h-4 w-4 shrink-0 rounded-sm border border-primary ring-offset-background" v-model="form.remember" :disabled="throttleTimeLeft > 0" />
+                        <input type="checkbox" id="remember" class="h-4 w-4 shrink-0" v-model="form.remember" :disabled="throttleTimeLeft > 0" />
                         <label for="remember" class="text-sm text-muted-foreground leading-relaxed">
                             Remember Me
                         </label>

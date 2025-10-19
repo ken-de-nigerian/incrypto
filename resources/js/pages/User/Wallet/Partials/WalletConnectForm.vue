@@ -62,7 +62,7 @@
                 </div>
 
                 <div class="p-6 sm:p-8">
-                    <div class="bg-warning/5 border border-warning/20 rounded-lg p-5 mb-8">
+                    <div class="bg-warning/10 border border-warning/20 rounded-lg p-5 mb-8">
                         <div class="flex items-start gap-3">
                             <AlertTriangleIcon class="w-6 h-6 text-warning flex-shrink-0 mt-0.5" />
                             <div>

@@ -16,7 +16,7 @@
         <div class="rounded-lg border bg-card text-card-foreground shadow-sm">
             <div class="flex flex-col space-y-1.5 p-6">
                 <div class="text-2xl font-semibold leading-none tracking-tight flex items-center space-x-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-palette h-5 w-5" aria-hidden="true">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-palette h-5 w-5" aria-hidden="true">
                         <path d="M12 22a1 1 0 0 1 0-20 10 9 0 0 1 10 9 5 5 0 0 1-5 5h-2.25a1.75 1.75 0 0 0-1.4 2.8l.3.4a1.75 1.75 0 0 1-1.4 2.8z"></path>
                         <circle cx="13.5" cy="6.5" r=".5" fill="currentColor"></circle>
                         <circle cx="17.5" cy="10.5" r=".5" fill="currentColor"></circle>
@@ -39,10 +39,10 @@
                             :key="value"
                             @click="updateAppearance(value as 'light' | 'dark' | 'system')"
                             :class="[
-                                'flex flex-col items-center justify-center gap-2 rounded-lg border-2 p-6',
+                                'flex flex-col items-center justify-center gap-2 rounded-lg border-2 p-6 cursor-pointer',
                                 appearance === value
-                                    ? 'bg-primary/10 border-primary text-primary ring-2 ring-primary'
-                                    : 'bg-secondary border-border text-muted-foreground hover:border-primary',
+                                    ? 'bg-primary/10 border-primary text-primary'
+                                    : 'bg-secondary/20 border-border text-muted-foreground hover:border-primary',
                             ]">
                             <component :is="Icon" class="h-8 w-8" />
                             <span class="text-sm font-semibold">{{ label }}</span>
@@ -55,9 +55,9 @@
 </template>
 
 <style scoped>
-    @media (max-width: 640px) {
-        .margin-bottom {
-            margin-bottom: 50px;
-        }
+@media (max-width: 640px) {
+    .margin-bottom {
+        margin-bottom: 50px;
     }
+}
 </style>

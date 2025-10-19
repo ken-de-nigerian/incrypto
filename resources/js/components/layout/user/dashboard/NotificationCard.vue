@@ -61,7 +61,7 @@
                     </div>
                 </div>
 
-                <div class="flex flex-col gap-2 p-4 bg-secondary rounded-lg border border-border">
+                <div class="flex flex-col gap-2 p-4 bg-secondary/20 rounded-lg border border-border">
                     <h4 class="flex items-center gap-2 text-xs font-medium text-card-foreground">
                         <span v-if="!notification.read_at" class="w-2 h-2 bg-primary rounded-full"></span>
                         {{ notification.data.title }}

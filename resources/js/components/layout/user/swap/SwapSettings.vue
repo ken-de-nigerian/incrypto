@@ -35,9 +35,12 @@
                     :key="s"
                     @click="setSlippage(s)"
                     :class="[
-            'px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg text-xs sm:text-sm font-medium',
-            slippage === s ? 'bg-primary text-primary-foreground' : 'bg-background text-muted-foreground hover:bg-muted',
-          ]">
+                        'px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-colors duration-150',
+                        // Active: Compliant (bg-primary)
+                        slippage === s ? 'bg-primary text-primary-foreground' :
+                        // Inactive: UPDATED hover:bg-muted/70
+                        'bg-background text-muted-foreground hover:bg-muted/70',
+                    ]">
                     {{ s }}%
                 </button>
                 <input
@@ -73,8 +76,9 @@
                     :key="preset"
                     @click="emit('update:gasPreset', preset)"
                     :class="[
-                        'px-2 sm:px-3 py-1 sm:py-2 rounded-lg text-xs sm:text-sm font-medium',
-                        gasPreset === preset ? 'bg-primary text-primary-foreground' : 'bg-background text-muted-foreground hover:bg-muted',
+                        'px-2 sm:px-3 py-1 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors duration-150',
+                        gasPreset === preset ? 'bg-primary text-primary-foreground' :
+                        'bg-background text-muted-foreground hover:bg-muted/70',
                     ]">
                     <div class="capitalize">{{ preset }}</div>
                     <div class="text-xs opacity-70">{{ gasPrices[preset].time }}</div>

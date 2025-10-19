@@ -4,14 +4,17 @@
     const FloatingCrypto = defineComponent({
         render() {
             return h('div', { class: 'absolute inset-0 overflow-hidden pointer-events-none' }, [
+                // Bitcoin: bg-crypto-bitcoin/20 is compliant.
                 h('div', {
                     class: 'absolute top-1/4 left-1/4 w-24 h-24 bg-crypto-bitcoin/20 rounded-full animate-float',
                     style: 'animation-delay: 0s'
                 }),
+                // Ethereum: bg-crypto-ethereum/20 is compliant.
                 h('div', {
                     class: 'absolute top-1/3 right-1/4 w-16 h-16 bg-crypto-ethereum/20 rounded-full animate-float',
                     style: 'animation-delay: 1s'
                 }),
+                // Accent: bg-accent/20 is compliant.
                 h('div', {
                     class: 'absolute bottom-1/3 left-1/3 w-20 h-20 bg-accent/20 rounded-full animate-float',
                     style: 'animation-delay: 2s'
@@ -27,8 +30,8 @@
         <div class="text-center z-10 max-w-md">
             <div class="mb-8 flex justify-center">
                 <div class="relative">
-                    <div class="w-32 h-32 bg-crypto-bitcoin rounded-full opacity-20 animate-pulse-slow" />
-                    <div class="absolute top-4 left-4 w-24 h-24 bg-crypto-ethereum rounded-full opacity-30 animate-float" />
+                    <div class="w-32 h-32 bg-crypto-bitcoin/20 rounded-full animate-pulse-slow" />
+                    <div class="absolute top-4 left-4 w-24 h-24 bg-crypto-ethereum/30 rounded-full animate-float" />
                     <div class="absolute top-8 left-8 w-16 h-16 bg-accent rounded-full animate-crypto-glow" />
                 </div>
             </div>

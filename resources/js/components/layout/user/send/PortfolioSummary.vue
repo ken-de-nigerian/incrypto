@@ -28,7 +28,7 @@
 
 <template>
     <div class="hidden sm:block">
-        <div class="bg-gradient-to-br from-primary/10 to-primary/5 border border-border rounded-2xl p-6">
+        <div class="bg-gradient-to-br from-primary/10 to-primary/10 border border-border rounded-2xl p-6">
             <div class="flex items-center gap-2 mb-2">
                 <WalletIcon class="w-5 h-5 text-primary" />
                 <span class="text-sm font-medium text-muted-foreground">Portfolio Value</span>

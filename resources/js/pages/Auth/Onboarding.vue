@@ -201,7 +201,8 @@
     }
 
     .vue-tel-input-custom .vti__dropdown:hover {
-        background-color: hsl(var(--muted));
+        /* UPDATED: Change to explicit opacity utility hsl(var(--muted) / .9) */
+        background-color: hsl(var(--muted) / .9);
     }
 
     .vue-tel-input-custom .vti__dropdown-list {
@@ -222,7 +223,8 @@
 
     .vue-tel-input-custom .vti__dropdown-item:hover,
     .vue-tel-input-custom .vti__dropdown-item.highlighted {
-        background-color: hsl(var(--muted));
+        /* UPDATED: Change to explicit opacity utility hsl(var(--muted) / .9) */
+        background-color: hsl(var(--muted) / .9);
     }
 
     .vue-tel-input-custom .vti__dropdown-item strong {
@@ -233,7 +235,6 @@
         color: hsl(var(--muted-foreground));
     }
 
-    /* Scrollbar styling for dropdown */
     .vue-tel-input-custom .vti__dropdown-list::-webkit-scrollbar {
         width: 6px;
     }

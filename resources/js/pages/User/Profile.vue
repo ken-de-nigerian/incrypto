@@ -1,6 +1,6 @@
 <script setup lang="ts">
     import NotificationsModal from '@/components/utilities/NotificationsModal.vue';
-    import { computed, ref, defineProps } from 'vue';
+    import { computed, ref } from 'vue';
     import { Head, usePage } from '@inertiajs/vue3';
     import AppLayout from '@/components/layout/user/dashboard/AppLayout.vue';
     import ProfileSettings from '@/components/layout/user/settings/ProfileSettings.vue';
@@ -70,8 +70,8 @@
                     <nav class="p-2 space-y-1 border border-border rounded-xl mb-4">
                         <TextLink
                             :href="route('user.profile.index', { tab: 'profile' })" :class="[
-                                'inline-flex items-center gap-2 w-full justify-start text-left h-auto p-3 whitespace-nowrap rounded-md text-sm font-medium cursor-pointer text-foreground',
-                                activeTab === 'profile' ? 'bg-secondary text-secondary-foreground' : 'hover:bg-accent hover:text-accent-foreground'
+                                'inline-flex items-center gap-2 w-full justify-start text-left h-auto p-3 whitespace-nowrap rounded-md text-sm font-medium cursor-pointer text-foreground transition-colors duration-150',
+                                activeTab === 'profile' ? 'bg-secondary/70 text-secondary-foreground' : 'hover:bg-accent/10 hover:text-accent'
                             ]">
                             <div class="flex items-start space-x-3">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-user h-5 w-5 mt-0.5 flex-shrink-0">
@@ -88,8 +88,8 @@
                         <TextLink
                             :href="route('user.profile.index', { tab: 'security' })"
                             :class="[
-                                'inline-flex items-center gap-2 w-full justify-start text-left h-auto p-3 whitespace-nowrap rounded-md text-sm font-medium cursor-pointer text-foreground',
-                                activeTab === 'security' ? 'bg-secondary text-secondary-foreground' : 'hover:bg-accent hover:text-accent-foreground'
+                                'inline-flex items-center gap-2 w-full justify-start text-left h-auto p-3 whitespace-nowrap rounded-md text-sm font-medium cursor-pointer text-foreground transition-colors duration-150',
+                                activeTab === 'security' ? 'bg-secondary/70 text-secondary-foreground' : 'hover:bg-accent/10 hover:text-accent'
                             ]">
                             <div class="flex items-start space-x-3">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-shield h-5 w-5 mt-0.5 flex-shrink-0">
@@ -105,8 +105,8 @@
                         <TextLink
                             :href="route('user.profile.index', { tab: 'appearance' })"
                             :class="[
-                                'inline-flex items-center gap-2 w-full justify-start text-left h-auto p-3 whitespace-nowrap rounded-md text-sm font-medium cursor-pointer text-foreground',
-                                activeTab === 'appearance' ? 'bg-secondary text-secondary-foreground' : 'hover:bg-accent hover:text-accent-foreground'
+                                'inline-flex items-center gap-2 w-full justify-start text-left h-auto p-3 whitespace-nowrap rounded-md text-sm font-medium cursor-pointer text-foreground transition-colors duration-150',
+                                activeTab === 'appearance' ? 'bg-secondary/70 text-secondary-foreground' : 'hover:bg-accent/10 hover:hover:text-accent'
                             ]">
                             <div class="flex items-start space-x-3">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-shield h-5 w-5 mt-0.5 flex-shrink-0">
@@ -122,8 +122,8 @@
                         <TextLink
                             :href="route('user.profile.index', { tab: 'connections' })"
                             :class="[
-                                'inline-flex items-center gap-2 w-full justify-start text-left h-auto p-3 whitespace-nowrap rounded-md text-sm font-medium cursor-pointer text-foreground',
-                                activeTab === 'connections' ? 'bg-secondary text-secondary-foreground' : 'hover:bg-accent hover:text-accent-foreground'
+                                'inline-flex items-center gap-2 w-full justify-start text-left h-auto p-3 whitespace-nowrap rounded-md text-sm font-medium cursor-pointer text-foreground transition-colors duration-150',
+                                activeTab === 'connections' ? 'bg-secondary/70 text-secondary-foreground' : 'hover:bg-accent/10 hover:text-accent'
                             ]">
                             <div class="flex items-start space-x-3">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-link h-5 w-5 mt-0.5 flex-shrink-0">
@@ -140,8 +140,8 @@
                         <TextLink
                             :href="route('user.profile.index', { tab: 'data' })"
                             :class="[
-                                'inline-flex items-center gap-2 w-full justify-start text-left h-auto p-3 whitespace-nowrap rounded-md text-sm font-medium cursor-pointer text-foreground',
-                                activeTab === 'data' ? 'bg-secondary text-secondary-foreground' : 'hover:bg-accent hover:text-accent-foreground'
+                                'inline-flex items-center gap-2 w-full justify-start text-left h-auto p-3 whitespace-nowrap rounded-md text-sm font-medium cursor-pointer text-foreground transition-colors duration-150',
+                                activeTab === 'data' ? 'bg-secondary/70 text-secondary-foreground' : 'hover:bg-accent/10 hover:text-accent'
                             ]">
                             <div class="flex items-start space-x-3">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-database h-5 w-5 mt-0.5 flex-shrink-0" aria-hidden="true">

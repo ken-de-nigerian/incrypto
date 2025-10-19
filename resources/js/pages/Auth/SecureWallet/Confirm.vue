@@ -148,7 +148,7 @@
             </header>
 
             <div v-if="validationError"
-                 class="p-3 mb-4 text-sm bg-destructive/10 border border-destructive/50 rounded-lg text-destructive transition-all duration-300"
+                 class="p-3 mb-4 text-sm bg-destructive/10 border border-destructive/30 rounded-lg text-destructive transition-all duration-300"
                  role="alert">
                 <div class="flex items-center gap-2 font-medium">
                     <XCircle class="w-4 h-4" />
@@ -161,7 +161,6 @@
                 <div
                     class="min-h-[100px] grid grid-cols-4 sm:grid-cols-4 gap-2 p-2 border-2 rounded-lg"
                     :class="{
-                        // MODIFIED: Used destructive/success colors instead of hardcoded red/green
                         'border-destructive bg-destructive/10': isIncorrect,
                         'border-success bg-success/10': isCorrect,
                         'border-dashed border-border': !isIncorrect && !isCorrect
@@ -172,7 +171,7 @@
                         :key="`selected-${index}`"
                         @click="deselectLastWord"
                         type="button"
-                        class="flex items-center justify-center space-x-1 bg-accent/10 text-accent font-semibold text-xs py-2 px-1 rounded-md hover:bg-accent/20 cursor-pointer relative group"
+                        class="flex items-center justify-center space-x-1 bg-secondary text-secondary-foreground font-semibold text-xs py-2 px-1 rounded-md hover:bg-accent/20 cursor-pointer relative group"
                         :disabled="form.processing">
                         <span class="text-xs text-muted-foreground font-medium mr-1">{{ index + 1 }}.</span>
                         <span class="truncate">{{ word }}</span>
@@ -204,7 +203,7 @@
                         :key="`pool-${word}`"
                         @click="selectWord(word, index)"
                         type="button"
-                        class="bg-secondary text-secondary-foreground font-medium text-sm py-2 px-1 rounded-md hover:bg-secondary/80 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                        class="bg-secondary/70 text-secondary-foreground font-medium text-sm py-2 px-1 rounded-md hover:bg-secondary/90 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                         :disabled="form.processing">
                         {{ word }}
                     </button>
@@ -229,7 +228,6 @@
             <div
                 class="w-full mx-auto shadow-2xl overflow-hidden animate-slide-up sm:w-auto sm:max-w-md sm:rounded-xl sm:animate-fade-in"
                 :class="{
-                    // Ensure the modal remains visually distinct (optional but good for mobile)
                     'absolute bottom-0 rounded-t-3xl': isModalOpen,
                     'sm:relative': isModalOpen
                 }">
@@ -245,7 +243,7 @@
                     </h1>
 
                     <div class="flex justify-start items-start gap-3 bg-secondary/50 rounded-xl p-4 mt-4">
-                        <div class="bg-secondary flex justify-center items-center p-2 rounded-md text-accent">
+                        <div class="bg-secondary/70 flex justify-center items-center p-2 rounded-md text-accent">
                             <Lock class="w-5 h-5" />
                         </div>
 
@@ -284,34 +282,34 @@
 </template>
 
 <style scoped>
-.fade-enter-active, .fade-leave-active {
-    transition: opacity 0.3s ease;
-}
-.fade-enter-from, .fade-leave-to {
-    opacity: 0;
-}
-
-/* Mobile slide-up keyframes */
-@keyframes slideUp {
-    from { transform: translateY(100%); }
-    to { transform: translateY(0); }
-}
-/* Desktop fade-in keyframes */
-@keyframes fadeIn {
-    from { opacity: 0; transform: scale(0.95); }
-    to { opacity: 1; transform: scale(1); }
-}
-
-/* The modal content container animation logic */
-.animate-slide-up {
-    animation: slideUp 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-/* Apply fade-in for desktop view only */
-@media (min-width: 640px) {
-    .animate-slide-up {
-        /* Override the slide up for desktop */
-        animation: fadeIn 0.3s ease-out;
-        transform: none !important;
+    .fade-enter-active, .fade-leave-active {
+        transition: opacity 0.3s ease;
     }
-}
+    .fade-enter-from, .fade-leave-to {
+        opacity: 0;
+    }
+
+    /* Mobile slide-up keyframes */
+    @keyframes slideUp {
+        from { transform: translateY(100%); }
+        to { transform: translateY(0); }
+    }
+    /* Desktop fade-in keyframes */
+    @keyframes fadeIn {
+        from { opacity: 0; transform: scale(0.95); }
+        to { opacity: 1; transform: scale(1); }
+    }
+
+    /* The modal content container animation logic */
+    .animate-slide-up {
+        animation: slideUp 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    /* Apply fade-in for desktop view only */
+    @media (min-width: 640px) {
+        .animate-slide-up {
+            /* Override the slide up for desktop */
+            animation: fadeIn 0.3s ease-out;
+            transform: none !important;
+        }
+    }
 </style>

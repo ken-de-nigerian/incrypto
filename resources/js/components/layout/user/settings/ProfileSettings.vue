@@ -101,12 +101,12 @@
                 <input ref="photoInput" type="file" class="hidden" @change="updatePhotoPreview" accept="image/*" />
 
                 <div class="flex items-center flex-wrap gap-4">
-                    <div class="rounded-xl h-20 w-20 object-cover border border-border overflow-hidden bg-secondary flex items-center justify-center">
+                    <div class="rounded-xl h-20 w-20 object-cover border border-border overflow-hidden bg-secondary/20 flex items-center justify-center">
                         <img v-if="photoPreview || user.profile?.profile_photo_path"
                              :src="photoPreview || user.profile?.profile_photo_path"
                              :alt="`${user.first_name} ${user.last_name}`"
                              class="h-full w-full object-cover">
-                        <span v-else class="text-xl font-bold text-muted-foreground">{{ initials }}</span>
+                        <span v-else class="text-3xl font-bold text-secondary-foreground">{{ initials }}</span>
                     </div>
 
                     <div class="space-y-2">
@@ -225,7 +225,8 @@
     }
 
     .vue-tel-input-custom .vti__dropdown:hover {
-        background-color: hsl(var(--muted));
+        /* UPDATED: Change to explicit opacity utility hsl(var(--muted) / .9) */
+        background-color: hsl(var(--muted) / .9);
     }
 
     .vue-tel-input-custom .vti__dropdown-list {
@@ -246,7 +247,8 @@
 
     .vue-tel-input-custom .vti__dropdown-item:hover,
     .vue-tel-input-custom .vti__dropdown-item.highlighted {
-        background-color: hsl(var(--muted));
+        /* UPDATED: Change to explicit opacity utility hsl(var(--muted) / .9) */
+        background-color: hsl(var(--muted) / .9);
     }
 
     .vue-tel-input-custom .vti__dropdown-item strong {

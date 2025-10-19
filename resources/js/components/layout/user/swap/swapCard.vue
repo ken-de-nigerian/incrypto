@@ -87,22 +87,40 @@
         return fromPrice / toPrice;
     });
 
+    // --- UPDATED LOGIC FOR SWAP STATUS ---
+    const totalCost = computed(() => (parseFloat(props.fromAmount) || 0));
+
+    const swapStatus = computed<'ready' | 'insufficient_funds' | 'pending_approval' | 'pending_connect' | 'pending_input' | 'processing'>(() => {
+        if (props.isSwapping || props.isApproving) return 'processing';
+        if (!props.isWalletConnected) return 'pending_connect';
+
+        const amount = parseFloat(props.fromAmount);
+        if (!props.fromAmount || isNaN(amount) || amount <= 0) return 'pending_input';
+
+        // Use totalCost which includes the estimated transaction amount
+        if (totalCost.value > fromBalance.value) return 'insufficient_funds';
+
+        if (props.needsApproval) return 'pending_approval';
+
+        return 'ready';
+    });
+
     const canSwap = computed(() => {
-        if (!props.isWalletConnected) return false;
-        if (!props.fromAmount || isNaN(parseFloat(props.fromAmount)) || parseFloat(props.fromAmount) <= 0) return false;
-        if (parseFloat(props.fromAmount) > fromBalance.value) return false;
-        return !(props.isSwapping || props.isApproving);
+        return swapStatus.value === 'ready' || swapStatus.value === 'pending_approval';
     });
 
     const swapButtonText = computed(() => {
-        if (!props.isWalletConnected) return 'Connect Wallet';
-        if (props.isApproving) return 'Approving...';
-        if (props.needsApproval && props.fromAmount) return `Approve ${props.fromToken?.symbol || ''}`;
-        if (props.isSwapping) return 'Swapping...';
-        if (!props.fromAmount) return 'Enter Amount';
-        if (parseFloat(props.fromAmount) > fromBalance.value) return 'Insufficient Balance';
-        return 'Swap';
+        switch (swapStatus.value) {
+            case 'pending_connect': return 'Connect Wallet';
+            case 'processing': return props.isApproving ? 'Approving...' : 'Swapping...';
+            case 'pending_approval': return `Approve ${props.fromToken?.symbol || 'Token'}`;
+            case 'insufficient_funds': return 'Insufficient Balance';
+            case 'pending_input': return 'Enter Amount';
+            case 'ready': return props.needsApproval ? `Approve ${props.fromToken?.symbol || 'Token'}` : 'Proceed To Swap';
+            default: return 'Proceed To Swap';
+        }
     });
+    // --- END UPDATED LOGIC ---
 
     // Methods that emit events to the parent
     const calculateToAmount = () => {
@@ -243,6 +261,13 @@
             <div class="text-sm text-destructive">{{ errorMessage }}</div>
         </div>
 
+        <div
+            v-if="!errorMessage && swapStatus === 'insufficient_funds'"
+            class="p-4 bg-warning/10 border border-warning/30 rounded-lg flex items-start gap-2">
+            <AlertCircleIcon class="w-5 h-5 text-warning flex-shrink-0 mt-0.5" />
+            <div class="text-sm text-warning">Insufficient balance to cover the transaction amount and fee.</div>
+        </div>
+
         <div v-if="props.tokens && props.tokens.length > 0" class="bg-card border border-border rounded-2xl p-6">
 
             <div class="flex items-center justify-between mb-4">
@@ -250,7 +275,7 @@
                     <ZapIcon class="w-5 h-5 text-primary" />
                     <span class="text-sm font-semibold text-card-foreground">Quick Swap</span>
                 </div>
-                <button @click="isSettingsOpen = !isSettingsOpen" class="p-2 hover:bg-muted rounded-lg">
+                <button @click="isSettingsOpen = !isSettingsOpen" class="p-2 hover:bg-muted/70 rounded-lg">
                     <Settings2Icon class="w-5 h-5 text-muted-foreground" />
                 </button>
             </div>
@@ -281,7 +306,7 @@
             <div class="flex justify-center -my-3 relative z-10">
                 <button
                     @click="reverseTokens"
-                    class="p-2 bg-card border-2 border-border hover:border-primary rounded-full hover:rotate-180 duration-300 cursor-pointer">
+                    class="p-2 bg-card/70 border-2 border-border hover:border-primary rounded-full hover:rotate-180 duration-300 cursor-pointer">
                     <ArrowDownIcon class="w-5 h-5 text-muted-foreground" />
                 </button>
             </div>
@@ -313,9 +338,10 @@
                 :disabled="!canSwap"
                 :class="[
                     'w-full mt-6 py-4 rounded-xl font-bold text-lg cursor-pointer',
-                    canSwap
-                        ? 'bg-primary hover:opacity-90 text-primary-foreground'
-                        : 'bg-muted text-muted-foreground cursor-not-allowed',
+                    swapStatus === 'insufficient_funds' ? 'bg-destructive/70 text-destructive-foreground' :
+                    (canSwap
+                        ? 'bg-primary hover:bg-primary/90 text-primary-foreground'
+                        : 'bg-muted/70 text-muted-foreground cursor-not-allowed'),
                 ]">
                 <span v-if="isSwapping || isApproving" class="flex items-center justify-center gap-2">
                     <RefreshCwIcon class="w-5 h-5 animate-spin" />

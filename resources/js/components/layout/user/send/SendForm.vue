@@ -229,7 +229,7 @@
             <label class="text-sm font-semibold text-card-foreground mb-2 block">Amount</label>
             <div class="relative">
                 <input v-model="sendAmount" @blur="validateAmount" @input="amountError = ''" type="text" step="any" placeholder="0.00" :disabled="!selectedAssetToSend" class="w-full p-4 pr-20 bg-muted border border-border rounded-lg text-lg font-semibold focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-50 disabled:cursor-not-allowed" />
-                <button @click="setMaxAmount" :disabled="!selectedAssetToSend" class="absolute right-3 top-1/2 -translate-y-1/2 px-3 py-1.5 bg-primary text-primary-foreground rounded-md text-sm font-semibold hover:opacity-90 transition-opacity disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed">
+                <button @click="setMaxAmount" :disabled="!selectedAssetToSend" class="absolute right-3 top-1/2 -translate-y-1/2 px-3 py-1.5 bg-primary text-primary-foreground rounded-md text-sm font-semibold hover:bg-primary/90 transition-opacity disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed">
                     MAX
                 </button>
             </div>
@@ -245,14 +245,14 @@
             <label class="text-sm font-semibold text-card-foreground mb-2 block">Recipient Address</label>
             <div class="relative">
                 <input v-model="recipientAddress"
-                    @blur="validateAddress"
-                    @input="addressError = ''"
-                    type="text"
-                    placeholder="0x..."
-                    class="w-full p-4 pr-12 bg-muted border border-border rounded-lg font-mono text-sm focus:outline-none focus:ring-2 focus:ring-primary" />
+                       @blur="validateAddress"
+                       @input="addressError = ''"
+                       type="text"
+                       placeholder="0x..."
+                       class="w-full p-4 pr-12 bg-muted border border-border rounded-lg font-mono text-sm focus:outline-none focus:ring-2 focus:ring-primary" />
                 <button @click="pasteFromClipboard"
-                    title="Paste from clipboard"
-                    class="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-card-foreground p-1 transition-colors cursor-pointer">
+                        title="Paste from clipboard"
+                        class="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-card-foreground p-1 transition-colors cursor-pointer">
                     <ClipboardIcon class="w-5 h-5" />
                 </button>
             </div>
@@ -292,7 +292,7 @@
             </div>
         </div>
 
-        <button @click="reviewTransaction" :disabled="!isFormValid" class="w-full py-4 bg-primary text-primary-foreground rounded-lg font-semibold text-lg flex items-center justify-center gap-2 hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer">
+        <button @click="reviewTransaction" :disabled="!isFormValid" class="w-full py-4 bg-primary text-primary-foreground rounded-lg font-semibold text-lg flex items-center justify-center gap-2 hover:bg-primary/90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer">
             <SendIcon class="w-5 h-5" />
             Review Transaction
         </button>

@@ -8,7 +8,7 @@
     import TopHoldingsCard from '@/components/layout/user/swap/TopHoldingsCard.vue';
     import QuickStatsCard from '@/components/layout/user/swap/QuickStatsCard.vue';
     import WalletConnection from '@/components/layout/user/swap/WalletConnection.vue';
-    import SwapCard from '@/components/layout/user/swap/swapCard.vue';
+    import SwapCard from '@/components/layout/user/swap/SwapCard.vue';
     import MarketInfoCard from '@/components/layout/user/swap/MarketInfoCard.vue';
     import TransactionHistoryCard from '@/components/layout/user/swap/TransactionHistoryCard.vue';
     import GasTrackerCard from '@/components/layout/user/swap/GasTrackerCard.vue';
@@ -104,16 +104,13 @@
                 @open-notifications="openNotificationsModal"
             />
 
-            <!-- Three Column Layout -->
             <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 mt-6">
-                <!-- Left Column - Portfolio & Stats -->
                 <div class="lg:col-span-3 space-y-4">
                     <PortfolioCard :portfolio-value="totalPortfolioValue" :portfolio-change24h="props.portfolioChange24h" />
                     <TopHoldingsCard :tokens="props.tokens" :user-balances="props.userBalances" :prices="props.prices" />
                     <QuickStatsCard :transaction-count="props.transactionHistory.length" :slippage="slippage" />
                 </div>
 
-                <!-- Center Column - Swap Interface -->
                 <div class="lg:col-span-6">
                     <WalletConnection v-model:is-wallet-connected="isWalletConnected" v-model:wallet-address="walletAddress" />
 

@@ -13,7 +13,11 @@ class UpdateWalletStatusRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return Auth::check();
+        $user = Auth::user();
+        if ($user || $user->role === 'admin') {
+            return true;
+        }
+        return false;
     }
 
     /**

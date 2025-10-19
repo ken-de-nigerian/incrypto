@@ -4,10 +4,11 @@
 
 <template>
     <div class="hidden sm:block">
-        <div class="bg-card border border-border rounded-2xl p-4 mb-4"> <h3 class="text-sm font-semibold text-card-foreground mb-4 flex items-center gap-2">
-            <HelpCircleIcon class="w-4 h-4" />
-            How to Send
-        </h3>
+        <div class="bg-card border border-border rounded-2xl p-4 mb-4">
+            <h3 class="text-sm font-semibold text-card-foreground mb-4 flex items-center gap-2">
+                <HelpCircleIcon class="w-4 h-4" />
+                How to Send
+            </h3>
             <div class="space-y-4">
                 <div class="flex gap-3">
                     <div class="w-6 h-6 rounded-full bg-primary/10 text-primary flex items-center justify-center flex-shrink-0 text-sm font-bold">1</div>
@@ -39,7 +40,7 @@
                 </div>
             </div>
         </div>
-        <div class="bg-gradient-to-br from-primary/10 to-primary/5 border border-primary/20 rounded-2xl p-4">
+        <div class="bg-gradient-to-br from-primary/10 to-primary/10 border border-primary/20 rounded-2xl p-4">
             <h3 class="text-sm font-semibold text-card-foreground mb-3 flex items-center gap-2">
                 <AlertCircleIcon class="w-4 h-4 text-primary" />
                 Safety Tips

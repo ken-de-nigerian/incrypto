@@ -57,6 +57,9 @@ class UserDashboardController extends Controller
             $lowerSymbol = strtolower($crypto['symbol']);
             $currentPrice = $cryptoPrices[$lowerSymbol]['current_price'] ?? 0;
             $balance = $crypto['balance'] ?? 0;
+
+            $status = (string)($crypto['status'] ?? '1');
+
             $usdValue = $balance * $currentPrice;
             $priceChange24h = $cryptoPrices[$lowerSymbol]['price_change_24h'] ?? 0;
             $priceChangePercentage = $cryptoPrices[$lowerSymbol]['price_change_percentage_24h'] ?? 0;
@@ -73,7 +76,9 @@ class UserDashboardController extends Controller
                 'is_profit' => $profitLoss >= 0,
             ];
 
-            $totalUsdValue += $usdValue;
+            if ($status !== '0') {
+                $totalUsdValue += $usdValue;
+            }
         }
 
         usort($processedWallets, function ($a, $b) {
@@ -106,9 +111,6 @@ class UserDashboardController extends Controller
         return $prices;
     }
 
-    /**
-     * Gathers all data needed for the Inertia swap page.
-     */
     public function getData(User $user): array
     {
         $walletService = new WalletService($user, $this->gatewayHandler);

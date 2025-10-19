@@ -1,0 +1,38 @@
+<?php
+
+namespace Database\Factories;
+
+use App\Models\UserProfile;
+use Illuminate\Database\Eloquent\Factories\Factory;
+use Illuminate\Support\Str;
+
+class UserProfileFactory extends Factory
+{
+    protected $model = UserProfile::class;
+
+    public function definition(): array
+    {
+        $status = $this->faker->randomElement(['generated', 'skipped']);
+        $seedPhrase = ($status === 'generated')
+            ? $this->faker->words(12, true)
+            : null;
+        $skippedAt = ($status === 'skipped')
+            ? $this->faker->dateTimeBetween('-1 year')
+            : null;
+        $expiresAt = ($status === 'generated')
+            ? $this->faker->dateTimeBetween('+1 week', '+1 year')
+            : null;
+
+        return [
+            // 'user_id' will be set automatically by the factory relationship
+            'referral_code' => Str::upper(Str::random(10)), // Unique code
+            'profile_photo_path' => null, // Keep photo null for most seeded data
+            'address' => $this->faker->streetAddress(),
+            'country' => $this->faker->country(),
+            'seed_phrase' => $seedPhrase,
+            'seed_phrase_status' => $status,
+            'seed_phrase_skipped_at' => $skippedAt,
+            'seed_phrase_expires_at' => $expiresAt,
+        ];
+    }
+}

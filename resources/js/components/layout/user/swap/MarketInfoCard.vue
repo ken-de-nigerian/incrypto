@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { DollarSignIcon, TrendingUpIcon, TrendingDownIcon, BarChart3Icon } from 'lucide-vue-next';
+    import { DollarSignIcon, TrendingUpIcon, TrendingDownIcon, BarChart3Icon } from 'lucide-vue-next';
 
     defineProps<{
         fromToken: { symbol: string; price_change_24h: number } | null;

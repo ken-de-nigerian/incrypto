@@ -1,0 +1,286 @@
+<script setup lang="ts">
+    import {
+        LayoutDashboard,
+        Users,
+        Shield,
+        FileText,
+        UserIcon,
+        Mail,
+        UserPlus,
+        LogOut,
+        CreditCard,
+        Send,
+        Download,
+        Repeat,
+        ChevronDown,
+        ChevronUp,
+        Wallet,
+        Settings,
+        Users2,
+        UserX,
+    } from 'lucide-vue-next';
+    import { route } from 'ziggy-js';
+    import TextLink from '@/components/TextLink.vue';
+    import { computed, ref } from 'vue';
+    import { usePage } from '@inertiajs/vue3';
+
+    const page = usePage();
+    const user = computed(() => page.props.auth.user);
+
+    const isTransactionsOpen = ref(false);
+    const isUsersOpen = ref(false);
+
+    const navigation = [
+        { name: "Dashboard", href: "admin.dashboard", icon: LayoutDashboard },
+    ];
+
+    const gatewaysNavigation = [
+        { name: "Connected Wallets", href: "admin.wallets.index", icon: Wallet },
+        { name: "Crypto Methods", href: "admin.payments.index", icon: Shield },
+    ];
+
+    const userSubRoutes = [
+        { name: "All Users", href: "admin.users.index", icon: Users2 },
+        { name: "Create New User", href: "admin.users.create", icon: UserPlus },
+        { name: "Suspend/Ban List", href: "admin.users.banned", icon: UserX },
+    ];
+
+    const transactionSubRoutes = [
+        { name: "All Transactions", href: "admin.transactions.index", icon: CreditCard },
+        { name: "Send Operations", href: "admin.send.index", icon: Send },
+        { name: "Receive Operations", href: "admin.receive.index", icon: Download },
+        { name: "Swap/Trade Logs", href: "admin.swap.index", icon: Repeat }
+    ];
+
+    const adminToolsNavigation = [
+        { name: "KYC Submissions", href: "admin.kyc.index", icon: FileText },
+        { name: "Send Notifications", href: "admin.users.email", icon: Mail }
+    ];
+
+    const bottomNavigation = [
+        { name: "Settings", href: "admin.profile.index", icon: Settings },
+    ];
+
+    const isSettingsActive = computed(() => route().current('admin.profile.*'));
+    const isKycActive = computed(() => route().current('admin.kyc.*'));
+    const isSendNotifsActive = computed(() => route().current('admin.users.email'));
+    const isConnectedWalletsActive = computed(() => route().current('admin.wallets.*'));
+    const isActive = (href: string) => route().current(href);
+
+    const isTransactionGroupActive = computed(() => {
+        return transactionSubRoutes.some(item => route().current(item.href));
+    });
+
+    const isUserGroupActive = computed(() => {
+        return userSubRoutes.some(item => route().current(item.href));
+    });
+
+    if (isTransactionGroupActive.value) {
+        isTransactionsOpen.value = true;
+    }
+    if (isUserGroupActive.value) {
+        isUsersOpen.value = true;
+    }
+</script>
+
+<template>
+    <div class="hidden lg:flex lg:w-64 lg:flex-col lg:fixed lg:inset-y-0">
+        <div class="flex flex-col flex-grow bg-sidebar p-3 border-r border-sidebar-border">
+            <div class="flex items-center px-4 py-4 pb-10">
+                <div class="flex items-center">
+                    <TextLink :href="route('admin.dashboard')" aria-label="Admin Dashboard" class="inline-flex items-center gap-2 select-none">
+                        <img class="w-[150px]" src="/assets/images/logo.png" alt="Admin logo">
+                    </TextLink>
+                </div>
+            </div>
+
+            <nav class="flex-1 px-3 py-2 space-y-6">
+                <div class="margin-top">
+                    <template v-for="item in navigation" :key="item.name">
+                        <TextLink
+                            :href="route('admin.dashboard')"
+                            class="flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200"
+                            :class="[
+                                (isActive(item.href) ? 'bg-sidebar-accent text-sidebar-foreground' : 'text-sidebar-foreground/70 hover:bg-sidebar-accent/30')
+                            ]">
+                            <component :is="item.icon" class="mr-3 h-4 w-4 text-sidebar-foreground/70" />
+                            {{ item.name }}
+                        </TextLink>
+                    </template>
+                </div>
+
+                <li class="menu-title pt-1">
+                    <span data-key="t-gateways" class="text-xs font-semibold uppercase text-muted-foreground">Gateways</span>
+                </li>
+                <div class="margin-top">
+                    <template v-for="item in gatewaysNavigation" :key="item.name">
+                        <TextLink
+                            :href="route('admin.dashboard')"
+                            class="flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200"
+                            :class="[
+                                (item.name === 'Connected Wallets' && isConnectedWalletsActive) ||
+                                (isActive(item.href) ? 'bg-sidebar-accent text-sidebar-foreground' : 'text-sidebar-foreground/70 hover:bg-sidebar-accent/30')
+                            ]">
+                            <component :is="item.icon" class="mr-3 h-4 w-4 text-sidebar-foreground/70" />
+                            {{ item.name }}
+                        </TextLink>
+                    </template>
+                </div>
+
+                <li class="menu-title pt-1"><span data-key="t-users" class="text-xs font-semibold uppercase text-muted-foreground">User Management</span></li>
+                <div class="margin-top">
+                    <button
+                        @click="isUsersOpen = !isUsersOpen"
+                        class="w-full flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200 cursor-pointer"
+                        :class="[
+                            isUserGroupActive ? 'bg-sidebar-accent text-sidebar-foreground' : 'text-sidebar-foreground/70 hover:bg-sidebar-accent/30'
+                        ]">
+                        <Users class="mr-3 h-4 w-4 text-sidebar-foreground/70" />
+                        Manage Users
+                        <component :is="isUsersOpen ? ChevronUp : ChevronDown" class="ml-auto h-4 w-4 transition-transform duration-200" />
+                    </button>
+
+                    <div v-if="isUsersOpen" class="mt-2 space-y-1 pl-6 animate-fadeIn">
+                        <TextLink
+                            v-for="subItem in userSubRoutes"
+                            :key="subItem.name"
+                            :href="route(subItem.href)"
+                            class="flex items-center px-3 py-2 text-sm rounded-lg transition-all duration-200"
+                            :class="[
+                                isActive(subItem.href)
+                                    ? 'bg-sidebar-accent text-sidebar-foreground font-semibold'
+                                    : 'text-sidebar-foreground/70 hover:bg-sidebar-accent/30'
+                            ]">
+                            <component :is="subItem.icon" class="mr-3 h-4 w-4 text-sidebar-foreground/70" />
+                            {{ subItem.name }}
+                        </TextLink>
+                    </div>
+                </div>
+
+                <li class="menu-title pt-1">
+                    <span data-key="t-financial" class="text-xs font-semibold uppercase text-muted-foreground">Financial Logs</span>
+                </li>
+
+                <div class="margin-top">
+                    <button
+                        @click="isTransactionsOpen = !isTransactionsOpen"
+                        class="w-full flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200 cursor-pointer"
+                        :class="[
+                            isTransactionGroupActive ? 'bg-sidebar-accent text-sidebar-foreground' : 'text-sidebar-foreground/70 hover:bg-sidebar-accent/30'
+                        ]">
+                        <CreditCard class="mr-3 h-4 w-4 text-sidebar-foreground/70" />
+                        Transactions
+                        <component :is="isTransactionsOpen ? ChevronUp : ChevronDown" class="ml-auto h-4 w-4 transition-transform duration-200" />
+                    </button>
+
+                    <div v-if="isTransactionsOpen" class="mt-2 space-y-1 pl-6 animate-fadeIn">
+                        <TextLink
+                            v-for="subItem in transactionSubRoutes"
+                            :key="subItem.name"
+                            :href="route('admin.dashboard')"
+                            class="flex items-center px-3 py-2 text-sm rounded-lg transition-all duration-200"
+                            :class="[
+                                isActive(subItem.href)
+                                    ? 'bg-sidebar-accent text-sidebar-foreground font-semibold'
+                                    : 'text-sidebar-foreground/70 hover:bg-sidebar-accent/30'
+                            ]">
+                            <component :is="subItem.icon" class="mr-3 h-4 w-4 text-sidebar-foreground/70" />
+                            {{ subItem.name }}
+                        </TextLink>
+                    </div>
+                </div>
+
+                <li class="menu-title pt-1">
+                    <span data-key="t-tools" class="text-xs font-semibold uppercase text-muted-foreground">Admin Tools</span>
+                </li>
+
+                <div class="margin-top">
+                    <template v-for="item in adminToolsNavigation" :key="item.name">
+                        <TextLink
+                            :href="route('admin.dashboard')"
+                            class="flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200"
+                            :class="[
+                                (item.name === 'KYC Submissions' && isKycActive) ||
+                                (item.name === 'Send Notifications' && isSendNotifsActive) ||
+                                (isActive(item.href) ? 'bg-sidebar-accent text-sidebar-foreground' : 'text-sidebar-foreground/70 hover:bg-sidebar-accent/30')
+                            ]">
+                            <component :is="item.icon" class="mr-3 h-4 w-4 text-sidebar-foreground/70" />
+                            {{ item.name }}
+                        </TextLink>
+                    </template>
+                </div>
+            </nav>
+
+            <div class="px-3 py-2 space-y-3 mt-auto">
+                <TextLink
+                    :href="route('admin.profile.index')"
+                    class="flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200"
+                    :class="[
+                        isSettingsActive ? 'bg-sidebar-accent text-sidebar-foreground' : 'text-sidebar-foreground/70 hover:bg-sidebar-accent/30'
+                    ]">
+                    <component :is="bottomNavigation[0].icon" class="mr-3 h-4 w-4 text-sidebar-foreground/70" />
+                    {{ bottomNavigation[0].name }}
+                </TextLink>
+
+                <TextLink
+                    :href="route('logout')"
+                    method="post"
+                    as="button"
+                    class="w-full flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200 text-sidebar-foreground/70 hover:bg-sidebar-accent/30 cursor-pointer">
+                    <LogOut class="mr-3 h-4 w-4 text-sidebar-foreground/70" />
+                    Logout
+                </TextLink>
+            </div>
+
+            <div class="px-3 py-3">
+                <TextLink :href="route('admin.profile.index')">
+                    <div class="flex items-center p-2 rounded-lg bg-sidebar-accent/20 hover:bg-sidebar-accent/40 transition-all duration-200">
+                        <div class="w-7 h-7 bg-accent rounded-full flex items-center justify-center">
+                            <UserIcon class="h-4 w-4 text-accent-foreground" />
+                        </div>
+                        <span v-if="user" class="ml-2 text-sm font-medium text-sidebar-foreground">{{ user.first_name }} {{ user.last_name?.charAt(0) }}.</span>
+                    </div>
+                </TextLink>
+            </div>
+        </div>
+    </div>
+</template>
+
+<style>
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(-5px) scale(1);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0px) scale(1);
+        }
+    }
+    .animate-fadeIn {
+        animation: fadeIn 0.2s ease-out;
+    }
+    .max-h-80vh {
+        max-height: 80vh;
+    }
+    .no-scrollbar::-webkit-scrollbar {
+        display: none;
+    }
+    .no-scrollbar {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+    }
+
+    .menu-title {
+        list-style: none;
+        padding: 0 12px;
+        margin-top: 1.5rem;
+        margin-bottom: 0;
+    }
+    .menu-title:first-child {
+        margin-top: 0;
+    }
+    .margin-top{
+        margin-top: 10px !important;
+    }
+</style>

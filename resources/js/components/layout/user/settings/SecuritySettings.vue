@@ -155,7 +155,7 @@
                     </div>
 
                     <div v-if="activeSessions && activeSessions.length" class="space-y-3">
-                        <div v-for="session in activeSessions" :key="session.id" class="flex flex-col items-start gap-4 rounded-lg border p-4 sm:flex-row sm:items-center sm:justify-between">
+                        <div v-for="session in activeSessions" :key="session.id" class="flex flex-col items-start gap-4 rounded-lg border p-4 sm:flex-row sm:items-center sm:justify-between bg-secondary/10">
                             <div class="flex items-center space-x-4">
                                 <div class="flex items-center space-x-2">
                                     <svg v-if="['Windows', 'macOS', 'Linux'].includes(session.platform)" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5 text-muted-foreground">
@@ -204,7 +204,7 @@
 
                 <div class="mt-6 flex justify-end gap-4">
                     <button type="button" @click="closeLogoutModal" class="btn-crypto-outline h-12 px-6 text-sm">Cancel</button>
-                    <ActionButton :processing="logoutForm.processing" class="bg-destructive text-destructive-foreground hover:opacity-90 h-12 px-6 text-sm">Log Out Other Devices</ActionButton>
+                    <ActionButton :processing="logoutForm.processing" class="bg-destructive text-destructive-foreground hover:bg-destructive/90 h-12 px-6 text-sm">Log Out Other Devices</ActionButton>
                 </div>
             </form>
         </div>

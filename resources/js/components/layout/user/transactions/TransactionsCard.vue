@@ -144,16 +144,12 @@
     };
 
     const getTransactionColor = (type: string) => {
-        switch (type) {
-            case 'swap':
-                return 'text-primary bg-primary/10 border-primary/30';
-            case 'received':
-                return 'text-green-600 bg-green-500/10 border-green-500/30';
-            case 'sent':
-                return 'text-blue-600 bg-blue-500/10 border-blue-500/30';
-            default:
-                return 'text-muted-foreground bg-muted border-border';
-        }
+        const colors: Record<string, string> = {
+            'swap': 'text-primary bg-primary/10 border-primary/30',
+            'received': 'text-success bg-success/10 border-success/30',
+            'sent': 'text-accent bg-accent/10 border-accent/30',
+        };
+        return colors[type] || 'text-muted-foreground bg-muted/20 border-border/50';
     };
 
     const getStatusIcon = (status: string) => {
@@ -173,19 +169,15 @@
     };
 
     const getStatusColor = (status: string) => {
-        switch (status.toLowerCase()) {
-            case 'completed':
-            case 'success':
-                return 'text-green-600 bg-green-500/10 border-green-500/30';
-            case 'pending':
-            case 'processing':
-                return 'text-warning bg-warning/10 border-warning/30';
-            case 'failed':
-            case 'error':
-                return 'text-destructive bg-destructive/10 border-destructive/30';
-            default:
-                return 'text-muted-foreground bg-muted border-border';
-        }
+        const colors: Record<string, string> = {
+            'completed': 'text-success bg-success/10 border-success/30',
+            'success': 'text-success bg-success/10 border-success/30',
+            'pending': 'text-warning bg-warning/10 border-warning/30',
+            'processing': 'text-warning bg-warning/10 border-warning/30',
+            'failed': 'text-destructive bg-destructive/10 border-destructive/30',
+            'error': 'text-destructive bg-destructive/10 border-destructive/30',
+        };
+        return colors[status.toLowerCase()] || 'text-muted-foreground bg-muted/20 border-border/50';
     };
 
     const formatDate = (dateString: string) => {
@@ -307,8 +299,7 @@
     <div class="w-full mx-auto">
         <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
             <div class="xl:col-span-2 space-y-6">
-                <!-- Header Section -->
-                <div class="bg-gradient-to-br from-primary/10 via-primary/5 to-transparent rounded-2xl border border-primary/20 overflow-hidden">
+                <div class="bg-gradient-to-br from-primary/10 via-primary/10 to-transparent rounded-2xl border border-primary/20 overflow-hidden">
                     <div class="p-6 sm:p-8">
                         <div class="flex items-start gap-4">
                             <div class="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center flex-shrink-0 border border-border">
@@ -322,39 +313,36 @@
                             </div>
                         </div>
 
-                        <!-- Statistics Grid -->
                         <div class="mt-6 grid grid-cols-2 lg:grid-cols-3 gap-4">
-                            <div class="bg-card/50 backdrop-blur-sm rounded-xl p-4 border border-border">
+                            <div class="bg-card/70 backdrop-blur-sm rounded-xl p-4 border border-border">
                                 <p class="text-xs text-muted-foreground mb-1">Total Transactions</p>
                                 <p class="text-2xl font-bold text-primary">{{ statistics.total }}</p>
                             </div>
-                            <div class="bg-card/50 backdrop-blur-sm rounded-xl p-4 border border-border">
+                            <div class="bg-card/70 backdrop-blur-sm rounded-xl p-4 border border-border">
                                 <p class="text-xs text-muted-foreground mb-1">Completed</p>
-                                <p class="text-2xl font-bold text-green-600">{{ statistics.completed }}</p>
+                                <p class="text-2xl font-bold text-success">{{ statistics.completed }}</p>
                             </div>
-                            <div class="bg-card/50 backdrop-blur-sm rounded-xl p-4 border border-border">
+                            <div class="bg-card/70 backdrop-blur-sm rounded-xl p-4 border border-border">
                                 <p class="text-xs text-muted-foreground mb-1">Pending</p>
                                 <p class="text-2xl font-bold text-warning">{{ statistics.pending }}</p>
                             </div>
-                            <div class="bg-card/50 backdrop-blur-sm rounded-xl p-4 border border-border">
+                            <div class="bg-card/70 backdrop-blur-sm rounded-xl p-4 border border-border">
                                 <p class="text-xs text-muted-foreground mb-1">Swaps</p>
                                 <p class="text-xl font-bold text-primary">{{ statistics.swaps }}</p>
                             </div>
-                            <div class="bg-card/50 backdrop-blur-sm rounded-xl p-4 border border-border">
+                            <div class="bg-card/70 backdrop-blur-sm rounded-xl p-4 border border-border">
                                 <p class="text-xs text-muted-foreground mb-1">Received</p>
-                                <p class="text-xl font-bold text-green-600">{{ statistics.received }}</p>
+                                <p class="text-xl font-bold text-success">{{ statistics.received }}</p>
                             </div>
-                            <div class="bg-card/50 backdrop-blur-sm rounded-xl p-4 border border-border">
+                            <div class="bg-card/70 backdrop-blur-sm rounded-xl p-4 border border-border">
                                 <p class="text-xs text-muted-foreground mb-1">Sent</p>
-                                <p class="text-xl font-bold text-blue-600">{{ statistics.sent }}</p>
+                                <p class="text-xl font-bold text-accent">{{ statistics.sent }}</p>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Transactions List Card -->
                 <div class="bg-card rounded-2xl border border-border overflow-hidden margin-bottom">
-                    <!-- Tabs -->
                     <div class="bg-muted/30 px-4 sm:px-6 py-4 border-b border-border">
                         <div class="flex items-center gap-2 overflow-x-auto hide-scrollbar">
                             <button
@@ -364,7 +352,7 @@
                                 class="flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium text-sm transition-all whitespace-nowrap cursor-pointer"
                                 :class="activeTab === tab.id
                                     ? 'bg-primary text-primary-foreground shadow-sm'
-                                    : 'text-muted-foreground hover:bg-muted hover:text-card-foreground'"
+                                    : 'text-muted-foreground hover:bg-muted/70 hover:text-card-foreground'"
                             >
                                 <component :is="tab.icon" class="w-4 h-4" />
                                 {{ tab.label }}
@@ -372,7 +360,6 @@
                         </div>
                     </div>
 
-                    <!-- Filters Bar -->
                     <div class="bg-muted/20 px-4 sm:px-6 py-4 border-b border-border">
                         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                             <div class="flex items-center gap-3">
@@ -385,7 +372,7 @@
                             <div class="flex items-center gap-2">
                                 <button
                                     @click="showFilters = !showFilters"
-                                    class="px-3 py-1.5 rounded-lg text-xs font-medium bg-muted hover:bg-muted/80 text-muted-foreground border border-border flex items-center gap-2 cursor-pointer"
+                                    class="px-3 py-1.5 rounded-lg text-xs font-medium bg-muted/70 hover:bg-muted/80 text-muted-foreground border border-border flex items-center gap-2 cursor-pointer"
                                     :class="{ 'bg-primary/10 text-primary border-primary/30': hasActiveFilters }"
                                 >
                                     <FilterIcon class="w-3.5 h-3.5" />
@@ -393,13 +380,12 @@
                                     <span v-if="hasActiveFilters" class="w-1.5 h-1.5 rounded-full bg-primary"></span>
                                 </button>
 
-                                <span class="px-3 py-1.5 rounded-lg text-xs font-medium bg-muted text-muted-foreground border border-border">
+                                <span class="px-3 py-1.5 rounded-lg text-xs font-medium bg-muted/70 text-muted-foreground border border-border">
                                     {{ displayedTransactions.length }} of {{ totalTransactionsCount }}
                                 </span>
                             </div>
                         </div>
 
-                        <!-- Filter Controls -->
                         <div v-if="showFilters" class="mt-4 space-y-3 pt-4 border-t border-border">
                             <div class="relative">
                                 <SearchIcon class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -412,7 +398,7 @@
                                 <button
                                     v-if="searchQuery"
                                     @click="clearSearch"
-                                    class="absolute right-3 top-1/2 -translate-y-1/2 p-1 hover:bg-muted rounded cursor-pointer"
+                                    class="absolute right-3 top-1/2 -translate-y-1/2 p-1 hover:bg-muted/50 rounded cursor-pointer"
                                 >
                                     <XIcon class="w-4 h-4 text-muted-foreground" />
                                 </button>
@@ -423,7 +409,7 @@
                                     <label class="block text-xs font-medium text-muted-foreground mb-1.5">Sort By Date</label>
                                     <button
                                         @click="toggleSortOrder"
-                                        class="w-full px-3 py-2 bg-background border border-border rounded-lg text-sm hover:bg-muted flex items-center justify-between cursor-pointer"
+                                        class="w-full px-3 py-2 bg-background border border-border rounded-lg text-sm hover:bg-muted/50 flex items-center justify-between cursor-pointer"
                                     >
                                         <span>
                                             {{ sortOrder === 'asc' ? 'Oldest First' : sortOrder === 'desc' ? 'Newest First' : 'Recent First' }}
@@ -438,7 +424,7 @@
                                     <label class="block text-xs font-medium text-muted-foreground mb-1.5">Filter by Status</label>
                                     <select
                                         v-model="filterByStatus"
-                                        class="w-full px-3 py-2 bg-background border border-border rounded-lg text-sm hover:bg-muted cursor-pointer"
+                                        class="w-full px-3 py-2 bg-background border border-border rounded-lg text-sm hover:bg-muted/50 cursor-pointer"
                                     >
                                         <option value="all">All Statuses</option>
                                         <option value="completed">Completed</option>
@@ -461,11 +447,9 @@
                         </div>
                     </div>
 
-                    <!-- Transactions List -->
                     <div ref="scrollContainer" @scroll="handleScroll" class="p-4 sm:p-6 max-h-[800px] overflow-y-auto custom-scrollbar">
-                        <!-- Empty State - No Transactions -->
                         <div v-if="allTransactions.length === 0" class="text-center py-12">
-                            <div class="w-16 h-16 rounded-full bg-muted mx-auto mb-4 flex items-center justify-center">
+                            <div class="w-16 h-16 rounded-full bg-muted/70 mx-auto mb-4 flex items-center justify-center">
                                 <HistoryIcon class="w-8 h-8 text-muted-foreground" />
                             </div>
                             <h4 class="text-lg font-semibold text-card-foreground mb-2">No Transactions Yet</h4>
@@ -476,9 +460,8 @@
                             </TextLink>
                         </div>
 
-                        <!-- Empty State - No Results -->
                         <div v-else-if="displayedTransactions.length === 0" class="text-center py-12">
-                            <div class="w-16 h-16 rounded-full bg-muted mx-auto mb-4 flex items-center justify-center">
+                            <div class="w-16 h-16 rounded-full bg-muted/70 mx-auto mb-4 flex items-center justify-center">
                                 <SearchIcon class="w-8 h-8 text-muted-foreground" />
                             </div>
                             <h4 class="text-lg font-semibold text-card-foreground mb-2">No Transactions Found</h4>
@@ -488,14 +471,13 @@
                             </button>
                         </div>
 
-                        <!-- Transactions Grid -->
                         <div v-else class="space-y-4">
                             <div
                                 v-for="tx in displayedTransactions"
                                 :key="tx.id"
                                 class="group bg-gradient-to-br from-card to-muted/20 border border-border rounded-xl p-5 transition-all duration-200 hover:border-primary/30"
                             >
-                                <div class="flex items-start justify-between gap-4 mb-4">
+                                <div class="flex flex-col lg:flex-row items-start justify-between gap-4 mb-4">
                                     <div class="flex items-center gap-3">
                                         <div class="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 border" :class="getTransactionColor(tx.type)">
                                             <component :is="getTransactionIcon(tx.type)" class="w-6 h-6" />
@@ -513,11 +495,14 @@
                                     </div>
                                 </div>
 
-                                <!-- Swap Details -->
                                 <div v-if="tx.type === 'swap'" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                     <div class="bg-muted/50 rounded-lg p-3">
+                                        <p class="text-xs text-muted-foreground mb-1">From</p>
+                                        <p class="text-sm font-semibold text-card-foreground">{{ formatAmount(tx.from_amount) }} {{ tx.from_token }}</p>
+                                    </div>
+                                    <div class="bg-muted/50 rounded-lg p-3">
                                         <p class="text-xs text-muted-foreground mb-1">To</p>
-                                        <p class="text-sm font-semibold text-primary">{{ formatAmount(tx.to_amount) }} {{ tx.to_token }}</p>
+                                        <p class="text-sm font-semibold text-card-foreground">{{ formatAmount(tx.to_amount) }} {{ tx.to_token }}</p>
                                     </div>
                                     <div v-if="tx.chain" class="bg-muted/50 rounded-lg p-3">
                                         <p class="text-xs text-muted-foreground mb-1">Network</p>
@@ -531,7 +516,7 @@
                                             <p class="text-sm font-mono text-card-foreground">{{ truncateHash(tx.transaction_hash) }}</p>
                                             <button
                                                 @click="copyToClipboard(tx.transaction_hash!, tx.id)"
-                                                class="p-1 hover:bg-muted rounded cursor-pointer"
+                                                class="p-1 hover:bg-muted/70 rounded cursor-pointer"
                                             >
                                                 <CheckIcon v-if="copiedHash === `${tx.id}`" class="w-3 h-3 text-primary" />
                                                 <CopyIcon v-else class="w-3 h-3 text-muted-foreground" />
@@ -539,7 +524,7 @@
                                             <a
                                                 :href="getExplorerUrl(tx.transaction_hash!, tx.chain)"
                                                 target="_blank"
-                                                class="p-1 hover:bg-muted rounded cursor-pointer"
+                                                class="p-1 hover:bg-muted/70 rounded cursor-pointer"
                                             >
                                                 <ExternalLinkIcon class="w-3 h-3 text-muted-foreground" />
                                             </a>
@@ -547,21 +532,20 @@
                                     </div>
                                 </div>
 
-                                <!-- Received Details -->
                                 <div v-if="tx.type === 'received'" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                     <div class="bg-muted/50 rounded-lg p-3">
                                         <p class="text-xs text-muted-foreground mb-1">Amount Received</p>
-                                        <p class="text-sm font-semibold text-green-600">+{{ formatAmount(tx.amount) }} {{ tx.token_symbol }}</p>
+                                        <p class="text-sm font-semibold text-success">+{{ formatAmount(tx.amount) }} {{ tx.token_symbol }}</p>
                                     </div>
                                     <div v-if="tx.wallet_address" class="bg-muted/50 rounded-lg p-3">
                                         <p class="text-xs text-muted-foreground mb-1">Wallet Address</p>
                                         <div class="flex items-center gap-2">
                                             <p class="text-sm font-mono text-card-foreground">{{ truncateHash(tx.wallet_address) }}</p>
                                             <button
-                                                @click="copyToClipboard(tx.wallet_address!, tx.id)"
-                                                class="p-1 hover:bg-muted rounded cursor-pointer"
+                                                @click="copyToClipboard(tx.wallet_address!, tx.id + 1000)"
+                                                class="p-1 hover:bg-muted/70 rounded cursor-pointer"
                                             >
-                                                <CheckIcon v-if="copiedHash === `${tx.id}`" class="w-3 h-3 text-primary" />
+                                                <CheckIcon v-if="copiedHash === `${tx.id + 1000}`" class="w-3 h-3 text-primary" />
                                                 <CopyIcon v-else class="w-3 h-3 text-muted-foreground" />
                                             </button>
                                         </div>
@@ -572,7 +556,7 @@
                                             <p class="text-sm font-mono text-card-foreground">{{ truncateHash(tx.transaction_hash) }}</p>
                                             <button
                                                 @click="copyToClipboard(tx.transaction_hash!, tx.id + 1000)"
-                                                class="p-1 hover:bg-muted rounded cursor-pointer"
+                                                class="p-1 hover:bg-muted/70 rounded cursor-pointer"
                                             >
                                                 <CheckIcon v-if="copiedHash === `${tx.id + 1000}`" class="w-3 h-3 text-primary" />
                                                 <CopyIcon v-else class="w-3 h-3 text-muted-foreground" />
@@ -580,7 +564,7 @@
                                             <a
                                                 :href="getExplorerUrl(tx.transaction_hash!)"
                                                 target="_blank"
-                                                class="p-1 hover:bg-muted rounded cursor-pointer"
+                                                class="p-1 hover:bg-muted/70 rounded cursor-pointer"
                                             >
                                                 <ExternalLinkIcon class="w-3 h-3 text-muted-foreground" />
                                             </a>
@@ -588,11 +572,10 @@
                                     </div>
                                 </div>
 
-                                <!-- Sent Details -->
                                 <div v-if="tx.type === 'sent'" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                     <div class="bg-muted/50 rounded-lg p-3">
                                         <p class="text-xs text-muted-foreground mb-1">Amount Sent</p>
-                                        <p class="text-sm font-semibold text-blue-600">-{{ formatAmount(tx.amount) }} {{ tx.token_symbol }}</p>
+                                        <p class="text-sm font-semibold text-accent">-{{ formatAmount(tx.amount) }} {{ tx.token_symbol }}</p>
                                     </div>
                                     <div v-if="tx.fee" class="bg-muted/50 rounded-lg p-3">
                                         <p class="text-xs text-muted-foreground mb-1">Transaction Fee</p>
@@ -604,7 +587,7 @@
                                             <p class="text-sm font-mono text-card-foreground">{{ truncateHash(tx.recipient_address) }}</p>
                                             <button
                                                 @click="copyToClipboard(tx.recipient_address!, tx.id + 2000)"
-                                                class="p-1 hover:bg-muted rounded cursor-pointer"
+                                                class="p-1 hover:bg-muted/70 rounded cursor-pointer"
                                             >
                                                 <CheckIcon v-if="copiedHash === `${tx.id + 2000}`" class="w-3 h-3 text-primary" />
                                                 <CopyIcon v-else class="w-3 h-3 text-muted-foreground" />
@@ -617,7 +600,7 @@
                                             <p class="text-sm font-mono text-card-foreground">{{ truncateHash(tx.transaction_hash) }}</p>
                                             <button
                                                 @click="copyToClipboard(tx.transaction_hash!, tx.id + 3000)"
-                                                class="p-1 hover:bg-muted rounded cursor-pointer"
+                                                class="p-1 hover:bg-muted/70 rounded cursor-pointer"
                                             >
                                                 <CheckIcon v-if="copiedHash === `${tx.id + 3000}`" class="w-3 h-3 text-primary" />
                                                 <CopyIcon v-else class="w-3 h-3 text-muted-foreground" />
@@ -625,7 +608,7 @@
                                             <a
                                                 :href="getExplorerUrl(tx.transaction_hash!)"
                                                 target="_blank"
-                                                class="p-1 hover:bg-muted rounded cursor-pointer"
+                                                class="p-1 hover:bg-muted/70 rounded cursor-pointer"
                                             >
                                                 <ExternalLinkIcon class="w-3 h-3 text-muted-foreground" />
                                             </a>
@@ -635,12 +618,10 @@
                             </div>
                         </div>
 
-                        <!-- Loading More Indicator -->
                         <div v-if="isLoadingMore" class="flex items-center justify-center py-8">
                             <Loader2Icon class="w-8 h-8 text-primary animate-spin" />
                         </div>
 
-                        <!-- End of List Indicator -->
                         <div v-else-if="!hasMoreTransactions && displayedTransactions.length > itemsPerLoad" class="text-center py-8">
                             <div class="inline-flex items-center gap-2 px-4 py-2 bg-muted/50 rounded-full text-sm text-muted-foreground">
                                 <CheckCircleIcon class="w-4 h-4" />
@@ -651,11 +632,9 @@
                 </div>
             </div>
 
-            <!-- Sidebar -->
             <div class="hidden sm:block">
                 <div class="xl:col-span-1 space-y-6 sticky top-6">
-                    <!-- Security Features -->
-                    <div class="bg-gradient-to-br from-primary/5 to-transparent border border-primary/20 rounded-2xl p-6">
+                    <div class="bg-gradient-to-br from-primary/10 to-transparent border border-primary/20 rounded-2xl p-6">
                         <h5 class="text-sm font-semibold text-card-foreground mb-4 flex items-center gap-2">
                             <ShieldCheckIcon class="w-5 h-5 text-primary" />
                             Security & Features
@@ -673,7 +652,6 @@
                         </ul>
                     </div>
 
-                    <!-- Transaction Info -->
                     <div class="bg-gradient-to-br from-card to-muted/20 border border-border rounded-2xl p-6">
                         <h5 class="text-sm font-semibold text-card-foreground mb-4 flex items-center gap-2">
                             <InfoIcon class="w-5 h-5 text-primary" />
@@ -689,14 +667,14 @@
                             </div>
                             <div>
                                 <h6 class="font-semibold text-card-foreground mb-1 flex items-center gap-2">
-                                    <ArrowDownLeftIcon class="w-3.5 h-3.5 text-green-600" />
+                                    <ArrowDownLeftIcon class="w-3.5 h-3.5 text-success" />
                                     Received
                                 </h6>
                                 <p>Crypto deposits that have been sent to your wallet addresses.</p>
                             </div>
                             <div>
                                 <h6 class="font-semibold text-card-foreground mb-1 flex items-center gap-2">
-                                    <ArrowUpRightIcon class="w-3.5 h-3.5 text-blue-600" />
+                                    <ArrowUpRightIcon class="w-3.5 h-3.5 text-accent" />
                                     Sent
                                 </h6>
                                 <p>Crypto transfers you've initiated to external wallet addresses.</p>
@@ -704,15 +682,14 @@
                         </div>
                     </div>
 
-                    <!-- Transaction Status Guide -->
-                    <div class="bg-warning/5 border border-warning/20 rounded-2xl p-6">
+                    <div class="bg-warning/10 border border-warning/20 rounded-2xl p-6">
                         <h5 class="text-sm font-semibold text-warning mb-3 flex items-center gap-2">
                             <CalendarIcon class="w-5 h-5" />
                             Transaction Status Guide
                         </h5>
                         <ul class="space-y-3 text-xs text-muted-foreground">
                             <li class="flex items-start gap-2">
-                                <CheckCircleIcon class="w-4 h-4 text-green-600 mt-0.5 flex-shrink-0" />
+                                <CheckCircleIcon class="w-4 h-4 text-success mt-0.5 flex-shrink-0" />
                                 <div>
                                     <span class="font-semibold text-card-foreground">Completed:</span>
                                     <span class="block">Transaction successfully confirmed on blockchain</span>
@@ -735,7 +712,6 @@
                         </ul>
                     </div>
 
-                    <!-- Help Section -->
                     <div class="text-center p-6 bg-gradient-to-br from-card to-muted/20 border border-border rounded-2xl">
                         <div class="w-12 h-12 rounded-full bg-primary/10 mx-auto mb-3 flex items-center justify-center">
                             <InfoIcon class="w-6 h-6 text-primary" />

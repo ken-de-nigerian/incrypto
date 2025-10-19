@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue';
+    import { ref, computed, watch } from 'vue';
     import { SearchIcon, XIcon } from 'lucide-vue-next';
 
     interface Token {
@@ -72,7 +72,7 @@ import { ref, computed, watch } from 'vue';
             <div class="w-full max-w-md bg-card border border-border rounded-2xl shadow-2xl flex flex-col">
                 <div class="p-4 border-b border-border flex items-center justify-between">
                     <h3 class="text-lg font-bold text-card-foreground">Select Token</h3>
-                    <button @click="emit('update:isOpen', false)" class="p-2 hover-bg-muted rounded-lg">
+                    <button @click="emit('update:isOpen', false)" class="p-2 hover:bg-muted/70 rounded-lg">
                         <XIcon class="w-5 h-5 text-muted-foreground" />
                     </button>
                 </div>
@@ -106,7 +106,7 @@ import { ref, computed, watch } from 'vue';
                         v-for="token in activeTab === 'popular' ? popularTokensList : filteredTokens"
                         :key="token.symbol"
                         @click="selectToken(token)"
-                        class="p-4 hover:bg-muted cursor-pointer flex items-center justify-between">
+                        class="p-4 hover:bg-muted/70 cursor-pointer flex items-center justify-between">
                         <div class="flex items-center gap-3">
                             <img :src="token.logo" :alt="token.symbol" class="w-8 h-8 rounded-full" />
                             <div>

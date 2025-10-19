@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { TrendingUpIcon, TrendingDownIcon, Loader2, RotateCwIcon, Wallet2 } from 'lucide-vue-next';
+    import { TrendingUpIcon, TrendingDownIcon, Loader2, RotateCwIcon, Wallet2 } from 'lucide-vue-next';
     import { computed, ref, watch } from 'vue';
 
     type Token = {
@@ -173,7 +173,7 @@ import { TrendingUpIcon, TrendingDownIcon, Loader2, RotateCwIcon, Wallet2 } from
                     'flex items-center gap-2 rounded-lg border p-2 cursor-pointer',
                         selectedTokenSymbol === token.symbol
                         ? 'bg-primary/10 border-primary text-primary ring-primary'
-                        : 'bg-secondary border-border text-muted-foreground hover:border-primary',
+                        : 'bg-secondary/20 border-border text-muted-foreground hover:border-primary/50',
                     ]">
 
                     <div class="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
@@ -212,7 +212,7 @@ import { TrendingUpIcon, TrendingDownIcon, Loader2, RotateCwIcon, Wallet2 } from
             <button
                 @click="loadMore"
                 :disabled="isLoading"
-                class="bg-secondary text-secondary-foreground rounded-lg sm:rounded-xl hover:bg-muted py-2 sm:py-2.5 cursor-pointer text-sm sm:text-base disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 px-6">
+                class="bg-secondary/50 text-secondary-foreground rounded-lg sm:rounded-xl hover:bg-muted/70 py-2 sm:py-2.5 cursor-pointer text-sm sm:text-base disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 px-6">
 
                 <template v-if="isLoading">
                     <Loader2 class="w-4 h-4 animate-spin" />

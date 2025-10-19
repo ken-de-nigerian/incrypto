@@ -1,11 +1,10 @@
 <script setup lang="ts">
-    import { Head } from '@inertiajs/vue3';
+    import { Head, usePage } from '@inertiajs/vue3';
     import AppLayout from '@/components/layout/user/dashboard/AppLayout.vue';
     import NotificationsModal from '@/components/utilities/NotificationsModal.vue';
     import Breadcrumb from '@/components/Breadcrumb.vue';
     import TextLink from '@/components/TextLink.vue';
     import { computed, ref } from 'vue';
-    import { usePage } from '@inertiajs/vue3';
     import { GavelIcon, UserCheckIcon, ScanIcon, AlertTriangleIcon, ExternalLinkIcon, InfoIcon, ListOrderedIcon, ArrowRightIcon, DollarSignIcon } from 'lucide-vue-next';
 
     const page = usePage();
@@ -100,7 +99,7 @@
                 <div class="w-full mx-auto">
                     <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
                         <div class="xl:col-span-2 space-y-6">
-                            <div class="bg-gradient-to-br from-primary/10 via-primary/5 to-transparent rounded-2xl border border-primary/20 overflow-hidden p-6 sm:p-8">
+                            <div class="bg-gradient-to-br from-primary/10 via-primary/10 to-transparent rounded-2xl border border-primary/20 overflow-hidden p-6 sm:p-8">
                                 <div class="flex items-start gap-4">
                                     <div class="w-12 h-12 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl bg-primary/10 flex items-center justify-center flex-shrink-0 border border-border">
                                         <GavelIcon class="w-6 h-6 sm:w-7 sm:h-7 text-primary" />
@@ -124,7 +123,7 @@
                                 </h3>
                                 <div class="grid grid-cols-2 md:grid-cols-3 gap-x-4 gap-y-3 pt-2">
                                     <a v-for="(section, index) in policySections" :key="index" :href="`#${section.id}`"
-                                       class="flex items-center group text-xs sm:text-sm font-medium text-muted-foreground transition-colors hover:text-primary hover:bg-primary/5 p-2 rounded-lg -ml-2">
+                                       class="flex items-center group text-xs sm:text-sm font-medium text-muted-foreground transition-colors hover:text-primary hover:bg-primary/10 p-2 rounded-lg -ml-2">
                                         <ArrowRightIcon class="w-3 h-3 text-primary flex-shrink-0 mr-2 opacity-75 group-hover:opacity-100" />
                                         <span class="truncate">{{ section.title }}</span>
                                     </a>
@@ -156,7 +155,7 @@
 
                         <div class="xl:col-span-1 space-y-6">
                             <div class="sticky top-6">
-                                <div class="bg-gradient-to-br from-primary/5 to-transparent border border-primary/20 rounded-2xl p-6">
+                                <div class="bg-gradient-to-br from-primary/10 to-primary/10 border border-primary/20 rounded-2xl p-6">
                                     <h5 class="text-sm font-semibold text-card-foreground mb-4 flex items-center gap-2">
                                         <UserCheckIcon class="w-5 h-5 text-primary" />
                                         Key Compliance Principles
@@ -183,7 +182,7 @@
                                     </ul>
                                 </div>
 
-                                <div class="bg-warning/5 border border-warning/20 rounded-2xl p-6 mt-6">
+                                <div class="bg-warning/10 border border-warning/20 rounded-2xl p-6 mt-6">
                                     <h5 class="text-sm font-semibold text-warning mb-3 flex items-center gap-2">
                                         <AlertTriangleIcon class="w-5 h-5" />
                                         Important Warning
@@ -219,11 +218,3 @@
         @close="closeNotificationsModal"
     />
 </template>
-
-<style>
-    @media (max-width: 640px) {
-        .margin-bottom {
-            margin-bottom: 50px;
-        }
-    }
-</style>

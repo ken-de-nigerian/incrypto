@@ -36,7 +36,7 @@
 
 <template>
     <div class="bg-card border border-border rounded-2xl overflow-hidden">
-        <button @click="showHistory = !showHistory" class="w-full flex items-center justify-between p-4 hover:bg-muted">
+        <button @click="showHistory = !showHistory" class="w-full flex items-center justify-between p-4 hover:bg-muted/70">
             <span class="font-semibold text-card-foreground flex items-center gap-2">
                 <ClockIcon class="w-4 h-4" />
                 Recent Transactions
@@ -54,10 +54,10 @@
                     <div
                         :class="[
                             'w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0',
-                            tx.status === 'success' ? 'bg-primary/10' : tx.status === 'pending' ? 'bg-yellow-500/10' : 'bg-destructive/10',
+                            tx.status === 'success' ? 'bg-primary/10' : tx.status === 'pending' ? 'bg-warning/10' : 'bg-destructive/10',
                         ]">
                         <CheckCircleIcon v-if="tx.status === 'success'" class="w-4 h-4 text-primary" />
-                        <ClockIcon v-else-if="tx.status === 'pending'" class="w-4 h-4 text-yellow-500 animate-pulse" />
+                        <ClockIcon v-else-if="tx.status === 'pending'" class="w-4 h-4 text-warning animate-pulse" />
                         <XIcon v-else class="w-4 h-4 text-destructive" />
                     </div>
 

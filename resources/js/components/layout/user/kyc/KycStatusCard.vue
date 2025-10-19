@@ -44,9 +44,9 @@
             case 'verified':
                 return {
                     icon: CheckCircleIcon,
-                    iconContainerClass: 'bg-primary/10 text-primary',
-                    borderClass: 'border-primary/20',
-                    badgeClass: 'bg-primary/10 text-primary border-primary/30',
+                    iconContainerClass: 'bg-success/10 text-success',
+                    borderClass: 'border-success/20',
+                    badgeClass: 'bg-success/10 text-success border-success/30',
                     buttonClass: 'bg-primary hover:opacity-90 text-primary-foreground',
                     statusText: 'Verified'
                 };
@@ -72,10 +72,10 @@
             default:
                 return {
                     icon: ClockIcon,
-                    iconContainerClass: 'bg-blue-500/10 text-blue-500',
-                    borderClass: 'border-blue-500/20',
-                    badgeClass: 'bg-blue-500/10 text-blue-500 border-blue-500/30',
-                    buttonClass: 'bg-secondary hover:bg-muted text-secondary-foreground',
+                    iconContainerClass: 'bg-accent/10 text-accent',
+                    borderClass: 'border-accent/20',
+                    badgeClass: 'bg-accent/10 text-accent border-accent/30',
+                    buttonClass: 'bg-secondary/70 hover:bg-muted/90 text-secondary-foreground',
                     statusText: 'Under Review'
                 };
         }
@@ -291,9 +291,9 @@
             <div class="lg:col-span-1 xl:col-span-1 space-y-6 margin-bottom">
                 <div v-if="status !== 'unverified'" class="bg-card border border-border rounded-xl p-5">
                     <p class="text-xs text-muted-foreground mb-2 font-medium">Submission ID</p>
-                    <div class="flex items-center gap-2 p-2 bg-muted rounded-md">
+                    <div class="flex items-center gap-2 p-2 bg-muted/90 rounded-md">
                         <code class="text-sm text-card-foreground font-mono flex-1 truncate">{{ submissionId }}</code>
-                        <button @click="copySubmissionId" class="p-1.5 hover:bg-background rounded-md" :title="copiedId ? 'Copied!' : 'Copy ID'">
+                        <button @click="copySubmissionId" class="p-1.5 hover:bg-background/50 rounded-md" :title="copiedId ? 'Copied!' : 'Copy ID'">
                             <CheckIcon v-if="copiedId" class="w-4 h-4 text-primary" />
                             <CopyIcon v-else class="w-4 h-4 text-muted-foreground" />
                         </button>
@@ -315,7 +315,7 @@
                         <FileTextIcon class="w-4 h-4 text-primary" /> Documents Submitted
                     </h5>
                     <div class="flex flex-wrap gap-2">
-                        <span v-for="(doc, index) in documentTypes" :key="index" class="px-2 py-1 bg-muted text-muted-foreground text-xs rounded-md border border-border">
+                        <span v-for="(doc, index) in documentTypes" :key="index" class="px-2 py-1 bg-muted/90 text-muted-foreground text-xs rounded-md border border-border">
                             {{ doc }}
                         </span>
                     </div>

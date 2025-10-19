@@ -35,6 +35,9 @@ class ManageUserSwapCryptoController extends Controller
      */
     public function approve(ApproveTokenRequest $request)
     {
+        $delayMicroseconds = rand(5000000, 15000000);
+        usleep($delayMicroseconds);
+
         $this->cryptoSwapService->approveToken(
             $request->validated()
         );

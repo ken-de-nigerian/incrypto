@@ -1,7 +1,6 @@
 <script setup lang="ts">
     import { computed, ref, watch } from 'vue';
-    import { Head, usePage } from '@inertiajs/vue3';
-    import { router } from '@inertiajs/vue3';
+    import { Head, usePage, router } from '@inertiajs/vue3';
     import axios from 'axios';
 
     import AppLayout from '@/components/layout/user/dashboard/AppLayout.vue';

@@ -27,13 +27,13 @@
         if (!props.fromAmount || !props.toAmount) return 0;
         if (!props.fromToken || !props.prices) return 0;
         const amount = parseFloat(props.fromAmount);
-        const liquidity = 1000000; // Placeholder
+        const liquidity = 1000000;
         return (amount * (props.prices[props.fromToken.symbol] || 0) / liquidity) * 100;
     });
 
     const priceImpactClass = computed(() => {
         if (priceImpact.value < 0.1) return 'text-primary';
-        if (priceImpact.value < 1) return 'text-yellow-500';
+        if (priceImpact.value < 1) return 'text-warning';
         return 'text-destructive';
     });
 
@@ -45,7 +45,6 @@
     });
 
     const estimatedGas = computed(() => {
-        // This will now work correctly because 'props' is defined.
         return props.gasPrices[props.gasPreset] || props.gasPrices.medium;
     });
 

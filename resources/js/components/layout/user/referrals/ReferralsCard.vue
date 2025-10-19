@@ -74,8 +74,9 @@
 
     const getStatusColor = (status: string) => {
         const colors = {
+            // UPDATED: All solid/generic muted backgrounds replaced with compliant explicit opacities
             active: 'text-primary bg-primary/10 border-primary/30',
-            inactive: 'text-muted-foreground bg-muted border-border',
+            inactive: 'text-muted-foreground bg-secondary/50 border-border/50',
             pending: 'text-warning bg-warning/10 border-warning/30',
             suspended: 'text-destructive bg-destructive/10 border-destructive/30'
         };
@@ -254,7 +255,7 @@
     <div class="w-full mx-auto">
         <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
             <div class="xl:col-span-2 space-y-6">
-                <div class="bg-gradient-to-br from-primary/10 via-primary/5 to-transparent rounded-2xl border border-primary/20 overflow-hidden">
+                <div class="bg-gradient-to-br from-primary/10 via-primary/10 to-transparent rounded-2xl border border-primary/20 overflow-hidden">
                     <div class="p-6 sm:p-8">
                         <div class="flex items-start gap-4">
                             <div class="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center flex-shrink-0 border border-border">
@@ -269,19 +270,19 @@
                         </div>
 
                         <div class="mt-6 grid grid-cols-2 lg:grid-cols-4 gap-4">
-                            <div class="bg-card/50 backdrop-blur-sm rounded-xl p-4 border border-border">
+                            <div class="bg-card/70 backdrop-blur-sm rounded-xl p-4 border border-border">
                                 <p class="text-xs text-muted-foreground mb-1">Total Referrals</p>
                                 <p class="text-2xl font-bold text-primary">{{ statistics.total_referrals }}</p>
                             </div>
-                            <div class="bg-card/50 backdrop-blur-sm rounded-xl p-4 border border-border">
+                            <div class="bg-card/70 backdrop-blur-sm rounded-xl p-4 border border-border">
                                 <p class="text-xs text-muted-foreground mb-1">Active</p>
                                 <p class="text-2xl font-bold text-card-foreground">{{ statistics.active_referrals }}</p>
                             </div>
-                            <div class="bg-card/50 backdrop-blur-sm rounded-xl p-4 border border-border">
+                            <div class="bg-card/70 backdrop-blur-sm rounded-xl p-4 border border-border">
                                 <p class="text-xs text-muted-foreground mb-1">This Month</p>
                                 <p class="text-2xl font-bold text-primary">{{ statistics.this_month_referrals }}</p>
                             </div>
-                            <div class="bg-card/50 backdrop-blur-sm rounded-xl p-4 border border-border">
+                            <div class="bg-card/70 backdrop-blur-sm rounded-xl p-4 border border-border">
                                 <p class="text-xs text-muted-foreground mb-1">Conversions</p>
                                 <p class="text-sm font-semibold text-primary flex items-center gap-1">
                                     {{ statistics.conversion_rate }}%
@@ -321,7 +322,7 @@
                         <div>
                             <label class="block text-sm font-medium text-muted-foreground mb-3">Quick Share</label>
                             <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                                <button v-for="option in shareOptions" :key="option.action" @click="handleShare(option.action)" class="px-4 py-3 bg-muted/50 hover:bg-muted border border-border rounded-xl font-medium text-sm transition-all flex items-center justify-center gap-2 cursor-pointer">
+                                <button v-for="option in shareOptions" :key="option.action" @click="handleShare(option.action)" class="px-4 py-3 bg-muted/50 hover:bg-muted/70 border border-border rounded-xl font-medium text-sm transition-all flex items-center justify-center gap-2 cursor-pointer">
                                     <component :is="option.icon" class="w-4 h-4" />
                                     {{ option.label }}
                                 </button>
@@ -339,13 +340,13 @@
                             </div>
 
                             <div class="flex items-center gap-2">
-                                <button @click="showFilters = !showFilters" class="px-3 py-1.5 rounded-lg text-xs font-medium bg-muted hover:bg-muted/80 text-muted-foreground border border-border flex items-center gap-2 cursor-pointer" :class="{ 'bg-primary/10 text-primary border-primary/30': hasActiveFilters }">
+                                <button @click="showFilters = !showFilters" class="px-3 py-1.5 rounded-lg text-xs font-medium bg-muted/70 hover:bg-muted/80 text-muted-foreground border border-border flex items-center gap-2 cursor-pointer" :class="{ 'bg-primary/10 text-primary border-primary/30': hasActiveFilters }">
                                     <FilterIcon class="w-3.5 h-3.5" />
                                     Filters
                                     <span v-if="hasActiveFilters" class="w-1.5 h-1.5 rounded-full bg-primary"></span>
                                 </button>
 
-                                <span class="px-3 py-1.5 rounded-lg text-xs font-medium bg-muted text-muted-foreground border border-border">
+                                <span class="px-3 py-1.5 rounded-lg text-xs font-medium bg-muted/70 text-muted-foreground border border-border">
                                     {{ displayedReferrals.length }} of {{ totalReferralsCount }}
                                 </span>
                             </div>
@@ -355,7 +356,7 @@
                             <div class="relative">
                                 <SearchIcon class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                                 <input v-model="searchQuery" type="text" placeholder="Search by name or email..." class="w-full pl-10 pr-10 py-2.5 bg-background border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all cursor-pointer" />
-                                <button v-if="searchQuery" @click="clearSearch" class="absolute right-3 top-1/2 -translate-y-1/2 p-1 hover:bg-muted rounded">
+                                <button v-if="searchQuery" @click="clearSearch" class="absolute right-3 top-1/2 -translate-y-1/2 p-1 hover:bg-muted/50 rounded">
                                     <XIcon class="w-4 h-4 text-muted-foreground" />
                                 </button>
                             </div>
@@ -363,7 +364,7 @@
                             <div class="flex flex-col sm:flex-row gap-3">
                                 <div class="flex-1">
                                     <label class="block text-xs font-medium text-muted-foreground mb-1.5">Sort By Name</label>
-                                    <button @click="toggleSortOrder" class="w-full px-3 py-2 bg-background border border-border rounded-lg text-sm hover:bg-muted flex items-center justify-between cursor-pointer">
+                                    <button @click="toggleSortOrder" class="w-full px-3 py-2 bg-background border border-border rounded-lg text-sm hover:bg-muted/50 flex items-center justify-between cursor-pointer">
                                         <span>
                                             {{ sortOrder === 'asc' ? 'A → Z' : sortOrder === 'desc' ? 'Z → A' : 'Recent First' }}
                                         </span>
@@ -383,7 +384,7 @@
 
                     <div ref="scrollContainer" @scroll="handleScroll" class="p-6 max-h-[800px] overflow-y-auto custom-scrollbar">
                         <div v-if="props.referredUsers.length === 0 && !hasActiveFilters" class="text-center py-12">
-                            <div class="w-16 h-16 rounded-full bg-muted mx-auto mb-4 flex items-center justify-center">
+                            <div class="w-16 h-16 rounded-full bg-muted/70 mx-auto mb-4 flex items-center justify-center">
                                 <UsersIcon class="w-8 h-8 text-muted-foreground" />
                             </div>
                             <h4 class="text-lg font-semibold text-card-foreground mb-2">No Referrals Yet</h4>
@@ -395,7 +396,7 @@
                         </div>
 
                         <div v-else-if="displayedReferrals.length === 0" class="text-center py-12">
-                            <div class="w-16 h-16 rounded-full bg-muted mx-auto mb-4 flex items-center justify-center">
+                            <div class="w-16 h-16 rounded-full bg-muted/70 mx-auto mb-4 flex items-center justify-center">
                                 <SearchIcon class="w-8 h-8 text-muted-foreground" />
                             </div>
                             <h4 class="text-lg font-semibold text-card-foreground mb-2">No Referrals Found</h4>
@@ -425,7 +426,7 @@
                                             <p class="text-sm text-muted-foreground mb-3">{{ user.email }}</p>
 
                                             <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                                                <div class="bg-muted/50 rounded-lg p-2">
+                                                <div class="bg-muted/70 rounded-lg p-2">
                                                     <p class="text-xs text-muted-foreground mb-0.5 flex items-center gap-1">
                                                         <CalendarIcon class="w-3 h-3" />
                                                         Joined
@@ -433,7 +434,7 @@
                                                     <p class="text-xs font-semibold text-card-foreground">{{ formatDate(user.joined_date) }}</p>
                                                 </div>
 
-                                                <div class="bg-muted/50 rounded-lg p-2">
+                                                <div class="bg-muted/70 rounded-lg p-2">
                                                     <p class="text-xs text-muted-foreground mb-0.5">Commission Earned</p>
                                                     <p class="text-sm font-bold text-primary">${{ user.total_commission_earned.toFixed(2) }}</p>
                                                 </div>
@@ -459,7 +460,7 @@
 
             <div class="hidden sm:block">
                 <div class="xl:col-span-1 space-y-6 sticky top-6">
-                    <div class="bg-gradient-to-br from-primary/5 to-transparent border border-primary/20 rounded-2xl p-6">
+                    <div class="bg-gradient-to-br from-primary/10 to-transparent border border-primary/20 rounded-2xl p-6">
                         <h5 class="text-sm font-semibold text-card-foreground mb-4 flex items-center gap-2">
                             <SparklesIcon class="w-5 h-5 text-primary" />
                             Referral Benefits

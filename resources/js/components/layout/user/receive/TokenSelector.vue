@@ -93,7 +93,7 @@
 
         <div class="max-h-[600px] overflow-y-auto">
             <div v-if="displayedTokens.length === 0" class="p-8 text-center">
-                <div class="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
+                <div class="w-16 h-16 bg-muted/70 rounded-full flex items-center justify-center mx-auto mb-4">
                     <SearchIcon class="w-8 h-8 text-muted-foreground" />
                 </div>
                 <p class="text-sm text-muted-foreground">No tokens found</p>

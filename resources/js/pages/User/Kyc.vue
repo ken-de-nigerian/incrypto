@@ -8,7 +8,19 @@
 
     defineProps({
         kycData: {
-            type: Object,
+            type: Object as () => {
+                status: string;
+                title: string;
+                staticMessage: string;
+                dynamicMessage?: string;
+                action: { href: string; text: string };
+                submissionId?: string;
+                submittedAt?: string;
+                reviewedAt?: string;
+                documentTypes?: string[];
+                rejectionReason?: string;
+                estimatedReviewTime?: string;
+            },
         }
     });
 
@@ -60,7 +72,7 @@
                     :title="kycData?.title || 'KYC Verification Required'"
                     :static-message="kycData?.staticMessage || 'Complete your KYC verification to access all features.'"
                     :dynamic-message="kycData?.dynamicMessage || ''"
-                    :action="kycData?.action || { href: '#', text: 'Begin Verification' }"
+                    :action="kycData?.action || { href: route('user.kyc.create'), text: 'Begin Verification' }"
                     :submission-id="kycData?.submissionId || ''"
                     :submitted-at="kycData?.submittedAt || ''"
                     :reviewed-at="kycData?.reviewedAt || ''"

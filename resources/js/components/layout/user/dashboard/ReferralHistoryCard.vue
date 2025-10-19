@@ -2,6 +2,7 @@
     import TextLink from '@/components/TextLink.vue';
     import { computed } from 'vue';
     import { Users } from 'lucide-vue-next';
+    import { route } from 'ziggy-js';
 
     // Define props
     interface ReferredUserItem {
@@ -35,31 +36,31 @@
         <h3 v-if="props.referred_users && props.referred_users.length > 0" class="text-card-foreground font-semibold mb-3 sm:mb-4 text-sm sm:text-base">Recent Referrals</h3>
 
         <div class="space-y-2 sm:space-y-3">
-            <div v-if="props.referred_users && props.referred_users.length > 0" class="flex items-center justify-between text-muted-foreground text-xs uppercase font-medium pb-1 border-b border-secondary">
+            <div v-if="props.referred_users && props.referred_users.length > 0" class="flex items-center justify-between text-muted-foreground text-xs uppercase font-medium pb-1 border-b border-border/50">
                 <span class="flex-1 min-w-0">Referred User</span>
                 <span class="text-right">Joined</span>
             </div>
 
             <template v-if="isLoading">
                 <div v-for="i in skeletonCount" :key="`skeleton-${i}`"
-                    class="flex items-center justify-between py-1">
+                     class="flex items-center justify-between py-1 animate-pulse">
                     <div class="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
-                        <div class="w-6 h-6 sm:w-7 sm:h-7 bg-secondary rounded-full"></div>
-                        <div class="h-4 bg-secondary rounded w-2/3"></div>
+                        <div class="w-6 h-6 sm:w-7 sm:h-7 bg-secondary/70 rounded-full"></div>
+                        <div class="h-4 bg-secondary/70 rounded w-2/3"></div>
                     </div>
 
                     <div class="w-1/4 text-right flex-shrink-0">
-                        <div class="h-4 bg-secondary rounded w-full"></div>
+                        <div class="h-4 bg-secondary/70 rounded w-full"></div>
                     </div>
                 </div>
             </template>
 
             <template v-else-if="props.referred_users && props.referred_users.length > 0">
                 <div v-for="(referral, index) in props.referred_users"
-                    :key="referral.id"
-                    class="flex items-center justify-between py-1">
+                     :key="referral.id"
+                     class="flex items-center justify-between py-1">
                     <div class="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
-                        <div class="w-6 h-6 sm:w-7 sm:h-7 bg-secondary rounded-full flex items-center justify-center text-muted-foreground font-bold text-xs flex-shrink-0">
+                        <div class="w-6 h-6 sm:w-7 sm:h-7 bg-secondary/70 rounded-full flex items-center justify-center text-muted-foreground font-bold text-xs flex-shrink-0">
                             {{ index + 1 }}
                         </div>
                         <span class="text-card-foreground font-medium text-sm sm:text-base truncate">{{ referral.first_name }} {{ referral.last_name?.charAt(0) }}.</span>
@@ -82,13 +83,15 @@
             </template>
         </div>
 
-        <div v-if="props.referred_users && props.referred_users.length > 0" class="mx-[-1rem] sm:mx-[-1.5rem] mt-4 pt-4 border-t border-secondary bg-transparent">
+        <div v-if="props.referred_users && props.referred_users.length > 0" class="mx-[-1rem] sm:mx-[-1.5rem] mt-4 pt-4 border-t border-border/50 bg-transparent">
             <div class="text-center">
                 <TextLink
                     :href="route('user.rewards.index')"
-                    class="bg-secondary text-secondary-foreground rounded-lg sm:rounded-xl hover:bg-muted
-                   py-1.5 sm:py-2 cursor-pointer text-sm sm:text-base font-medium
-                   inline-flex items-center justify-center gap-2 px-6">
+                    :class="[
+                       'rounded-lg sm:rounded-xl py-1.5 sm:py-2 cursor-pointer text-sm sm:text-base font-medium',
+                       'inline-flex items-center justify-center gap-2 px-6',
+                       'bg-secondary/70 text-secondary-foreground hover:bg-muted/90'
+                    ]">
                     Referrals List →
                 </TextLink>
             </div>

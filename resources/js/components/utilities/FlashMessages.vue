@@ -1,8 +1,6 @@
 <script setup lang="ts">
-    import { ref } from 'vue'
-    import { usePage } from '@inertiajs/vue3'
-    import { watch } from 'vue';
-
+    import { ref, watch } from 'vue';
+    import { usePage } from '@inertiajs/vue3';
     import CheckCircleIcon from '@/components/utilities/CheckCircleIcon.vue';
     import XCircleIcon from '@/components/utilities/XCircleIcon.vue';
     import InformationCircleIcon from '@/components/utilities/InformationCircleIcon.vue';
@@ -11,21 +9,26 @@
     const page = usePage()
     let nextId = 1;
 
-    const getIconComponent = (type) => {
+    const getIconComponent = (type: string) => {
         switch (type) {
             case 'success': return CheckCircleIcon;
             case 'error': return XCircleIcon;
             default: return InformationCircleIcon;
         }
     };
-    const getTypeClasses = (type) => {
+
+    const getTypeClasses = (type: string) => {
         switch (type) {
-            case 'success': return 'bg-green-800/80 border-green-600/50 text-green-200';
-            case 'error': return 'bg-red-800/80 border-red-600/50 text-red-200';
-            default: return 'bg-[#26292B] border-[#E5F2FE42] text-[#ECEDEE]';
+            case 'success':
+                return 'bg-success/80 border-success/50 text-success-foreground';
+            case 'error':
+                return 'bg-destructive/80 border-destructive/50 text-destructive-foreground';
+            default:
+                return 'bg-muted/80 border-border/50 text-foreground';
         }
     };
-    const removeNotification = (id) => {
+
+    const removeNotification = (id: number) => {
         notifications.value = notifications.value.filter(n => n.id !== id);
     }
     watch(() => page.props.flash, (flash) => {
@@ -47,7 +50,6 @@
             notifications.value.push({ id, type, message });
             setTimeout(() => removeNotification(id), 5000);
         }
-        page.props.flash = null;
     }, { deep: true, immediate: true });
 </script>
 

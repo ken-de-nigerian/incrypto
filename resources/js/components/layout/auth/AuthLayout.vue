@@ -1,5 +1,5 @@
 <script setup lang="ts">
-    import FlashMessages from '@/components/utilities/FlashMessages.vue';
+import FlashMessages from '@/components/utilities/FlashMessages.vue';
 </script>
 
 <template>

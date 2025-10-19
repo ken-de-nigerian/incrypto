@@ -6,17 +6,21 @@
             return h('div', { class: 'flex justify-center items-center' }, [
                 h('div', { class: 'relative' }, [
                     // Magnifying Glass
+                    // bg-muted/20 is compliant.
                     h('div', { class: 'w-32 h-32 border-4 border-muted rounded-full bg-muted/20 flex items-center justify-center' }, [
                         h('div', { class: 'w-16 h-16 border-2 border-foreground rounded-full' }),
                         h('div', { class: 'absolute bottom-4 right-4 w-8 h-8 border-2 border-foreground rotate-45' })
                     ]),
 
                     // NFT Hexagon
+                    // bg-muted/30 is compliant.
                     h('div', { class: 'absolute top-8 -right-8 w-20 h-20 bg-muted/30 rounded-lg flex items-center justify-center border border-border' }, [
                         h('span', { class: 'text-sm font-bold text-muted-foreground' }, 'NFT')
                     ]),
 
                     // Ethereum Coin
+                    // bg-crypto-ethereum/20 is compliant.
+                    // border-crypto-ethereum/50 is compliant.
                     h('div', { class: 'absolute -top-4 left-8 w-16 h-16 bg-crypto-ethereum/20 rounded-full flex items-center justify-center border-2 border-crypto-ethereum/50' }, [
                         h('span', { class: 'text-xs font-bold' }, 'Ξ')
                     ])

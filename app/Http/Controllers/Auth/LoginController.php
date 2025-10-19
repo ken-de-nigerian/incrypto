@@ -90,8 +90,8 @@ class LoginController extends Controller
         // Check if a user exists
         if ($user) {
 
-            // 1. Check if the account is inactive
-            if ($user->status === 'inactive') {
+            // 1. Check if the account is suspended
+            if ($user->status === 'suspended') {
                 throw ValidationException::withMessages([
                     $this->username() => [__('Your account has been suspended. Please contact support for assistance.')],
                 ])->status(403);

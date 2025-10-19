@@ -91,7 +91,7 @@
 
             <button
                 @click="openNotificationsModal"
-                class="p-2 bg-card rounded-xl border border-border hover:bg-secondary relative cursor-pointer"
+                class="p-2 bg-card rounded-xl border border-border hover:bg-secondary/50 relative cursor-pointer"
                 title="Notifications">
                 <Bell class="w-5 h-5 text-card-foreground" />
                 <span
@@ -102,7 +102,7 @@
 
             <button
                 @click="toggleAppearance"
-                class="p-2 bg-card rounded-xl border border-border hover:bg-secondary relative cursor-pointer"
+                class="p-2 bg-card rounded-xl border border-border hover:bg-secondary/50 relative cursor-pointer"
                 title="Change Appearance">
                 <component :is="currentIcon" class="w-5 h-5 text-card-foreground" />
             </button>

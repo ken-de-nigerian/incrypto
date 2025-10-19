@@ -21,8 +21,11 @@
                 v-for="(preset, key) in gasPrices"
                 :key="key"
                 @click="$emit('update:preset', key as GasPreset)"
-                class="w-full flex items-center justify-between p-2 rounded-lg text-left"
-                :class="[selectedPreset === key ? 'bg-primary/10' : 'bg-muted/50 hover:bg-muted']">
+                class="w-full flex items-center justify-between p-2 rounded-lg text-left transition-colors duration-150"
+                :class="[
+                    selectedPreset === key ? 'bg-primary/10' :
+                    'bg-muted/50 hover:bg-muted/70'
+                ]">
                 <span class="text-xs text-muted-foreground capitalize">{{ key }}</span>
                 <span class="text-xs font-semibold" :class="selectedPreset === key ? 'text-primary' : 'text-card-foreground'">{{ preset.gwei }} Gwei</span>
             </button>

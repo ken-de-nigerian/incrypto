@@ -72,7 +72,7 @@
         if (sortOrder.value === 'asc') {
             filtered = [...filtered].sort((a, b) => a.name.localeCompare(b.name));
         } else if (sortOrder.value === 'desc') {
-            filtered = [...filtered].sort((a, b) => b.name.localeCompare(b.name));
+            filtered = [...filtered].sort((a, b) => b.name.localeCompare(a.name));
         } else {
             filtered = [...filtered].sort((a, b) => a.name.localeCompare(b.name));
         }
@@ -212,7 +212,7 @@
     <div class="w-full mx-auto">
         <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
             <div class="xl:col-span-2 space-y-6">
-                <div class="bg-gradient-to-br from-primary/10 via-primary/5 to-transparent rounded-2xl border border-primary/20 overflow-hidden shadow-sm">
+                <div class="bg-gradient-to-br from-primary/10 via-primary/10 to-transparent rounded-2xl border border-primary/20 overflow-hidden shadow-sm">
                     <div class="p-6 sm:p-8">
                         <div class="flex items-start gap-4">
                             <div class="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center flex-shrink-0 border border-border">
@@ -227,22 +227,22 @@
                         </div>
 
                         <div class="mt-6 grid grid-cols-2 sm:grid-cols-4 gap-4">
-                            <div class="bg-card/50 backdrop-blur-sm rounded-xl p-4 border border-border">
+                            <div class="bg-card/70 backdrop-blur-sm rounded-xl p-4 border border-border">
                                 <p class="text-xs text-muted-foreground mb-1">Connected</p>
                                 <p class="text-2xl font-bold text-primary">{{ connectedWallets.length }}</p>
                             </div>
-                            <div class="bg-card/50 backdrop-blur-sm rounded-xl p-4 border border-border">
+                            <div class="bg-card/70 backdrop-blur-sm rounded-xl p-4 border border-border">
                                 <p class="text-xs text-muted-foreground mb-1">Available</p>
                                 <p class="text-2xl font-bold text-card-foreground">{{ totalWalletsCount }}</p>
                             </div>
-                            <div class="bg-card/50 backdrop-blur-sm rounded-xl p-4 border border-border">
+                            <div class="bg-card/70 backdrop-blur-sm rounded-xl p-4 border border-border">
                                 <p class="text-xs text-muted-foreground mb-1">Status</p>
                                 <p class="text-sm font-semibold text-primary flex items-center gap-1">
                                     <span class="w-2 h-2 rounded-full bg-primary animate-pulse"></span>
                                     Active
                                 </p>
                             </div>
-                            <div class="bg-card/50 backdrop-blur-sm rounded-xl p-4 border border-border">
+                            <div class="bg-card/70 backdrop-blur-sm rounded-xl p-4 border border-border">
                                 <p class="text-xs text-muted-foreground mb-1">Security</p>
                                 <p class="text-sm font-semibold text-primary flex items-center gap-1">
                                     <ShieldCheckIcon class="w-4 h-4" />
@@ -266,7 +266,7 @@
 
                     <div class="p-6">
                         <div v-if="connectedWallets.length === 0" class="text-center py-12">
-                            <div class="w-16 h-16 rounded-full bg-muted mx-auto mb-4 flex items-center justify-center">
+                            <div class="w-16 h-16 rounded-full bg-muted/70 mx-auto mb-4 flex items-center justify-center">
                                 <WalletIcon class="w-8 h-8 text-muted-foreground" />
                             </div>
                             <h4 class="text-lg font-semibold text-card-foreground mb-2">No Wallets Connected</h4>
@@ -292,13 +292,13 @@
                                             </div>
 
                                             <div class="flex items-center gap-2 mb-2">
-                                                <code class="text-xs text-muted-foreground bg-muted px-2 py-1 rounded font-mono truncate">
+                                                <code class="text-xs text-muted-foreground bg-muted/50 px-2 py-1 rounded font-mono truncate">
                                                     {{ wallet.wallet_id }}
                                                 </code>
 
                                                 <button
                                                     @click="copyAddress(wallet.wallet_id)"
-                                                    class="p-1 hover:bg-muted rounded cursor-pointer flex-shrink-0"
+                                                    class="p-1 hover:bg-muted/70 rounded cursor-pointer flex-shrink-0"
                                                     :title="copiedAddress === wallet.wallet_id ? 'Copied!' : 'Copy ID'">
                                                     <CheckIcon v-if="copiedAddress === wallet.wallet_id" class="w-3.5 h-3.5 text-primary" />
                                                     <CopyIcon v-else class="w-3.5 h-3.5 text-muted-foreground" />
@@ -331,14 +331,14 @@
                             <div class="flex items-center gap-2">
                                 <button
                                     @click="showFilters = !showFilters"
-                                    class="px-3 py-1.5 rounded-lg text-xs font-medium bg-muted hover:bg-muted/80 text-muted-foreground border border-border flex items-center gap-2"
+                                    class="px-3 py-1.5 rounded-lg text-xs font-medium bg-muted/70 hover:bg-muted/80 text-muted-foreground border border-border flex items-center gap-2"
                                     :class="{ 'bg-primary/10 text-primary border-primary/30': hasActiveFilters }">
                                     <FilterIcon class="w-3.5 h-3.5" />
                                     Filters
                                     <span v-if="hasActiveFilters" class="w-1.5 h-1.5 rounded-full bg-primary"></span>
                                 </button>
 
-                                <span class="px-3 py-1.5 rounded-lg text-xs font-medium bg-muted text-muted-foreground border border-border">
+                                <span class="px-3 py-1.5 rounded-lg text-xs font-medium bg-muted/70 text-muted-foreground border border-border">
                                     {{ displayedWallets.length }} of {{ totalWalletsCount }}
                                 </span>
                             </div>
@@ -352,7 +352,7 @@
                                     type="text"
                                     placeholder="Search wallets..."
                                     class="w-full pl-10 pr-10 py-2.5 bg-background border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all" />
-                                <button v-if="searchQuery" @click="clearSearch" class="absolute right-3 top-1/2 -translate-y-1/2 p-1 hover:bg-muted rounded">
+                                <button v-if="searchQuery" @click="clearSearch" class="absolute right-3 top-1/2 -translate-y-1/2 p-1 hover:bg-muted/50 rounded">
                                     <XIcon class="w-4 h-4 text-muted-foreground" />
                                 </button>
                             </div>
@@ -360,7 +360,7 @@
                             <div class="flex flex-col sm:flex-row gap-3">
                                 <div class="flex-1">
                                     <label class="block text-xs font-medium text-muted-foreground mb-1.5">Wallet Type</label>
-                                    <select v-model="filterByType" class="w-full px-3 py-2 bg-background border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all">
+                                    <select v-model="filterByType" class="w-full px-3 py-2 bg-background border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all hover:bg-muted/50 cursor-pointer">
                                         <option v-for="type in walletTypes" :key="type" :value="type">
                                             {{ type === 'all' ? 'All Types' : type }}
                                         </option>
@@ -369,7 +369,7 @@
 
                                 <div class="flex-1">
                                     <label class="block text-xs font-medium text-muted-foreground mb-1.5">Sort By Name</label>
-                                    <button @click="toggleSortOrder" class="w-full px-3 py-2 bg-background border border-border rounded-lg text-sm hover:bg-muted flex items-center justify-between">
+                                    <button @click="toggleSortOrder" class="w-full px-3 py-2 bg-background border border-border rounded-lg text-sm hover:bg-muted/50 flex items-center justify-between">
                                         <span>
                                             {{ sortOrder === 'asc' ? 'A → Z' : sortOrder === 'desc' ? 'Z → A' : 'A → Z (Default)' }}
                                         </span>
@@ -397,7 +397,7 @@
                         </div>
 
                         <div v-else-if="displayedWallets.length === 0" class="text-center py-12">
-                            <div class="w-16 h-16 rounded-full bg-muted mx-auto mb-4 flex items-center justify-center">
+                            <div class="w-16 h-16 rounded-full bg-muted/70 mx-auto mb-4 flex items-center justify-center">
                                 <SearchIcon class="w-8 h-8 text-muted-foreground" />
                             </div>
                             <h4 class="text-lg font-semibold text-card-foreground mb-2">No Wallets Found</h4>
@@ -420,7 +420,7 @@
 
                                     <div class="flex-1">
                                         <h4 class="text-base font-semibold text-card-foreground mb-1">{{ wallet.name }}</h4>
-                                        <span class="text-xs text-muted-foreground px-2 py-0.5 bg-muted rounded-full">
+                                        <span class="text-xs text-muted-foreground px-2 py-0.5 bg-muted/50 rounded-full">
                                             {{ wallet.type }}
                                         </span>
                                     </div>
@@ -449,7 +449,7 @@
 
             <div class="hidden sm:block">
                 <div class="xl:col-span-1 space-y-6">
-                    <div class="bg-gradient-to-br from-primary/5 to-transparent border border-primary/20 rounded-2xl p-6 shadow-sm">
+                    <div class="bg-gradient-to-br from-primary/10 to-primary/10 border border-primary/20 rounded-2xl p-6 shadow-sm">
                         <h5 class="text-sm font-semibold text-card-foreground mb-4 flex items-center gap-2">
                             <ShieldCheckIcon class="w-5 h-5 text-primary" />
                             Why Connect Your Wallet?
@@ -483,7 +483,7 @@
                         </ul>
                     </div>
 
-                    <div class="bg-warning/5 border border-warning/20 rounded-2xl p-6">
+                    <div class="bg-warning/10 border border-warning/20 rounded-2xl p-6">
                         <h5 class="text-sm font-semibold text-warning mb-3 flex items-center gap-2">
                             <ZapIcon class="w-5 h-5" />
                             Important Notice
@@ -513,17 +513,3 @@
         </div>
     </div>
 </template>
-
-<style scoped>
-    /* 1. Standard for Firefox */
-    .custom-scrollbar {
-        scrollbar-width: none;
-        -ms-overflow-style: none;
-    }
-
-    /* 2. Webkit (Chrome, Safari, newer Edge) */
-    .custom-scrollbar::-webkit-scrollbar {
-        width: 0;
-        height: 0;
-    }
-</style>

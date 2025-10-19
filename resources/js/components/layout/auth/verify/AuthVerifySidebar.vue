@@ -5,9 +5,7 @@
         render() {
             return h('div', { class: 'flex justify-center items-center' }, [
                 h('div', { class: 'relative' }, [
-                    // Monitor
                     h('div', { class: 'w-48 h-32 bg-muted/20 rounded-lg border border-muted p-4' }, [
-                        // Chart bars
                         h('div', { class: 'flex items-end justify-center h-full space-x-1' }, [
                             h('div', { class: 'w-2 h-4 bg-muted rounded-sm' }),
                             h('div', { class: 'w-2 h-6 bg-muted rounded-sm' }),
@@ -19,12 +17,8 @@
                             h('div', { class: 'w-2 h-4 bg-muted rounded-sm' })
                         ])
                     ]),
-
-                    // Monitor Stand
                     h('div', { class: 'w-8 h-4 bg-muted/30 mx-auto relative -top-1' }),
                     h('div', { class: 'w-16 h-2 bg-muted/30 mx-auto relative -top-1' }),
-
-                    // Arrows
                     h('div', { class: 'absolute -top-4 -left-8 w-8 h-8 border-l-4 border-t-4 border-accent rotate-45' }),
                     h('div', { class: 'absolute top-4 -right-8 w-8 h-8 border-r-4 border-t-4 border-accent -rotate-45' })
                 ])

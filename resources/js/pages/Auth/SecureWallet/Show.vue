@@ -61,13 +61,6 @@
                     <p class="text-muted-foreground text-sm pt-3">
                         Make sure nobody is watching your screen
                     </p>
-
-                    <button
-                        @click="toggleVisibility"
-                        class="bg-secondary text-accent py-2 px-4 rounded-md flex justify-center items-center gap-1 mt-5 hover:bg-secondary/80 cursor-pointer">
-                        <Eye class="w-5 h-5" />
-                        View Phrase
-                    </button>
                 </div>
 
                 <div class="grid grid-cols-3 gap-3 text-sm font-mono text-foreground p-3">
@@ -82,7 +75,7 @@
             </div>
 
             <div class="mt-8 text-center">
-                <p class="text-xs text-muted-foreground bg-warning/20 p-3 rounded-lg border border-warning/50">
+                <p class="text-xs text-muted-foreground bg-warning/20 p-3 rounded-lg border border-warning/30">
                     <span class="font-bold text-foreground">Note:</span> We will ask you to confirm this phrase on the next screen.
                 </p>
             </div>
@@ -92,7 +85,7 @@
                 <button
                     v-if="!isPhraseVisible"
                     @click="toggleVisibility"
-                    class="flex-1 border text-muted-foreground border-border font-semibold text-center py-3 rounded-lg w-full text-nowrap hover:bg-secondary cursor-pointer flex items-center justify-center gap-2"
+                    class="flex-1 border text-muted-foreground border-border font-semibold text-center py-3 rounded-lg w-full text-nowrap hover:bg-secondary/50 cursor-pointer flex items-center justify-center gap-2"
                     aria-label="View seed phrase">
                     <Eye class="w-5 h-5" /> View Phrase
                 </button>

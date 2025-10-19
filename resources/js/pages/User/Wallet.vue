@@ -8,11 +8,11 @@
 
     const props = defineProps({
         userWallet: {
-            type: Object,
+            type: Object as () => { wallets: any[] },
             required: true
         },
         wallets: {
-            type: [Array, Object],
+            type: [Array, Object] as () => Array<any> | Record<string, any>,
             default: () => []
         }
     });

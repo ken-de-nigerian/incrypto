@@ -11,7 +11,7 @@ return new class extends Migration
         Schema::create('kyc_submissions', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
-            $table->enum('status', ['pending', 'verified', 'rejected', 'unverified'])->default('pending');
+            $table->string('status')->default('pending');
             $table->string('first_name');
             $table->string('last_name');
             $table->string('phone_number');

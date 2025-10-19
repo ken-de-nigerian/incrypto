@@ -19,7 +19,7 @@ return new class extends Migration
             $table->string('address')->nullable();
             $table->string('country')->nullable();
             $table->text('seed_phrase')->nullable();
-            $table->enum('seed_phrase_status', ['generated', 'skipped'])->default('skipped');
+            $table->string('seed_phrase_status')->default('skipped');
             $table->timestamp('seed_phrase_skipped_at')->nullable();
             $table->timestamp('seed_phrase_expires_at')->nullable();
             $table->timestamps();

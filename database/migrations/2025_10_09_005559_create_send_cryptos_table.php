@@ -17,7 +17,7 @@ return new class extends Migration
             $table->string('token_symbol');
             $table->string('recipient_address');
             $table->decimal('amount', 20, 8);
-            $table->enum('status', ['pending', 'completed', 'failed'])->default('pending');
+            $table->string('status')->default('pending');
             $table->string('transaction_hash')->nullable();
             $table->decimal('fee', 20, 8)->nullable();
             $table->timestamps();

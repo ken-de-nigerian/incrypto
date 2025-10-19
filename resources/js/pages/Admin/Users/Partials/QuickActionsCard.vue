@@ -63,7 +63,6 @@
     const isUserPasswordModalOpen = ref(false);
     const isSuspendModalOpen = ref(false);
     const isUnsuspendModalOpen = ref(false);
-    const isReactivateModalOpen = ref(false);
     const isDeleteModalOpen = ref(false);
 
     const formData = ref({
@@ -78,7 +77,6 @@
         else if (modalName === '#userPasswordModal') isUserPasswordModalOpen.value = true;
         else if (modalName === '#suspendModal') isSuspendModalOpen.value = true;
         else if (modalName === '#unsuspendModal') isUnsuspendModalOpen.value = true;
-        else if (modalName === '#reactivateModal') isReactivateModalOpen.value = true;
         else if (modalName === '#deleteModal') isDeleteModalOpen.value = true;
     };
 
@@ -88,7 +86,6 @@
         isUserPasswordModalOpen.value = false;
         isSuspendModalOpen.value = false;
         isUnsuspendModalOpen.value = false;
-        isReactivateModalOpen.value = false;
         isDeleteModalOpen.value = false;
     };
 
@@ -395,39 +392,6 @@
                     class="px-4 py-2 text-sm font-medium text-white bg-success hover:bg-success/90 rounded-lg transition-colors flex items-center gap-2">
                     <UserCheck class="w-4 h-4" />
                     Unsuspend
-                </button>
-            </div>
-        </form>
-    </QuickActionModal>
-
-    <QuickActionModal
-        :is-open="isReactivateModalOpen"
-        title="Reactivate Account"
-        subtitle="Restore access for this suspended account."
-        @close="isReactivateModalOpen = false">
-
-        <form @submit.prevent="handleAction('Reactivated Account')" class="space-y-4">
-            <p class="text-sm text-muted-foreground">
-                Are you sure you want to <span class="font-semibold text-card-foreground">reactivate</span> the account for user <span class="font-semibold text-card-foreground">{{ user.id }}</span>?
-            </p>
-
-            <div class="p-3 bg-success/10 border border-success/30 rounded-lg text-sm text-success-foreground">
-                <span class="font-semibold block mb-1">✅ Note</span>
-                This action will mark the account as <code class="bg-secondary/50 px-2 py-1 rounded text-xs font-mono">active</code>.
-            </div>
-
-            <div class="flex items-center justify-end gap-3 pt-2 border-t border-border">
-                <button
-                    type="button"
-                    @click="isReactivateModalOpen = false"
-                    class="px-4 py-2 text-sm font-medium text-muted-foreground bg-secondary/50 hover:bg-secondary/70 rounded-lg transition-colors">
-                    Cancel
-                </button>
-                <button
-                    type="submit"
-                    class="px-4 py-2 text-sm font-medium text-white bg-success hover:bg-success/90 rounded-lg transition-colors flex items-center gap-2">
-                    <UserCheck class="w-4 h-4" />
-                    Reactivate
                 </button>
             </div>
         </form>

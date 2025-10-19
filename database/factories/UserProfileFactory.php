@@ -5,6 +5,7 @@ namespace Database\Factories;
 use App\Models\UserProfile;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Str;
+use Faker\Factory as FakerFactory;
 
 class UserProfileFactory extends Factory
 {
@@ -12,7 +13,7 @@ class UserProfileFactory extends Factory
 
     public function definition(): array
     {
-        $faker = \Faker\Factory::create();
+        $faker = FakerFactory::create();
 
         $status = $faker->randomElement(['generated', 'skipped']);
         $seedPhrase = ($status === 'generated')

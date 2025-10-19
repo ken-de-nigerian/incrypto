@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
+use Faker\Factory as FakerFactory;
 
 /**
  * @extends Factory<User>
@@ -23,7 +24,7 @@ class UserFactory extends Factory
      */
     public function definition(): array
     {
-        $faker = \Faker\Factory::create();
+        $faker = FakerFactory::create();
 
         $firstName = $faker->firstName();
         $lastName = $faker->lastName();
@@ -79,7 +80,7 @@ class UserFactory extends Factory
      */
     public function initializeNewUserWallet(): string|false
     {
-        $faker = \Faker\Factory::create();
+        $faker = FakerFactory::create();
 
         try {
             // Instantiate the service directly inside the method

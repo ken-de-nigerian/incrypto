@@ -3,7 +3,9 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\AdjustUserBalanceRequest;
 use App\Http\Requests\UpdateWalletStatusRequest;
+use App\Services\AdjustUserBalanceService;
 use App\Services\GatewayHandlerService;
 use App\Services\MarketDataService;
 use App\Services\WalletService;
@@ -13,6 +15,7 @@ use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
 use App\Models\User;
 use JsonException;
+use Throwable;
 
 class AdminUserController extends Controller
 {
@@ -91,6 +94,24 @@ class AdminUserController extends Controller
                 'total' => $sentCryptosCollection->count(),
             ],
         ]);
+    }
+
+    /**
+     * @throws Throwable
+     */
+    public function manageBalance(AdjustUserBalanceRequest $request, User $user, AdjustUserBalanceService $adjustUserBalanceService)
+    {
+        try {
+            $adjustUserBalanceService->updateUserBalance(
+                $user,
+                $request->validated(),
+            );
+            return redirect()->back()->with('success', 'User wallet balance updated successfully.');
+        } catch (Exception $e) {
+            return redirect()->back()
+                ->withInput()
+                ->withErrors(['amount' => $e->getMessage()]);
+        }
     }
 
     /**

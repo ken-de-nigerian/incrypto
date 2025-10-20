@@ -44,22 +44,16 @@ Route::prefix('admin')
             Route::post('/store', 'store')->name('store');
 
             Route::get('/{user}/show', 'show')->name('show');
-            Route::get('/banned', 'banned')->name('banned');
 
             Route::get('/{user}/edit', 'edit')->name('edit');
-
             Route::patch('/{user}/update', 'update')->name('update');
 
-            Route::post('/{user}/funds', 'manageFunds')->name('funds');
-
-            Route::post('/{user}/email', 'sendEmail')->name('email');
-
-            Route::post('/{user}/reset-password', 'resetPassword')->name('reset-password');
-
-            Route::post('/{user}/block', 'block')->name('block');
-            Route::post('/{user}/unblock', 'unblock')->name('unblock');
-            Route::delete('/{user}/delete', 'delete')->name('delete');
-
+            Route::post('/{user}/funds', 'manageBalance')->name('adjust.balance');
+            Route::post('/{user}/email', 'sendEmail')->name('send.email');
+            Route::post('/{user}/reset/password', 'resetPassword')->name('reset.password');
+            Route::post('/{user}/block', 'suspend')->name('suspend');
+            Route::post('/{user}/unblock', 'unsuspend')->name('unsuspend');
+            Route::delete('/{user}/delete', 'destroy')->name('destroy');
             Route::post('/{user}/login', 'loginAsUser')->name('login');
             Route::patch('/{user}/update/wallet/status', 'updateWalletStatus')->name('update.wallet.status');
         });

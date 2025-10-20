@@ -6,7 +6,6 @@
         FileText,
         UserIcon,
         Mail,
-        UserPlus,
         LogOut,
         CreditCard,
         Send,
@@ -16,8 +15,6 @@
         ChevronUp,
         Wallet,
         Settings,
-        Users2,
-        UserX,
     } from 'lucide-vue-next';
     import { route } from 'ziggy-js';
     import TextLink from '@/components/TextLink.vue';
@@ -28,25 +25,22 @@
     const user = computed(() => page.props.auth.user);
 
     const isTransactionsOpen = ref(false);
-    const isUsersOpen = ref(false);
 
     const navigation = [
         { name: "Dashboard", href: "admin.dashboard", icon: LayoutDashboard },
     ];
 
     const gatewaysNavigation = [
-        { name: "Connected Wallets", href: "admin.wallets.index", icon: Wallet },
-        { name: "Crypto Methods", href: "admin.payments.index", icon: Shield },
+        { name: "Connected Wallets", href: "admin.wallet.index", icon: Wallet },
+        { name: "Crypto Methods", href: "admin.dashboard", icon: Shield },
     ];
 
-    const userSubRoutes = [
-        { name: "All Users", href: "admin.users.index", icon: Users2 },
-        { name: "Create New User", href: "admin.users.create", icon: UserPlus },
-        { name: "Suspend/Ban List", href: "admin.users.banned", icon: UserX },
+    const userNavigation = [
+        { name: "Manage Users", href: "admin.users.index", icon: Users },
     ];
 
     const transactionSubRoutes = [
-        { name: "All Transactions", href: "admin.transactions.index", icon: CreditCard },
+        { name: "All Transactions", href: "admin.dashboard", icon: CreditCard },
         { name: "Send Operations", href: "admin.send.index", icon: Send },
         { name: "Receive Operations", href: "admin.receive.index", icon: Download },
         { name: "Swap/Trade Logs", href: "admin.swap.index", icon: Repeat }
@@ -54,7 +48,7 @@
 
     const adminToolsNavigation = [
         { name: "KYC Submissions", href: "admin.kyc.index", icon: FileText },
-        { name: "Send Notifications", href: "admin.users.email", icon: Mail }
+        { name: "Send Notifications", href: "admin.dashboard", icon: Mail }
     ];
 
     const bottomNavigation = [
@@ -65,21 +59,16 @@
     const isKycActive = computed(() => route().current('admin.kyc.*'));
     const isSendNotifsActive = computed(() => route().current('admin.users.email'));
     const isConnectedWalletsActive = computed(() => route().current('admin.wallets.*'));
+    const isUsersActive = computed(() => route().current('admin.users.*'));
+
     const isActive = (href: string) => route().current(href);
 
     const isTransactionGroupActive = computed(() => {
         return transactionSubRoutes.some(item => route().current(item.href));
     });
 
-    const isUserGroupActive = computed(() => {
-        return userSubRoutes.some(item => route().current(item.href));
-    });
-
     if (isTransactionGroupActive.value) {
         isTransactionsOpen.value = true;
-    }
-    if (isUserGroupActive.value) {
-        isUsersOpen.value = true;
     }
 </script>
 
@@ -98,7 +87,7 @@
                 <div class="margin-top">
                     <template v-for="item in navigation" :key="item.name">
                         <TextLink
-                            :href="route('admin.dashboard')"
+                            :href="route(item.href)"
                             class="flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200"
                             :class="[
                                 (isActive(item.href) ? 'bg-sidebar-accent text-sidebar-foreground' : 'text-sidebar-foreground/70 hover:bg-sidebar-accent/30')
@@ -115,7 +104,7 @@
                 <div class="margin-top">
                     <template v-for="item in gatewaysNavigation" :key="item.name">
                         <TextLink
-                            :href="route('admin.dashboard')"
+                            :href="route(item.href)"
                             class="flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200"
                             :class="[
                                 (item.name === 'Connected Wallets' && isConnectedWalletsActive) ||
@@ -127,34 +116,21 @@
                     </template>
                 </div>
 
-                <li class="menu-title pt-1"><span data-key="t-users" class="text-xs font-semibold uppercase text-muted-foreground">User Management</span></li>
+                <li class="menu-title pt-1"><span data-key="t-users" class="text-xs font-semibold uppercase text-muted-foreground">Users</span></li>
                 <div class="margin-top">
-                    <button
-                        @click="isUsersOpen = !isUsersOpen"
-                        class="w-full flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200 cursor-pointer"
-                        :class="[
-                            isUserGroupActive ? 'bg-sidebar-accent text-sidebar-foreground' : 'text-sidebar-foreground/70 hover:bg-sidebar-accent/30'
-                        ]">
-                        <Users class="mr-3 h-4 w-4 text-sidebar-foreground/70" />
-                        Manage Users
-                        <component :is="isUsersOpen ? ChevronUp : ChevronDown" class="ml-auto h-4 w-4 transition-transform duration-200" />
-                    </button>
-
-                    <div v-if="isUsersOpen" class="mt-2 space-y-1 pl-6 animate-fadeIn">
+                    <template v-for="item in userNavigation" :key="item.name">
                         <TextLink
-                            v-for="subItem in userSubRoutes"
-                            :key="subItem.name"
-                            :href="route(subItem.href)"
-                            class="flex items-center px-3 py-2 text-sm rounded-lg transition-all duration-200"
+                            :href="route(item.href)"
+                            class="flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200"
                             :class="[
-                                isActive(subItem.href)
-                                    ? 'bg-sidebar-accent text-sidebar-foreground font-semibold'
+                                isUsersActive || isActive(item.href)
+                                    ? 'bg-sidebar-accent text-sidebar-foreground'
                                     : 'text-sidebar-foreground/70 hover:bg-sidebar-accent/30'
                             ]">
-                            <component :is="subItem.icon" class="mr-3 h-4 w-4 text-sidebar-foreground/70" />
-                            {{ subItem.name }}
+                            <component :is="item.icon" class="mr-3 h-4 w-4 text-sidebar-foreground/70" />
+                            {{ item.name }}
                         </TextLink>
-                    </div>
+                    </template>
                 </div>
 
                 <li class="menu-title pt-1">
@@ -177,7 +153,7 @@
                         <TextLink
                             v-for="subItem in transactionSubRoutes"
                             :key="subItem.name"
-                            :href="route('admin.dashboard')"
+                            :href="route(subItem.href)"
                             class="flex items-center px-3 py-2 text-sm rounded-lg transition-all duration-200"
                             :class="[
                                 isActive(subItem.href)
@@ -197,7 +173,7 @@
                 <div class="margin-top">
                     <template v-for="item in adminToolsNavigation" :key="item.name">
                         <TextLink
-                            :href="route('admin.dashboard')"
+                            :href="route(item.href)"
                             class="flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200"
                             :class="[
                                 (item.name === 'KYC Submissions' && isKycActive) ||

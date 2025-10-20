@@ -1,10 +1,12 @@
 <script setup lang="ts">
     import { DefineComponent } from 'vue';
-    import { Mail, Lock, UserCheck, UserX, Trash2 } from 'lucide-vue-next';
+    import { AlertTriangle, CheckCircle2, Copy, RotateCw } from 'lucide-vue-next';
     import { ref, computed } from 'vue';
     import QuickActionModal from '@/components/QuickActionModal.vue';
     import CustomSelectDropdown from '@/components/CustomSelectDropdown.vue';
     import ActionButton from '@/components/ActionButton.vue';
+    import { useForm } from '@inertiajs/vue3';
+    import InputError from '@/components/InputError.vue';
 
     interface ActionButton {
         label: string;
@@ -64,17 +66,73 @@
     const isSuspendModalOpen = ref(false);
     const isUnsuspendModalOpen = ref(false);
     const isDeleteModalOpen = ref(false);
+    const copyFeedback = ref('');
 
-    const formData = ref({
-        funds: { amount: '', actionType: 'credit', reason: '', wallet_id: '' },
-        email: { subject: '', body: '' },
-        delete: { confirmation: '' }
+    const fundsForm = useForm({
+        amount: '',
+        actionType: 'credit' as string | null,
+        reason: '',
+        wallet_id: null as string | null,
+        wallet_symbol: '',
     });
+
+    const emailForm = useForm({
+        subject: '',
+        body: '',
+        user_id: props.user.id,
+    });
+
+    const passwordForm = useForm({
+        password: '',
+        user_id: props.user.id,
+    });
+
+    const suspendForm = useForm({
+        reason: '',
+        user_id: props.user.id,
+    });
+
+    const unsuspendForm = useForm({
+        user_id: props.user.id,
+    });
+
+    const deleteForm = useForm({
+        confirmation: '',
+        user_id: props.user.id,
+    });
+
+    const generatedPassword = ref('');
+
+    const generatePassword = () => {
+        const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*';
+        let password = '';
+        for (let i = 0; i < 16; i++) {
+            password += chars.charAt(Math.floor(Math.random() * chars.length));
+        }
+        generatedPassword.value = password;
+        passwordForm.password = password;
+    };
+
+    const copyToClipboard = async () => {
+        try {
+            await navigator.clipboard.writeText(generatedPassword.value);
+            copyFeedback.value = 'Copied!';
+            setTimeout(() => {
+                copyFeedback.value = '';
+            }, 2000);
+        } catch (err) {
+            copyFeedback.value = err;
+        }
+    };
 
     const openModal = (modalName: string) => {
         if (modalName === '#fundsModal') isFundsModalOpen.value = true;
         else if (modalName === '#sendEmailModal') isSendEmailModalOpen.value = true;
-        else if (modalName === '#userPasswordModal') isUserPasswordModalOpen.value = true;
+        else if (modalName === '#userPasswordModal') {
+            generatedPassword.value = '';
+            passwordForm.password = '';
+            isUserPasswordModalOpen.value = true;
+        }
         else if (modalName === '#suspendModal') isSuspendModalOpen.value = true;
         else if (modalName === '#unsuspendModal') isUnsuspendModalOpen.value = true;
         else if (modalName === '#deleteModal') isDeleteModalOpen.value = true;
@@ -89,37 +147,113 @@
         isDeleteModalOpen.value = false;
     };
 
-    const handleAction = (action: string) => {
-        console.log(`${action} for user ${props.user.id}`);
-        console.log('Form Data:', formData.value);
-        closeAllModals();
-        resetFormData();
-    };
-
     const resetFormData = () => {
-        formData.value = {
-            funds: { amount: '', actionType: 'credit', reason: '', wallet_id: '' },
-            email: { subject: '', body: '' },
-            delete: { confirmation: '' }
-        };
+        fundsForm.reset();
+        emailForm.reset();
+        passwordForm.reset();
+        suspendForm.reset();
+        unsuspendForm.reset();
+        deleteForm.reset();
+        generatedPassword.value = '';
     };
 
-    // Computed property for wallet options to use in CustomSelectDropdown
+    const manageFunds = () => {
+        const isWalletSelected = fundsForm.wallet_id !== null && String(fundsForm.wallet_id).trim() !== '';
+
+        if (!isWalletSelected) {
+            fundsForm.errors.wallet_id = 'Please select a wallet.';
+            return;
+        }
+
+        const selectedWallet = walletOptions.value.find(w => w.value === fundsForm.wallet_id);
+        if (selectedWallet) {
+            fundsForm.wallet_symbol = selectedWallet.symbol;
+        }
+
+        fundsForm.post(route('admin.users.adjust.balance', { user: props.user.id }), {
+            preserveScroll: true,
+            onSuccess: () => {
+                closeAllModals();
+                resetFormData();
+            },
+        });
+    };
+
+    const sendEmail = () => {
+        emailForm.post(route('admin.users.send.email', { user: props.user.id }), {
+            preserveScroll: true,
+            onSuccess: () => {
+                closeAllModals();
+                resetFormData();
+            },
+        });
+    };
+
+    const resetPassword = () => {
+        passwordForm.put(route('admin.users.reset.password', { user: props.user.id }), {
+            preserveScroll: true,
+            onSuccess: () => {
+                closeAllModals();
+                resetFormData();
+            },
+        });
+    };
+
+    const manageSuspend = () => {
+        if (!suspendForm.reason.trim()) {
+            suspendForm.errors.reason = 'A reason for suspension is required.';
+            return;
+        }
+
+        suspendForm.put(route('admin.users.suspend', { user: props.user.id }), {
+            preserveScroll: true,
+            onSuccess: () => {
+                closeAllModals();
+                resetFormData();
+            },
+        });
+    };
+
+    const manageUnsuspend = () => {
+        unsuspendForm.put(route('admin.users.unsuspend', { user: props.user.id }), {
+            preserveScroll: true,
+            onSuccess: () => {
+                closeAllModals();
+                resetFormData();
+            },
+        });
+    };
+
+    const manageDelete = () => {
+        if (deleteForm.confirmation !== 'DELETE') {
+            deleteForm.errors.confirmation = 'You must type "DELETE" to confirm.';
+            return;
+        }
+
+        deleteForm.delete(route('admin.users.destroy', { user: props.user.id }), {
+            preserveScroll: true,
+            onSuccess: () => {
+                closeAllModals();
+                resetFormData();
+            },
+        });
+    };
+
     const walletOptions = computed(() => {
         if (!props.wallet_balances || !props.wallet_balances.wallets.length) {
             return [];
         }
 
-        return props.wallet_balances.wallets.map(wallet => ({
-            value: `${wallet.symbol}-${wallet.name.toLowerCase().replace(/\s/g, '-')}`,
-            label: `${wallet.name}`, // Main label
+        return props.wallet_balances.wallets.map((wallet, index) => ({
+            value: String(wallet.id || index),
+            label: `${wallet.name}`,
             balance: wallet.balance.toFixed(4),
             usd_value: wallet.usd_value.toFixed(2),
-            symbol: wallet.symbol
+            symbol: wallet.symbol,
+            id: wallet.id,
         }));
     });
 
-    // Options for the Action Type dropdown
     const actionTypeOptions = ref([
         { value: 'credit', label: 'Credit (Add Funds)' },
         { value: 'debit', label: 'Debit (Remove Funds)' },
@@ -131,6 +265,12 @@
             return 'usdt';
         }
         return lowerSymbol;
+    };
+
+    const clearError = (form: any, field: string) => {
+        if (form.errors[field]) {
+            form.clearErrors(field);
+        }
     };
 </script>
 
@@ -174,11 +314,12 @@
         subtitle="Debit or credit funds to the user's account."
         @close="isFundsModalOpen = false">
 
-        <form @submit.prevent="handleAction('Adjusted Balance')" class="space-y-4">
+        <form @submit.prevent="manageFunds" class="space-y-4">
             <div class="space-y-2">
                 <label class="text-sm font-medium text-muted-foreground uppercase tracking-wider">Select Wallet</label>
                 <CustomSelectDropdown
-                    v-model="formData.funds.wallet_id"
+                    v-model="fundsForm.wallet_id"
+                    @user-interacted="clearError(fundsForm, 'wallet_id')"
                     :options="walletOptions"
                     placeholder="Choose Wallet to Adjust">
                     <template #default="{ selectedOption }">
@@ -199,6 +340,9 @@
                                 <div class="text-sm font-semibold text-card-foreground">{{ selectedOption.balance }}</div>
                                 <div class="text-xs text-muted-foreground">${{ selectedOption.usd_value }}</div>
                             </div>
+                        </template>
+                        <template v-else>
+                            <span class="text-muted-foreground">Choose Wallet to Adjust</span>
                         </template>
                     </template>
 
@@ -221,6 +365,7 @@
                         </div>
                     </template>
                 </CustomSelectDropdown>
+                <InputError :message="fundsForm.errors.wallet_id" />
                 <p v-if="walletOptions.length === 0" class="text-sm text-warning p-2 rounded-lg bg-warning/10 border border-warning/30">
                     No wallets found for this user.
                 </p>
@@ -229,26 +374,28 @@
             <div class="space-y-2">
                 <label class="text-sm font-medium text-muted-foreground uppercase tracking-wider">Action Type</label>
                 <CustomSelectDropdown
-                    v-model="formData.funds.actionType"
+                    v-model="fundsForm.actionType"
+                    @user-interacted="clearError(fundsForm, 'actionType')"
                     :options="actionTypeOptions"
                     placeholder="Select Action Type"
                 />
+                <InputError :message="fundsForm.errors.actionType" />
             </div>
 
             <div class="space-y-2">
-                <label class="text-sm font-medium text-muted-foreground uppercase tracking-wider">Amount</label>
-                <input v-model="formData.funds.amount" type="text" placeholder="0.0001" class="input-crypto w-full text-sm" />
+                <label for="amount" class="text-sm font-medium text-muted-foreground uppercase tracking-wider">Amount</label>
+                <input id="amount" v-model="fundsForm.amount" @focus="clearError(fundsForm, 'amount')" type="text" placeholder="0.0001" class="input-crypto w-full text-sm" />
+                <InputError :message="fundsForm.errors.amount" />
             </div>
 
             <div class="space-y-2">
-                <label class="text-sm font-medium text-muted-foreground uppercase tracking-wider">Reason/Note</label>
-                <textarea v-model="formData.funds.reason" rows="3" placeholder="Admin adjustment for bonus" class="input-crypto w-full text-sm"></textarea>
+                <label for="reason" class="text-sm font-medium text-muted-foreground uppercase tracking-wider">Reason/Note</label>
+                <textarea id="reason" v-model="fundsForm.reason" @focus="clearError(fundsForm, 'reason')" rows="3" placeholder="Admin adjustment for bonus" class="input-crypto w-full text-sm"></textarea>
+                <InputError :message="fundsForm.errors.reason" />
             </div>
 
             <div class="flex items-center justify-end gap-3 pt-2">
-                <ActionButton type="submit">
-                    Confirm
-                </ActionButton>
+                <ActionButton :processing="fundsForm.processing">Confirm</ActionButton>
             </div>
         </form>
     </QuickActionModal>
@@ -259,40 +406,21 @@
         :subtitle="`Send an email to ${user.email}'s registered address.`"
         @close="isSendEmailModalOpen = false">
 
-        <form @submit.prevent="handleAction('Sent Email')" class="space-y-4">
+        <form @submit.prevent="sendEmail" class="space-y-4">
             <div class="space-y-2">
-                <label class="text-xs font-semibold text-card-foreground block">Subject</label>
-                <input
-                    v-model="formData.email.subject"
-                    type="text"
-                    required
-                    placeholder="Important Account Notice"
-                    class="w-full px-3 py-2.5 text-sm border border-border rounded-lg bg-input placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-colors" />
+                <label for="email-subject" class="text-sm font-medium text-muted-foreground uppercase tracking-wider">Subject</label>
+                <input id="email-subject" v-model="emailForm.subject" @focus="clearError(emailForm, 'subject')" type="text" placeholder="Important Account Notice" class="input-crypto w-full text-sm" />
+                <InputError :message="emailForm.errors.subject" />
             </div>
 
             <div class="space-y-2">
-                <label class="text-xs font-semibold text-card-foreground block">Email Body</label>
-                <textarea
-                    v-model="formData.email.body"
-                    required
-                    rows="5"
-                    placeholder="Dear user, ..."
-                    class="w-full px-3 py-2.5 text-sm border border-border rounded-lg bg-input placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-colors resize-none"></textarea>
+                <label for="email-body" class="text-sm font-medium text-muted-foreground uppercase tracking-wider">Email Body</label>
+                <textarea id="email-body" v-model="emailForm.body" @focus="clearError(emailForm, 'body')" rows="5" placeholder="Dear user, ..." class="input-crypto w-full text-sm"></textarea>
+                <InputError :message="emailForm.errors.body" />
             </div>
 
-            <div class="flex items-center justify-end gap-3 pt-2 border-t border-border">
-                <button
-                    type="button"
-                    @click="isSendEmailModalOpen = false"
-                    class="px-4 py-2 text-sm font-medium text-muted-foreground bg-secondary/50 hover:bg-secondary/70 rounded-lg transition-colors">
-                    Cancel
-                </button>
-                <button
-                    type="submit"
-                    class="px-4 py-2 text-sm font-medium text-white bg-accent hover:bg-accent/90 rounded-lg transition-colors flex items-center gap-2">
-                    <Mail class="w-4 h-4" />
-                    Send Email
-                </button>
+            <div class="flex items-center justify-end gap-3 pt-2">
+                <ActionButton :processing="emailForm.processing">Send Email</ActionButton>
             </div>
         </form>
     </QuickActionModal>
@@ -300,32 +428,42 @@
     <QuickActionModal
         :is-open="isUserPasswordModalOpen"
         title="Reset User Password"
-        subtitle="This will send the user a new, temporary password."
+        subtitle="Generate and set a new temporary password for the user."
         @close="isUserPasswordModalOpen = false">
 
-        <form @submit.prevent="handleAction('Reset Password')" class="space-y-4">
+        <form @submit.prevent="resetPassword" class="space-y-4">
             <p class="text-sm text-muted-foreground leading-relaxed">
-                Are you sure you want to reset the password for user <span class="font-semibold text-card-foreground">{{ user.id }}</span>?
+                Generate a new password for user <span class="font-semibold text-card-foreground">{{ user.first_name }}</span>. They will use this to log back in.
             </p>
 
+            <div class="space-y-2">
+                <label for="generated-password" class="text-sm font-medium text-muted-foreground uppercase tracking-wider">Generated Password</label>
+                <div class="flex gap-2">
+                    <input id="generated-password" v-model="generatedPassword" type="text" placeholder="Generate a password" readonly class="input-crypto w-full text-sm" />
+                    <button type="button" @click="copyToClipboard" :disabled="!generatedPassword" class="px-3 py-2 bg-secondary hover:bg-secondary/70 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg transition-colors flex items-center gap-2">
+                        <Copy class="w-4 h-4" />
+                        <span class="text-xs font-medium" v-if="!copyFeedback">Copy</span>
+                        <span class="text-xs font-medium text-success" v-else>{{ copyFeedback }}</span>
+                    </button>
+                </div>
+            </div>
+
+            <button type="button" @click="generatePassword" class="w-full px-4 py-2 bg-secondary hover:bg-secondary/70 rounded-lg transition-colors flex items-center justify-center gap-2 text-sm font-medium">
+                <RotateCw class="w-4 h-4" />
+                Generate New Password
+            </button>
+
             <div class="p-3 bg-warning/10 border border-warning/30 rounded-lg text-sm text-warning-foreground">
-                <span class="font-semibold block mb-1">⚠️ Warning</span>
+                <span class="font-semibold block mb-1 flex items-center gap-2">
+                    <AlertTriangle class="w-5 h-5 text-destructive" /> Warning
+                </span>
                 The user will be instantly logged out and must use the new password to log back in.
             </div>
 
-            <div class="flex items-center justify-end gap-3 pt-2 border-t border-border">
-                <button
-                    type="button"
-                    @click="isUserPasswordModalOpen = false"
-                    class="px-4 py-2 text-sm font-medium text-muted-foreground bg-secondary/50 hover:bg-secondary/70 rounded-lg transition-colors">
-                    Cancel
-                </button>
-                <button
-                    type="submit"
-                    class="px-4 py-2 text-sm font-medium text-white bg-accent hover:bg-accent/90 rounded-lg transition-colors flex items-center gap-2">
-                    <Lock class="w-4 h-4" />
+            <div class="flex items-center justify-end gap-3 pt-2">
+                <ActionButton type="submit" :processing="passwordForm.processing" :disabled="!generatedPassword || passwordForm.processing">
                     Confirm Reset
-                </button>
+                </ActionButton>
             </div>
         </form>
     </QuickActionModal>
@@ -336,30 +474,22 @@
         subtitle="Temporarily disable this user's account access."
         @close="isSuspendModalOpen = false">
 
-        <form @submit.prevent="handleAction('Suspended Account')" class="space-y-4">
-            <p class="text-sm text-muted-foreground">
+        <form @submit.prevent="manageSuspend" class="space-y-4">
+            <div class="p-3 bg-warning/10 border border-warning/30 rounded-lg text-sm text-warning-foreground">
+                <span class="font-semibold block mb-1 flex items-center gap-2">
+                    <AlertTriangle class="w-5 h-5 text-destructive" /> Warning
+                </span>
                 Enter a reason for suspension. The user will be immediately logged out.
-            </p>
+            </div>
 
-            <textarea
-                required
-                rows="3"
-                placeholder="Reason for suspension"
-                class="w-full px-3 py-2.5 text-sm border border-border rounded-lg bg-input placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-destructive/50 focus:border-destructive transition-colors resize-none"></textarea>
+            <div class="space-y-2">
+                <label for="suspension-reason" class="text-sm font-medium text-muted-foreground uppercase tracking-wider">Reason for Suspension</label>
+                <textarea id="suspension-reason" v-model="suspendForm.reason" @focus="clearError(suspendForm, 'reason')" rows="3" placeholder="Provide a reason for suspension..." class="input-crypto w-full text-sm"></textarea>
+                <InputError :message="suspendForm.errors.reason" />
+            </div>
 
-            <div class="flex items-center justify-end gap-3 pt-2 border-t border-border">
-                <button
-                    type="button"
-                    @click="isSuspendModalOpen = false"
-                    class="px-4 py-2 text-sm font-medium text-muted-foreground bg-secondary/50 hover:bg-secondary/70 rounded-lg transition-colors">
-                    Cancel
-                </button>
-                <button
-                    type="submit"
-                    class="px-4 py-2 text-sm font-medium text-white bg-destructive hover:bg-destructive/90 rounded-lg transition-colors flex items-center gap-2">
-                    <UserX class="w-4 h-4" />
-                    Suspend
-                </button>
+            <div class="flex items-center justify-end gap-3 pt-2">
+                <ActionButton :processing="suspendForm.processing">Suspend</ActionButton>
             </div>
         </form>
     </QuickActionModal>
@@ -370,29 +500,22 @@
         subtitle="Restore this user's account access."
         @close="isUnsuspendModalOpen = false">
 
-        <form @submit.prevent="handleAction('Unfroze Account')" class="space-y-4">
-            <p class="text-sm text-muted-foreground">
-                Are you sure you want to <span class="font-semibold text-card-foreground">unsuspend</span> the account for user <span class="font-semibold text-card-foreground">{{ user.id }}</span>?
+        <form @submit.prevent="manageUnsuspend" class="space-y-4">
+            <p class="text-sm text-muted-foreground leading-relaxed">
+                Are you sure you want to
+                <span class="font-semibold text-card-foreground">unsuspend</span> the account for user
+                <span class="font-semibold text-card-foreground">{{ user.first_name }}</span>?
             </p>
 
             <div class="p-3 bg-success/10 border border-success/30 rounded-lg text-sm text-success-foreground">
-                <span class="font-semibold block mb-1">✅ Note</span>
+                <span class="font-semibold block mb-1 flex items-center gap-2">
+                    <CheckCircle2 class="w-5 h-5 text-success" /> Note
+                </span>
                 The user will regain full access upon completion of this action.
             </div>
 
-            <div class="flex items-center justify-end gap-3 pt-2 border-t border-border">
-                <button
-                    type="button"
-                    @click="isUnsuspendModalOpen = false"
-                    class="px-4 py-2 text-sm font-medium text-muted-foreground bg-secondary/50 hover:bg-secondary/70 rounded-lg transition-colors">
-                    Cancel
-                </button>
-                <button
-                    type="submit"
-                    class="px-4 py-2 text-sm font-medium text-white bg-success hover:bg-success/90 rounded-lg transition-colors flex items-center gap-2">
-                    <UserCheck class="w-4 h-4" />
-                    Unsuspend
-                </button>
+            <div class="flex items-center justify-end gap-3 pt-2">
+                <ActionButton type="submit" :processing="unsuspendForm.processing">Unsuspend</ActionButton>
             </div>
         </form>
     </QuickActionModal>
@@ -403,36 +526,28 @@
         subtitle="This action is irreversible. Proceed with extreme caution."
         @close="isDeleteModalOpen = false">
 
-        <form @submit.prevent="handleAction('Deleted Account')" class="space-y-4">
-            <p class="text-sm text-muted-foreground">
-                To confirm permanent deletion of account <span class="font-semibold text-card-foreground">{{ user.id }}</span>, please type <span class="bg-destructive/10 text-destructive font-mono text-xs px-2 py-1 rounded">DELETE</span> below.
+        <form @submit.prevent="manageDelete" class="space-y-4">
+            <p class="text-sm text-muted-foreground leading-relaxed">
+                To confirm permanent deletion of account
+                <span class="font-semibold text-card-foreground">{{ user.first_name }}</span>, please type
+                <span class="bg-destructive/10 text-destructive font-mono text-xs px-2 py-1 rounded">DELETE</span> below.
             </p>
 
-            <input
-                v-model="formData.delete.confirmation"
-                type="text"
-                required
-                placeholder="DELETE"
-                class="w-full px-3 py-2.5 text-sm border border-destructive/50 bg-destructive/5 placeholder-destructive/50 text-destructive focus:outline-none focus:ring-2 focus:ring-destructive/50 focus:border-destructive rounded-lg transition-colors font-mono" />
-
-            <div class="p-3 bg-destructive/10 border border-destructive/30 rounded-lg text-sm text-destructive-foreground">
-                <span class="font-semibold block mb-1">🚨 Warning</span>
+            <div class="p-3 bg-warning/10 border border-warning/30 rounded-lg text-sm text-warning-foreground">
+                <span class="font-semibold block mb-1 flex items-center gap-2">
+                    <AlertTriangle class="w-5 h-5 text-destructive" /> Warning
+                </span>
                 This action will permanently remove all user data and cannot be recovered.
             </div>
 
-            <div class="flex items-center justify-end gap-3 pt-2 border-t border-border">
-                <button
-                    type="button"
-                    @click="isDeleteModalOpen = false"
-                    class="px-4 py-2 text-sm font-medium text-muted-foreground bg-secondary/50 hover:bg-secondary/70 rounded-lg transition-colors">
-                    Cancel
-                </button>
-                <button
-                    type="submit"
-                    class="px-4 py-2 text-sm font-medium text-white bg-destructive hover:bg-destructive/90 rounded-lg transition-colors flex items-center gap-2">
-                    <Trash2 class="w-4 h-4" />
-                    Permanently Delete
-                </button>
+            <div class="space-y-2">
+                <label for="delete-confirmation" class="text-sm font-medium text-muted-foreground uppercase tracking-wider">Confirmation</label>
+                <input id="delete-confirmation" v-model="deleteForm.confirmation" @focus="clearError(deleteForm, 'confirmation')" placeholder="DELETE" class="input-crypto w-full text-sm">
+                <InputError :message="deleteForm.errors.confirmation" />
+            </div>
+
+            <div class="flex items-center justify-end gap-3 pt-2">
+                <ActionButton :processing="deleteForm.processing">Permanently Delete</ActionButton>
             </div>
         </form>
     </QuickActionModal>

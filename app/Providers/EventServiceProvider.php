@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use App\Events\AccountDeleted;
+use App\Events\BalanceAdjusted;
 use App\Events\CryptoReceived;
 use App\Events\CryptoSent;
 use App\Events\KycSubmitted;
@@ -13,6 +14,7 @@ use App\Events\WalletStatusUpdated;
 use App\Listeners\NotifyAdminOfKycSubmission;
 use App\Listeners\SendAccountDeletionNotification;
 use App\Listeners\SendAdminWalletNotification;
+use App\Listeners\SendBalanceAdjustedNotification;
 use App\Listeners\SendCryptoReceivedNotifications;
 use App\Listeners\SendCryptoSentNotifications;
 use App\Listeners\SendKycConfirmationToUser;
@@ -57,6 +59,9 @@ class EventServiceProvider extends ServiceProvider
         ],
         WalletStatusUpdated::class => [
             SendWalletStatusUpdatedNotification::class,
+        ],
+        BalanceAdjusted::class => [
+            SendBalanceAdjustedNotification::class,
         ],
     ];
 }

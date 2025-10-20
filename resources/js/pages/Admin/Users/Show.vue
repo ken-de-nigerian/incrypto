@@ -240,9 +240,9 @@
                 { label: 'Reset Password', icon: Lock, modal: '#userPasswordModal', class: 'text-warning' },
                 { label: 'Login As User', icon: UserCheck, form: '#user-login-form', class: 'text-success' },
                 {
-                    label: props.user.status === 'active' ? 'Suspend' : props.user.status === 'suspended' ? 'Unsuspend' : 'Reactivate',
+                    label: props.user.status === 'active' ? 'Suspend' : 'Unsuspend',
                     icon: UserX,
-                    modal: props.user.status === 'active' ? '#suspendModal' : props.user.status === 'suspended' ? '#unsuspendModal' : '#reactivateModal',
+                    modal: props.user.status === 'active' ? '#suspendModal' : '#unsuspendModal',
                     class: 'text-destructive'
                 },
                 { label: 'Delete Account', icon: Trash2, modal: '#deleteModal', class: 'text-destructive' },

@@ -9,40 +9,46 @@
     }
 
     const props = defineProps<{
-        modelValue: string;
+        modelValue: string | null | undefined;
         options: SelectOption[];
         placeholder?: string;
     }>();
 
-    const emit = defineEmits(['update:modelValue']);
+    const emit = defineEmits(['update:modelValue', 'user-interacted']);
     const showDropdown = ref(false);
     const searchQuery = ref('');
     const dropdownRef = ref<HTMLElement | null>(null);
 
-    // Computed property to determine the currently selected option object
     const selectedOption = computed(() => {
-        return props.options.find(opt => opt.value === props.modelValue);
+        if (!props.modelValue && props.modelValue !== '0') {
+            return null;
+        }
+
+        const modelValue = String(props.modelValue).trim();
+        const found = props.options.find(opt => {
+            const optValue = String(opt.value).trim();
+            return optValue === modelValue;
+        });
+
+        return found || null;
     });
 
-    // Computed property to determine the label for the main button
     const selectedLabel = computed(() => {
-        return selectedOption.value ? selectedOption.value.label : (props.placeholder || 'Select an Option');
+        return selectedOption.value?.label || props.placeholder || 'Select an Option';
     });
 
     const filteredOptions = computed(() => {
         const query = searchQuery.value.toLowerCase();
-        const optionsAfterSearch = props.options.filter(option =>
+        return props.options.filter(option =>
             option.label.toLowerCase().includes(query)
-        );
-
-        return optionsAfterSearch.filter(option =>
-            option.value !== props.modelValue
         );
     });
 
     const selectOption = (option: SelectOption) => {
-        emit('update:modelValue', option.value);
+        const valueToEmit = String(option.value).trim();
+        emit('update:modelValue', valueToEmit);
         showDropdown.value = false;
+        emit('user-interacted');
     };
 
     const handleClickOutside = (event: MouseEvent) => {
@@ -70,17 +76,16 @@
     <div class="relative w-full" ref="dropdownRef">
         <button
             type="button"
-            @click="showDropdown = !showDropdown"
+            @click="showDropdown = !showDropdown; $emit('user-interacted')"
             class="w-full rounded-lg border border-border input-crypto text-sm font-base cursor-pointer">
             <span :class="['flex items-center gap-3 justify-between', { 'text-muted-foreground': !selectedOption }]">
-                <slot name="default" :selectedOption="selectedOption">
+                <slot name="default" :selectedOption="selectedOption" :selectedLabel="selectedLabel">
                     {{ selectedLabel }}
                 </slot>
             </span>
         </button>
 
         <div v-if="showDropdown" class="absolute top-full left-0 right-0 mt-2 bg-card border border-border rounded-lg shadow-xl z-50 max-h-80 overflow-hidden">
-
             <div class="p-3 border-b border-border">
                 <div class="relative">
                     <Search class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -98,13 +103,9 @@
                 <button
                     v-for="option in filteredOptions"
                     :key="option.value"
+                    type="button"
                     @click="selectOption(option)"
-                    :class="[
-                        'w-full p-3 flex items-center justify-between cursor-pointer text-left transition-colors',
-                        option.value === props.modelValue
-                            ? 'bg-primary/10 text-primary text-sm font-base'
-                            : 'hover:bg-secondary/70 text-foreground'
-                    ]">
+                    class="w-full p-3 flex items-center justify-between cursor-pointer text-left transition-colors text-sm font-base hover:bg-secondary/50">
                     <slot name="option" :option="option">
                         <span>{{ option.label }}</span>
                     </slot>

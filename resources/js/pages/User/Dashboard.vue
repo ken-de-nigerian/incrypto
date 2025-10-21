@@ -100,6 +100,7 @@
         userBalances: Record<string, number>;
         prices: Record<string, number>;
         portfolioChange24h: number;
+        is_admin_impersonating: number;
     }>();
 
     const selectedToken = ref<ChartToken | null>(null);
@@ -128,6 +129,19 @@
                 </div>
 
                 <div class="flex items-center gap-4">
+                    <TextLink v-if="is_admin_impersonating"
+                        :href="route('exit.user.session')"
+                        class="p-2 bg-amber-500/10 border border-amber-500/30 rounded-xl hover:bg-amber-500/20 transition-colors cursor-pointer"
+                        title="Exit Admin Mode">
+                        <span class="text-sm font-semibold text-amber-600 flex items-center gap-2">
+                            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M5.293 7.707a1 1 0 010-1.414L10 1.586l4.707 4.707a1 1 0 01-1.414 1.414L11 4.414V15a1 1 0 11-2 0V4.414L6.707 7.707a1 1 0 01-1.414 0z" clip-rule="evenodd"/>
+                                <path d="M15 12a1 1 0 100-2 1 1 0 000 2z"/>
+                            </svg>
+                            Admin Mode
+                        </span>
+                    </TextLink>
+
                     <div class="relative">
                         <SearchIcon class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                         <input type="text" placeholder="Search" class="input-crypto pl-10 pr-4 py-2" />

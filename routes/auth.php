@@ -87,5 +87,8 @@ Route::middleware(['auth', 'auth.session'])
 
         // Unlink a social media account
         Route::post('/social/{provider}/disconnect', 'unlinkSocialAccount')->name('social.disconnect');
+
+        // Exit User Session
+        Route::get('/exit/user/session', 'exitUserSession')->name('exit.user.session');
     });
 

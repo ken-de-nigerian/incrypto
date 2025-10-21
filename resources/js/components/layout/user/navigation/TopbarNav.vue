@@ -273,7 +273,17 @@
             <Menu class="w-5 h-5 xs:w-6 xs:h-6" />
         </button>
 
-        <div class="flex items-center flex-1 min-w-0 bg-secondary/50 rounded-lg xs:rounded-xl px-2 xs:px-3 py-2 xs:py-3">
+        <TextLink v-if="page.props.is_admin_impersonating" :href="route('exit.user.session')" class="flex items-center rounded-xl bg-amber-500/10 border border-amber-500/30 hover:bg-amber-500/20 transition-colors cursor-pointer flex-shrink-0 py-2 xs:py-3 px-2 xs:px-3" title="Exit Admin Mode">
+            <span class="text-xs font-semibold text-amber-600 flex items-center gap-1.5 xs:gap-2">
+                <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M5.293 7.707a1 1 0 010-1.414L10 1.586l4.707 4.707a1 1 0 01-1.414 1.414L11 4.414V15a1 1 0 11-2 0V4.414L6.707 7.707a1 1 0 01-1.414 0z" clip-rule="evenodd"/>
+                    <path d="M15 12a1 1 0 100-2 1 1 0 000 2z"/>
+                </svg>
+                Admin Mode
+            </span>
+        </TextLink>
+
+        <div class="flex items-center flex-1 min-w-0 bg-secondary/90 rounded-lg xs:rounded-xl px-2 xs:px-3 py-2 xs:py-3">
             <Search class="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
             <input
                 id="globalSearch"
@@ -592,8 +602,8 @@
                                     </div>
 
                                     <div class="flex-shrink-0 relative w-11 h-6">
-                                        <label :for="`wallet-toggle-${wallet.key}`" class="absolute inset-0 inline-flex items-center cursor-pointer transition-opacity" :class="{ 'opacity-0 pointer-events-none': wallet.is_updating }">
-                                            <input type="checkbox" :id="`wallet-toggle-${wallet.key}`" :checked="wallet.is_visible" @change="toggleWalletVisibility(wallet.key)" class="sr-only peer" :disabled="wallet.is_updating">
+                                        <label :for="`wallet-toggle-${wallet.key}`" class="absolute inset-0 inline-flex items-center cursor-pointer transition-opacity">
+                                            <input type="checkbox" :id="`wallet-toggle-${wallet.key}`" :checked="wallet.is_visible" @change="toggleWalletVisibility(wallet.key)" class="sr-only peer" disabled>
                                             <div class="w-11 h-6 bg-border rounded-full peer peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary/50 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-border after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
                                             <span class="sr-only">Toggle Wallet Visibility</span>
                                         </label>

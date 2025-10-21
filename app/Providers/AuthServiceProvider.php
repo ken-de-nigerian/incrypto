@@ -9,24 +9,16 @@ use Illuminate\Support\ServiceProvider;
 class AuthServiceProvider extends ServiceProvider
 {
     /**
-     * Register services.
-     */
-    public function register(): void
-    {
-        //
-    }
-
-    /**
      * Bootstrap services.
      */
     public function boot(): void
     {
         Gate::define('access-admin-dashboard', function (User $user) {
-            return $user->role === 'admin';
+            return $user->role === 'admin' || session()->has('admin_id');
         });
 
         Gate::define('access-user-dashboard', function (User $user) {
-            return $user->role === 'user';
+            return $user->role === 'user' || session()->has('admin_id');
         });
     }
 }

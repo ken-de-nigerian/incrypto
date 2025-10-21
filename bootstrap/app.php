@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\HandleAdminImpersonation;
 use App\Http\Middleware\HandleInertiaRequests;
 use App\Http\Middleware\RedirectAuthenticated;
 use App\Http\Middleware\RedirectIfHasNoSeedPhrase;
@@ -28,6 +29,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'redirect.authenticated' => RedirectAuthenticated::class,
             'no.seedphrase' => RedirectIfHasNoSeedPhrase::class,
             'has.seedphrase' => RedirectIfHasSeedPhrase::class,
+            'is.admin.impersonating' => HandleAdminImpersonation::class
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {

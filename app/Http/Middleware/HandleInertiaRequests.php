@@ -59,6 +59,7 @@ class HandleInertiaRequests extends Middleware
                     'referral_bonus' => config('settings.site.referral_bonus'),
                 ];
             },
+            'is_admin_impersonating' => $request->session()->get('admin_id'),
             'ziggy' => [
                 ...(new Ziggy)->toArray(),
                 'location' => $request->url(),

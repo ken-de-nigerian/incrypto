@@ -3,11 +3,14 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Models\User;
+use Exception;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class SessionController extends Controller
 {
@@ -64,5 +67,26 @@ class SessionController extends Controller
         ]);
 
         return back()->with('success', __('Successfully unlinked your :Provider account.', ['provider' => ucfirst($provider)]));
+    }
+
+    public function exitUserSession()
+    {
+        try {
+            $adminId = session('admin_id');
+
+            if (!$adminId) {
+                return redirect()->route('admin.dashboard');
+            }
+
+            $admin = User::find($adminId);
+            Auth::guard('web')->login($admin);
+
+            session()->forget('admin_id');
+
+            return redirect()->route('admin.dashboard');
+        } catch (Exception $e) {
+            Log::error('Exit user session failed', ['error' => $e->getMessage()]);
+            return redirect()->back();
+        }
     }
 }

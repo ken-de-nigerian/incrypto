@@ -5,11 +5,13 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\AdjustUserBalanceRequest;
 use App\Http\Requests\DeleteAccountRequest;
+use App\Http\Requests\RegisterRequest;
 use App\Http\Requests\ResetUserPasswordRequest;
 use App\Http\Requests\sendEmailRequest;
 use App\Http\Requests\SuspendUserRequest;
 use App\Http\Requests\UpdateWalletStatusRequest;
 use App\Services\AdjustUserBalanceService;
+use App\Services\AuthService;
 use App\Services\DeleteUserAccountService;
 use App\Services\GatewayHandlerService;
 use App\Services\MarketDataService;
@@ -46,7 +48,7 @@ class AdminUserController extends Controller
 
         $usersQuery = User::query()
             ->where('role', '!=', 'admin')
-            ->select('id', 'first_name', 'last_name', 'email', 'status')
+            ->select('id', 'first_name', 'last_name', 'email', 'status', 'social_login_provider')
             ->orderBy('id', 'desc');
 
         if ($search) {
@@ -73,6 +75,24 @@ class AdminUserController extends Controller
                 'status' => $status,
             ]
         ]);
+    }
+
+    /**
+     * @throws Throwable
+     */
+    public function store(RegisterRequest $request, AuthService $authService)
+    {
+        try {
+
+            // Simulate referrer data for now
+            $userData = $request->validated();
+            $userData['ref_by'] = null;
+
+            $authService->registerUser($userData);
+            return redirect()->back()->with('success', __("Account for $request->first_name $request->last_name has been created successfully."));
+        } catch (Exception $e) {
+            return redirect()->back()->with('error', __($e->getMessage()));
+        }
     }
 
     public function show(User $user)

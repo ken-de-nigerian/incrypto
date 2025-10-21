@@ -9,16 +9,18 @@ class RegisterRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
-     * We'll use this to check for the verified email session.
      */
     public function authorize(): bool
     {
+        if (auth()->check() && auth()->user()->role === 'admin') {
+            return true;
+        }
+
         return $this->session()->has('verified_email');
     }
 
     /**
      * Prepare the data for validation.
-     * This is where we'll sanitize the phone number.
      */
     protected function prepareForValidation(): void
     {
@@ -34,16 +36,22 @@ class RegisterRequest extends FormRequest
      */
     public function rules(): array
     {
-        $verifiedEmail = $this->session()->get('verified_email');
-
-        return [
+        $isAdminSubmission = auth()->check() && auth()->user()->role === 'admin';
+        $rules = [
             'first_name' => 'required|string|max:255',
             'last_name' => 'required|string|max:255',
-            'email' => 'required|string|email|max:255|unique:users,email|in:' . $verifiedEmail,
+            'email' => 'required|string|email|max:255|unique:users,email',
             'phone_number' => 'required|string|min:10|max:255|unique:users,phone_number',
             'country' => 'required|string|max:255',
             'password' => ['required', 'confirmed', Password::min(8)->mixedCase()->numbers()],
         ];
+
+        if (!$isAdminSubmission) {
+            $verifiedEmail = $this->session()->get('verified_email');
+            $rules['email'] .= '|in:' . $verifiedEmail;
+        }
+
+        return $rules;
     }
 
     /**

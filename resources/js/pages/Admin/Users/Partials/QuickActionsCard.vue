@@ -7,11 +7,10 @@
     import ActionButton from '@/components/ActionButton.vue';
     import { useForm } from '@inertiajs/vue3';
     import InputError from '@/components/InputError.vue';
+    import("@vueup/vue-quill/dist/vue-quill.snow.css");
 
     const QuillEditor = defineAsyncComponent(() =>
         import("@vueup/vue-quill").then(module => {
-            // Import CSS only when QuillEditor is loaded
-            import("@vueup/vue-quill/dist/vue-quill.snow.css");
             return module.QuillEditor;
         })
     );

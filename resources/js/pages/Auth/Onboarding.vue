@@ -201,7 +201,7 @@
     }
 
     .vue-tel-input-custom .vti__dropdown:hover {
-        /* UPDATED: Change to explicit opacity utility hsl(var(--muted) / .9) */
+        /* UPDATED: Change to explicit opacity utility bg-muted/90 */
         background-color: hsl(var(--muted) / .9);
     }
 
@@ -223,7 +223,7 @@
 
     .vue-tel-input-custom .vti__dropdown-item:hover,
     .vue-tel-input-custom .vti__dropdown-item.highlighted {
-        /* UPDATED: Change to explicit opacity utility hsl(var(--muted) / .9) */
+        /* UPDATED: Change to explicit opacity utility bg-muted/90 */
         background-color: hsl(var(--muted) / .9);
     }
 

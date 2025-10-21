@@ -9,12 +9,14 @@ use App\Http\Requests\RegisterRequest;
 use App\Http\Requests\ResetUserPasswordRequest;
 use App\Http\Requests\sendEmailRequest;
 use App\Http\Requests\SuspendUserRequest;
+use App\Http\Requests\UpdateProfileRequest;
 use App\Http\Requests\UpdateWalletStatusRequest;
 use App\Services\AdjustUserBalanceService;
 use App\Services\AuthService;
 use App\Services\DeleteUserAccountService;
 use App\Services\GatewayHandlerService;
 use App\Services\MarketDataService;
+use App\Services\ProfileService;
 use App\Services\resetPasswordService;
 use App\Services\SendEmailService;
 use App\Services\SuspendUserService;
@@ -124,6 +126,29 @@ class AdminUserController extends Controller
                 'total' => $sentCryptosCollection->count(),
             ],
         ]);
+    }
+
+    public function edit(User $user, Request $request)
+    {
+        return Inertia::render('Admin/Users/Edit', [
+            'user_profile' => $user->load('profile'),
+            'activeTab' => $request->query('tab', 'profile'),
+            'connectedAccounts' => $user->social_login_provider,
+        ]);
+    }
+
+    public function update(User $user, UpdateProfileRequest $request, ProfileService $profileService)
+    {
+        try {
+            $profileService->update(
+                $user,
+                $request->validated(),
+                $request->file('avatar')
+            );
+            return back()->with('success', 'User personal details have been updated successfully.');
+        } catch (Exception $e) {
+            return redirect()->back()->with('error', __($e->getMessage()));
+        }
     }
 
     /**

@@ -18,7 +18,7 @@ class SendKycConfirmationToUser
             try {
                 Mail::mailer(config('settings.email_provider'))
                     ->to($event->submission->user->email)
-                    ->send(new KycSubmissionReceived());
+                    ->send(new KycSubmissionReceived($event->submission));
             } catch (Exception $e) {
                 Log::error('Failed to send kyc submitted email', [
                     'email' => $event->submission->user->email,

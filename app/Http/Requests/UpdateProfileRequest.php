@@ -16,7 +16,11 @@ class UpdateProfileRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return Auth::check();
+        $user = Auth::user();
+        if ($user || $user->role === 'admin') {
+            return true;
+        }
+        return false;
     }
 
     /**
@@ -39,10 +43,18 @@ class UpdateProfileRequest extends FormRequest
      */
     public function rules(): array
     {
+        $userIdBeingUpdated = $this->route('user') ?? $this->user()->id;
+
         return [
             'first_name' => ['required', 'string', 'max:255'],
             'last_name' => ['required', 'string', 'max:255'],
-            'phone_number' => ['required', 'string', 'min:10', 'max:255', Rule::unique('users')->ignore($this->user()->id)],
+            'phone_number' => [
+                'required',
+                'string',
+                'min:10',
+                'max:255',
+                Rule::unique('users')->ignore($userIdBeingUpdated),
+            ],
             'country' => ['required', 'string', 'max:255'],
             'address' => ['required', 'string', 'max:255'],
             'avatar' => ['nullable', 'image', 'mimes:jpeg,png,gif', 'max:5120'],

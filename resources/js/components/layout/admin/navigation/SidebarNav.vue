@@ -48,7 +48,7 @@
 
     const adminToolsNavigation = [
         { name: "KYC Submissions", href: "admin.kyc.index", icon: FileText },
-        { name: "Send Notifications", href: "admin.dashboard", icon: Mail }
+        { name: "Send Notifications", href: "admin.notifications.index", icon: Mail }
     ];
 
     const bottomNavigation = [
@@ -176,7 +176,7 @@
                             :href="route(item.href)"
                             class="flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200"
                             :class="[
-                                (item.name === 'KYC Submissions' && isKycActive) ||
+                                (item.name === 'KYC Submissions' && isKycActive.value) ||
                                 (item.name === 'Send Notifications' && isSendNotifsActive) ||
                                 (isActive(item.href) ? 'bg-sidebar-accent text-sidebar-foreground' : 'text-sidebar-foreground/70 hover:bg-sidebar-accent/30')
                             ]">

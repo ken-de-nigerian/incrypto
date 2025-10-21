@@ -44,7 +44,7 @@ Route::prefix('admin')
             Route::get('/{user}/show', 'show')->name('show');
 
             Route::get('/{user}/edit', 'edit')->name('edit');
-            Route::patch('/{user}/update', 'update')->name('update');
+            Route::post('/{user}/update', 'update')->name('update');
 
             Route::post('/{user}/funds', 'manageBalance')->name('adjust.balance');
             Route::post('/{user}/email', 'sendEmail')->name('send.email');
@@ -64,7 +64,6 @@ Route::prefix('admin')
                 Route::get('/', 'index')->name('index');
                 Route::post('/{kyc}/approve', 'approve')->name('approve');
                 Route::post('/{kyc}/reject', 'reject')->name('reject');
-                Route::get('/{kyc}/show', 'show')->name('show');
             });
 
         // Wallet Management
@@ -109,6 +108,15 @@ Route::prefix('admin')
                 Route::post('/{sent}/approve', 'approve')->name('approve');
                 Route::post('/{sent}/reject', 'reject')->name('reject');
                 Route::get('/{sent}/show', 'show')->name('show');
+            });
+
+        // Newsletter Notifications
+        Route::prefix('notifications')
+            ->name('notifications.')
+            ->controller(AdminNotificationController::class)
+            ->group(function () {
+                Route::get('/', 'index')->name('index');
+                Route::post('/broadcast', 'broadcast')->name('broadcast');
             });
     });
 

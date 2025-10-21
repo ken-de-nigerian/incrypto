@@ -4,7 +4,7 @@
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
         <meta http-equiv="X-UA-Compatible" content="IE=edge">
-        <title>KYC Submission Received - {{ config('app.name') }}</title>
+        <title>KYC Submission Rejected - {{ config('app.name') }}</title>
         <style>
             body {
                 margin: 0;
@@ -61,8 +61,8 @@
             }
             .badge {
                 display: inline-block;
-                background-color: #dcfce7; /* Green for success */
-                color: #166534;
+                background-color: #fee2e2;
+                color: #991b1b;
                 padding: 8px 20px;
                 border-radius: 9999px;
                 font-size: 14px;
@@ -84,7 +84,6 @@
                 max-width: 90%;
                 margin: 0 auto 32px;
             }
-            /* --- Desktop Details Card Styling --- */
             .details-card {
                 background-color: #ffffff;
                 border: 1px solid #e2e8f0;
@@ -122,6 +121,52 @@
                 font-weight: 500;
                 text-align: right;
                 word-break: break-all;
+            }
+            .warning-box {
+                background: #fef2f2;
+                border-left: 4px solid #dc2626;
+                border-radius: 8px;
+                padding: 20px;
+                margin: 32px 0;
+                text-align: left;
+            }
+            .warning-box h3 {
+                margin: 0 0 12px;
+                color: #dc2626;
+                font-size: 17px;
+                display: flex;
+                align-items: center;
+            }
+            .warning-box h3 img {
+                width: 24px;
+                height: 24px;
+                margin-right: 12px;
+            }
+            .warning-box p {
+                margin: 0 0 12px;
+                color: #7f1d1d;
+                font-size: 15px;
+                line-height: 1.6;
+            }
+            .reason-section {
+                background-color: #fff5f5;
+                border-radius: 8px;
+                padding: 16px;
+                margin: 24px 0;
+                text-align: left;
+            }
+            .reason-label {
+                font-size: 13px;
+                font-weight: 700;
+                color: #7f1d1d;
+                text-transform: uppercase;
+                letter-spacing: 1px;
+                margin-bottom: 8px;
+            }
+            .reason-text {
+                color: #5a1f1f;
+                font-size: 15px;
+                line-height: 1.6;
             }
             .info-box {
                 background: #f0f9ff;
@@ -217,9 +262,6 @@
                 opacity: 1;
             }
 
-            /****************************************
-            * MOBILE RESPONSIVE STYLES
-            ****************************************/
             @media only screen and (max-width: 640px) {
                 .email-wrapper { padding: 0; }
                 .container { border-radius: 0; border: 0; }
@@ -270,6 +312,9 @@
                     font-weight: 600;
                     padding-top: 4px;
                 }
+                .warning-box {
+                    padding: 16px;
+                }
                 .info-box {
                     padding: 16px;
                 }
@@ -290,54 +335,45 @@
                             <a href="{{ config('app.url') }}" title="{{ config('app.name') }}">
                                 <img src="{{ asset('assets/images/logo.png') }}" alt="{{ config('app.name') }} Logo" class="logo-img">
                             </a>
-                            <div class="badge">Submission Received</div>
+                            <div class="badge">Submission Rejected</div>
                         </div>
 
                         <div class="content">
-                            <h1 class="greeting">We've Received Your Documents</h1>
-                            <p class="subtitle">Thank you, {{ $user->first_name }}. We've successfully received your KYC submission and our team is now reviewing it.</p>
+                            <h1 class="greeting">Submission Requires Revision</h1>
+                            <p class="subtitle">Hello {{ $user->first_name }}, your KYC submission has been reviewed and requires some corrections before we can proceed.</p>
 
-                            <div class="details-card">
-                                <table class="details-table" role="presentation">
-                                    <tr>
-                                        <td class="label-cell">
-                                            <img src="https://img.icons8.com/material-rounded/24/475569/time.png" alt="" class="icon">
-                                            <span class="label">Submission Time</span>
-                                        </td>
-                                        <td>
-                                            <span class="value">October 8, 2025, 10:45 PM (WAT)</span>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td class="label-cell">
-                                            <img src="https://img.icons8.com/material-rounded/24/475569/hourglass--v1.png" alt="" class="icon">
-                                            <span class="label">Current Status</span>
-                                        </td>
-                                        <td>
-                                            <span class="value">Pending Review</span>
-                                        </td>
-                                    </tr>
-                                </table>
+                            <div class="warning-box">
+                                <h3>
+                                    <img src="https://img.icons8.com/fluency-systems-filled/48/dc2626/error.png" alt="Error Icon">
+                                    Action Required
+                                </h3>
+                                <p>We've identified some issues with your submission that need to be addressed. Please review the details below and resubmit your documents.</p>
+                            </div>
+
+                            <div class="reason-section">
+                                <div class="reason-label">Reason for Rejection</div>
+                                <div class="reason-text">{{ $rejection_reason }}</div>
                             </div>
 
                             <div class="info-box">
                                 <h3>
                                     <img src="https://img.icons8.com/fluency-systems-filled/48/0369a1/info.png" alt="Info Icon">
-                                    What Happens Next?
+                                    What to Do Next
                                 </h3>
                                 <ul>
-                                    <li>Our compliance team will review your submission within <strong>24-48 business hours</strong>.</li>
-                                    <li>You will receive another email from us as soon as the review is complete.</li>
-                                    <li>No further action is needed from you at this time. Sit back and relax!</li>
+                                    <li>Review the rejection reason provided above carefully.</li>
+                                    <li>Gather the necessary corrected or additional documents.</li>
+                                    <li>Resubmit your KYC documents through your dashboard.</li>
+                                    <li>Our team will review your new submission within <strong>24-48 business hours</strong>.</li>
                                 </ul>
                             </div>
 
                             <div class="button-container">
-                                <a href="{{ route('user.dashboard') }}" class="button">Go to My Dashboard</a>
+                                <a href="{{ route('user.dashboard') }}" class="button">Go to Dashboard & Resubmit</a>
                             </div>
 
                             <div class="support-text">
-                                <p>If you have questions, contact us at <a href="mailto:{{ config('settings.site.site_email') }}" class="support-email">{{ config('settings.site.site_email') }}</a>.</p>
+                                <p>Need help? Contact our support team at <a href="mailto:{{ config('settings.site.site_email') }}" class="support-email">{{ config('settings.site.site_email') }}</a>.</p>
                             </div>
                         </div>
 

@@ -93,6 +93,11 @@ class ManageUserKycController extends Controller
      */
     public function create()
     {
+        $user = Auth::user()->load('kyc');
+        $kyc = $user->kyc;
+        if ($kyc) {
+            return redirect()->route('user.kyc.index');
+        }
         return Inertia::render('User/Kyc/Create');
     }
 

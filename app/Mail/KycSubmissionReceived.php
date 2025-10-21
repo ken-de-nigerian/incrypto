@@ -2,6 +2,7 @@
 
 namespace App\Mail;
 
+use App\Models\KycSubmission;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Content;
@@ -11,6 +12,12 @@ use Illuminate\Queue\SerializesModels;
 class KycSubmissionReceived extends Mailable
 {
     use Queueable, SerializesModels;
+
+    public KycSubmission $submission;
+
+    public function __construct(KycSubmission $submission){
+        $this->submission = $submission;
+    }
 
     /**
      * Get the message envelope.
@@ -29,6 +36,9 @@ class KycSubmissionReceived extends Mailable
     {
         return new Content(
             view: 'emails.kyc.submission_received',
+            with: [
+                'user' => $this->submission->user
+            ]
         );
     }
 }

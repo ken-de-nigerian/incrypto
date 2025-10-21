@@ -4,7 +4,7 @@
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
         <meta http-equiv="X-UA-Compatible" content="IE=edge">
-        <title>KYC Submission Received - {{ config('app.name') }}</title>
+        <title>KYC Verification Complete - {{ config('app.name') }}</title>
         <style>
             body {
                 margin: 0;
@@ -61,7 +61,7 @@
             }
             .badge {
                 display: inline-block;
-                background-color: #dcfce7; /* Green for success */
+                background-color: #dcfce7;
                 color: #166534;
                 padding: 8px 20px;
                 border-radius: 9999px;
@@ -84,7 +84,6 @@
                 max-width: 90%;
                 margin: 0 auto 32px;
             }
-            /* --- Desktop Details Card Styling --- */
             .details-card {
                 background-color: #ffffff;
                 border: 1px solid #e2e8f0;
@@ -217,9 +216,6 @@
                 opacity: 1;
             }
 
-            /****************************************
-            * MOBILE RESPONSIVE STYLES
-            ****************************************/
             @media only screen and (max-width: 640px) {
                 .email-wrapper { padding: 0; }
                 .container { border-radius: 0; border: 0; }
@@ -290,31 +286,31 @@
                             <a href="{{ config('app.url') }}" title="{{ config('app.name') }}">
                                 <img src="{{ asset('assets/images/logo.png') }}" alt="{{ config('app.name') }} Logo" class="logo-img">
                             </a>
-                            <div class="badge">Submission Received</div>
+                            <div class="badge">Verification Approved</div>
                         </div>
 
                         <div class="content">
-                            <h1 class="greeting">We've Received Your Documents</h1>
-                            <p class="subtitle">Thank you, {{ $user->first_name }}. We've successfully received your KYC submission and our team is now reviewing it.</p>
+                            <h1 class="greeting">You're All Set!</h1>
+                            <p class="subtitle">Congratulations, {{ $user->first_name }}! Your KYC verification has been approved. You can now enjoy full access to all features.</p>
 
                             <div class="details-card">
                                 <table class="details-table" role="presentation">
                                     <tr>
                                         <td class="label-cell">
-                                            <img src="https://img.icons8.com/material-rounded/24/475569/time.png" alt="" class="icon">
-                                            <span class="label">Submission Time</span>
+                                            <img src="https://img.icons8.com/material-rounded/24/475569/checkmark.png" alt="" class="icon">
+                                            <span class="label">Status</span>
                                         </td>
                                         <td>
-                                            <span class="value">October 8, 2025, 10:45 PM (WAT)</span>
+                                            <span class="value">Approved</span>
                                         </td>
                                     </tr>
                                     <tr>
                                         <td class="label-cell">
-                                            <img src="https://img.icons8.com/material-rounded/24/475569/hourglass--v1.png" alt="" class="icon">
-                                            <span class="label">Current Status</span>
+                                            <img src="https://img.icons8.com/material-rounded/24/475569/time.png" alt="" class="icon">
+                                            <span class="label">Approval Date</span>
                                         </td>
                                         <td>
-                                            <span class="value">Pending Review</span>
+                                            <span class="value">{{ now()->format('F j, Y, g:i A') }}</span>
                                         </td>
                                     </tr>
                                 </table>
@@ -323,12 +319,12 @@
                             <div class="info-box">
                                 <h3>
                                     <img src="https://img.icons8.com/fluency-systems-filled/48/0369a1/info.png" alt="Info Icon">
-                                    What Happens Next?
+                                    What's Next?
                                 </h3>
                                 <ul>
-                                    <li>Our compliance team will review your submission within <strong>24-48 business hours</strong>.</li>
-                                    <li>You will receive another email from us as soon as the review is complete.</li>
-                                    <li>No further action is needed from you at this time. Sit back and relax!</li>
+                                    <li>Your account is now fully verified and activated.</li>
+                                    <li>All account features and services are now available to you.</li>
+                                    <li>Your personal information is secure and encrypted.</li>
                                 </ul>
                             </div>
 
@@ -337,7 +333,7 @@
                             </div>
 
                             <div class="support-text">
-                                <p>If you have questions, contact us at <a href="mailto:{{ config('settings.site.site_email') }}" class="support-email">{{ config('settings.site.site_email') }}</a>.</p>
+                                <p>If you have any questions, contact us at <a href="mailto:{{ config('settings.site.site_email') }}" class="support-email">{{ config('settings.site.site_email') }}</a>.</p>
                             </div>
                         </div>
 

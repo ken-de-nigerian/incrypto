@@ -259,7 +259,7 @@
                 </div>
             </div>
 
-            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 mt-8">
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 mt-8" :class="{ 'margin-bottom': props.users.last_page <= 1 }">
                 <template v-if="filteredAndPagedUsers.length">
                     <div v-for="user in filteredAndPagedUsers" :key="user.id" class="card-crypto relative">
                         <div class="p-4">
@@ -326,6 +326,7 @@
             </div>
 
             <PaginationControls
+                class="margin-bottom"
                 v-if="props.users.last_page > 1"
                 :links="props.users.links"
                 :from="props.users.from"
@@ -420,9 +421,6 @@
             </div>
 
             <div class="flex items-center justify-end gap-3 pt-4">
-                <button type="button" @click="isRegisterUserModalOpen = false" class="px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
-                    Cancel
-                </button>
                 <ActionButton :processing="registerUserForm.processing" type="submit">
                     Create Account
                 </ActionButton>

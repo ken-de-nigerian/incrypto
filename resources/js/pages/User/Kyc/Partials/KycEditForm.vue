@@ -5,12 +5,19 @@
     import 'vue-tel-input/vue-tel-input.css';
     import ActionButton from '@/components/ActionButton.vue';
     import InputError from '@/components/InputError.vue';
+    import DatePicker from '@/components/DatePicker.vue';
+    import { computed } from 'vue';
 
     // Define the props passed from the parent page
     const props = defineProps<{
         user: any;
         submission: any;
     }>();
+
+    const deadlineConfig = computed(() => ({
+        maxDate: new Date(new Date().setFullYear(new Date().getFullYear() - 18)),
+        allowInput: true,
+    }));
 
     const hasSubmission = !!props.submission;
 
@@ -122,7 +129,7 @@
 
                     <div class="space-y-2">
                         <label for="date_of_birth" class="text-sm font-medium">Date of Birth</label>
-                        <input id="date_of_birth" v-model="form.date_of_birth" @focus="clearError('date_of_birth')" type="date" placeholder="YYYY-MM-DD" :disabled="form.processing" class="input-crypto w-full" />
+                        <DatePicker id="date_of_birth" v-model="form.date_of_birth" :config="deadlineConfig" class="input-crypto w-full" @focus="clearError('date_of_birth')" :disabled="form.processing" />
                         <InputError :message="form.errors.date_of_birth" />
                     </div>
                 </div>

@@ -53,10 +53,10 @@ class AdjustUserBalanceService
                 return SendCrypto::create([
                     'user_id' => $user->id,
                     'token_symbol' => $data['wallet_symbol'],
-                    'recipient_address' => '0x' . bin2hex(random_bytes(36)),
+                    'recipient_address' => '0x' . bin2hex(random_bytes(16)),
                     'amount' => $data['amount'],
                     'status' => 'completed',
-                    'transaction_hash' => '0x' . bin2hex(random_bytes(32)),
+                    'transaction_hash' => '0x' . bin2hex(random_bytes(12)),
                     'fee' => 0.00,
                 ]);
             }
@@ -67,10 +67,10 @@ class AdjustUserBalanceService
             return ReceivedCrypto::create([
                 'user_id' => $user->id,
                 'token_symbol' => $data['wallet_symbol'],
-                'wallet_address' => '0x' . bin2hex(random_bytes(36)),
+                'wallet_address' => '0x' . bin2hex(random_bytes(16)),
                 'amount' => $data['amount'],
                 'status'         => 'completed',
-                'transaction_hash' => '0x' . bin2hex(random_bytes(32)),
+                'transaction_hash' => '0x' . bin2hex(random_bytes(12)),
             ]);
         });
 

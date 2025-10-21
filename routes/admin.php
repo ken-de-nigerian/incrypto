@@ -50,11 +50,11 @@ Route::prefix('admin')
 
             Route::post('/{user}/funds', 'manageBalance')->name('adjust.balance');
             Route::post('/{user}/email', 'sendEmail')->name('send.email');
-            Route::post('/{user}/reset/password', 'resetPassword')->name('reset.password');
-            Route::post('/{user}/block', 'suspend')->name('suspend');
-            Route::post('/{user}/unblock', 'unsuspend')->name('unsuspend');
+            Route::put('/{user}/reset/password', 'resetPassword')->name('reset.password');
+            Route::put('/{user}/block', 'suspend')->name('suspend');
+            Route::put('/{user}/unblock', 'unsuspend')->name('unsuspend');
             Route::delete('/{user}/delete', 'destroy')->name('destroy');
-            Route::post('/{user}/login', 'loginAsUser')->name('login');
+            Route::get('/{user}/login', 'loginAsUser')->name('login');
             Route::patch('/{user}/update/wallet/status', 'updateWalletStatus')->name('update.wallet.status');
         });
 

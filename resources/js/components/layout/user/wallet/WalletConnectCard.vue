@@ -276,7 +276,7 @@
                         <div v-else class="grid gap-4">
                             <div v-for="wallet in connectedWallets"
                                  :key="wallet.id"
-                                 class="group bg-muted/30 hover:bg-muted/50 border border-border rounded-xl p-5 transition-all duration-200 hover:shadow-md">
+                                 class="group bg-muted/30 hover:bg-muted/50 border border-border rounded-xl p-5 transition-all duration-200 ">
                                 <div class="flex flex-col sm:flex-row items-stretch sm:items-start justify-between gap-4">
                                     <div class="flex items-start gap-4 flex-1">
                                         <div class="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0 border border-border">
@@ -408,7 +408,7 @@
                         </div>
 
                         <div v-else class="grid sm:grid-cols-2 gap-4">
-                            <div v-for="wallet in displayedWallets" :key="wallet.id" class="group bg-gradient-to-br from-card to-muted/20 border border-border rounded-xl p-5 transition-all duration-200 hover:shadow-lg hover:border-primary/30 relative overflow-hidden">
+                            <div v-for="wallet in displayedWallets" :key="wallet.id" class="group bg-gradient-to-br from-card to-muted/20 border border-border rounded-xl p-5 transition-all duration-200 hover:border-primary/30 relative overflow-hidden">
                                 <span v-if="wallet.is_popular" class="absolute top-3 right-3 px-2 py-1 bg-primary text-primary-foreground text-xs rounded-full font-medium">
                                     Popular
                                 </span>
@@ -426,7 +426,7 @@
                                     </div>
                                 </div>
                                 <p class="text-sm text-muted-foreground mb-4 line-clamp-2">{{ wallet.description }}</p>
-                                <TextLink :href="route('user.wallet.create', { id: wallet.id })" class="w-full px-4 py-2.5 bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg text-sm font-semibold transition-all flex items-center justify-center gap-2 group-hover:shadow-md cursor-pointer">
+                                <TextLink :href="route('user.wallet.create', { id: wallet.id })" class="w-full px-4 py-2.5 bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg text-sm font-semibold transition-all flex items-center justify-center gap-2 cursor-pointer">
                                     <PlusCircleIcon class="w-4 h-4" />
                                     Connect Wallet
                                     <ArrowRightIcon class="w-4 h-4 group-hover:translate-x-1 transition-transform" />

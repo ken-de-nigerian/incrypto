@@ -115,7 +115,7 @@
                         'w-full p-3 flex items-center justify-between cursor-pointer text-left transition-colors',
                         'hover:bg-secondary/70'
                     ]">
-                    <span class="text-sm font-semibold text-foreground">{{ option.label }}</span>
+                    <span class="text-sm font-base text-foreground">{{ option.label }}</span>
                 </button>
             </div>
         </div>

@@ -5,18 +5,19 @@ namespace App\Http\Requests;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Validation\Rules\Password;
 
-class UpdatePasswordRequest extends FormRequest
+class SuspendUserRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
-     *
-     * @return bool
      */
     public function authorize(): bool
     {
-        return Auth::check();
+        $user = Auth::user();
+        if ($user && $user->role === 'admin') {
+            return true;
+        }
+        return false;
     }
 
     /**
@@ -27,8 +28,7 @@ class UpdatePasswordRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'current_password' => ['required', 'string', 'current_password'],
-            'password' => ['required', 'confirmed', Password::min(8)->mixedCase()->numbers()],
+            'reason' => 'required|string|max:500',
         ];
     }
 }

@@ -4,13 +4,23 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\AdjustUserBalanceRequest;
+use App\Http\Requests\DeleteAccountRequest;
+use App\Http\Requests\ResetUserPasswordRequest;
+use App\Http\Requests\sendEmailRequest;
+use App\Http\Requests\SuspendUserRequest;
 use App\Http\Requests\UpdateWalletStatusRequest;
 use App\Services\AdjustUserBalanceService;
+use App\Services\DeleteUserAccountService;
 use App\Services\GatewayHandlerService;
 use App\Services\MarketDataService;
+use App\Services\resetPasswordService;
+use App\Services\SendEmailService;
+use App\Services\SuspendUserService;
+use App\Services\UnSuspendUserService;
 use App\Services\WalletService;
 use Exception;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
 use App\Models\User;
@@ -106,11 +116,91 @@ class AdminUserController extends Controller
                 $user,
                 $request->validated(),
             );
-            return redirect()->back()->with('success', 'User wallet balance updated successfully.');
+            return redirect()->back()->with('success', __('User wallet balance updated successfully.'));
         } catch (Exception $e) {
             return redirect()->back()
                 ->withInput()
                 ->withErrors(['amount' => $e->getMessage()]);
+        }
+    }
+
+    public function sendEmail(SendEmailRequest $request, User $user, SendEmailService $sendEmailService)
+    {
+        try {
+            $sendEmailService->sendEmail(
+                $user,
+                $request->validated(),
+            );
+            return redirect()->back()->with('success', __('Email sent successfully'));
+        } catch (Exception $e) {
+            return redirect()->back()
+                ->withInput()
+                ->withErrors(['subject' => $e->getMessage()]);
+        }
+    }
+
+    public function resetPassword(User $user, ResetUserPasswordRequest $request, resetPasswordService $resetPasswordService)
+    {
+        try {
+            $resetPasswordService->resetPassword(
+                $user,
+                $request->validated(),
+            );
+            return redirect()->back()->with('success', __('Password has been reset successfully'));
+        } catch (Exception $e) {
+            return redirect()->back()->with('error', __($e->getMessage()));
+        }
+    }
+
+    public function suspend(User $user, SuspendUserRequest $request, SuspendUserService $suspendUserService)
+    {
+        try {
+            $suspendUserService->suspendUser(
+                $user,
+                $request->validated(),
+            );
+            return redirect()->back()->with('success', __('Account has been suspended successfully'));
+        } catch (Exception $e) {
+            return redirect()->back()->with('error', __($e->getMessage()));
+        }
+    }
+
+    public function unsuspend(User $user, UnSuspendUserService $suspendUserService)
+    {
+        try {
+            $suspendUserService->unSuspendUser($user);
+            return redirect()->back()->with('success', __('Account has been unsuspended successfully'));
+        } catch (Exception $e) {
+            return redirect()->back()->with('error', __($e->getMessage()));
+        }
+    }
+
+    /**
+     * @throws Throwable
+     */
+    public function destroy(User $user, DeleteAccountRequest $request, DeleteUserAccountService $deleteUserAccountService)
+    {
+        $request->validated();
+
+        try {
+            $deleteUserAccountService->destroy($user);
+            return redirect()->route('admin.users.index')
+                ->with('success', __('User account has been deleted successfully'));
+        } catch (Exception $e) {
+            return redirect()->back()->with('error', __($e->getMessage()));
+        }
+    }
+
+    public function loginAsUser(User $user)
+    {
+        try {
+            session(['admin_id' => Auth::id()]);
+            Auth::guard('web')->login($user);
+
+            return redirect()->route('user.dashboard');
+        } catch (Exception $e) {
+            Log::error('Login as user failed', ['error' => $e->getMessage()]);
+            return redirect()->back()->with('error', __($e->getMessage()));
         }
     }
 

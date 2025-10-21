@@ -66,8 +66,8 @@ class AdjustUserBalanceRequest extends FormRequest
             'reason.required' => 'A reason is required.',
             'reason.min' => 'The reason must be at least 5 characters.',
             'reason.max' => 'The reason cannot exceed 500 characters.',
-            'wallet_symbol.required' => 'The wallet symbol is required.',
-            'wallet_symbol.alpha_dash' => 'The wallet symbol must only contain letters, numbers, and dashes.',
+            'wallet_symbol.required' => 'The wallet is required.',
+            'wallet_symbol.alpha_dash' => 'The wallet must only contain letters, numbers, and dashes.',
             'wallet_symbol.max' => 'The wallet symbol cannot exceed 10 characters.',
         ];
     }

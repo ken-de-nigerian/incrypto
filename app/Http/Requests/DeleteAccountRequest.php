@@ -14,7 +14,11 @@ class DeleteAccountRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return Auth::check();
+        $user = Auth::user();
+        if ($user || $user->role === 'admin') {
+            return true;
+        }
+        return false;
     }
 
     /**
@@ -26,6 +30,15 @@ class DeleteAccountRequest extends FormRequest
     {
         return [
             'confirm' => 'required|string|in:DELETE',
+        ];
+    }
+
+    public function messages(): array
+    {
+        return [
+            'confirm.required' => 'You must type "DELETE" to confirm.',
+            'confirm.string' => 'You must type "DELETE" to confirm.',
+            'confirm.in' => 'You must type "DELETE" to confirm.',
         ];
     }
 }

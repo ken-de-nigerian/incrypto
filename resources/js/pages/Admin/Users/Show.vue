@@ -238,13 +238,8 @@
                 { label: 'Adjust Balance', icon: Banknote, modal: '#fundsModal', class: 'text-primary' },
                 { label: 'Send Email', icon: Mail, modal: '#sendEmailModal', class: 'text-accent' },
                 { label: 'Reset Password', icon: Lock, modal: '#userPasswordModal', class: 'text-warning' },
-                { label: 'Login As User', icon: UserCheck, form: '#user-login-form', class: 'text-success' },
-                {
-                    label: props.user.status === 'active' ? 'Suspend' : 'Unsuspend',
-                    icon: UserX,
-                    modal: props.user.status === 'active' ? '#suspendModal' : '#unsuspendModal',
-                    class: 'text-destructive'
-                },
+                { label: 'Login As User', icon: UserCheck, modal: '#loginAsUserModal', class: 'text-success' },
+                { label: props.user.status === 'active' ? 'Suspend' : 'Unsuspend', icon: UserX, modal: props.user.status === 'active' ? '#suspendModal' : '#unsuspendModal', class: 'text-destructive' },
                 { label: 'Delete Account', icon: Trash2, modal: '#deleteModal', class: 'text-destructive' },
             ]
         }

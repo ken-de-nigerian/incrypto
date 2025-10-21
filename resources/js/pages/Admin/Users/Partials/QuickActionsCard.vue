@@ -1,5 +1,5 @@
 <script setup lang="ts">
-    import { DefineComponent } from 'vue';
+    import { defineAsyncComponent, DefineComponent } from 'vue';
     import { AlertTriangle, CheckCircle2, Copy, RotateCw } from 'lucide-vue-next';
     import { ref, computed } from 'vue';
     import QuickActionModal from '@/components/QuickActionModal.vue';
@@ -7,6 +7,14 @@
     import ActionButton from '@/components/ActionButton.vue';
     import { useForm } from '@inertiajs/vue3';
     import InputError from '@/components/InputError.vue';
+
+    const QuillEditor = defineAsyncComponent(() =>
+        import("@vueup/vue-quill").then(module => {
+            // Import CSS only when QuillEditor is loaded
+            import("@vueup/vue-quill/dist/vue-quill.snow.css");
+            return module.QuillEditor;
+        })
+    );
 
     interface ActionButton {
         label: string;
@@ -63,6 +71,7 @@
     const isFundsModalOpen = ref(false);
     const isSendEmailModalOpen = ref(false);
     const isUserPasswordModalOpen = ref(false);
+    const isLoginAsUserModalOpen = ref(false);
     const isSuspendModalOpen = ref(false);
     const isUnsuspendModalOpen = ref(false);
     const isDeleteModalOpen = ref(false);
@@ -87,6 +96,10 @@
         user_id: props.user.id,
     });
 
+    const loginAsUserForm = useForm({
+        user_id: props.user.id,
+    });
+
     const suspendForm = useForm({
         reason: '',
         user_id: props.user.id,
@@ -97,7 +110,7 @@
     });
 
     const deleteForm = useForm({
-        confirmation: '',
+        confirm: '',
         user_id: props.user.id,
     });
 
@@ -121,7 +134,7 @@
                 copyFeedback.value = '';
             }, 2000);
         } catch (err) {
-            copyFeedback.value = err;
+            copyFeedback.value = String(err);
         }
     };
 
@@ -134,6 +147,7 @@
             isUserPasswordModalOpen.value = true;
         }
         else if (modalName === '#suspendModal') isSuspendModalOpen.value = true;
+        else if (modalName === '#loginAsUserModal') isLoginAsUserModalOpen.value = true;
         else if (modalName === '#unsuspendModal') isUnsuspendModalOpen.value = true;
         else if (modalName === '#deleteModal') isDeleteModalOpen.value = true;
     };
@@ -142,6 +156,7 @@
         isFundsModalOpen.value = false;
         isSendEmailModalOpen.value = false;
         isUserPasswordModalOpen.value = false;
+        isLoginAsUserModalOpen.value = false;
         isSuspendModalOpen.value = false;
         isUnsuspendModalOpen.value = false;
         isDeleteModalOpen.value = false;
@@ -151,6 +166,7 @@
         fundsForm.reset();
         emailForm.reset();
         passwordForm.reset();
+        loginAsUserForm.reset();
         suspendForm.reset();
         unsuspendForm.reset();
         deleteForm.reset();
@@ -158,13 +174,6 @@
     };
 
     const manageFunds = () => {
-        const isWalletSelected = fundsForm.wallet_id !== null && String(fundsForm.wallet_id).trim() !== '';
-
-        if (!isWalletSelected) {
-            fundsForm.errors.wallet_id = 'Please select a wallet.';
-            return;
-        }
-
         const selectedWallet = walletOptions.value.find(w => w.value === fundsForm.wallet_id);
         if (selectedWallet) {
             fundsForm.wallet_symbol = selectedWallet.symbol;
@@ -199,12 +208,12 @@
         });
     };
 
-    const manageSuspend = () => {
-        if (!suspendForm.reason.trim()) {
-            suspendForm.errors.reason = 'A reason for suspension is required.';
-            return;
-        }
+    const loginAsUserDirect = () => {
+        window.open(route('admin.users.login', { user: props.user.id }), '_blank');
+        closeAllModals();
+    };
 
+    const manageSuspend = () => {
         suspendForm.put(route('admin.users.suspend', { user: props.user.id }), {
             preserveScroll: true,
             onSuccess: () => {
@@ -225,11 +234,6 @@
     };
 
     const manageDelete = () => {
-        if (deleteForm.confirmation !== 'DELETE') {
-            deleteForm.errors.confirmation = 'You must type "DELETE" to confirm.';
-            return;
-        }
-
         deleteForm.delete(route('admin.users.destroy', { user: props.user.id }), {
             preserveScroll: true,
             onSuccess: () => {
@@ -285,17 +289,7 @@
             <div v-for="group in actionGroups" :key="group.title ?? 'default'" class="py-3">
                 <div class="grid grid-cols-3 xs:grid-cols-3 gap-4 px-4">
                     <template v-for="button in group.buttons" :key="button.label">
-                        <form v-if="button.form" method="POST" class="w-full">
-                            <button type="submit" :class="[
-                                'flex flex-col items-center gap-1.5 sm:gap-2 p-2 sm:p-3 bg-secondary rounded-lg sm:rounded-xl group w-full cursor-pointer']">
-                                <div class="w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center rounded-lg bg-white/10 group-hover:bg-primary/10">
-                                    <component :is="button.icon" class="w-4 h-4" :class="button.class" />
-                                </div>
-                                <span class="text-card-foreground text-[10px] text-center leading-tight font-medium">{{ button.label }}</span>
-                            </button>
-                        </form>
-
-                        <button v-else @click="button.modal ? openModal(button.modal) : null" :class="[
+                        <button @click="button.modal ? openModal(button.modal) : null" :class="[
                             'flex flex-col items-center gap-1.5 sm:gap-2 p-2 sm:p-3 bg-secondary rounded-lg sm:rounded-xl group w-full cursor-pointer']">
                             <div class="w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center rounded-lg bg-white/10 group-hover:bg-primary/10">
                                 <component :is="button.icon" class="w-4 h-4" :class="button.class" />
@@ -315,6 +309,25 @@
         @close="isFundsModalOpen = false">
 
         <form @submit.prevent="manageFunds" class="space-y-4">
+            <p class="text-sm text-muted-foreground leading-relaxed">
+                Adjust the balance for user
+                <span class="font-semibold text-card-foreground">{{ user.first_name }}</span>. Specify the wallet, action type, and amount.
+            </p>
+
+            <div class="p-3 bg-blue-500/10 border border-blue-500/30 rounded-lg text-sm">
+                <span class="font-semibold block mb-2 text-blue-600">User Information</span>
+                <div class="grid grid-cols-2 gap-2 text-xs text-muted-foreground">
+                    <div>
+                        <span class="text-xs text-muted-foreground">User Name</span>
+                        <div class="font-medium text-card-foreground">{{ user.first_name }} {{ user.last_name }}</div>
+                    </div>
+                    <div>
+                        <span class="text-xs text-muted-foreground">Email</span>
+                        <div class="font-medium text-card-foreground text-xs">{{ user.email }}</div>
+                    </div>
+                </div>
+            </div>
+
             <div class="space-y-2">
                 <label class="text-sm font-medium text-muted-foreground uppercase tracking-wider">Select Wallet</label>
                 <CustomSelectDropdown
@@ -365,7 +378,7 @@
                         </div>
                     </template>
                 </CustomSelectDropdown>
-                <InputError :message="fundsForm.errors.wallet_id" />
+                <InputError :message="fundsForm.errors.wallet_symbol" />
                 <p v-if="walletOptions.length === 0" class="text-sm text-warning p-2 rounded-lg bg-warning/10 border border-warning/30">
                     No wallets found for this user.
                 </p>
@@ -392,10 +405,11 @@
                 <label for="reason" class="text-sm font-medium text-muted-foreground uppercase tracking-wider">Reason/Note</label>
                 <textarea id="reason" v-model="fundsForm.reason" @focus="clearError(fundsForm, 'reason')" rows="3" placeholder="Admin adjustment for bonus" class="input-crypto w-full text-sm"></textarea>
                 <InputError :message="fundsForm.errors.reason" />
+                <p class="text-xs text-muted-foreground">Provide a clear explanation for this adjustment.</p>
             </div>
 
             <div class="flex items-center justify-end gap-3 pt-2">
-                <ActionButton :processing="fundsForm.processing">Confirm</ActionButton>
+                <ActionButton :processing="fundsForm.processing">Confirm Adjustment</ActionButton>
             </div>
         </form>
     </QuickActionModal>
@@ -407,16 +421,37 @@
         @close="isSendEmailModalOpen = false">
 
         <form @submit.prevent="sendEmail" class="space-y-4">
+            <p class="text-sm text-muted-foreground leading-relaxed">
+                Send a custom email notification to
+                <span class="font-semibold text-card-foreground">{{ user.first_name }}</span> at
+                <span class="font-semibold text-card-foreground">{{ user.email }}</span>.
+            </p>
+
+            <div class="p-3 bg-blue-500/10 border border-blue-500/30 rounded-lg text-sm">
+                <span class="font-semibold block mb-2 text-blue-600">User Information</span>
+                <div class="grid grid-cols-2 gap-2 text-xs text-muted-foreground">
+                    <div>
+                        <span class="text-xs text-muted-foreground">User Name</span>
+                        <div class="font-medium text-card-foreground">{{ user.first_name }} {{ user.last_name }}</div>
+                    </div>
+                    <div>
+                        <span class="text-xs text-muted-foreground">Email Address</span>
+                        <div class="font-medium text-card-foreground text-xs">{{ user.email }}</div>
+                    </div>
+                </div>
+            </div>
+
             <div class="space-y-2">
-                <label for="email-subject" class="text-sm font-medium text-muted-foreground uppercase tracking-wider">Subject</label>
-                <input id="email-subject" v-model="emailForm.subject" @focus="clearError(emailForm, 'subject')" type="text" placeholder="Important Account Notice" class="input-crypto w-full text-sm" />
+                <label for="subject" class="text-sm font-medium text-muted-foreground uppercase tracking-wider">Subject</label>
+                <input id="subject" v-model="emailForm.subject" @focus="clearError(emailForm, 'subject')" type="text" placeholder="Important Account Notice" class="input-crypto w-full text-sm" />
                 <InputError :message="emailForm.errors.subject" />
             </div>
 
             <div class="space-y-2">
-                <label for="email-body" class="text-sm font-medium text-muted-foreground uppercase tracking-wider">Email Body</label>
-                <textarea id="email-body" v-model="emailForm.body" @focus="clearError(emailForm, 'body')" rows="5" placeholder="Dear user, ..." class="input-crypto w-full text-sm"></textarea>
+                <label for="body" class="text-sm font-medium text-muted-foreground uppercase tracking-wider">Email Body</label>
+                <QuillEditor v-model:content="emailForm.body" contentType="html" theme="snow" placeholder="Dear user, ..." toolbar="full" />
                 <InputError :message="emailForm.errors.body" />
+                <p class="text-xs text-muted-foreground">Compose a professional and clear message for the user.</p>
             </div>
 
             <div class="flex items-center justify-end gap-3 pt-2">
@@ -433,14 +468,29 @@
 
         <form @submit.prevent="resetPassword" class="space-y-4">
             <p class="text-sm text-muted-foreground leading-relaxed">
-                Generate a new password for user <span class="font-semibold text-card-foreground">{{ user.first_name }}</span>. They will use this to log back in.
+                Generate a new password for user
+                <span class="font-semibold text-card-foreground">{{ user.first_name }}</span>. They will use this to log back in.
             </p>
+
+            <div class="p-3 bg-blue-500/10 border border-blue-500/30 rounded-lg text-sm">
+                <span class="font-semibold block mb-2 text-blue-600">User Information</span>
+                <div class="grid grid-cols-2 gap-2 text-xs text-muted-foreground">
+                    <div>
+                        <span class="text-xs text-muted-foreground">User Name</span>
+                        <div class="font-medium text-card-foreground">{{ user.first_name }} {{ user.last_name }}</div>
+                    </div>
+                    <div>
+                        <span class="text-xs text-muted-foreground">Email</span>
+                        <div class="font-medium text-card-foreground">{{ user.email }}</div>
+                    </div>
+                </div>
+            </div>
 
             <div class="space-y-2">
                 <label for="generated-password" class="text-sm font-medium text-muted-foreground uppercase tracking-wider">Generated Password</label>
                 <div class="flex gap-2">
                     <input id="generated-password" v-model="generatedPassword" type="text" placeholder="Generate a password" readonly class="input-crypto w-full text-sm" />
-                    <button type="button" @click="copyToClipboard" :disabled="!generatedPassword" class="px-3 py-2 bg-secondary hover:bg-secondary/70 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg transition-colors flex items-center gap-2">
+                    <button type="button" @click="copyToClipboard" :disabled="!generatedPassword" class="px-3 py-2 bg-secondary hover:bg-secondary/70 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg transition-colors flex items-center gap-2 cursor-pointer">
                         <Copy class="w-4 h-4" />
                         <span class="text-xs font-medium" v-if="!copyFeedback">Copy</span>
                         <span class="text-xs font-medium text-success" v-else>{{ copyFeedback }}</span>
@@ -448,7 +498,7 @@
                 </div>
             </div>
 
-            <button type="button" @click="generatePassword" class="w-full px-4 py-2 bg-secondary hover:bg-secondary/70 rounded-lg transition-colors flex items-center justify-center gap-2 text-sm font-medium">
+            <button type="button" @click="generatePassword" class="w-full px-4 py-2 bg-secondary hover:bg-secondary/70 rounded-lg transition-colors flex items-center justify-center gap-2 text-sm font-medium cursor-pointer">
                 <RotateCw class="w-4 h-4" />
                 Generate New Password
             </button>
@@ -457,7 +507,7 @@
                 <span class="font-semibold block mb-1 flex items-center gap-2">
                     <AlertTriangle class="w-5 h-5 text-destructive" /> Warning
                 </span>
-                The user will be instantly logged out and must use the new password to log back in.
+                <span class="text-xs block">The user will be instantly logged out and must use the new password to log back in.</span>
             </div>
 
             <div class="flex items-center justify-end gap-3 pt-2">
@@ -469,27 +519,99 @@
     </QuickActionModal>
 
     <QuickActionModal
+        :is-open="isLoginAsUserModalOpen"
+        title="Login as User"
+        subtitle="Access the account as this user to provide support or troubleshoot issues."
+        @close="isLoginAsUserModalOpen = false">
+
+        <div class="space-y-4">
+            <p class="text-sm text-muted-foreground leading-relaxed">
+                You will log into the account as
+                <span class="font-semibold text-card-foreground">{{ user.first_name }}</span>, gaining full access to their account session. This action is logged for security purposes.
+            </p>
+
+            <div class="p-3 bg-blue-500/10 border border-blue-500/30 rounded-lg text-sm">
+                <span class="font-semibold block mb-2 text-blue-600">User Information</span>
+                <div class="grid grid-cols-2 gap-2 text-xs text-muted-foreground">
+                    <div>
+                        <span class="text-xs text-muted-foreground">User Name</span>
+                        <div class="font-medium text-card-foreground">{{ user.first_name }} {{ user.last_name }}</div>
+                    </div>
+                    <div>
+                        <span class="text-xs text-muted-foreground">Email</span>
+                        <div class="font-medium text-card-foreground text-xs">{{ user.email }}</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="p-3 bg-warning/10 border border-warning/30 rounded-lg text-sm text-warning-foreground">
+                <span class="font-semibold block mb-2 flex items-center gap-2">
+                    <AlertTriangle class="w-5 h-5 text-destructive" /> Warning
+                </span>
+                <ul class="text-xs space-y-1 list-disc list-inside">
+                    <li>You will be logged in as this user in a new session.</li>
+                    <li>Any actions performed will be associated with this user account.</li>
+                    <li>This action is monitored and logged for audit purposes.</li>
+                    <li>Use this feature only for legitimate support or troubleshooting.</li>
+                </ul>
+            </div>
+
+            <div class="flex items-center justify-end gap-3 pt-2">
+                <button type="button" @click="loginAsUserDirect" class="btn-crypto w-full h-12 px-6 py-3 inline-flex items-center justify-center whitespace-nowrap rounded-xl text-sm font-semibold cursor-pointer">
+                    Login as User
+                </button>
+            </div>
+        </div>
+    </QuickActionModal>
+
+    <QuickActionModal
         :is-open="isSuspendModalOpen"
         title="Suspend Account"
         subtitle="Temporarily disable this user's account access."
         @close="isSuspendModalOpen = false">
 
         <form @submit.prevent="manageSuspend" class="space-y-4">
+            <p class="text-sm text-muted-foreground leading-relaxed">
+                Are you sure you want to
+                <span class="font-semibold text-card-foreground">suspend</span> the account for user
+                <span class="font-semibold text-card-foreground">{{ user.first_name }}</span>?
+            </p>
+
+            <div class="p-3 bg-blue-500/10 border border-blue-500/30 rounded-lg text-sm">
+                <span class="font-semibold block mb-2 text-blue-600">User Information</span>
+                <div class="grid grid-cols-2 gap-2 text-xs text-muted-foreground">
+                    <div>
+                        <span class="text-xs text-muted-foreground">User Name</span>
+                        <div class="font-medium text-card-foreground">{{ user.first_name }} {{ user.last_name }}</div>
+                    </div>
+                    <div>
+                        <span class="text-xs text-muted-foreground">Email</span>
+                        <div class="font-medium text-card-foreground text-xs">{{ user.email }}</div>
+                    </div>
+                </div>
+            </div>
+
             <div class="p-3 bg-warning/10 border border-warning/30 rounded-lg text-sm text-warning-foreground">
-                <span class="font-semibold block mb-1 flex items-center gap-2">
+                <span class="font-semibold block mb-2 flex items-center gap-2">
                     <AlertTriangle class="w-5 h-5 text-destructive" /> Warning
                 </span>
-                Enter a reason for suspension. The user will be immediately logged out.
+                <ul class="text-xs space-y-1 list-disc list-inside">
+                    <li>The user will be immediately logged out.</li>
+                    <li>They will be unable to access their account or conduct any transactions.</li>
+                    <li>A notification email will be sent with the suspension reason.</li>
+                    <li>Include a clear reason for this action.</li>
+                </ul>
             </div>
 
             <div class="space-y-2">
                 <label for="suspension-reason" class="text-sm font-medium text-muted-foreground uppercase tracking-wider">Reason for Suspension</label>
-                <textarea id="suspension-reason" v-model="suspendForm.reason" @focus="clearError(suspendForm, 'reason')" rows="3" placeholder="Provide a reason for suspension..." class="input-crypto w-full text-sm"></textarea>
+                <textarea id="suspension-reason" v-model="suspendForm.reason" @focus="clearError(suspendForm, 'reason')" rows="4" placeholder="e.g., Suspicious trading activity detected - account under review" class="input-crypto w-full text-sm"></textarea>
                 <InputError :message="suspendForm.errors.reason" />
+                <p class="text-xs text-muted-foreground">Be specific and professional. This message will be sent to the user in the suspension notification email.</p>
             </div>
 
             <div class="flex items-center justify-end gap-3 pt-2">
-                <ActionButton :processing="suspendForm.processing">Suspend</ActionButton>
+                <ActionButton :processing="suspendForm.processing">Suspend Account</ActionButton>
             </div>
         </form>
     </QuickActionModal>
@@ -507,15 +629,30 @@
                 <span class="font-semibold text-card-foreground">{{ user.first_name }}</span>?
             </p>
 
+            <div class="p-3 bg-blue-500/10 border border-blue-500/30 rounded-lg text-sm">
+                <span class="font-semibold block mb-2 text-blue-600">Account Details</span>
+                <div class="grid grid-cols-2 gap-2 text-xs text-muted-foreground">
+                    <div>
+                        <span class="text-xs text-muted-foreground">User Name</span>
+                        <div class="font-medium text-card-foreground">{{ user.first_name }} {{ user.last_name }}</div>
+                    </div>
+                    <div>
+                        <span class="text-xs text-muted-foreground">Email</span>
+                        <div class="font-medium text-card-foreground">{{ user.email }}</div>
+                    </div>
+                </div>
+            </div>
+
             <div class="p-3 bg-success/10 border border-success/30 rounded-lg text-sm text-success-foreground">
                 <span class="font-semibold block mb-1 flex items-center gap-2">
-                    <CheckCircle2 class="w-5 h-5 text-success" /> Note
+                    <CheckCircle2 class="w-5 h-5 text-success" /> Confirmation
                 </span>
-                The user will regain full access upon completion of this action.
+                <span class="text-xs block mb-2">Once unsuspended, the user will immediately regain full access to their account.</span>
+                <span class="text-xs">An email notification will be sent to {{ user.email }} confirming the restoration of their account.</span>
             </div>
 
             <div class="flex items-center justify-end gap-3 pt-2">
-                <ActionButton type="submit" :processing="unsuspendForm.processing">Unsuspend</ActionButton>
+                <ActionButton type="submit" :processing="unsuspendForm.processing">Confirm Unsuspend</ActionButton>
             </div>
         </form>
     </QuickActionModal>
@@ -533,17 +670,32 @@
                 <span class="bg-destructive/10 text-destructive font-mono text-xs px-2 py-1 rounded">DELETE</span> below.
             </p>
 
+            <div class="p-3 bg-blue-500/10 border border-blue-500/30 rounded-lg text-sm">
+                <span class="font-semibold block mb-2 text-blue-600">User Information</span>
+                <div class="grid grid-cols-2 gap-2 text-xs text-muted-foreground">
+                    <div>
+                        <span class="text-xs text-muted-foreground">User Name</span>
+                        <div class="font-medium text-card-foreground">{{ user.first_name }} {{ user.last_name }}</div>
+                    </div>
+                    <div>
+                        <span class="text-xs text-muted-foreground">Email</span>
+                        <div class="font-medium text-card-foreground text-xs">{{ user.email }}</div>
+                    </div>
+                </div>
+            </div>
+
             <div class="p-3 bg-warning/10 border border-warning/30 rounded-lg text-sm text-warning-foreground">
                 <span class="font-semibold block mb-1 flex items-center gap-2">
                     <AlertTriangle class="w-5 h-5 text-destructive" /> Warning
                 </span>
-                This action will permanently remove all user data and cannot be recovered.
+                <span class="text-xs block">This action will permanently remove all user data and cannot be recovered.</span>
             </div>
 
             <div class="space-y-2">
                 <label for="delete-confirmation" class="text-sm font-medium text-muted-foreground uppercase tracking-wider">Confirmation</label>
-                <input id="delete-confirmation" v-model="deleteForm.confirmation" @focus="clearError(deleteForm, 'confirmation')" placeholder="DELETE" class="input-crypto w-full text-sm">
-                <InputError :message="deleteForm.errors.confirmation" />
+                <input id="delete-confirmation" v-model="deleteForm.confirm" @focus="clearError(deleteForm, 'confirm')" placeholder="DELETE" class="input-crypto w-full text-sm">
+                <InputError :message="deleteForm.errors.confirm" />
+                <p class="text-xs text-muted-foreground">Type DELETE to confirm this irreversible action.</p>
             </div>
 
             <div class="flex items-center justify-end gap-3 pt-2">
@@ -553,10 +705,32 @@
     </QuickActionModal>
 </template>
 
-<style scoped>
+<style>
     @media (max-width: 640px) {
         .margin-bottom {
             margin-bottom: 50px;
         }
+    }
+
+    .ql-editor {
+        min-height: 200px !important;
+    }
+
+    /* Customize the editor appearance */
+    .ql-toolbar.ql-snow {
+        border-radius: 0.75rem !important;
+        background-color: hsl(var(--input)) !important;
+        border: 1px solid hsl(var(--border)) !important;
+    }
+
+    .ql-container.ql-snow {
+        border-radius: 0.75rem !important;
+        font-family: inherit !important;
+        background-color: hsl(var(--input)) !important;
+        border: 1px solid hsl(var(--border)) !important;
+    }
+
+    .ql-editor.ql-blank::before {
+        color: hsl(var(--foreground)) !important;
     }
 </style>

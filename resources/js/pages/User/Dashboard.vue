@@ -131,12 +131,11 @@
                 <div class="flex items-center gap-4">
                     <TextLink v-if="is_admin_impersonating"
                         :href="route('exit.user.session')"
-                        class="p-2 bg-amber-500/10 border border-amber-500/30 rounded-xl hover:bg-amber-500/20 transition-colors cursor-pointer"
+                        class="p-2 bg-primary/10 border border-border rounded-xl hover:bg-primary/20 transition-colors cursor-pointer"
                         title="Exit Admin Mode">
-                        <span class="text-sm font-semibold text-amber-600 flex items-center gap-2">
-                            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                                <path fill-rule="evenodd" d="M5.293 7.707a1 1 0 010-1.414L10 1.586l4.707 4.707a1 1 0 01-1.414 1.414L11 4.414V15a1 1 0 11-2 0V4.414L6.707 7.707a1 1 0 01-1.414 0z" clip-rule="evenodd"/>
-                                <path d="M15 12a1 1 0 100-2 1 1 0 000 2z"/>
+                        <span class="text-sm font-semibold text-primary flex items-center gap-2">
+                            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M13 3H11v5h2V3zm4.83 2.17l-1.41 1.41C17.99 7.86 19 9.81 19 12c0 3.87-3.13 7-7 7s-7-3.13-7-7c0-2.19 1.01-4.14 2.58-5.42L6.17 5.17C4.23 6.82 3 9.26 3 12c0 4.97 4.03 9 9 9s9-4.03 9-9c0-2.74-1.23-5.18-3.17-6.83z"/>
                             </svg>
                             Admin Mode
                         </span>

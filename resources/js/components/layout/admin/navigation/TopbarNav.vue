@@ -1,5 +1,5 @@
 <script setup lang="ts">
-    import { computed, ref, watch } from 'vue';
+    import { computed, defineAsyncComponent, ref, watch } from 'vue';
     import { useAppearance } from '@/composables/useAppearance';
     import {
         BellIcon,
@@ -9,11 +9,6 @@
         CreditCard,
         Download,
         FileText,
-        Globe,
-        HelpCircle,
-        History,
-        HomeIcon,
-        LifeBuoy,
         LogOut,
         Mail,
         Menu,
@@ -27,19 +22,23 @@
         Sun,
         Users,
         Wallet,
-        X
+        X,
+        LayoutDashboard,
     } from 'lucide-vue-next';
     import TextLink from '@/components/TextLink.vue';
     import NotificationsModal from '@/components/utilities/NotificationsModal.vue';
-    import { router, usePage } from '@inertiajs/vue3';
+    import { useForm, usePage } from '@inertiajs/vue3';
+    import { route } from 'ziggy-js';
 
     const page = usePage();
     const searchQuery = ref('');
     const isAccountModalOpen = ref(false);
     const isNotificationsModalOpen = ref(false);
-    const activeTab = ref<'menu' | 'wallets'>('menu');
     const emailCopied = ref(false);
     const { appearance, updateAppearance } = useAppearance();
+
+    const isTransactionsOpen = ref(false);
+    const isCreateCampaignModalOpen = ref(false);
 
     const tabs = [
         { value: 'light', Icon: Sun, label: 'Light' },
@@ -71,27 +70,43 @@
     });
 
     const navigation = [
-        { name: "Home", href: "user.dashboard", icon: HomeIcon },
-        { name: "Send", href: "user.send.index", icon: Send },
-        { name: "Receive", href: "user.receive.index", icon: Download },
-        { name: "Swap", href: "user.swap.index", icon: Repeat },
-        { name: "Wallet Connect", href: "user.wallet.index", icon: Wallet },
-        { name: "Referrals", href: "user.rewards.index", icon: Users },
+        { name: "Dashboard", href: "admin.dashboard", icon: LayoutDashboard },
     ];
 
-    const accountLinks = [
-        { name: "KYC Verification", href: "user.kyc.index", icon: LifeBuoy, description: "Verify your identity" },
-        { name: "Transaction History", href: "user.transactions.index", icon: History, description: "View all transactions" },
-        { name: "Security", href: "user.profile.index", params: { tab: 'security' }, icon: Shield, description: "Password & 2FA" },
+    const gatewaysNavigation = [
+        { name: "Connected Wallets", href: "admin.wallet.index", icon: Wallet },
+        { name: "Crypto Methods", href: "admin.dashboard", icon: Shield },
     ];
 
-    const walletLink = { name: "Payment Methods", icon: CreditCard, description: "Manage wallet visibility" };
-
-    const supportLinks = [
-        { name: "Privacy Policy", href: "user.support.privacy", icon: HelpCircle },
-        { name: "Terms of Service", href: "user.support.terms", icon: FileText },
-        { name: "Contact Support", href: "user.support.index", icon: Mail },
+    const userNavigation = [
+        { name: "Users", href: "admin.users.index", icon: Users },
     ];
+
+    const transactionSubRoutes = [
+        { name: "All Transactions", href: "admin.dashboard", icon: CreditCard },
+        { name: "Send Operations", href: "admin.send.index", icon: Send },
+        { name: "Receive Operations", href: "admin.receive.index", icon: Download },
+        { name: "Swap/Trade Logs", href: "admin.swap.index", icon: Repeat }
+    ];
+
+    const adminToolsNavigation = [
+        { name: "KYC Submissions", href: "admin.kyc.index", icon: FileText },
+        { name: "Send Notifications", href: "admin.notifications.index", icon: Mail, isModal: true }
+    ];
+
+    const securityNavigation = [
+        { name: "Security", href: "admin.profile.index", params: { tab: 'security' }, icon: Shield, description: "Password & 2FA" }
+    ];
+
+    const isActive = (href: string) => route().current(href);
+
+    const isTransactionGroupActive = computed(() => {
+        return transactionSubRoutes.some(item => route().current(item.href));
+    });
+
+    if (isTransactionGroupActive.value) {
+        isTransactionsOpen.value = true;
+    }
 
     const kycStatus = computed(() => {
         const status = page.props.auth.user?.kyc?.status;
@@ -133,6 +148,10 @@
         isNotificationsModalOpen.value = false;
     };
 
+    const closeCreateCampaignModal = () => {
+        isCreateCampaignModalOpen.value = false;
+    };
+
     const copyEmail = async () => {
         if (user.value?.email) {
             await navigator.clipboard.writeText(user.value.email);
@@ -143,132 +162,79 @@
         }
     };
 
-    // Watcher to manage body overflow
+    const openModal = (modalName: string) => {
+        if (modalName === 'createCampaignModalOpen') {
+            isCreateCampaignModalOpen.value = true;
+        }
+    };
+
+    const handleMobileMenuClick = (item: { isModal?: boolean, name: string }) => {
+        closeAccountModal();
+        if (item.isModal && item.name === 'Send Notifications') {
+            openModal('createCampaignModalOpen');
+        }
+    };
+
     watch(isAccountModalOpen, (isOpen) => {
         if (isOpen) {
             document.body.style.overflow = 'hidden';
         } else {
             setTimeout(() => {
                 document.body.style.overflow = '';
-                // Reset to menu tab when account modal closes
-                if (activeTab.value !== 'menu') {
-                    activeTab.value = 'menu';
-                }
             }, 250);
         }
     });
 
-    interface WalletItem {
-        key: string;
-        id: string;
-        name: string;
-        symbol: string;
-        network: string | null;
-        balance: number;
-        image: string;
-        status: string;
-        is_visible: boolean;
-        is_updating: boolean;
-    }
+    const deliveryMethods = [
+        { value: 'email', label: 'Email' },
+        { value: 'db', label: 'In-App' },
+        { value: 'both', label: 'Both' },
+    ];
 
-    const wallets = ref<WalletItem[]>([]);
+    const campaignForm = useForm({
+        subject: '',
+        content: '',
+        deliveryMethod: 'both' as 'both' | 'email' | 'db',
+    });
 
-    const parseWalletBalances = () => {
-        const walletBalancesJson = page.props.auth.user?.wallet_balance;
-        if (walletBalancesJson && typeof walletBalancesJson === 'string') {
-            try {
-                const balances: Record<string, Omit<WalletItem, 'key' | 'is_visible' | 'is_updating'>> = JSON.parse(walletBalancesJson);
-
-                wallets.value = Object.entries(balances).map(([key, data]) => {
-                    const existingWallet = wallets.value.find(w => w.key === key);
-                    return {
-                        key: key,
-                        ...data,
-                        is_visible: data.status === '1',
-                        is_updating: existingWallet?.is_updating || false,
-                    };
-                });
-            } catch (e) {
-                console.error("Error parsing wallet_balance JSON:", e);
-                wallets.value = [];
-            }
-        } else {
-            wallets.value = [];
-        }
+    const resetFormData = () => {
+        campaignForm.reset();
+        campaignForm.deliveryMethod = 'both';
     };
 
-    watch(() => page.props.auth.user?.wallet_balance, parseWalletBalances, { immediate: true });
-
-    const toggleWalletVisibility = (key: string) => {
-        const wallet = wallets.value.find(w => w.key === key);
-        if (!wallet || wallet.is_updating) return;
-
-        // Set loading state
-        wallet.is_updating = true;
-
-        // Determine new status based on CURRENT status (invert it)
-        const newStatus = wallet.status === '1' ? '0' : '1';
-
-        // Store previous state for rollback
-        const previousStatus = wallet.status;
-        const previousIsVisible = wallet.is_visible;
-
-        // Optimistically update local UI state
-        wallet.status = newStatus;
-        wallet.is_visible = newStatus === '1';
-
-        // Send request to backend
-        router.patch(route('user.profile.update.wallet.status'), {
-            wallet_key: key,
-            wallet_status: newStatus,
-        }, {
+    const createCampaign = () => {
+        campaignForm.post(route('admin.notifications.broadcast'), {
             preserveScroll: true,
-            preserveState: true,
             onSuccess: () => {
-                const updatedWallet = wallets.value.find(w => w.key === key);
-                if (updatedWallet) {
-                    updatedWallet.is_updating = false;
-                }
+                closeCreateCampaignModal();
+                resetFormData();
             },
-            onError: () => {
-                const failedWallet = wallets.value.find(w => w.key === key);
-                if (failedWallet) {
-                    failedWallet.status = previousStatus;
-                    failedWallet.is_visible = previousIsVisible;
-                    failedWallet.is_updating = false;
-                }
-            },
-            onFinish: () => {
-                const finalWallet = wallets.value.find(w => w.key === key);
-                if (finalWallet) {
-                    finalWallet.is_updating = false;
-                }
-            }
         });
     };
 
-    const switchToWalletsTab = () => {
-        activeTab.value = 'wallets';
-    };
-
-    const switchToMenuTab = () => {
-        activeTab.value = 'menu';
-    };
-
-    const getIconSymbol = (symbol: string) => {
-        const lowerSymbol = symbol.toLowerCase();
-        if (lowerSymbol.includes('usdt')) {
-            return 'usdt';
+    const clearError = (form: typeof campaignForm, field: 'subject' | 'content' | 'deliveryMethod') => {
+        if (form.errors[field]) {
+            form.clearErrors(field);
         }
-        return lowerSymbol;
     };
+
+    import ActionButton from '@/components/ActionButton.vue';
+    import InputError from '@/components/InputError.vue';
+    import QuickActionModal from '@/components/QuickActionModal.vue';
+    import("@vueup/vue-quill/dist/vue-quill.snow.css");
+
+    const QuillEditor = defineAsyncComponent(() =>
+        import("@vueup/vue-quill").then(module => {
+            return module.QuillEditor;
+        })
+    );
 </script>
 
 <template>
     <div class="lg:hidden sticky top-0 inset-x-0 z-40 px-3 xs:px-4 py-3 xs:py-4 flex items-center gap-2 xs:gap-3 bg-background border-b border-border">
         <button
             class="w-8 h-8 xs:w-9 xs:h-9 flex items-center justify-center rounded-md bg-accent text-accent-foreground flex-shrink-0"
-            aria-label="Menu"
+            aria-label="Admin Menu"
             @click="isAccountModalOpen = true">
             <Menu class="w-5 h-5 xs:w-6 xs:h-6" />
         </button>
@@ -280,7 +246,7 @@
                 v-model="searchQuery"
                 type="text"
                 class="flex-1 min-w-0 bg-transparent border-0 focus:ring-0 focus:outline-none text-xs text-foreground placeholder:text-muted-foreground ml-2"
-                placeholder="Search"
+                placeholder="Search Admin"
             />
             <X v-if="searchQuery"
                class="w-4 h-4 text-muted-foreground cursor-pointer hover:text-foreground flex-shrink-0"
@@ -307,17 +273,16 @@
         </button>
 
         <TextLink
-            :href="route('user.profile.index')"
+            :href="route('admin.profile.index')"
             class="w-8 h-8 xs:w-9 xs:h-9 bg-accent rounded-lg xs:rounded-xl relative cursor-pointer overflow-hidden flex items-center justify-center flex-shrink-0"
-            title="My Profile">
+            title="Admin Profile">
             <img
                 v-if="user.profile?.profile_photo_path"
                 :src="user.profile.profile_photo_path"
                 alt="Profile picture"
                 class="h-full w-full object-cover"
             />
-            <span v-else
-                  class="text-xs xs:text-sm text-accent-foreground font-semibold select-none">
+            <span v-else class="text-xs xs:text-sm text-accent-foreground font-semibold select-none">
                 {{ initials }}
             </span>
         </TextLink>
@@ -348,8 +313,8 @@
                     <div class="sticky top-0 bg-card z-10 px-4 xs:px-5 pt-4 xs:pt-6 pb-3 xs:pb-4 border-b border-border">
                         <div class="flex items-start justify-between gap-2 mb-3">
                             <div class="flex-1 min-w-0">
-                                <h3 class="text-lg xs:text-xl font-semibold text-card-foreground">Account Menu</h3>
-                                <p class="text-xs xs:text-sm text-muted-foreground mt-1">Manage your account and preferences</p>
+                                <h3 class="text-lg xs:text-xl font-semibold text-card-foreground">Admin Menu</h3>
+                                <p class="text-xs xs:text-sm text-muted-foreground mt-1">Navigate the dashboard and manage settings</p>
                             </div>
                             <button
                                 @click="closeAccountModal"
@@ -358,34 +323,9 @@
                                 <X class="h-4 w-4 xs:h-5 xs:w-5 text-muted-foreground" />
                             </button>
                         </div>
-
-                        <div class="flex gap-1 p-1 rounded-lg bg-secondary">
-                            <button
-                                @click="switchToMenuTab"
-                                :class="[
-                                    'flex-1 px-3 py-2 text-xs xs:text-sm font-medium rounded-md transition-all',
-                                    activeTab === 'menu'
-                                        ? 'bg-primary text-primary-foreground shadow'
-                                        : 'text-muted-foreground hover:text-foreground'
-                                ]"
-                            >
-                                Menu
-                            </button>
-                            <button
-                                @click="switchToWalletsTab"
-                                :class="[
-                                    'flex-1 px-3 py-2 text-xs xs:text-sm font-medium rounded-md transition-all',
-                                    activeTab === 'wallets'
-                                        ? 'bg-primary text-primary-foreground shadow'
-                                        : 'text-muted-foreground hover:text-foreground'
-                                ]"
-                            >
-                                Wallets
-                            </button>
-                        </div>
                     </div>
 
-                    <div v-if="activeTab === 'menu'" class="flex flex-col flex-1">
+                    <div class="flex flex-col flex-1">
                         <div class="px-4 xs:px-5 pt-4 xs:pt-6 pb-3 xs:pb-4">
                             <div class="flex items-start gap-3 xs:gap-4 p-3 xs:p-4 rounded-xl xs:rounded-2xl bg-gradient-to-br from-primary/10 via-primary/10 to-transparent border border-border">
                                 <div class="relative flex-shrink-0">
@@ -395,9 +335,7 @@
                                             :src="user.profile.profile_photo_path"
                                             :alt="`${user.first_name} ${user.last_name}`"
                                             class="h-full w-full object-cover">
-                                        <span
-                                            v-else
-                                            class="text-base xs:text-xl font-bold text-muted-foreground">
+                                        <span v-else class="text-base xs:text-xl font-bold text-muted-foreground">
                                             {{ initials }}
                                         </span>
                                     </div>
@@ -425,7 +363,8 @@
                                 </div>
 
                                 <TextLink
-                                    :href="route('user.profile.index')"
+                                    :href="route('admin.profile.index')"
+                                    @click="closeAccountModal"
                                     class="p-1.5 xs:p-2 hover:bg-secondary rounded-lg flex-shrink-0"
                                     title="Edit Profile"
                                 >
@@ -434,113 +373,129 @@
                             </div>
                         </div>
 
-                        <div class="px-4 xs:px-5 pb-4 xs:pb-6 space-y-4 xs:space-y-6 flex-1">
+                        <div class="px-4 xs:px-5 pb-4 xs:pb-6 space-y-4 xs:space-y-6 flex-1 overflow-y-auto">
+                            <!-- Quick Actions Grid -->
                             <div>
                                 <h3 class="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 xs:mb-3 px-1">Quick Actions</h3>
-                                <div class="grid grid-cols-3 gap-1.5 xs:gap-2.5">
-                                    <TextLink
-                                        v-for="item in navigation"
-                                        :key="item.name"
-                                        :href="route(item.href)"
-                                        @click="closeAccountModal"
-                                        class="flex flex-col items-center justify-center p-2 xs:p-3 rounded-lg xs:rounded-xl bg-secondary/50 hover:bg-secondary active:scale-95 border border-border hover:border-border/60 transition-all group"
-                                    >
-                                        <div class="w-8 h-8 xs:w-10 xs:h-10 rounded-lg xs:rounded-xl bg-primary/10 flex items-center justify-center mb-1.5 xs:mb-2 group-hover:bg-primary/20">
-                                            <component :is="item.icon" class="w-4 h-4 xs:w-5 xs:h-5 text-primary" />
-                                        </div>
-                                        <span class="text-[10px] xs:text-xs font-medium text-center leading-tight">{{ item.name }}</span>
-                                    </TextLink>
-                                </div>
-                            </div>
 
-                            <div>
-                                <h3 class="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 xs:mb-3 px-1">Account Settings</h3>
-                                <div class="space-y-0.5 xs:space-y-1">
+                                <div class="grid grid-cols-3 gap-2 xs:gap-2.5 mb-2 xs:mb-2.5">
+
                                     <TextLink
-                                        v-for="item in accountLinks"
-                                        :key="item.name"
-                                        :href="route(item.href, item.params)"
+                                        :href="route(navigation[0].href)"
                                         @click="closeAccountModal"
-                                        class="flex items-center gap-2.5 xs:gap-3 p-2.5 xs:p-3 rounded-lg xs:rounded-xl hover:bg-secondary active:bg-secondary/90 transition-all group"
+                                        class="flex items-center gap-2.5 xs:gap-3 p-2.5 xs:p-3 rounded-lg xs:rounded-xl bg-secondary/50 border border-border hover:bg-secondary hover:border-border/60 active:bg-secondary/90 transition-all group"
                                     >
-                                        <div class="w-8 h-8 xs:w-10 xs:h-10 rounded-lg bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 flex-shrink-0">
-                                            <component :is="item.icon" class="w-4 h-4 xs:w-5 xs:h-5 text-primary" />
+                                        <div class="w-8 h-8 xs:w-10 xs:h-10 rounded-lg xs:rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0 group-hover:bg-primary/20">
+                                            <component :is="navigation[0].icon" class="w-4 h-4 xs:w-5 xs:h-5 text-primary" />
                                         </div>
                                         <div class="flex-1 min-w-0">
-                                            <p class="font-medium text-xs xs:text-sm">{{ item.name }}</p>
-                                            <p class="text-[10px] xs:text-xs text-muted-foreground truncate">{{ item.description }}</p>
+                                            <p class="text-xs xs:text-sm font-medium leading-tight">{{ navigation[0].name }}</p>
                                         </div>
-                                        <ChevronRight class="w-3.5 h-3.5 xs:w-4 xs:h-4 text-muted-foreground/50 group-hover:text-muted-foreground flex-shrink-0" />
+                                    </TextLink>
+
+                                    <TextLink
+                                        :href="route(userNavigation[0].href)"
+                                        @click="closeAccountModal"
+                                        class="flex items-center gap-2.5 xs:gap-3 p-2.5 xs:p-3 rounded-lg xs:rounded-xl bg-secondary/50 border border-border hover:bg-secondary hover:border-border/60 active:bg-secondary/90 transition-all group"
+                                    >
+                                        <div class="w-8 h-8 xs:w-10 xs:h-10 rounded-lg xs:rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0 group-hover:bg-primary/20">
+                                            <component :is="userNavigation[0].icon" class="w-4 h-4 xs:w-5 xs:h-5 text-primary" />
+                                        </div>
+                                        <div class="flex-1 min-w-0">
+                                            <p class="text-xs xs:text-sm font-medium leading-tight">{{ userNavigation[0].name }}</p>
+                                        </div>
+                                    </TextLink>
+
+                                    <TextLink
+                                        :href="route(adminToolsNavigation.find(i => i.name === 'KYC Submissions')?.href || 'admin.dashboard')"
+                                        @click="closeAccountModal"
+                                        class="flex items-center gap-2.5 xs:gap-3 p-2.5 xs:p-3 rounded-lg xs:rounded-xl bg-secondary/50 border border-border hover:bg-secondary hover:border-border/60 active:bg-secondary/90 transition-all group"
+                                    >
+                                        <div class="w-8 h-8 xs:w-10 xs:h-10 rounded-lg xs:rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0 group-hover:bg-primary/20">
+                                            <FileText class="w-4 h-4 xs:w-5 xs:h-5 text-primary" />
+                                        </div>
+                                        <div class="flex-1 min-w-0">
+                                            <p class="text-xs xs:text-sm font-medium leading-tight">KYC</p>
+                                        </div>
+                                    </TextLink>
+                                </div>
+
+                                <div class="grid grid-cols-2 gap-2 xs:gap-2.5 **w-2/3 mx-auto**">
+
+                                    <TextLink
+                                        :href="route(securityNavigation[0].href, securityNavigation[0].params)"
+                                        @click="closeAccountModal"
+                                        class="flex items-center gap-2.5 xs:gap-3 p-2.5 xs:p-3 rounded-lg xs:rounded-xl bg-secondary/50 border border-border hover:bg-secondary hover:border-border/60 active:bg-secondary/90 transition-all group"
+                                    >
+                                        <div class="w-8 h-8 xs:w-10 xs:h-10 rounded-lg xs:rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0 group-hover:bg-primary/20">
+                                            <Shield class="w-4 h-4 xs:w-5 xs:h-5 text-primary" />
+                                        </div>
+                                        <div class="flex-1 min-w-0">
+                                            <p class="text-xs xs:text-sm font-medium leading-tight">Security</p>
+                                        </div>
                                     </TextLink>
 
                                     <button
-                                        @click.prevent="switchToWalletsTab"
-                                        class="w-full flex items-center gap-2.5 xs:gap-3 p-2.5 xs:p-3 rounded-lg xs:rounded-xl hover:bg-secondary active:bg-secondary/90 transition-all group"
+                                        @click.prevent="handleMobileMenuClick({ isModal: true, name: 'Send Notifications' })"
+                                        class="flex items-center gap-2.5 xs:gap-3 p-2.5 xs:p-3 rounded-lg xs:rounded-xl bg-secondary/50 border border-border hover:bg-secondary hover:border-border/60 active:bg-secondary/90 transition-all group"
                                     >
-                                        <div class="w-8 h-8 xs:w-10 xs:h-10 rounded-lg bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 flex-shrink-0">
-                                            <component :is="walletLink.icon" class="w-4 h-4 xs:w-5 xs:h-5 text-primary" />
+                                        <div class="w-8 h-8 xs:w-10 xs:h-10 rounded-lg xs:rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0 group-hover:bg-primary/20">
+                                            <Mail class="w-4 h-4 xs:w-5 xs:h-5 text-primary" />
                                         </div>
                                         <div class="flex-1 text-left min-w-0">
-                                            <p class="font-medium text-xs xs:text-sm">{{ walletLink.name }}</p>
-                                            <p class="text-[10px] xs:text-xs text-muted-foreground truncate">{{ walletLink.description }}</p>
+                                            <p class="text-xs xs:text-sm font-medium leading-tight">Send Notifications</p>
                                         </div>
-                                        <ChevronRight class="w-3.5 h-3.5 xs:w-4 xs:h-4 text-muted-foreground/50 group-hover:text-muted-foreground flex-shrink-0" />
                                     </button>
                                 </div>
                             </div>
 
+                            <!-- Gateways & Tools -->
                             <div>
-                                <h3 class="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 xs:mb-3 px-1">Preferences</h3>
+                                <h3 class="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 xs:mb-3 px-1">Gateways & Tools</h3>
                                 <div class="space-y-0.5 xs:space-y-1">
-                                    <div class="p-2.5 xs:p-3">
-                                        <div class="flex items-center gap-1 xs:gap-1.5 p-1 rounded-lg bg-secondary">
-                                            <button
-                                                v-for="{ value, Icon, label } in tabs"
-                                                :key="value"
-                                                @click="updateAppearance(value as 'light' | 'dark' | 'system')"
-                                                :class="[
-                                                    'flex-1 flex items-center justify-center gap-1 xs:gap-2 rounded-md px-2 xs:px-3 py-1.5 text-xs xs:text-sm',
-                                                    appearance === value
-                                                        ? 'bg-primary text-primary-foreground shadow'
-                                                        : 'text-muted-foreground hover:bg-muted hover:text-foreground',
-                                                ]"
-                                            >
-                                                <component :is="Icon" class="h-3.5 w-3.5 xs:h-4 xs:w-4" />
-                                                <span class="hidden xs:inline">{{ label }}</span>
-                                            </button>
-                                        </div>
-                                    </div>
-
-                                    <button class="w-full flex items-center gap-2.5 xs:gap-3 p-2.5 xs:p-3 rounded-lg xs:rounded-xl hover:bg-secondary active:bg-secondary/90 transition-all group">
-                                        <div class="w-8 h-8 xs:w-10 xs:h-10 rounded-lg bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 flex-shrink-0">
-                                            <Globe class="w-4 h-4 xs:w-5 xs:h-5 text-primary" />
-                                        </div>
-                                        <div class="flex-1 text-left min-w-0">
-                                            <p class="font-medium text-xs xs:text-sm">Language</p>
-                                            <p class="text-[10px] xs:text-xs text-muted-foreground">English (US)</p>
-                                        </div>
-                                        <ChevronRight class="w-3.5 h-3.5 xs:w-4 xs:h-4 text-muted-foreground/50 group-hover:text-muted-foreground flex-shrink-0" />
-                                    </button>
+                                    <template v-for="item in gatewaysNavigation" :key="item.name">
+                                        <TextLink
+                                            :href="route(item.href)"
+                                            @click="closeAccountModal"
+                                            class="flex items-center gap-2.5 xs:gap-3 p-2.5 xs:p-3 rounded-lg xs:rounded-xl hover:bg-secondary active:bg-secondary/90 transition-all group"
+                                        >
+                                            <div class="w-8 h-8 xs:w-10 xs:h-10 rounded-lg bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 flex-shrink-0">
+                                                <component :is="item.icon" class="w-4 h-4 xs:w-5 xs:h-5 text-primary" />
+                                            </div>
+                                            <div class="flex-1 min-w-0">
+                                                <p class="font-medium text-xs xs:text-sm">{{ item.name }}</p>
+                                                <p class="text-[10px] xs:text-xs text-muted-foreground truncate">{{ item.name === 'Connected Wallets' ? 'Manage wallet connections' : 'Crypto processing methods' }}</p>
+                                            </div>
+                                            <ChevronRight class="w-3.5 h-3.5 xs:w-4 xs:h-4 text-muted-foreground/50 group-hover:text-muted-foreground flex-shrink-0" />
+                                        </TextLink>
+                                    </template>
                                 </div>
                             </div>
 
+                            <!-- Financial Logs with Expandable Dropdown - Grouped with Contents -->
                             <div>
-                                <h3 class="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 xs:mb-3 px-1">Support & Legal</h3>
+                                <h3 class="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 xs:mb-3 px-1">Financial Operations</h3>
                                 <div class="space-y-0.5 xs:space-y-1">
                                     <TextLink
-                                        v-for="item in supportLinks"
-                                        :key="item.name"
-                                        :href="route(item.href)"
+                                        v-for="subItem in transactionSubRoutes"
+                                        :key="subItem.name"
+                                        :href="route(subItem.href)"
                                         @click="closeAccountModal"
                                         class="flex items-center gap-2.5 xs:gap-3 p-2.5 xs:p-3 rounded-lg xs:rounded-xl hover:bg-secondary active:bg-secondary/90 transition-all group"
+                                        :class="{ 'font-semibold text-primary': isActive(subItem.href) }"
                                     >
-                                        <component :is="item.icon" class="w-4 h-4 xs:w-5 xs:h-5 text-muted-foreground flex-shrink-0" />
-                                        <span class="font-medium text-xs xs:text-sm flex-1 text-left">{{ item.name }}</span>
+                                        <div class="w-8 h-8 xs:w-10 xs:h-10 rounded-lg bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 flex-shrink-0">
+                                            <component :is="subItem.icon" class="h-4 w-4 xs:h-5 xs:w-5 text-primary" />
+                                        </div>
+                                        <div class="flex-1 min-w-0">
+                                            <p class="font-medium text-xs xs:text-sm">{{ subItem.name }}</p>
+                                        </div>
                                         <ChevronRight class="w-3.5 h-3.5 xs:w-4 xs:h-4 text-muted-foreground/50 group-hover:text-muted-foreground flex-shrink-0" />
                                     </TextLink>
                                 </div>
                             </div>
 
+                            <!-- Logout Button -->
                             <TextLink
                                 :href="route('logout')"
                                 method="post"
@@ -556,67 +511,6 @@
                             </div>
                         </div>
                     </div>
-
-                    <div v-if="activeTab === 'wallets'" class="flex flex-col flex-1">
-                        <div class="px-4 xs:px-5 pt-4 xs:pt-6 pb-3 xs:pb-4">
-                            <h3 class="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 xs:mb-3 px-1">Wallet Visibility</h3>
-                            <p class="text-xs text-muted-foreground mb-3 xs:mb-4 px-1">Toggle which wallets appear in your main balance list. Changes are saved immediately.</p>
-                        </div>
-
-                        <div class="px-4 xs:px-5 flex-1 overflow-y-auto no-scrollbar pb-4 xs:pb-6">
-                            <div class="space-y-2 xs:space-y-3">
-                                <div
-                                    v-for="wallet in wallets"
-                                    :key="wallet.key"
-                                    class="flex items-center justify-between p-3 xs:p-4 rounded-xl border border-border bg-secondary/30"
-                                >
-                                    <div class="flex items-center gap-3 flex-1 min-w-0">
-                                        <div class="w-10 h-10 xs:w-12 xs:h-12 flex-shrink-0 rounded-full overflow-hidden bg-background border border-border">
-                                            <img
-                                                :src="`https://cdn.jsdelivr.net/gh/atomiclabs/cryptocurrency-icons@1a63530be6e374711a8554f31b17e4cb92c25fa5/128/color/${getIconSymbol(wallet.symbol)}.png`"
-                                                :alt="`${wallet.name} icon`"
-                                                class="h-full w-full object-cover"
-                                                @error="(e) => (e.target as HTMLImageElement).src = 'https://cdn.jsdelivr.net/gh/atomiclabs/cryptocurrency-icons@1a63530be6e374711a8554f31b17e4cb92c25fa5/128/color/generic.png'"
-                                            />
-                                        </div>
-
-                                        <div class="min-w-0">
-                                            <p class="font-semibold text-sm xs:text-base truncate leading-tight">{{ wallet.name }}</p>
-                                            <p class="text-xs xs:text-sm text-muted-foreground mt-0.5">
-                                                {{ wallet.symbol }}
-                                                <span v-if="wallet.network" class="ml-1 text-[10px] xs:text-xs font-medium px-1.5 py-0.5 rounded-full bg-border text-foreground">{{ wallet.network }}</span>
-                                                <span class="ml-1 text-[10px] xs:text-xs text-primary font-medium" v-if="wallet.is_visible">({{ wallet.balance }})</span>
-                                                <span class="ml-1 text-[10px] xs:text-xs text-muted-foreground italic font-medium" v-else>(Hidden)</span>
-                                            </p>
-                                        </div>
-                                    </div>
-
-                                    <div class="flex-shrink-0 relative w-11 h-6">
-                                        <label :for="`wallet-toggle-${wallet.key}`" class="absolute inset-0 inline-flex items-center cursor-pointer transition-opacity" :class="{ 'opacity-0 pointer-events-none': wallet.is_updating }">
-                                            <input type="checkbox" :id="`wallet-toggle-${wallet.key}`" :checked="wallet.is_visible" @change="toggleWalletVisibility(wallet.key)" class="sr-only peer" :disabled="wallet.is_updating">
-                                            <div class="w-11 h-6 bg-border rounded-full peer peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary/50 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-border after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
-                                            <span class="sr-only">Toggle Wallet Visibility</span>
-                                        </label>
-
-                                        <div v-if="wallet.is_updating" class="absolute inset-0 flex items-center justify-center">
-                                            <svg class="animate-spin h-5 w-5 text-primary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                            </svg>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <p v-if="wallets.length === 0" class="text-center text-sm text-muted-foreground py-10">
-                                    No wallet balances found.
-                                </p>
-                            </div>
-                        </div>
-
-                        <div class="sticky bottom-0 bg-card z-10 p-4 xs:p-5 border-t border-border text-center">
-                            <p class="text-xs text-muted-foreground">This setting controls which wallets are displayed on your main dashboard.</p>
-                        </div>
-                    </div>
                 </div>
             </Transition>
         </div>
@@ -626,6 +520,43 @@
         :is-open="isNotificationsModalOpen"
         @close="closeNotificationsModal"
     />
+
+    <QuickActionModal
+        :is-open="isCreateCampaignModalOpen"
+        title="Create Newsletter Campaign"
+        subtitle="Set up and schedule your newsletter broadcast"
+        @close="closeCreateCampaignModal">
+
+        <form @submit.prevent="createCampaign" class="space-y-4">
+            <div class="space-y-2">
+                <label for="subject" class="text-sm font-medium text-muted-foreground uppercase tracking-wider">Email Subject</label>
+                <input id="subject" v-model="campaignForm.subject" @focus="clearError(campaignForm, 'subject')" type="text" placeholder="Important Account Notice" class="input-crypto w-full text-sm" />
+                <InputError :message="campaignForm.errors.subject" />
+            </div>
+
+            <div class="space-y-2">
+                <label for="content" class="text-sm font-medium text-muted-foreground uppercase tracking-wider">Content</label>
+                <QuillEditor id="content" v-model:content="campaignForm.content" contentType="html" theme="snow" placeholder="Your newsletter content..." toolbar="full" />
+                <InputError :message="campaignForm.errors.content" />
+            </div>
+
+            <div class="space-y-2">
+                <label class="text-sm font-medium text-muted-foreground uppercase tracking-wider">Delivery Method</label>
+                <div class="grid grid-cols-3 gap-2">
+                    <button v-for="method in deliveryMethods" :key="method.value" type="button" @click="campaignForm.deliveryMethod = method.value as any" :class="`p-3 rounded-lg border-2 text-center cursor-pointer transition text-xs font-medium ${campaignForm.deliveryMethod === method.value ? 'border-primary bg-primary/10' : 'border-border hover:border-border/60'}`">
+                        {{ method.label }}
+                    </button>
+                </div>
+                <InputError :message="campaignForm.errors.deliveryMethod" />
+            </div>
+
+            <div class="flex items-center justify-end gap-3 pt-2">
+                <ActionButton :processing="campaignForm.processing">
+                    Create Campaign
+                </ActionButton>
+            </div>
+        </form>
+    </QuickActionModal>
 </template>
 
 <style scoped>
@@ -635,5 +566,18 @@
     .no-scrollbar {
         -ms-overflow-style: none;
         scrollbar-width: none;
+    }
+    .animate-fadeIn {
+        animation: fadeIn 0.2s ease-out;
+    }
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(-5px) scale(1);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0px) scale(1);
+        }
     }
 </style>

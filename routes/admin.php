@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Admin\AdminDashboardController;
 use App\Http\Controllers\Admin\AdminKycController;
+use App\Http\Controllers\Admin\AdminNotificationController;
 use App\Http\Controllers\Admin\AdminProfileController;
 use App\Http\Controllers\Admin\AdminReceivedCryptoController;
 use App\Http\Controllers\Admin\AdminSentCryptoController;
@@ -115,7 +116,6 @@ Route::prefix('admin')
             ->name('notifications.')
             ->controller(AdminNotificationController::class)
             ->group(function () {
-                Route::get('/', 'index')->name('index');
                 Route::post('/broadcast', 'broadcast')->name('broadcast');
             });
     });

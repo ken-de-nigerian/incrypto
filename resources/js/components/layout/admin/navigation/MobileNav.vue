@@ -1,15 +1,15 @@
 <script setup lang="ts">
-    import { Home, User2, Send, Download, Wallet } from 'lucide-vue-next';
+import { Home, User2, Users2, CreditCard, FilesIcon } from 'lucide-vue-next';
     import { route } from 'ziggy-js';
     import TextLink from '@/components/TextLink.vue';
     import { computed } from 'vue';
 
     const navigation = [
-        { name: 'Home', href: 'user.dashboard', icon: Home },
-        { name: "Send", href: "user.send.index", icon: Send },
-        { name: "Receive", href: "user.receive.index", icon: Download },
-        { name: 'Connect', href: 'user.wallet.index', icon: Wallet, isWallet: true },
-        { name: 'Account', href: 'user.profile.index', icon: User2 }
+        { name: 'Home', href: 'admin.dashboard', icon: Home },
+        { name: "Users", href: "admin.users.index", icon: Users2 },
+        { name: "Logs", href: "admin.dashboard", icon: FilesIcon },
+        { name: 'Connect', href: 'admin.wallet.index', icon: CreditCard, isWallet: true },
+        { name: 'Account', href: 'admin.profile.index', icon: User2 }
     ];
 
     const isWalletActive = computed(() => {

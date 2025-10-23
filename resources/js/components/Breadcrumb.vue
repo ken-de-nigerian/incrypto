@@ -82,7 +82,7 @@
         </div>
 
         <div class="hidden lg:flex items-center gap-4">
-            <TextLink v-if="page.props.is_admin_impersonating" :href="route('exit.user.session')" class="p-2 bg-primary/10 border border-border rounded-xl hover:bg-primary/20 transition-colors cursor-pointer" title="Exit Admin Mode">
+            <TextLink v-if="page.props.is_admin_impersonating && page.component.startsWith('User/')" :href="route('exit.user.session')" class="p-2 bg-primary/10 border border-border rounded-xl hover:bg-primary/20 transition-colors cursor-pointer" title="Exit Admin Mode">
                 <span class="text-sm font-semibold text-primary flex items-center gap-2">
                     <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
                         <path d="M13 3H11v5h2V3zm4.83 2.17l-1.41 1.41C17.99 7.86 19 9.81 19 12c0 3.87-3.13 7-7 7s-7-3.13-7-7c0-2.19 1.01-4.14 2.58-5.42L6.17 5.17C4.23 6.82 3 9.26 3 12c0 4.97 4.03 9 9 9s9-4.03 9-9c0-2.74-1.23-5.18-3.17-6.83z"/>
@@ -119,10 +119,9 @@
             </button>
 
             <TextLink
-                :href="route('user.profile.index')"
+                :href="page.component.startsWith('User/') ? route('user.profile.index') : route('admin.profile.index')"
                 class="w-9 h-9 bg-accent rounded-xl relative cursor-pointer overflow-hidden flex items-center justify-center"
-                title="My Profile"
-            >
+                :title="page.component.startsWith('User/') ? 'My Profile' : 'My Profile'">
                 <img
                     v-if="user.profile?.profile_photo_path"
                     :src="user.profile.profile_photo_path"

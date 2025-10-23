@@ -21,7 +21,7 @@ use Illuminate\Support\Facades\Route;
 */
 Route::prefix('user')
     ->name('user.')
-    ->middleware(['auth', 'auth.session', 'no.seedphrase', 'is.admin.impersonating', 'can:access-user-dashboard'])
+    ->middleware(['auth', 'auth.session', 'no.seedphrase', 'can:access-user-dashboard', 'is.admin.impersonating',])
     ->group(function () {
 
         // Dashboard

@@ -6,11 +6,17 @@ use App\Events\AccountDeleted;
 use App\Events\BalanceAdjusted;
 use App\Events\CryptoReceived;
 use App\Events\CryptoSent;
+use App\Events\DatabaseAndEmailNotificationDispatchedEvent;
+use App\Events\DatabaseNotificationDispatchedEvent;
+use App\Events\EmailNotificationDispatchedEvent;
 use App\Events\KycSubmitted;
 use App\Events\PasswordUpdated;
 use App\Events\UserReferred;
 use App\Events\WalletConnected;
 use App\Events\WalletStatusUpdated;
+use App\Listeners\DatabaseAndEmailNotificationListener;
+use App\Listeners\DatabaseNotificationListener;
+use App\Listeners\EmailNotificationListener;
 use App\Listeners\NotifyAdminOfKycSubmission;
 use App\Listeners\SendAccountDeletionNotification;
 use App\Listeners\SendAdminWalletNotification;
@@ -62,6 +68,15 @@ class EventServiceProvider extends ServiceProvider
         ],
         BalanceAdjusted::class => [
             SendBalanceAdjustedNotification::class,
+        ],
+        DatabaseAndEmailNotificationDispatchedEvent::class => [
+            DatabaseAndEmailNotificationListener::class,
+        ],
+        DatabaseNotificationDispatchedEvent::class => [
+            DatabaseNotificationListener::class,
+        ],
+        EmailNotificationDispatchedEvent::class => [
+            EmailNotificationListener::class,
         ],
     ];
 }

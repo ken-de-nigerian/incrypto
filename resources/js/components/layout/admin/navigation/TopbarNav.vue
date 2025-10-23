@@ -165,7 +165,7 @@
     ];
 
     const campaignForm = useForm({
-        subject: '',
+        title: '',
         content: '',
         deliveryMethod: 'both' as 'both' | 'email' | 'db',
     });
@@ -185,7 +185,7 @@
         });
     };
 
-    const clearError = (form: typeof campaignForm, field: 'subject' | 'content' | 'deliveryMethod') => {
+    const clearError = (form: typeof campaignForm, field: 'title' | 'content' | 'deliveryMethod') => {
         if (form.errors[field]) {
             form.clearErrors(field);
         }
@@ -515,9 +515,9 @@
                         <div class="px-4 xs:px-5 flex-1 overflow-y-auto no-scrollbar pb-4 xs:pb-6">
                             <form @submit.prevent="createCampaign" class="space-y-4">
                                 <div class="space-y-2">
-                                    <label for="subject" class="text-sm font-medium text-muted-foreground uppercase tracking-wider">Subject Line</label>
-                                    <input id="subject" v-model="campaignForm.subject" @focus="clearError(campaignForm, 'subject')" type="text" placeholder="Important System Update Notice" class="input-crypto w-full text-sm" />
-                                    <InputError :message="campaignForm.errors.subject" />
+                                    <label for="title" class="text-sm font-medium text-muted-foreground uppercase tracking-wider">Subject Line</label>
+                                    <input id="title" v-model="campaignForm.title" @focus="clearError(campaignForm, 'title')" type="text" placeholder="Important System Update Notice" class="input-crypto w-full text-sm" />
+                                    <InputError :message="campaignForm.errors.title" />
                                 </div>
 
                                 <div class="space-y-2">
@@ -535,7 +535,7 @@
                                     <InputError :message="campaignForm.errors.deliveryMethod" />
                                 </div>
 
-                                <div class="flex items-center justify-end gap-3 pt-2 mt-auto">
+                                <div class="flex items-center justify-end gap-3 pt-2 mt-auto margin-bottom">
                                     <ActionButton :processing="campaignForm.processing">
                                         Launch Campaign
                                     </ActionButton>
@@ -600,5 +600,11 @@
 
     .ql-editor.ql-blank::before {
         color: hsl(var(--foreground)) !important;
+    }
+
+    @media (max-width: 640px) {
+        .margin-bottom {
+            margin-bottom: 50px;
+        }
     }
 </style>

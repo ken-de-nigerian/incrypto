@@ -84,8 +84,6 @@ Route::prefix('admin')
                 Route::get('/', 'index')->name('index');
                 Route::post('/store', 'store')->name('store');
                 Route::patch('/{method}/update', 'update')->name('update');
-                Route::patch('/{method}/activate', 'activate')->name('activate');
-                Route::patch('/{method}/deactivate', 'deactivate')->name('deactivate');
             });
 
         // Swapped Cryptos

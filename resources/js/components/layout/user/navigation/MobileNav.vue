@@ -5,23 +5,37 @@
     import { computed } from 'vue';
 
     const navigation = [
-        { name: 'Home', href: 'user.dashboard', icon: Home },
-        { name: "Send", href: "user.send.index", icon: Send },
-        { name: "Receive", href: "user.receive.index", icon: Download },
-        { name: 'Connect', href: 'user.wallet.index', icon: Wallet, isWallet: true },
-        { name: 'Account', href: 'user.profile.index', icon: User2 }
+        { name: 'Home', href: 'user.dashboard', icon: Home, group: 'user.dashboard', isDefault: true },
+        { name: "Send", href: "user.send.index", icon: Send, group: 'user.send.' },
+        { name: "Receive", href: "user.receive.index", icon: Download, group: 'user.receive.' },
+        { name: 'Wallets', href: 'user.wallet.index', icon: Wallet, group: 'user.wallet.' },
+        { name: 'Account', href: 'user.profile.index', icon: User2, group: 'user.profile.' }
     ];
 
-    const isWalletActive = computed(() => {
-        return route().current('user.wallet.index')
-            || route().current('user.wallet.create');
+    const isAnyItemActive = computed(() => {
+        return navigation.some(item => {
+            if (item.isDefault) return false;
+            if (item.group) {
+                return route().current(item.group + '*');
+            }
+            return route().current(item.href);
+        });
     });
 
     const isActive = (item: typeof navigation[0]) => {
-        if (item.isWallet) {
-            return isWalletActive.value;
+        let active: boolean;
+
+        if (item.group) {
+            active = route().current(item.group + '*');
+        } else {
+            active = route().current(item.href);
         }
-        return route().current(item.href);
+
+        if (!active && item.isDefault && !isAnyItemActive.value) {
+            active = true;
+        }
+
+        return active;
     }
 </script>
 

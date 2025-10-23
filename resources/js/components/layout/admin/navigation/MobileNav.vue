@@ -1,27 +1,39 @@
 <script setup lang="ts">
-import { Home, User2, Users2, CreditCard, FilesIcon } from 'lucide-vue-next';
+    import { Home, User2, Users2, CreditCard, FilesIcon } from 'lucide-vue-next';
     import { route } from 'ziggy-js';
     import TextLink from '@/components/TextLink.vue';
     import { computed } from 'vue';
 
     const navigation = [
-        { name: 'Home', href: 'admin.dashboard', icon: Home },
-        { name: "Users", href: "admin.users.index", icon: Users2 },
-        { name: "Logs", href: "admin.dashboard", icon: FilesIcon },
-        { name: 'Connect', href: 'admin.wallet.index', icon: CreditCard, isWallet: true },
-        { name: 'Account', href: 'admin.profile.index', icon: User2 }
+        { name: 'Home', href: 'admin.dashboard', icon: Home, isDefault: true },
+        { name: "Users", href: "admin.users.index", icon: Users2, group: 'admin.users.' },
+        { name: "Logs", href: 'admin.dashboard', icon: FilesIcon, group: 'admin.logs.' },
+        { name: 'Wallets', href: 'admin.wallet.index', icon: CreditCard, group: 'admin.wallet.' },
+        { name: 'Account', href: 'admin.profile.index', icon: User2, group: 'admin.profile.' }
     ];
 
-    const isWalletActive = computed(() => {
-        return route().current('user.wallet.index')
-            || route().current('user.wallet.create');
+    const isAnyItemActive = computed(() => {
+        return navigation.some(item => {
+            if (item.group) {
+                return route().current(item.group + '*');
+            }
+            return route().current(item.href);
+        });
     });
 
+
     const isActive = (item: typeof navigation[0]) => {
-        if (item.isWallet) {
-            return isWalletActive.value;
+        let active: boolean;
+        if (item.group) {
+            active = route().current(item.group + '*');
+        } else {
+            active = route().current(item.href);
         }
-        return route().current(item.href);
+        if (!active && item.isDefault && !isAnyItemActive.value) {
+            active = true;
+        }
+
+        return active;
     }
 </script>
 

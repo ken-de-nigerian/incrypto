@@ -3,6 +3,7 @@
 use App\Http\Controllers\Admin\AdminDashboardController;
 use App\Http\Controllers\Admin\AdminKycController;
 use App\Http\Controllers\Admin\AdminNotificationController;
+use App\Http\Controllers\Admin\AdminPaymentMethodController;
 use App\Http\Controllers\Admin\AdminProfileController;
 use App\Http\Controllers\Admin\AdminReceivedCryptoController;
 use App\Http\Controllers\Admin\AdminSentCryptoController;
@@ -73,6 +74,18 @@ Route::prefix('admin')
             ->controller(AdminWalletConnectController::class)
             ->group(function () {
                 Route::get('/', 'index')->name('index');
+            });
+
+        // Wallet Management
+        Route::prefix('method')
+            ->name('method.')
+            ->controller(AdminPaymentMethodController::class)
+            ->group(function () {
+                Route::get('/', 'index')->name('index');
+                Route::post('/store', 'store')->name('store');
+                Route::patch('/{method}/update', 'update')->name('update');
+                Route::patch('/{method}/activate', 'activate')->name('activate');
+                Route::patch('/{method}/deactivate', 'deactivate')->name('deactivate');
             });
 
         // Swapped Cryptos

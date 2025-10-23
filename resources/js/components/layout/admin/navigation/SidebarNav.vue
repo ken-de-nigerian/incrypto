@@ -25,7 +25,7 @@
 
     const gatewaysNavigation = [
         { name: "Connected Wallets", href: "admin.wallet.index", icon: Wallet },
-        { name: "Crypto Methods", href: "admin.dashboard", icon: Shield },
+        { name: "Crypto Methods", href: "admin.method.index", icon: Shield },
     ];
 
     const userNavigation = [

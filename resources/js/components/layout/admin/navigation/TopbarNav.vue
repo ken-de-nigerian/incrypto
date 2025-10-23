@@ -36,7 +36,6 @@
     const activeTab = ref<'menu' | 'notifications'>('menu');
     const emailCopied = ref(false);
     const { appearance, updateAppearance } = useAppearance();
-
     import ActionButton from '@/components/ActionButton.vue';
     import InputError from '@/components/InputError.vue';
     import("@vueup/vue-quill/dist/vue-quill.snow.css");
@@ -82,7 +81,7 @@
 
     const gatewaysNavigation = [
         { name: "Connected Wallets", href: "admin.wallet.index", icon: Wallet, description: "Manage all linked user wallet connections" },
-        { name: "Crypto Gateways", href: "admin.dashboard", icon: Shield, description: "Configure cryptocurrency processing methods" },
+        { name: "Crypto Gateways", href: "admin.method.index", icon: Shield, description: "Configure cryptocurrency processing methods" },
     ];
 
     const userNavigation = [
@@ -559,7 +558,7 @@
     />
 </template>
 
-<style scoped>
+<style>
     .no-scrollbar::-webkit-scrollbar {
         display: none;
     }

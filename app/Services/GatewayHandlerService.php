@@ -19,6 +19,7 @@ class GatewayHandlerService
         'GAS_PRICE_DATA' => 120,   // 2 minutes
         'WALLET_DATA' => 43200,    // 12 hours
         'CHART_DATA' => 300,       // 5 minutes
+        'CRYPTOS_LIST' => 3600,    // 1 hour
     ];
 
     /**
@@ -68,6 +69,66 @@ class GatewayHandlerService
             'coinmarketcap' => 'ETH',
         ],
     ];
+
+    /**
+     * Gets market prices via CoinGecko API without pagination and caches results.
+     *
+     * @return array
+     */
+    public function getCryptos(): array
+    {
+        $cacheKey = "coinGeckoCryptosList";
+        $ttl = self::CACHE_TTL['CRYPTOS_LIST'];
+
+        return Cache::remember($cacheKey, $ttl, function () {
+            $data = $this->coinGeckoNoPagination();
+
+            if (empty($data)) {
+                Log::warning('Failed to fetch full cryptos list from CoinGecko.');
+                return [];
+            }
+
+            return $this->transformCoinGeckoCryptos($data);
+        });
+    }
+
+    /**
+     * Gets raw market data from CoinGecko API.
+     *
+     * @return array
+     */
+    private function coinGeckoNoPagination(): array
+    {
+        $url = "https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&sparkline=false";
+
+        return $this->fetchData(
+            "raw_coingecko_no_pagination_temp",
+            $url,
+            self::CACHE_TTL['CRYPTOS_LIST'],
+            "Failed to fetch CoinGecko top cryptos"
+        );
+    }
+
+    /**
+     * Transforms raw CoinGecko market data to cache only required fields.
+     *
+     * @param array $rawData
+     * @return array
+     */
+    private function transformCoinGeckoCryptos(array $rawData): array
+    {
+        return collect($rawData)->map(function ($coin) {
+            return [
+                'id' => $coin['id'] ?? null,
+                'symbol' => $coin['symbol'] ?? '',
+                'name' => $coin['name'] ?? '',
+                'image' => $coin['image'] ?? asset('assets/images/crypto.png'),
+            ];
+        })
+            ->filter(fn($coin) => $coin['id'] !== null)
+            ->values()
+            ->toArray();
+    }
 
     public function getGateways(): array
     {
@@ -925,7 +986,9 @@ class GatewayHandlerService
 
         $data = $response['data'] ?? [];
 
-        if (!empty($data) && !str_contains($cacheKey, 'coinGeckoSpecificCoins_')) {
+        // Only cache raw data if it's not the specific coins endpoint,
+        // as that is transformed before being cached externally.
+        if (!empty($data) && !str_contains($cacheKey, 'coinGeckoSpecificCoins_') && !str_contains($cacheKey, 'raw_coingecko_no_pagination_temp')) {
             Cache::put($cacheKey, $data, $ttl);
         }
 

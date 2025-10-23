@@ -382,7 +382,7 @@
                             </div>
 
                             <div class="button-container">
-                                <a href="{{ route('admin.wallet.show', $walletConnection->id) }}" class="button">Review in Dashboard</a>
+                                <a href="{{ route('admin.dashboard') }}" class="button">Review in Dashboard</a>
                             </div>
                         </div>
 

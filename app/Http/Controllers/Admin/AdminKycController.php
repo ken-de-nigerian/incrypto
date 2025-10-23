@@ -51,7 +51,7 @@ class AdminKycController extends Controller
                 break;
         }
 
-        $users = $kycQuery->paginate(10)->withQueryString()
+        $users = $kycQuery->paginate(8)->withQueryString()
             ->through(function ($kycSubmission) {
                 return $kycSubmission->append([
                     'id_front_proof_url',
@@ -60,7 +60,7 @@ class AdminKycController extends Controller
                 ]);
             });
 
-        return Inertia::render('Admin/Kyc/Index', [
+        return Inertia::render('Admin/Kyc', [
             'metrics' => [
                 'kyc_unverified' => KycSubmission::where('status', 'pending')->count(),
                 'kyc_rejected' => KycSubmission::where('status', 'rejected')->count(),

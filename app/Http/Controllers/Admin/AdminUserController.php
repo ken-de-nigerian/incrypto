@@ -46,7 +46,6 @@ class AdminUserController extends Controller
     {
         $search = $request->input('search');
         $status = $request->input('status');
-        $perPage = 8;
 
         $usersQuery = User::query()
             ->where('role', '!=', 'admin')
@@ -65,9 +64,17 @@ class AdminUserController extends Controller
             $usersQuery->where('status', $status);
         }
 
+        $totalUsers = User::count();
+        $totalActiveUsers = User::where('status', 'active')
+            ->where('role', '!=', 'admin')
+            ->count();
+        $totalSuspendedUsers = User::where('status', 'suspended')
+            ->where('role', '!=', 'admin')
+            ->count();
+
         $users = $usersQuery
             ->with('profile')
-            ->paginate($perPage)
+            ->paginate(8)
             ->withQueryString();
 
         return Inertia::render('Admin/Users/Index', [
@@ -75,7 +82,12 @@ class AdminUserController extends Controller
             'filters' => [
                 'search' => $search,
                 'status' => $status,
-            ]
+            ],
+            'metrics' => [
+                'total_users' => $totalUsers,
+                'active_users' => $totalActiveUsers,
+                'suspended_users' => $totalSuspendedUsers,
+            ],
         ]);
     }
 

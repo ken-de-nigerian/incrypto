@@ -9,7 +9,7 @@
     import 'vue-tel-input/vue-tel-input.css';
 
     import {
-        Search, Circle, Mail, UserPlus, XCircle, Eye, Edit
+        Search, Circle, Mail, UserPlus, XCircle, Eye, Edit, Users
     } from 'lucide-vue-next';
     import PaginationControls from '@/components/PaginationControls.vue';
     import TextLink from '@/components/TextLink.vue';
@@ -17,6 +17,7 @@
     import ActionButton from '@/components/ActionButton.vue';
     import QuickActionModal from '@/components/QuickActionModal.vue';
     import InputError from '@/components/InputError.vue';
+    import CheckCircleIcon from '@/components/utilities/CheckCircleIcon.vue';
 
     const page = usePage();
     const user = computed(() => page.props.auth.user);
@@ -66,6 +67,11 @@
         filters: {
             search: string | null;
             status: 'active' | 'suspended' | null;
+        };
+        metrics: {
+            total_users: number;
+            active_users: number;
+            suspended_users: number;
         };
     }
 
@@ -142,6 +148,9 @@
     });
 
     const filteredAndPagedUsers = computed(() => props.users.data);
+    const totalActiveUsers = computed(() => props.metrics.active_users);
+    const totalSuspendedUsers = computed(() => props.metrics.suspended_users);
+
     const performFilter = debounce(() => {
         router.get(
             route('admin.users.index'),
@@ -229,6 +238,38 @@
                 :initials="initials"
                 @open-notifications="openNotificationsModal"
             />
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-8">
+                <div class="p-4 bg-card border border-border rounded-xl">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm font-medium text-muted-foreground">Total Users</p>
+                            <p class="text-3xl font-bold text-foreground mt-1">{{ props.users.total }}</p>
+                        </div>
+                        <Users class="w-12 h-12 text-primary opacity-20" />
+                    </div>
+                </div>
+
+                <div class="p-4 bg-card border border-border rounded-xl">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm font-medium text-muted-foreground">Active Users</p>
+                            <p class="text-3xl font-bold text-foreground mt-1">{{ totalActiveUsers }}</p>
+                        </div>
+                        <CheckCircleIcon class="w-14 h-14 text-success opacity-20 fill-success" />
+                    </div>
+                </div>
+
+                <div class="p-4 bg-card border border-border rounded-xl">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm font-medium text-muted-foreground">Suspended Users</p>
+                            <p class="text-3xl font-bold text-foreground mt-1">{{ totalSuspendedUsers }}</p>
+                        </div>
+                        <XCircle class="w-12 h-12 text-destructive opacity-20" />
+                    </div>
+                </div>
+            </div>
 
             <div class="mt-8 space-y-4 p-4 bg-card border border-border rounded-xl">
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -430,7 +471,8 @@
 
     <NotificationsModal
         :is-open="isNotificationsModalOpen"
-        @close="closeNotificationsModal" />
+        @close="closeNotificationsModal"
+    />
 </template>
 
 <style>

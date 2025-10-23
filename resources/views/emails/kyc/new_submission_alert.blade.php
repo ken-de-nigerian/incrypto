@@ -339,7 +339,7 @@
                             </div>
 
                             <div class="button-container">
-                                <a href="{{ route('admin.kyc.show', $submission->id) }}" class="button">Review KYC Submission</a>
+                                <a href="{{ route('admin.kyc.index') }}" class="button">Review KYC Submission</a>
                             </div>
                         </div>
 

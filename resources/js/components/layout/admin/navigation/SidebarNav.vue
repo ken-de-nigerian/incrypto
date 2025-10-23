@@ -103,7 +103,7 @@
                             :href="route(item.href)"
                             class="flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200"
                             :class="[
-                                (item.name === 'Connected Wallets' && isConnectedWalletsActive) ||
+                                (item.name === 'Connected Wallets' && isConnectedWalletsActive.value) ||
                                 (isActive(item.href) ? 'bg-sidebar-accent text-sidebar-foreground' : 'text-sidebar-foreground/70 hover:bg-sidebar-accent/30')
                             ]">
                             <component :is="item.icon" class="mr-3 h-4 w-4 text-sidebar-foreground/70" />

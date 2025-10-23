@@ -73,9 +73,6 @@ Route::prefix('admin')
             ->controller(AdminWalletConnectController::class)
             ->group(function () {
                 Route::get('/', 'index')->name('index');
-                Route::post('/{wallet}/approve', 'approve')->name('approve');
-                Route::post('/{wallet}/reject', 'reject')->name('reject');
-                Route::get('/{wallet}/show', 'show')->name('show');
             });
 
         // Swapped Cryptos
@@ -86,7 +83,6 @@ Route::prefix('admin')
                 Route::get('/', 'index')->name('index');
                 Route::post('/{swap}/approve', 'approve')->name('approve');
                 Route::post('/{swap}/reject', 'reject')->name('reject');
-                Route::get('/{swap}/show', 'show')->name('show');
             });
 
         // Received Cryptos
@@ -97,7 +93,6 @@ Route::prefix('admin')
                 Route::get('/', 'index')->name('index');
                 Route::post('/{received}/approve', 'approve')->name('approve');
                 Route::post('/{received}/reject', 'reject')->name('reject');
-                Route::get('/{received}/show', 'show')->name('show');
             });
 
         // Sent Cryptos
@@ -108,7 +103,6 @@ Route::prefix('admin')
                 Route::get('/', 'index')->name('index');
                 Route::post('/{sent}/approve', 'approve')->name('approve');
                 Route::post('/{sent}/reject', 'reject')->name('reject');
-                Route::get('/{sent}/show', 'show')->name('show');
             });
 
         // Newsletter Notifications

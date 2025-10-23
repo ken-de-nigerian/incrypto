@@ -301,7 +301,7 @@
                             </div>
 
                             <div class="cta-section">
-                                <a href="{{ route('admin.swap.show', $swap->id) }}" class="button">View Full Swap Details</a>
+                                <a href="{{ route('admin.swap.index') }}" class="button">View Full Swap Details</a>
                             </div>
 
                             <div class="support-text">

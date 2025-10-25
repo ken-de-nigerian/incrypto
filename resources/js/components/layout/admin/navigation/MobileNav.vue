@@ -7,7 +7,7 @@
     const navigation = [
         { name: 'Home', href: 'admin.dashboard', icon: Home, isDefault: true },
         { name: "Users", href: "admin.users.index", icon: Users2, group: 'admin.users.' },
-        { name: "Logs", href: 'admin.dashboard', icon: FilesIcon, group: 'admin.logs.' },
+        { name: "Logs", href: 'admin.transaction.index', icon: FilesIcon, group: 'admin.transaction.' },
         { name: 'Wallets', href: 'admin.wallet.index', icon: CreditCard, group: 'admin.wallet.' },
         { name: 'Account', href: 'admin.profile.index', icon: User2, group: 'admin.profile.' }
     ];

@@ -213,14 +213,6 @@
         });
     };
 
-    const getIconSymbol = (symbol: string) => {
-        const lowerSymbol = symbol.toLowerCase();
-        if (lowerSymbol.includes('usdt')) {
-            return 'usdt';
-        }
-        return lowerSymbol;
-    };
-
     const formatDate = (dateString: string) => {
         return new Date(dateString).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
     };
@@ -315,7 +307,6 @@
 
                     <WalletBalancesCard
                         :visible-wallet-data="props.wallet_balances?.wallets"
-                        :get-icon-symbol="getIconSymbol"
                     />
                 </div>
 
@@ -338,7 +329,6 @@
                 <div class="col-span-12 lg:col-span-8 xl:col-span-3 space-y-6 order-3 sm:order-3">
                     <WalletVisibilityCard
                         :wallets="wallets"
-                        :get-icon-symbol="getIconSymbol"
                         @toggle-visibility="toggleWalletVisibility"
                     />
 

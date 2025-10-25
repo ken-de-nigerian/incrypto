@@ -5,9 +5,7 @@ use App\Http\Controllers\Admin\AdminKycController;
 use App\Http\Controllers\Admin\AdminNotificationController;
 use App\Http\Controllers\Admin\AdminPaymentMethodController;
 use App\Http\Controllers\Admin\AdminProfileController;
-use App\Http\Controllers\Admin\AdminReceivedCryptoController;
-use App\Http\Controllers\Admin\AdminSentCryptoController;
-use App\Http\Controllers\Admin\AdminSwapCryptoController;
+use App\Http\Controllers\Admin\AdminTransactionController;
 use App\Http\Controllers\Admin\AdminUserController;
 use App\Http\Controllers\Admin\AdminWalletConnectController;
 use Illuminate\Support\Facades\Route;
@@ -87,33 +85,13 @@ Route::prefix('admin')
             });
 
         // Swapped Cryptos
-        Route::prefix('swap')
-            ->name('swap.')
-            ->controller(AdminSwapCryptoController::class)
+        Route::prefix('transaction')
+            ->name('transaction.')
+            ->controller(AdminTransactionController::class)
             ->group(function () {
                 Route::get('/', 'index')->name('index');
-                Route::post('/{swap}/approve', 'approve')->name('approve');
-                Route::post('/{swap}/reject', 'reject')->name('reject');
-            });
-
-        // Received Cryptos
-        Route::prefix('receive')
-            ->name('receive.')
-            ->controller(AdminReceivedCryptoController::class)
-            ->group(function () {
-                Route::get('/', 'index')->name('index');
-                Route::post('/{received}/approve', 'approve')->name('approve');
-                Route::post('/{received}/reject', 'reject')->name('reject');
-            });
-
-        // Sent Cryptos
-        Route::prefix('send')
-            ->name('send.')
-            ->controller(AdminSentCryptoController::class)
-            ->group(function () {
-                Route::get('/', 'index')->name('index');
-                Route::post('/{sent}/approve', 'approve')->name('approve');
-                Route::post('/{sent}/reject', 'reject')->name('reject');
+                Route::post('/approve', 'approve')->name('approve');
+                Route::post('/reject', 'reject')->name('reject');
             });
 
         // Newsletter Notifications

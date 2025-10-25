@@ -149,6 +149,46 @@ class StorePaymentGatewayService
     }
 
     /**
+     * Extract the path and query string from a full image URL.
+     *
+     * @param string $url
+     * @return string
+     */
+    private function extractImagePath(string $url): string
+    {
+        $path = parse_url($url, PHP_URL_PATH);
+        $query = parse_url($url, PHP_URL_QUERY);
+
+        // Append query string if it exists
+        return $query ? $path . '?' . $query : $path;
+    }
+
+    /**
+     * Get crypto image from coingecko_id
+     *
+     * @param string $coingeckoId
+     * @return string|null
+     */
+    private function getCryptoImage(string $coingeckoId): ?string
+    {
+        try {
+            $gatewayService = new GatewayHandlerService();
+            $cryptos = $gatewayService->getCryptos();
+
+            foreach ($cryptos as $crypto) {
+                if ($crypto['id'] === $coingeckoId) {
+                    $image = $crypto['image'] ?? null;
+                    return $image ? $this->extractImagePath($image) : null;
+                }
+            }
+        } catch (Exception $e) {
+            Log::warning("Failed to fetch crypto image for $coingeckoId: " . $e->getMessage());
+        }
+
+        return null;
+    }
+
+    /**
      * Add the new wallet to all existing users' wallet_balance using chunking
      *
      * @param array $newWallet
@@ -218,6 +258,9 @@ class StorePaymentGatewayService
                 return;
             }
 
+            // Get the image for this wallet
+            $image = $this->getCryptoImage($newWallet['coingecko_id']);
+
             // Add the new wallet with initial balance of 0
             $wallets[$key] = [
                 'id' => $newWallet['method_code'],
@@ -226,6 +269,7 @@ class StorePaymentGatewayService
                 'network' => $newWallet['gateway_parameter'],
                 'balance' => 0,
                 'status' => $newWallet['status'],
+                'image' => $image,
             ];
 
             // Update user's wallet_balance
@@ -258,6 +302,9 @@ class StorePaymentGatewayService
                 ? json_decode($walletBalance, true)
                 : (is_array($walletBalance) ? $walletBalance : []);
 
+            // Get the image for this wallet
+            $image = $this->getCryptoImage($updatedWallet['coingecko_id']);
+
             // If abbreviation changed, remove old key and add new one
             if ($oldAbbreviation !== $updatedWallet['abbreviation']) {
                 if (isset($wallets[$oldAbbreviation])) {
@@ -268,6 +315,7 @@ class StorePaymentGatewayService
                         'network' => $updatedWallet['gateway_parameter'],
                         'balance' => $wallets[$oldAbbreviation]['balance'],
                         'status' => $updatedWallet['status'],
+                        'image' => $image,
                     ];
                     unset($wallets[$oldAbbreviation]);
                 }
@@ -282,6 +330,7 @@ class StorePaymentGatewayService
                         'network' => $updatedWallet['gateway_parameter'],
                         'balance' => $wallets[$key]['balance'],
                         'status' => $updatedWallet['status'],
+                        'image' => $image,
                     ];
                 }
             }

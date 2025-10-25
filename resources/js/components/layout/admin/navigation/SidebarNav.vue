@@ -33,7 +33,7 @@
     ];
 
     const transactionRoutes = [
-        { name: "Transactions", href: "admin.dashboard", icon: CreditCard },
+        { name: "Transactions", href: "admin.transaction.index", icon: CreditCard },
     ];
 
     const adminToolsNavigation = [

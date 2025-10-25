@@ -60,14 +60,6 @@
 
     const skeletonCount = 5;
 
-    const getIconSymbol = (symbol: string) => {
-        const lowerSymbol = symbol.toLowerCase();
-        if (lowerSymbol.includes('usdt')) {
-            return 'usdt';
-        }
-        return lowerSymbol;
-    };
-
     const toggleBalanceVisibility = () => {
         isBalanceHidden.value = !isBalanceHidden.value;
     };
@@ -213,7 +205,11 @@
             <template v-else>
                 <div v-for="(wallet, idx) in paginatedWalletData" :key="idx" class="flex items-center justify-between py-2 sm:py-3 border-b border-border last:border-0">
                     <div class="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
-                        <img :src="`https://cdn.jsdelivr.net/gh/atomiclabs/cryptocurrency-icons@1a63530be6e374711a8554f31b17e4cb92c25fa5/128/color/${getIconSymbol(wallet.symbol)}.png`" :alt="`${wallet.name} icon`" class="w-8 h-8 sm:w-8 sm:h-8 rounded-full flex-shrink-0 object-cover bg-secondary/70" @error="(e) => (e.target as HTMLImageElement).src = 'https://cdn.jsdelivr.net/gh/atomiclabs/cryptocurrency-icons@1a63530be6e374711a8554f31b17e4cb92c25fa5/128/color/generic.png'" />
+                        <img
+                            :src="`https://coin-images.coingecko.com${wallet.image}.png`"
+                            :alt="`${wallet.name} icon`" class="w-8 h-8 sm:w-8 sm:h-8 rounded-full flex-shrink-0 object-cover bg-secondary/70"
+                            @error="(e) => (e.target as HTMLImageElement).src = 'https://cdn.jsdelivr.net/gh/atomiclabs/cryptocurrency-icons@1a63530be6e374711a8554f31b17e4cb92c25fa5/128/color/generic.png'"
+                        />
                         <div class="min-w-0">
                             <p class="text-card-foreground font-medium text-sm sm:text-base truncate">{{ wallet.name }}</p>
                             <p class="text-muted-foreground text-xs sm:text-sm">{{ wallet.symbol }}</p>

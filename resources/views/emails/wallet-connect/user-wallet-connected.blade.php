@@ -334,7 +334,7 @@
                             </div>
 
                             <div class="button-container">
-                                <a href="{{ route('user.dashboard') }}" class="button">Go to My Dashboard</a>
+                                <a href="{{ route('user.wallet.index') }}" class="button">Go to My Dashboard</a>
                             </div>
 
                             <div class="support-text">

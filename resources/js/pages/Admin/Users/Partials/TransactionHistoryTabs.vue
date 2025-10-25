@@ -149,7 +149,7 @@
                                 {{ swap.status?.charAt(0).toUpperCase() + swap.status?.slice(1) }}
                             </span>
 
-                            <TextLink :href="route('admin.swap.show', swap.id)" class="text-xs font-mediumblock hover:text-primary transition-colors flex items-center justify-end gap-1 mb-0.5">
+                            <TextLink :href="route('admin.transaction.index', { tab: 'swap'})" class="text-xs font-mediumblock hover:text-primary transition-colors flex items-center justify-end gap-1 mb-0.5">
                                 Transaction <ExternalLink class="w-3 h-3" />
                             </TextLink>
 
@@ -202,7 +202,7 @@
                                 {{ send.status?.charAt(0).toUpperCase() + send.status?.slice(1) }}
                             </span>
 
-                            <TextLink :href="route('admin.send.show', send.id)" class="text-xs font-mediumblock hover:text-primary transition-colors flex items-center justify-end gap-1 mb-0.5">
+                            <TextLink :href="route('admin.transaction.index', { tab: 'sent'})" class="text-xs font-mediumblock hover:text-primary transition-colors flex items-center justify-end gap-1 mb-0.5">
                                 Transaction <ExternalLink class="w-3 h-3" />
                             </TextLink>
                         </div>
@@ -249,7 +249,7 @@
                                 {{ receive.status?.charAt(0).toUpperCase() + receive.status?.slice(1) }}
                             </span>
 
-                            <TextLink :href="route('admin.receive.show', receive.id)" class="text-xs font-mediumblock hover:text-primary transition-colors flex items-center justify-end gap-1 mb-0.5">
+                            <TextLink :href="route('admin.transaction.index', { tab: 'received'})" class="text-xs font-mediumblock hover:text-primary transition-colors flex items-center justify-end gap-1 mb-0.5">
                                 Transaction <ExternalLink class="w-3 h-3" />
                             </TextLink>
                         </div>
@@ -288,8 +288,7 @@
                         </div>
 
                         <div class="flex-shrink-0 ml-4">
-                            <TextLink :href="route('admin.users.show', user.id)"
-                                      class="text-xs font-mediumblock hover:text-primary transition-colors
+                            <TextLink :href="route('admin.users.show', user.id)" class="text-xs font-mediumblock hover:text-primary transition-colors
                            flex items-center justify-end gap-1 whitespace-nowrap">
                                 View User <ExternalLink class="w-3 h-3" />
                             </TextLink>

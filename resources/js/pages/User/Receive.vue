@@ -47,6 +47,7 @@
     const selectedToken = ref<Token | null>(null);
     const isWalletModalOpen = ref(false);
     const isCreatingTransaction = ref(false);
+    const transactionError = ref<string | null>(null);
 
     const page = usePage();
     const user = computed(() => page.props.auth?.user);
@@ -94,24 +95,40 @@
     // Methods to handle events from children
     const handleTokenSelected = (token: Token) => {
         selectedToken.value = token;
+        transactionError.value = null; // Clear any previous errors
         isWalletModalOpen.value = true;
     };
 
     const handleCloseModal = () => {
         isWalletModalOpen.value = false;
+        transactionError.value = null; // Clear error when closing
     };
 
     const handleCreatePendingTransaction = async () => {
         if (!selectedToken.value || isCreatingTransaction.value) return;
         isCreatingTransaction.value = true;
+        transactionError.value = null;
+
         try {
             await axios.post(route('user.receive.store'), {
                 token_symbol: selectedToken.value.symbol,
                 wallet_address: selectedToken.value.address,
             });
             router.reload({ only: ['pendingTransactions'] });
-        } catch (error) {
+            isWalletModalOpen.value = false;
+        } catch (error: any) {
             console.error('Failed to create pending transaction:', error);
+
+            // Extract error message from various error formats
+            if (error.response?.data?.message) {
+                transactionError.value = error.response.data.message;
+            } else if (error.response?.data?.error) {
+                transactionError.value = error.response.data.error;
+            } else if (error.message) {
+                transactionError.value = error.message;
+            } else {
+                transactionError.value = 'An unexpected error occurred while creating the transaction.';
+            }
         } finally {
             isCreatingTransaction.value = false;
         }
@@ -163,6 +180,7 @@
             :token="selectedToken"
             :balance="selectedToken ? (props.userBalances[selectedToken.symbol] || 0) : 0"
             :price="selectedToken ? (props.prices[selectedToken.symbol] || 0) : 0"
+            :error="transactionError"
             @close="handleCloseModal"
             @create-pending-transaction="handleCreatePendingTransaction"
         />

@@ -369,7 +369,7 @@
                             </div>
 
                             <div class="button-container">
-                                <a href="{{ route('user.dashboard') }}" class="button">Go to Dashboard & Resubmit</a>
+                                <a href="{{ route('user.kyc.index') }}" class="button">Go to Dashboard & Resubmit</a>
                             </div>
 
                             <div class="support-text">

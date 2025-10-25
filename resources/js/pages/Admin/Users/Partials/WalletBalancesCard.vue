@@ -19,10 +19,6 @@
         visibleWalletData: {
             type: Array as PropType<WalletBalance[]>,
             required: true,
-        },
-        getIconSymbol: {
-            type: Function as PropType<(symbol: string) => string>,
-            required: true,
         }
     });
 
@@ -47,7 +43,7 @@
                              class="flex items-center justify-between p-3 bg-muted/30 border border-border rounded-lg group hover:bg-muted/50 transition-colors">
                             <div class="flex items-center gap-3 min-w-0 flex-1">
                                 <img
-                                    :src="`https://cdn.jsdelivr.net/gh/atomiclabs/cryptocurrency-icons@1a63530be6e374711a8554f31b17e4cb92c25fa5/128/color/${getIconSymbol(wallet.symbol)}.png`"
+                                    :src="`https://coin-images.coingecko.com${wallet.image}.png`"
                                     :alt="`${wallet.name} icon`"
                                     class="w-8 h-8 rounded-full flex-shrink-0 object-cover bg-background border border-border"
                                     @error="(e) => (e.target as HTMLImageElement).src = 'https://cdn.jsdelivr.net/gh/atomiclabs/cryptocurrency-icons@1a63530be6e374711a8554f31b17e4cb92c25fa5/128/color/generic.png'"

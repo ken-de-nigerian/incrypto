@@ -61,10 +61,22 @@ class UserFactory extends Factory
      */
     protected function getNetworkFromName(string $name): string
     {
-        if (str_contains($name, 'TRC 20')) return 'TRC20';
-        if (str_contains($name, 'ERC 20')) return 'ERC20';
-        if (str_contains($name, 'BEP 20')) return 'BEP20';
+        if (str_contains($name, 'TRC20') || str_contains($name, 'TRC 20')) return 'TRC20';
+        if (str_contains($name, 'ERC20') || str_contains($name, 'ERC 20')) return 'ERC20';
+        if (str_contains($name, 'BEP20') || str_contains($name, 'BEP 20')) return 'BEP20';
         return 'Native'; // Default or other network
+    }
+
+    /**
+     * Extract the path and query string from a full image URL.
+     */
+    protected function extractImagePath(string $url): string
+    {
+        $path = parse_url($url, PHP_URL_PATH);
+        $query = parse_url($url, PHP_URL_QUERY);
+
+        // Append query string if it exists
+        return $query ? $path . '?' . $query : $path;
     }
 
     /**
@@ -84,26 +96,31 @@ class UserFactory extends Factory
                 $name = $crypto['name'];
                 $key = $symbol;
                 $status = $crypto['status'];
+                $image = $crypto['image'] ?? '';
 
-                // Logic to set a specific key for USDT networks
-                if (str_contains($name, 'TRC 20')) $key = 'USDT_TRC20';
-                elseif (str_contains($name, 'ERC 20')) $key = 'USDT_ERC20';
-                elseif (str_contains($name, 'BEP 20')) $key = 'USDT_BEP20';
+                // Extract image path using the helper method
+                $imagePath = $image ? $this->extractImagePath($image) : '';
+
+                if (str_contains($name, 'TRC20') || str_contains($name, 'TRC 20'))
+                    $key = trim(str_replace(['TRC20', 'TRC 20'], '', $name)) . '_TRC20';
+                elseif (str_contains($name, 'ERC20') || str_contains($name, 'ERC 20'))
+                    $key = trim(str_replace(['ERC20', 'ERC 20'], '', $name)) . '_ERC20';
+                elseif (str_contains($name, 'BEP20') || str_contains($name, 'BEP 20'))
+                    $key = trim(str_replace(['BEP20', 'BEP 20'], '', $name)) . '_BEP20';
 
                 $formattedCryptos[$key] = [
                     'id' => $id,
                     'name' => $name,
                     'symbol' => $symbol,
-                    // Use the protected helper method on $this
                     'network' => $this->getNetworkFromName($name),
-                    'balance' => $this->faker->randomFloat(4, 0.0001, 100), // Use faker for random balance
-                    'status' => $status
+                    'balance' => $this->faker->randomFloat(4, 0.0001, 100),
+                    'status' => $status,
+                    'image' => $imagePath,
                 ];
             }
 
             return json_encode($formattedCryptos);
         } catch (Exception $e) {
-            // Log the error for debugging
             Log::error('Wallet creation failed in UserFactory', ['error' => $e->getMessage()]);
             return false;
         }

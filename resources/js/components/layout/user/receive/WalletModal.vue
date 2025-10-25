@@ -1,6 +1,6 @@
 <script setup lang="ts">
     import { ref, computed, watch } from 'vue';
-    import { XIcon, CopyIcon, CheckIcon, QrCodeIcon, WalletIcon, AlertCircleIcon, TrendingUpIcon, TrendingDownIcon } from 'lucide-vue-next';
+    import { XIcon, CopyIcon, CheckIcon, WalletIcon, AlertCircleIcon } from 'lucide-vue-next';
     import QRCodeVue3 from 'qrcode-vue3';
 
     const props = defineProps<{
@@ -8,6 +8,7 @@
         token: any | null;
         balance: number;
         price: number;
+        error?: string | null;
     }>();
 
     const emit = defineEmits(['close', 'create-pending-transaction']);
@@ -63,6 +64,17 @@
 
         return formatted.toUpperCase();
     };
+
+    // Extract error message from complex error objects
+    const getErrorMessage = (error: any): string => {
+        if (!error) return '';
+        if (typeof error === 'string') return error;
+        if (error.message) return error.message;
+        if (error.data?.message) return error.data.message;
+        return 'An error occurred';
+    };
+
+    const errorMessage = computed(() => getErrorMessage(props.error));
 </script>
 
 <template>
@@ -91,41 +103,53 @@
                     <div
                         v-if="isOpen && token"
                         class="bg-card w-full h-full max-h-full lg:w-full lg:max-w-lg lg:h-auto lg:max-h-[90vh] flex flex-col rounded-none lg:rounded-2xl shadow-2xl overflow-hidden border-border relative lg:border"
-                        @click.stop >
+                        @click.stop
+                    >
                         <div class="p-6 border-b border-border flex-shrink-0">
                             <div class="flex items-center justify-between mb-4">
                                 <h3 class="text-xl font-bold text-card-foreground">Receive {{ formatSymbol(token.symbol) }}</h3>
                                 <button @click="handleClose" class="p-2 hover:bg-muted/70 rounded-lg"><XIcon class="w-5 h-5 text-muted-foreground" /></button>
                             </div>
                             <div class="flex items-center gap-3">
-                                <img :src="token.logo" :alt="token.symbol" class="w-12 h-12 rounded-full" />
-                                <div class="flex-1">
-                                    <div class="font-semibold text-card-foreground">{{ token.name }}</div>
+                                <img :src="token.logo" :alt="token.symbol" class="w-12 h-12 rounded-full flex-shrink-0" />
+                                <div class="flex-1 min-w-0">
+                                    <div class="font-semibold text-card-foreground truncate">{{ token.name }}</div>
                                     <div class="text-sm text-muted-foreground flex items-center gap-2"><span>{{ balance.toFixed(6) }} {{ formatSymbol(token.symbol) }}</span></div>
                                 </div>
-                                <div class="text-right">
+                                <div class="text-right flex-shrink-0">
                                     <div class="text-lg font-bold text-card-foreground">${{ (balance * price).toFixed(2) }}</div>
                                 </div>
                             </div>
                         </div>
 
-                        <div class="p-6 space-y-6 overflow-y-auto flex-1 no-scrollbar">
-                            <div class="p-4 bg-warning/10 border border-warning/30 rounded-xl flex items-start gap-3">
-                                <AlertCircleIcon class="w-5 h-5 text-warning flex-shrink-0 mt-0.5" />
-                                <div class="text-sm">
-                                    <p class="font-semibold text-warning mb-1">Important: Network Warning</p>
-                                    <p class="text-muted-foreground">Only send <span class="font-semibold text-card-foreground">{{ formatSymbol(token.symbol) }}</span> to this address. Sending other assets or using the wrong network may result in permanent loss of funds.</p>
+                        <!-- Error Display -->
+                        <div v-if="errorMessage" class="p-4 bg-destructive/10 border-b border-destructive/20">
+                            <div class="flex items-start gap-3">
+                                <AlertCircleIcon class="w-5 h-5 text-destructive flex-shrink-0 mt-0.5" />
+                                <div class="flex-1 min-w-0">
+                                    <p class="text-sm font-semibold text-destructive mb-1">Error</p>
+                                    <p class="text-xs text-destructive/80 break-words whitespace-pre-wrap">{{ errorMessage }}</p>
                                 </div>
                             </div>
+                        </div>
 
+                        <div class="p-6 space-y-4 overflow-y-auto flex-1 no-scrollbar">
                             <div v-if="walletAddress">
-                                <label class="text-sm font-semibold text-card-foreground mb-3 block flex items-center gap-2"><QrCodeIcon class="w-4 h-4" />Scan QR Code</label>
-                                <div class="flex justify-center p-4 sm:p-6 bg-white rounded-xl border-2 border-border">
-                                    <QRCodeVue3 :value="walletAddress" :size="240" :corners-square-options="{ type: 'square', color: '#000000' }" :corners-dot-options="{ type: 'square', color: '#000000' }" :dots-options="{ type: 'square', color: '#000000' }" />
+                                <div class="flex justify-center p-4">
+                                    <QRCodeVue3 :value="walletAddress" :size="180" :corners-square-options="{ type: 'square', color: '#000000' }" :corners-dot-options="{ type: 'square', color: '#000000' }" :dots-options="{ type: 'square', color: '#000000' }" />
                                 </div>
-                                <p class="text-xs text-muted-foreground text-center mt-3">Scan this QR code with your sending wallet</p>
+                                <p class="text-xs text-muted-foreground text-center mt-2">Scan this QR code with your sending wallet</p>
+                                <p class="text-xs text-muted-foreground text-center mt-2">Only send <span class="font-semibold text-card-foreground">{{ formatSymbol(token.symbol) }}</span> to this address. Sending other assets or using the wrong network may result in permanent loss of funds.</p>
                             </div>
 
+                            <div v-else class="p-8 text-center">
+                                <div class="w-16 h-16 bg-muted/50 rounded-full flex items-center justify-center mx-auto mb-4"><WalletIcon class="w-8 h-8 text-muted-foreground" /></div>
+                                <h3 class="text-lg font-semibold text-card-foreground mb-2">No Wallet Address Available</h3>
+                                <p class="text-sm text-muted-foreground">This token does not have a configured wallet address yet.</p>
+                            </div>
+                        </div>
+
+                        <div class="p-6 border-t border-border bg-muted/30 flex-shrink-0">
                             <div v-if="walletAddress">
                                 <label class="text-sm font-semibold text-card-foreground mb-3 block flex items-center gap-2"><WalletIcon class="w-4 h-4" />Your Wallet Address</label>
                                 <div class="p-4 bg-muted/50 border border-border rounded-xl">
@@ -135,51 +159,6 @@
                                         <CopyIcon v-else class="w-5 h-5" />
                                         {{ copiedAddress ? 'Address Copied to Clipboard!' : 'Copy Address' }}
                                     </button>
-                                </div>
-                            </div>
-
-                            <div v-else class="p-8 text-center">
-                                <div class="w-16 h-16 bg-muted/50 rounded-full flex items-center justify-center mx-auto mb-4"><WalletIcon class="w-8 h-8 text-muted-foreground" /></div>
-                                <h3 class="text-lg font-semibold text-card-foreground mb-2">No Wallet Address Available</h3>
-                                <p class="text-sm text-muted-foreground">This token does not have a configured wallet address yet.</p>
-                            </div>
-
-                            <div v-if="walletAddress" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                <div class="p-4 bg-muted/30 rounded-xl">
-                                    <div class="text-xs text-muted-foreground mb-1">Symbol</div>
-                                    <div class="text-sm font-semibold text-card-foreground">{{ formatSymbol(token.symbol) }}</div>
-                                </div>
-                                <div class="p-4 bg-muted/30 rounded-xl">
-                                    <div class="text-xs text-muted-foreground mb-1">Current Price</div>
-                                    <div class="text-sm font-semibold text-card-foreground">${{ price.toFixed(2) }}</div>
-                                </div>
-                                <div class="p-4 bg-muted/30 rounded-xl">
-                                    <div class="text-xs text-muted-foreground mb-1">Balance</div>
-                                    <div class="text-sm font-semibold text-card-foreground">{{ balance.toFixed(6) }}</div>
-                                </div>
-                                <div class="p-4 bg-muted/30 rounded-xl">
-                                    <div class="text-xs text-muted-foreground mb-1">24h Change</div>
-                                    <div :class="['text-sm font-semibold flex items-center gap-1', token.price_change_24h >= 0 ? 'text-primary' : 'text-destructive']">
-                                        <TrendingUpIcon v-if="token.price_change_24h >= 0" class="w-3 h-3" />
-                                        <TrendingDownIcon v-else class="w-3 h-3" />
-                                        {{ token.price_change_24h >= 0 ? '+' : '' }}{{ token.price_change_24h.toFixed(2) }}%
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="p-6 border-t border-border bg-muted/30 flex-shrink-0">
-                            <div class="flex items-center gap-3">
-                                <div class="flex-1">
-                                    <div v-if="walletAddress" class="p-4 bg-accent/10 border border-accent/30 rounded-xl">
-                                        <div class="flex items-start gap-3">
-                                            <AlertCircleIcon class="w-5 h-5 text-accent flex-shrink-0 mt-0.5" />
-                                            <div class="text-xs text-muted-foreground">
-                                                <p class="font-semibold text-accent mb-1">Processing Time</p>
-                                                <p>Deposits are usually credited within 10-30 minutes depending on network congestion. You can track your transaction status in the "Received Cryptos" section.</p>
-                                            </div>
-                                        </div>
-                                    </div>
                                 </div>
                             </div>
                         </div>

@@ -33,7 +33,6 @@ class ManageUserTransactionController extends Controller
                 'created_at',
             ])
             ->orderByDesc('created_at')
-            ->limit(50)
             ->get();
 
         return $cryptos->map(fn ($crypto) => [
@@ -62,7 +61,6 @@ class ManageUserTransactionController extends Controller
                 'created_at',
             ])
             ->orderByDesc('created_at')
-            ->limit(50)
             ->get();
 
         return $cryptos->map(fn ($crypto) => [
@@ -90,7 +88,6 @@ class ManageUserTransactionController extends Controller
                 'created_at',
             ])
             ->orderByDesc('created_at')
-            ->limit(50)
             ->get();
 
         return $cryptos->map(fn ($crypto) => [

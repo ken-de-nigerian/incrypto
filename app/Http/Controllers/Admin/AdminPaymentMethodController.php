@@ -81,6 +81,24 @@ class AdminPaymentMethodController extends Controller
                 $sorted = $collection->values()->toArray();
             }
 
+            // Fetch cryptos and create lookup map
+            $gatewayService = new GatewayHandlerService();
+            $cryptos = $gatewayService->getCryptos();
+            $cryptoMap = collect($cryptos)
+                ->keyBy('id')
+                ->all();
+
+            // Merge gateways with crypto data
+            $sorted = array_map(function ($gateway) use ($cryptoMap) {
+                $coinId = $gateway['coingecko_id'] ?? null;
+
+                if ($coinId && isset($cryptoMap[$coinId])) {
+                    $gateway['image'] = $cryptoMap[$coinId]['image'];
+                }
+
+                return $gateway;
+            }, $sorted);
+
             $perPage = 12;
             $page = request()->get('page', 1);
             $total = count($sorted);

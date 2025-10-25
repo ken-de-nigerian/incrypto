@@ -5,6 +5,7 @@
         key: string;
         name: string;
         symbol: string;
+        image: string;
         network: string | null;
         is_visible: boolean;
         is_updating: boolean;
@@ -12,7 +13,6 @@
 
     defineProps<{
         wallets: WalletItem[];
-        getIconSymbol: (symbol: string) => string;
     }>();
 
     const emit = defineEmits(['toggleVisibility']);
@@ -38,7 +38,8 @@
                         class="flex items-center justify-between p-3 rounded-xl border border-border bg-secondary/30">
                         <div class="flex items-center gap-2 flex-1 min-w-0">
                             <div class="w-8 h-8 flex-shrink-0 rounded-full overflow-hidden bg-background border border-border">
-                                <img :src="`https://cdn.jsdelivr.net/gh/atomiclabs/cryptocurrency-icons@1a63530be6e374711a8554f31b17e4cb92c25fa5/128/color/${getIconSymbol(wallet.symbol)}.png`"
+                                <img
+                                    :src="`https://coin-images.coingecko.com${wallet.image}.png`"
                                      :alt="`${wallet.name} icon`"
                                      class="h-full w-full object-cover"
                                      @error="(e) => (e.target as HTMLImageElement).src = 'https://cdn.jsdelivr.net/gh/atomiclabs/cryptocurrency-icons@1a63530be6e374711a8554f31b17e4cb92c25fa5/128/color/generic.png'"

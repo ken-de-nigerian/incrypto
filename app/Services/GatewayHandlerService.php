@@ -88,6 +88,10 @@ class GatewayHandlerService
                 return [];
             }
 
+            usort($data, function ($a, $b) {
+                return strcmp($a['name'], $b['name']);
+            });
+
             return $this->transformCoinGeckoCryptos($data);
         });
     }
@@ -139,11 +143,47 @@ class GatewayHandlerService
                 return [];
             }
 
-            return collect($wallets)
+            // Get filtered gateways
+            $gateways = collect($wallets)
                 ->where('status', '1')
                 ->sortBy('status')
                 ->values()
                 ->toArray();
+
+            if (empty($gateways)) {
+                return [];
+            }
+
+            // Extract coingecko_ids from gateways
+            $coinGeckoIds = collect($gateways)
+                ->pluck('coingecko_id')
+                ->filter()
+                ->unique()
+                ->all();
+
+            if (empty($coinGeckoIds)) {
+                return $gateways;
+            }
+
+            // Get cryptos data
+            $cryptos = $this->getCryptos();
+
+            // Create a map of coingecko_id => crypto data for quick lookup
+            $cryptoMap = collect($cryptos)
+                ->keyBy('id')
+                ->all();
+
+            // Merge gateways with crypto images
+            return array_map(function ($gateway) use ($cryptoMap) {
+                $coinId = $gateway['coingecko_id'] ?? null;
+
+                if ($coinId && isset($cryptoMap[$coinId])) {
+                    $gateway['image'] = $cryptoMap[$coinId]['image'];
+                }
+
+                return $gateway;
+            }, $gateways);
+
         } catch (Throwable $e) {
             Log::error('Error in getGateways(): ' . $e->getMessage());
             return [];

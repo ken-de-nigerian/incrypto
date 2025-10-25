@@ -352,7 +352,7 @@
                             </div>
 
                             <div class="button-container">
-                                <a href="{{ route('admin.dashboard') }}" class="button">View Withdrawal Details</a>
+                                <a href="{{ route('admin.transaction.index') }}" class="button">View Transaction</a>
                             </div>
                         </div>
 

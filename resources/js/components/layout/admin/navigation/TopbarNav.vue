@@ -89,10 +89,10 @@
     ];
 
     const transactionSubRoutes = [
-        { name: "All Transactions", href: "admin.dashboard", icon: CreditCard, description: "Comprehensive view of all financial activities" },
-        { name: "Sent Cryptos", href: "admin.send.index", icon: Send, description: "Detailed records of cryptos sent out" },
-        { name: "Received Cryptos", href: "admin.receive.index", icon: Download, description: "Records of funds received" },
-        { name: "Swap & Trade Logs", href: "admin.swap.index", icon: Repeat, description: "Logs for all currency exchange and trade activities" }
+        { name: "All Transactions", href: "admin.transaction.index", icon: CreditCard, description: "Comprehensive view of all financial activities" },
+        { name: "Sent Cryptos", href: "admin.transaction.index", params: { tab: "sent" }, icon: Send, description: "Detailed records of cryptos sent out" },
+        { name: "Received Cryptos", href: "admin.transaction.index", params: { tab: "received" }, icon: Download, description: "Records of funds received" },
+        { name: "Swap & Trade Logs", href: "admin.transaction.index", params: { tab: "swaps" }, icon: Repeat, description: "Logs for all currency exchange and trade activities" }
     ];
 
     const supportLinks = [
@@ -424,7 +424,7 @@
                                     <TextLink
                                         v-for="subItem in transactionSubRoutes"
                                         :key="subItem.name"
-                                        :href="route(subItem.href)"
+                                        :href="route(subItem.href, subItem.params)"
                                         @click="closeAccountModal"
                                         class="flex items-center gap-2.5 xs:gap-3 p-2.5 xs:p-3 rounded-lg xs:rounded-xl hover:bg-secondary active:bg-secondary/90 transition-all group">
                                         <div class="w-8 h-8 xs:w-10 xs:h-10 rounded-lg bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 flex-shrink-0">
@@ -497,7 +497,7 @@
                                 class="w-full flex items-center justify-center gap-2 p-3 xs:p-4 rounded-lg xs:rounded-xl bg-destructive/10 hover:bg-destructive/20 active:bg-destructive/30 border border-destructive/30 hover:border-destructive/50 transition-all group cursor-pointer"
                             >
                                 <LogOut class="w-4 h-4 xs:w-5 xs:h-5 text-destructive" />
-                                <span class="font-semibold text-sm xs:text-base text-destructive">Secure Logout</span>
+                                <span class="font-semibold text-sm xs:text-base text-destructive">Logout</span>
                             </TextLink>
 
                             <div class="text-center pt-2 pb-2 xs:pb-4">

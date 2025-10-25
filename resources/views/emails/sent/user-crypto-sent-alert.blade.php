@@ -348,7 +348,7 @@
                             </div>
 
                             <div class="button-container">
-                                <a href="{{ url('/dashboard/transactions') }}" class="button">View Transaction Status</a>
+                                <a href="{{ route('user.transactions.index') }}" class="button">View Transaction</a>
                             </div>
                         </div>
 

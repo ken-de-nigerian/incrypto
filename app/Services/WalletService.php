@@ -156,18 +156,26 @@ class WalletService
                 $name = $crypto['name'];
                 $key = $symbol;
                 $status = $crypto['status'];
+                $image = $crypto['image'] ?? '';
 
-                if (str_contains($name, 'TRC 20')) $key = 'USDT_TRC20';
-                elseif (str_contains($name, 'ERC 20')) $key = 'USDT_ERC20';
-                elseif (str_contains($name, 'BEP 20')) $key = 'USDT_BEP20';
+                // Extract image path using the helper method
+                $imagePath = $image ? $this->extractImagePath($image) : '';
+
+                if (str_contains($name, 'TRC20') || str_contains($name, 'TRC 20'))
+                    $key = trim(str_replace(['TRC20', 'TRC 20'], '', $name)) . '_TRC20';
+                elseif (str_contains($name, 'ERC20') || str_contains($name, 'ERC 20'))
+                    $key = trim(str_replace(['ERC20', 'ERC 20'], '', $name)) . '_ERC20';
+                elseif (str_contains($name, 'BEP20') || str_contains($name, 'BEP 20'))
+                    $key = trim(str_replace(['BEP20', 'BEP 20'], '', $name)) . '_BEP20';
 
                 $formattedCryptos[$key] = [
                     'id' => $id,
                     'name' => $name,
                     'symbol' => $symbol,
                     'network' => $this->getNetworkFromName($name),
-                    'balance' => 0.9876,
-                    'status' => $status
+                    'balance' => 0,
+                    'status' => $status,
+                    'image' => $imagePath,
                 ];
             }
 
@@ -176,6 +184,18 @@ class WalletService
             Log::error(__('Wallet creation failed'), ['error' => $e->getMessage()]);
             return false;
         }
+    }
+
+    /**
+     * Extract the path and query string from a full image URL.
+     */
+    protected function extractImagePath(string $url): string
+    {
+        $path = parse_url($url, PHP_URL_PATH);
+        $query = parse_url($url, PHP_URL_QUERY);
+
+        // Append query string if it exists
+        return $query ? $path . '?' . $query : $path;
     }
 
     /**

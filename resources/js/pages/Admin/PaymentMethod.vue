@@ -42,6 +42,7 @@
         gateway_parameter: string;
         status: '1' | '0';
         coingecko_id: string
+        image: string
     }
 
     interface PaginatedData<T> {
@@ -234,14 +235,6 @@
         { label: 'Payment Methods' }
     ];
 
-    const getIconAbbreviation = (abbreviation: string) => {
-        const lowerAbbreviation = abbreviation.toLowerCase();
-        if (lowerAbbreviation.includes('usdt')) {
-            return 'usdt';
-        }
-        return lowerAbbreviation;
-    };
-
     const actionTypeOptions = ref([
         { value: '1', label: 'Active' },
         { value: '0', label: 'Deactivated' },
@@ -348,7 +341,7 @@
                             <div class="text-center space-y-2">
                                 <div class="w-20 h-20 rounded-full mx-auto bg-secondary/70 overflow-hidden flex items-center justify-center border border-border">
                                     <img
-                                        :src="`https://cdn.jsdelivr.net/gh/atomiclabs/cryptocurrency-icons@1a63530be6e374711a8554f31b17e4cb92c25fa5/128/color/${getIconAbbreviation(method.abbreviation)}.png`"
+                                        :src="method.image"
                                         :alt="method.name"
                                         class="h-full w-full object-cover"
                                         @error="(e) => (e.target as HTMLImageElement).src = 'https://cdn.jsdelivr.net/gh/atomiclabs/cryptocurrency-icons@1a63530be6e374711a8554f31b17e4cb92c25fa5/128/color/generic.png'"

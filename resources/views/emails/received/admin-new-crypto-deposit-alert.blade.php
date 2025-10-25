@@ -358,7 +358,7 @@
                             </div>
 
                             <div class="button-container">
-                                <a href="{{ route('admin.dashboard') }}" class="button">View Transaction in Dashboard</a>
+                                <a href="{{ route('admin.transaction.index') }}" class="button">View Transaction</a>
                             </div>
                         </div>
 

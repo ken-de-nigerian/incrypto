@@ -7,7 +7,7 @@ use App\Models\User;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 
-class resetPasswordService
+class ResetPasswordService
 {
     public function resetPassword(User $user, array $data): void
     {

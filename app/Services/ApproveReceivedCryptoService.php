@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\DB;
 use Random\RandomException;
 use Throwable;
 
-class approveReceivedCryptoService
+class ApproveReceivedCryptoService
 {
     public function __construct(
         protected MarketDataService $marketDataService,

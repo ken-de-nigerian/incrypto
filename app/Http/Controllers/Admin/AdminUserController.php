@@ -17,7 +17,7 @@ use App\Services\DeleteUserAccountService;
 use App\Services\GatewayHandlerService;
 use App\Services\MarketDataService;
 use App\Services\ProfileService;
-use App\Services\resetPasswordService;
+use App\Services\ResetPasswordService;
 use App\Services\SendEmailService;
 use App\Services\SuspendUserService;
 use App\Services\UnSuspendUserService;
@@ -199,7 +199,7 @@ class AdminUserController extends Controller
         }
     }
 
-    public function resetPassword(User $user, ResetUserPasswordRequest $request, resetPasswordService $resetPasswordService)
+    public function resetPassword(User $user, ResetUserPasswordRequest $request, ResetPasswordService $resetPasswordService)
     {
         try {
             $resetPasswordService->resetPassword(

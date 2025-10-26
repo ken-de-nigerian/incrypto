@@ -1,9 +1,9 @@
 <script setup lang="ts">
-    import { ref, computed, nextTick, watch, onMounted, onUnmounted } from 'vue';
-    import { Wallet, Eye, EyeOff, RefreshCw, Loader2, Wallet2 } from 'lucide-vue-next';
-    import { router } from '@inertiajs/vue3';
+import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue';
+import { Eye, EyeOff, Loader2, RefreshCw, Wallet, Wallet2 } from 'lucide-vue-next';
+import { router } from '@inertiajs/vue3';
 
-    interface WalletBalance {
+interface WalletBalance {
         name: string;
         symbol: string;
         balance: number;
@@ -32,7 +32,6 @@
     const currentPage = ref(1);
     const isFetchingMore = ref(false);
 
-    const hideZeroBalances = ref(false);
     const isBalanceHidden = ref(false);
     const isRefreshing = ref(false);
 
@@ -40,13 +39,7 @@
 
     const allFilteredWallets = computed<WalletBalance[]>(() => {
         if (!props.wallet_balances) return [];
-
-        let walletsArray = props.wallet_balances.wallets || [];
-
-        if (hideZeroBalances.value) {
-            walletsArray = walletsArray.filter(wallet => wallet.balance > 0);
-        }
-        return walletsArray;
+        return props.wallet_balances.wallets || [];
     });
 
     const paginatedWalletData = computed<WalletBalance[]>(() => {
@@ -171,15 +164,6 @@
                         USD
                     </span>
                 </div>
-            </div>
-        </div>
-
-        <div v-if="paginatedWalletData.length > 0 && !isLoading" class="flex items-center gap-2 mb-4 text-xs sm:text-sm text-muted-foreground">
-            <div class="flex items-center space-x-2">
-                <input type="checkbox" v-model="hideZeroBalances" id="hideZeroBalances" class="h-4 w-4 shrink-0" />
-                <label for="hideZeroBalances" class="text-sm text-muted-foreground leading-relaxed cursor-pointer">
-                    Hide zero balances
-                </label>
             </div>
         </div>
 

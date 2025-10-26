@@ -21,8 +21,7 @@
         Sun,
         Users,
         Wallet,
-        X,
-        LayoutDashboard, Globe, HelpCircle, Mail
+        X, Globe, HelpCircle, Mail, House
     } from 'lucide-vue-next';
     import TextLink from '@/components/TextLink.vue';
     import NotificationsModal from '@/components/utilities/NotificationsModal.vue';
@@ -76,7 +75,7 @@
     });
 
     const navigation = [
-        { name: "Dashboard", href: "admin.dashboard", icon: LayoutDashboard },
+        { name: "Dashboard", href: "admin.dashboard", icon: House },
     ];
 
     const gatewaysNavigation = [
@@ -98,7 +97,7 @@
     const supportLinks = [
         { name: "Privacy Policy", href: "admin.dashboard", icon: HelpCircle },
         { name: "Terms of Service", href: "admin.dashboard", icon: FileText },
-        { name: "Contact & Helpdesk", href: "admin.dashboard", icon: Mail },
+        { name: "Contact Support", href: "admin.dashboard", icon: Mail },
     ];
 
     const adminToolsNavigation = [
@@ -288,7 +287,7 @@
                                         ? 'bg-primary text-primary-foreground shadow'
                                         : 'text-muted-foreground hover:text-foreground'
                                 ]">
-                                Navigation
+                                Menu
                             </button>
                             <button
                                 @click="switchToNotificationsTab"
@@ -345,7 +344,7 @@
 
                         <div class="px-4 xs:px-5 pb-4 xs:pb-6 space-y-4 xs:space-y-6 flex-1 overflow-y-auto">
                             <div>
-                                <h3 class="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 xs:mb-3 px-1">Core Actions</h3>
+                                <h3 class="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 xs:mb-3 px-1">Quick Actions</h3>
                                 <div class="grid grid-cols-2 gap-1.5 xs:gap-2.5">
                                     <TextLink
                                         :href="route(navigation[0].href)"
@@ -440,7 +439,7 @@
                             </div>
 
                             <div>
-                                <h3 class="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 xs:mb-3 px-1">User Preferences</h3>
+                                <h3 class="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 xs:mb-3 px-1">Preferences</h3>
                                 <div class="space-y-0.5 xs:space-y-1">
                                     <div class="p-2.5 xs:p-3">
                                         <div class="flex items-center gap-1 xs:gap-1.5 p-1 rounded-lg bg-secondary/70">
@@ -466,7 +465,7 @@
                                             <Globe class="w-4 h-4 xs:w-5 xs:h-5 text-primary" />
                                         </div>
                                         <div class="flex-1 text-left min-w-0">
-                                            <p class="font-medium text-xs xs:text-sm">Interface Language</p> <p class="text-[10px] xs:text-xs text-muted-foreground">English (US)</p>
+                                            <p class="font-medium text-xs xs:text-sm">Language</p> <p class="text-[10px] xs:text-xs text-muted-foreground">English (US)</p>
                                         </div>
                                         <ChevronRight class="w-3.5 h-3.5 xs:w-4 xs:h-4 text-muted-foreground/50 group-hover:text-muted-foreground flex-shrink-0" />
                                     </button>
@@ -474,7 +473,7 @@
                             </div>
 
                             <div>
-                                <h3 class="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 xs:mb-3 px-1">Support & Documentation</h3>
+                                <h3 class="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 xs:mb-3 px-1">Support & Legal</h3>
                                 <div class="space-y-0.5 xs:space-y-1">
                                     <TextLink
                                         v-for="item in supportLinks"
@@ -501,7 +500,7 @@
                             </TextLink>
 
                             <div class="text-center pt-2 pb-2 xs:pb-4">
-                                <p class="text-[10px] xs:text-xs text-muted-foreground/50">System Version 2.1.0</p>
+                                <p class="text-[10px] xs:text-xs text-muted-foreground/50">Version 2.1.0</p>
                             </div>
                         </div>
                     </div>

@@ -38,6 +38,9 @@
     const transactionDetails = ref<object | null>(null);
     const message = ref<{ type: 'error'; text: string; } | null>(null);
 
+    // NEW: Template ref to access the SendForm component instance
+    const sendFormRef = ref(null);
+
     // Breadcrumb & User Info
     const page = usePage();
     const user = computed(() => page.props.auth?.user);
@@ -74,7 +77,6 @@
     const availableAssets = computed(() => {
         if (!props.tokens || !props.userBalances) return [];
         return props.tokens
-            .filter(token => (props.userBalances[token.symbol] || 0) > 0)
             .map(token => ({
                 ...token,
                 balance: props.userBalances[token.symbol] || 0,
@@ -98,7 +100,12 @@
         try {
             await axios.post(route('user.send.store'), transactionDetails.value);
             closeConfirmModal();
+            // Reload user balances and transaction history
             router.reload({ only: ['userBalances', 'sentTransactions'] });
+
+            if (sendFormRef.value && typeof sendFormRef.value.resetForm === 'function') {
+                sendFormRef.value.resetForm();
+            }
         } catch (error: any) {
             message.value = {
                 type: 'error',
@@ -111,7 +118,6 @@
 
     const closeConfirmModal = () => {
         isConfirmModalOpen.value = false;
-        // Delay resetting state to allow modal to fade out
         setTimeout(() => {
             isSending.value = false;
             message.value = null;
@@ -150,7 +156,7 @@
 
                 <div class="lg:col-span-6">
                     <SendForm
-                        :available-assets="availableAssets"
+                        ref="sendFormRef" :available-assets="availableAssets"
                         :prices="props.prices"
                         @review-transaction="handleReviewTransaction"
                     />

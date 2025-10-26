@@ -18,6 +18,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Inertia\Inertia;
 use JsonException;
+use Throwable;
 
 class ManageUserProfileController extends Controller
 {
@@ -30,6 +31,9 @@ class ManageUserProfileController extends Controller
         ]);
     }
 
+    /**
+     * @throws Throwable
+     */
     public function updateProfile(UpdateProfileRequest $request, ProfileService $profileService)
     {
         $profileService->update(

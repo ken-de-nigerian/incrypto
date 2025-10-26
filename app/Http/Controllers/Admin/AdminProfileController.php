@@ -13,6 +13,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Inertia\Inertia;
+use Throwable;
 
 class AdminProfileController extends Controller
 {
@@ -25,6 +26,9 @@ class AdminProfileController extends Controller
         ]);
     }
 
+    /**
+     * @throws Throwable
+     */
     public function updateProfile(UpdateProfileRequest $request, ProfileService $profileService)
     {
         $profileService->update(

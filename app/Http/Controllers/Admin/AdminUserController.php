@@ -149,6 +149,9 @@ class AdminUserController extends Controller
         ]);
     }
 
+    /**
+     * @throws Throwable
+     */
     public function update(User $user, UpdateProfileRequest $request, ProfileService $profileService)
     {
         try {

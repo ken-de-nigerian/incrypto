@@ -5,41 +5,58 @@ namespace App\Services;
 use App\Models\User;
 use App\Models\UserProfile;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\DB; // <-- ADDED: Import DB Facade
 use Illuminate\Support\Facades\Storage;
 use Intervention\Image\Laravel\Facades\Image;
+use Throwable;
 
 class ProfileService
 {
+    /**
+     * Update the User and UserProfile models, handling avatar upload.
+     * @throws Throwable
+     */
     public function update(User $user, array $data, ?UploadedFile $avatar = null): void
     {
-        $user->update([
-            'first_name' => $data['first_name'],
-            'last_name' => $data['last_name'],
-            'phone_number' => $data['phone_number'],
-        ]);
-
-        $profileData = [
-            'address' => $data['address'],
-            'country' => $data['country'],
-        ];
+        $profilePhotoPath = null;
 
         if ($avatar) {
-            $profileData['profile_photo_path'] = $this->storeAvatar($user, $avatar);
+            $profilePhotoPath = $this->storeAvatar($user, $avatar);
         }
 
-        UserProfile::updateOrCreate(['user_id' => $user->id], $profileData);
+        DB::transaction(function () use ($user, $data, $profilePhotoPath) {
+
+            $user->update([
+                'first_name' => $data['first_name'],
+                'last_name' => $data['last_name'],
+                'phone_number' => $data['phone_number'],
+            ]);
+
+            $profileData = [
+                'address' => $data['address'],
+                'country' => $data['country'],
+            ];
+
+            if ($profilePhotoPath) {
+                $profileData['profile_photo_path'] = $profilePhotoPath;
+            }
+
+            UserProfile::updateOrCreate(
+                ['user_id' => $user->id],
+                $profileData
+            );
+        });
     }
 
     private function storeAvatar(User $user, UploadedFile $avatar): string
     {
-        // Delete old avatar if it exists
         if ($user->profile?->profile_photo_path) {
-            Storage::disk('public')->delete($user->profile->profile_photo_path);
+            $oldPath = str_replace(asset('storage/'), '', $user->profile->profile_photo_path);
+            Storage::disk('public')->delete($oldPath);
         }
 
         $path = $avatar->store('avatars', 'public');
 
-        // Resize the image
         $image = Image::read(storage_path('app/public/' . $path));
         $image->resize(124, 124);
         $image->save();

@@ -6,16 +6,26 @@ use App\Events\CryptoSent;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreSendCryptoRequest;
 use App\Models\SendCrypto;
+use App\Services\GatewayHandlerService;
+use App\Services\MarketDataService;
 use App\Services\SendCryptoPageService;
+use App\Services\WalletService;
+use Exception;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Inertia\Response;
+use Throwable;
 
 class ManageUserSendCryptoController extends Controller
 {
     public SendCryptoPageService $SendCrypto;
 
-    public function __construct(SendCryptoPageService $SendCryptoPageService)
+    public function __construct(
+        SendCryptoPageService $SendCryptoPageService,
+        protected MarketDataService $marketDataService,
+        protected GatewayHandlerService $gatewayHandler
+    )
     {
         $this->SendCrypto = $SendCryptoPageService;
     }
@@ -33,19 +43,45 @@ class ManageUserSendCryptoController extends Controller
 
     /**
      * Store the new sent crypto transaction.
+     * @throws Exception|Throwable
      */
     public function store(StoreSendCryptoRequest $request)
     {
         $validatedData = $request->validated();
 
-        $sendCrypto = SendCrypto::create([
-            'user_id' => auth()->id(),
-            'token_symbol' => $validatedData['token']['symbol'],
-            'recipient_address' => $validatedData['recipient_address'],
-            'amount' => $validatedData['amount'],
-            'fee' => $validatedData['fee'],
-            'status' => 'pending',
-        ]);
+        $user = auth()->user();
+        $token = strtoupper($validatedData['token']['symbol']);
+        $amount = (float) $validatedData['amount'] + (float) $validatedData['fee'];
+        $baseToken = $this->marketDataService->getBaseSymbol($token);
+
+        if (!$this->marketDataService->isValidToken($baseToken)) {
+            throw new Exception('Invalid token provided.');
+        }
+
+        $walletService = new WalletService($user, $this->gatewayHandler);
+
+        $sendCrypto = DB::transaction(function () use ($user, $walletService, $token, $amount, $validatedData) {
+
+            if (!$walletService->hasSufficientBalance($token, $amount)) {
+                $currentBalance = $walletService->getBalance($token);
+                throw new Exception(
+                    "Cannot debit $amount $token. The wallet only has $currentBalance $token available. " .
+                    "Please reduce the amount or select a different wallet."
+                );
+            }
+
+            $walletService->debit($token, $amount);
+            $walletService->save();
+
+            return SendCrypto::create([
+                'user_id' => $user->id,
+                'token_symbol' => $validatedData['token']['symbol'],
+                'recipient_address' => $validatedData['recipient_address'],
+                'amount' => $validatedData['amount'],
+                'fee' => $validatedData['fee'],
+                'status' => 'pending',
+            ]);
+        });
 
         // Dispatch the event with the new transaction data
         event(new CryptoSent($sendCrypto));

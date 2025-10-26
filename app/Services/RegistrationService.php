@@ -21,11 +21,12 @@ class RegistrationService
         $token = $this->generateToken();
         $expiration = Carbon::now()->addMinutes(10);
 
-        Cache::put('verify:' . $email, $token, $expiration);
+        Cache::put($this->cacheKey($email), $token, $expiration);
 
         $notifiable = (new class {
             use Notifiable;
             public string $email;
+            public function routeNotificationForMail(){return $this->email;}
         });
 
         $notifiable->email = $email;
@@ -58,8 +59,10 @@ class RegistrationService
     public function verifyCode(string $email, string $otp): bool
     {
         $cachedToken = Cache::get($this->cacheKey($email));
+        if (is_null($cachedToken)) {
+            return false;
+        }
 
-        // Use a timing-safe comparison to prevent timing attacks.
         return hash_equals((string) $cachedToken, $otp);
     }
 

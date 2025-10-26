@@ -7,7 +7,7 @@ use App\Http\Requests\AdjustUserBalanceRequest;
 use App\Http\Requests\DeleteAccountRequest;
 use App\Http\Requests\RegisterRequest;
 use App\Http\Requests\ResetUserPasswordRequest;
-use App\Http\Requests\sendEmailRequest;
+use App\Http\Requests\SendEmailRequest;
 use App\Http\Requests\SuspendUserRequest;
 use App\Http\Requests\UpdateProfileRequest;
 use App\Http\Requests\UpdateWalletStatusRequest;

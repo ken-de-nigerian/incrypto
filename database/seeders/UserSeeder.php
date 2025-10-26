@@ -12,8 +12,6 @@ class UserSeeder extends Seeder
      */
     public function run(): void
     {
-        // Create 50 regular users, each with a corresponding profile.
-        // The `has()` method automatically links the foreign key.
         User::factory()
             ->count(50)
             ->hasProfile(1)

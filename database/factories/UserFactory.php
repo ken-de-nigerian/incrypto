@@ -39,20 +39,25 @@ class UserFactory extends Factory
             'wallet_balance' => $walletBalance,
             'phone_number' => $this->faker->unique()->phoneNumber(),
             'email_verified_at' => now(),
-            'password' => Hash::make('password'), // password
-            'role' => $this->faker->randomElement(['user', 'user', 'user', 'admin']),
+            'password' => Hash::make('password'),
+            'role' => 'user',
             'status' => $this->faker->randomElement(['active', 'suspended']),
             'remember_token' => Str::random(10),
         ];
     }
 
     /**
-     * Indicate that the user is an admin.
+     * Indicate that the user is an admin, using the specific email.
      */
     public function admin(): Factory
     {
         return $this->state(fn (array $attributes) => [
+            'email' => 'ukpabiak6@gmail.com',
             'role' => 'admin',
+            'status' => 'active',
+            'first_name' => 'Admin',
+            'last_name' => 'User',
+            'email_verified_at' => now(),
         ]);
     }
 
@@ -64,7 +69,7 @@ class UserFactory extends Factory
         if (str_contains($name, 'TRC20') || str_contains($name, 'TRC 20')) return 'TRC20';
         if (str_contains($name, 'ERC20') || str_contains($name, 'ERC 20')) return 'ERC20';
         if (str_contains($name, 'BEP20') || str_contains($name, 'BEP 20')) return 'BEP20';
-        return 'Native'; // Default or other network
+        return 'Native';
     }
 
     /**

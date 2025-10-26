@@ -2,7 +2,6 @@
 
 use App\Http\Controllers\User\ChartDataController;
 use App\Http\Controllers\User\ManageUserKycController;
-use App\Http\Controllers\User\ManageUserNotificationsController;
 use App\Http\Controllers\User\ManageUserProfileController;
 use App\Http\Controllers\User\ManageUserReceiveCryptoController;
 use App\Http\Controllers\User\ManageUserRewardsController;
@@ -108,16 +107,6 @@ Route::prefix('user')
             ->group(function () {
             Route::get('/', 'index')->name('index');
         });
-
-        // Notifications
-        Route::prefix('notifications')
-            ->name('notifications.')
-            ->controller(ManageUserNotificationsController::class)
-            ->group(function () {
-                Route::post('/{notification}/read', 'markAsRead')->name('read');
-                Route::delete('/{notification}/destroy', 'destroy')->name('destroy');
-                Route::delete('/destroy/all', 'destroyAll')->name('destroyAll');
-            });
 
         // Support
         Route::prefix('support')

@@ -22,19 +22,19 @@
     };
 
     const markAsRead = (notificationId: string) => {
-        router.post(route('user.notifications.read', notificationId), {}, {
+        router.post(route('notifications.read', notificationId), {}, {
             preserveScroll: true,
         });
     };
 
     const deleteNotification = (notificationId: string) => {
-        router.delete(route('user.notifications.destroy', notificationId), {
+        router.delete(route('notifications.destroy', notificationId), {
             preserveScroll: true,
         });
     };
 
     const deleteAllNotifications = () => {
-        router.delete(route('user.notifications.destroyAll'), {
+        router.delete(route('notifications.destroyAll'), {
             preserveScroll: true,
         });
     };

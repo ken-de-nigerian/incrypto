@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Auth\NotificationsController;
 use App\Http\Controllers\Auth\OnboardingController;
 use App\Http\Controllers\Auth\SecureWalletController;
 use App\Http\Controllers\Auth\VerificationController;
@@ -56,9 +57,11 @@ Route::middleware(['guest', 'redirect.authenticated'])->group(function () {
     });
 });
 
-/**
- * Secure Wallet
- */
+/*
+|--------------------------------------------------------------------------
+| Secure Wallet Routes
+|--------------------------------------------------------------------------
+*/
 Route::prefix('secure')
     ->name('secure.')
     ->middleware(['auth', 'auth.session', 'has.seedphrase'])
@@ -69,6 +72,21 @@ Route::prefix('secure')
         Route::get('/wallet/phrase', 'show')->name('wallet.phrase.show');
         Route::get('/confirm/phrase', 'confirm')->name('wallet.phrase.confirm');
         Route::post('/confirm/phrase/update', 'update')->name('wallet.phrase.confirm.update');
+    });
+
+/*
+|--------------------------------------------------------------------------
+| Notifications Routes
+|--------------------------------------------------------------------------
+*/
+Route::middleware(['auth', 'auth.session'])
+    ->prefix('notifications')
+    ->name('notifications.')
+    ->controller(NotificationsController::class)
+    ->group(function () {
+        Route::post('/{notification}/read', 'markAsRead')->name('read');
+        Route::delete('/{notification}/destroy', 'destroy')->name('destroy');
+        Route::delete('/destroy/all', 'destroyAll')->name('destroyAll');
     });
 
 /*

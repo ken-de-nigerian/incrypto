@@ -115,7 +115,6 @@
                 wallet_address: selectedToken.value.address,
             });
             router.reload({ only: ['pendingTransactions'] });
-            isWalletModalOpen.value = false;
         } catch (error: any) {
             console.error('Failed to create pending transaction:', error);
 

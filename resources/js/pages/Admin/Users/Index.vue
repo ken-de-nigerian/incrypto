@@ -9,7 +9,7 @@
     import 'vue-tel-input/vue-tel-input.css';
 
     import {
-        Search, Circle, Mail, UserPlus, XCircle, Eye, Edit, Users
+        Search, Circle, Mail, UserPlus, XCircle, Eye, Edit, Users, Link as LinkIcon
     } from 'lucide-vue-next';
     import PaginationControls from '@/components/PaginationControls.vue';
     import TextLink from '@/components/TextLink.vue';
@@ -36,6 +36,16 @@
         profile_photo_path: string | null;
     }
 
+    interface Referral {
+        id: number;
+        first_name: string;
+        last_name: string;
+        email: string;
+        status: 'active' | 'suspended';
+        created_at: string;
+        profile: Profile | null;
+    }
+
     interface User {
         id: number;
         first_name: string;
@@ -44,6 +54,7 @@
         status: 'active' | 'suspended';
         profile: Profile | null;
         social_login_provider: string | null;
+        referrals?: Referral[];
     }
 
     interface PaginatedData<T> {
@@ -79,6 +90,9 @@
 
     const isNotificationsModalOpen = ref(false);
     const isRegisterUserModalOpen = ref(false);
+    const isReferralsModalOpen = ref(false);
+    const selectedUserForReferrals = ref<User | null>(null);
+
     const openNotificationsModal = () => { isNotificationsModalOpen.value = true; };
     const closeNotificationsModal = () => { isNotificationsModalOpen.value = false; };
 
@@ -88,8 +102,15 @@
         if (modalName === 'registerUserModal') isRegisterUserModalOpen.value = true;
     };
 
+    const openReferralsModal = (userData: User) => {
+        selectedUserForReferrals.value = userData;
+        isReferralsModalOpen.value = true;
+    };
+
     const closeAllModals = () => {
         isRegisterUserModalOpen.value = false;
+        isReferralsModalOpen.value = false;
+        selectedUserForReferrals.value = null;
     };
 
     const registerUserForm = useForm({
@@ -206,7 +227,6 @@
         return { label: formattedProvider, class: badgeClass };
     };
 
-
     const hasActiveFilters = computed(() => form.value.search || form.value.status);
 
     const clearFilters = () => {
@@ -223,6 +243,14 @@
         if (registerUserForm.errors[field]) {
             registerUserForm.clearErrors(field);
         }
+    };
+
+    const formatDate = (dateString: string) => {
+        return new Date(dateString).toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric'
+        });
     };
 </script>
 
@@ -343,6 +371,14 @@
                                 <span>View</span>
                             </TextLink>
 
+                            <button
+                                @click="openReferralsModal(user)"
+                                :disabled="!user.referrals || user.referrals.length === 0"
+                                class="flex items-center justify-center gap-2 px-3 py-1 bg-accent hover:bg-accent/90 text-accent-foreground rounded-lg text-sm font-medium transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed">
+                                <LinkIcon class="w-4 h-4" />
+                                <span>Referrals</span>
+                            </button>
+
                             <TextLink
                                 :href="route('admin.users.edit', user.id)"
                                 class="flex items-center justify-center gap-2 px-3 py-1 bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg text-sm font-medium">
@@ -357,7 +393,7 @@
                     <div class="lg:col-span-4 sm:col-span-2 col-span-1">
                         <div class="card-crypto p-10 text-center border-dashed border-border flex flex-col items-center justify-center">
                             <div class="w-24 h-24 mx-auto mb-4">
-                                <XCircle class="w-full h-full text-destructive" />
+                                <XCircle class="w-full h-full text-muted-foreground" />
                             </div>
                             <h6 class="text-lg font-semibold text-foreground">No users found</h6>
                             <p class="text-muted-foreground mt-1">Try adjusting your search terms or status filter.</p>
@@ -467,6 +503,51 @@
                 </ActionButton>
             </div>
         </form>
+    </QuickActionModal>
+
+    <QuickActionModal
+        :is-open="isReferralsModalOpen"
+        :title="`Referred Users - ${selectedUserForReferrals?.first_name} ${selectedUserForReferrals?.last_name}`"
+        :subtitle="`Showing ${selectedUserForReferrals?.referrals?.length || 0} referred user(s)`"
+        @close="closeAllModals">
+
+        <template v-if="selectedUserForReferrals?.referrals && selectedUserForReferrals.referrals.length > 0">
+            <div v-for="referral in selectedUserForReferrals.referrals" :key="referral.id" class="p-3 bg-muted/50 border border-border rounded-lg hover:bg-muted transition-colors">
+                <div class="flex items-center gap-3">
+                    <div class="w-12 h-12 rounded-full bg-secondary/70 overflow-hidden flex items-center justify-center border border-border flex-shrink-0">
+                        <img v-if="referral.profile?.profile_photo_path" :src="referral.profile?.profile_photo_path" :alt="referral.first_name" class="h-full w-full object-cover">
+                        <span v-else class="text-lg font-bold text-foreground">{{ referral.first_name.charAt(0) }}{{ referral.last_name.charAt(0) }}</span>
+                    </div>
+
+                    <div class="flex-1 min-w-0">
+                        <h6 class="font-semibold text-foreground truncate">{{ referral.first_name }} {{ referral.last_name }}</h6>
+                        <p class="text-xs text-muted-foreground truncate">{{ referral.email }}</p>
+                        <div class="flex items-center gap-2 mt-1">
+                            <span class="inline-flex items-center space-x-1 text-xs font-semibold rounded-full px-2 py-0.5" :class="getStatusClass(referral.status)">
+                                <Circle class="w-1.5 h-1.5 fill-current" />
+                                <span>{{ referral.status.charAt(0).toUpperCase() + referral.status.slice(1) }}</span>
+                            </span>
+                            <span class="text-xs text-muted-foreground">{{ formatDate(referral.created_at) }}</span>
+                        </div>
+                    </div>
+
+                    <div class="flex-shrink-0">
+                        <TextLink
+                            :href="route('admin.users.show', referral.id)"
+                            class="flex items-center justify-center w-8 h-8 bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg transition-colors">
+                            <Eye class="w-4 h-4" />
+                        </TextLink>
+                    </div>
+                </div>
+            </div>
+        </template>
+
+        <template v-else>
+            <div class="p-8 text-center">
+                <Users class="w-12 h-12 mx-auto text-muted-foreground opacity-40 mb-3" />
+                <p class="text-muted-foreground">No referred users yet</p>
+            </div>
+        </template>
     </QuickActionModal>
 
     <NotificationsModal

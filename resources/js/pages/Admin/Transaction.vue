@@ -94,18 +94,29 @@
                     : 'all';
     });
 
-    // Combine all transactions with type labels
     const allTransactions = computed(() => {
-        const swaps = props.crypto_swaps.map(tx => ({ ...tx, type: 'swap' as const }));
-        const received = props.received_cryptos.map(tx => ({ ...tx, type: 'received' as const }));
-        const sent = props.sent_cryptos.map(tx => ({ ...tx, type: 'sent' as const }));
+        const swaps = props.crypto_swaps.map(tx => ({
+            ...tx,
+            type: 'swap' as const,
+            compositeId: `swap-${tx.id}`
+        }));
+        const received = props.received_cryptos.map(tx => ({
+            ...tx,
+            type: 'received' as const,
+            compositeId: `received-${tx.id}`
+        }));
+        const sent = props.sent_cryptos.map(tx => ({
+            ...tx,
+            type: 'sent' as const,
+            compositeId: `sent-${tx.id}`
+        }));
 
         return [...swaps, ...received, ...sent].sort((a, b) =>
             new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
         );
     });
 
-    // Filter transactions based on active tab
+    // Filter transactions based on the active tab
     const tabFilteredTransactions = computed(() => {
         switch (activeTab.value) {
             case 'swaps':
@@ -325,15 +336,6 @@
         { id: 'sent', label: 'Sent', icon: ArrowUpRightIcon, params: { tab: 'sent' } }
     ];
 
-    const navigateToTab = (tab: typeof activeTab.value, params?: { tab: string }) => {
-        activeTab.value = tab;
-        if (params && tab !== 'all') {
-            router.get(route('admin.transaction.index'), params, { preserveState: true });
-        } else if (tab === 'all') {
-            router.get(route('admin.transaction.index'), {}, { preserveState: true });
-        }
-    };
-
     const user = computed(() => page.props.auth.user);
 
     const initials = computed(() => {
@@ -428,7 +430,6 @@
             transaction_type: selectedTransaction.value.type
         };
 
-        // Include amount for approve action on received transactions
         if (actionType.value === 'approve' && selectedTransaction.value.type === 'received' && approvalAmount.value) {
             payload.amount = parseFloat(approvalAmount.value);
         }
@@ -446,7 +447,7 @@
         });
     };
 
-    watch([searchQuery, sortOrder, filterByStatus, activeTab], () => {
+    watch([searchQuery, sortOrder, filterByStatus], () => {
         displayCount.value = Math.min(itemsPerLoad, totalTransactionsCount.value);
         if (scrollContainer.value) {
             scrollContainer.value.scrollTop = 0;
@@ -469,7 +470,6 @@
 
             <div class="mt-8">
                 <div class="w-full mx-auto space-y-6">
-                    <!-- Header Statistics -->
                     <div class="bg-gradient-to-br from-primary/10 via-primary/10 to-transparent rounded-2xl border border-primary/20 overflow-hidden">
                         <div class="p-6 sm:p-8">
                             <div class="flex items-start gap-4 mb-6">
@@ -513,22 +513,21 @@
                         </div>
                     </div>
 
-                    <!-- Transactions Table -->
                     <div class="bg-card rounded-2xl border border-border overflow-hidden margin-bottom">
                         <div class="bg-muted/30 px-4 sm:px-6 py-4 border-b border-border">
                             <div class="flex items-center gap-2 overflow-x-auto hide-scrollbar">
-                                <button
+                                <TextLink
                                     v-for="tab in tabs"
                                     :key="tab.id"
-                                    @click="navigateToTab(tab.id as typeof activeTab, tab.params)"
-                                    class="flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium text-sm transition-all whitespace-nowrap cursor-pointer"
+                                    :href="tab.params ? route('admin.transaction.index', tab.params) : route('admin.transaction.index')"
+                                    class="flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium text-sm transition-all duration-200 whitespace-nowrap cursor-pointer"
                                     :class="activeTab === tab.id
-                                        ? 'bg-primary text-primary-foreground shadow-sm'
+                                        ? 'bg-primary text-primary-foreground shadow-sm scale-105'
                                         : 'text-muted-foreground hover:bg-muted/70 hover:text-card-foreground'"
                                 >
                                     <component :is="tab.icon" class="w-4 h-4" />
                                     {{ tab.label }}
-                                </button>
+                                </TextLink>
                             </div>
                         </div>
 
@@ -544,7 +543,7 @@
                                 <div class="flex items-center gap-2">
                                     <button
                                         @click="showFilters = !showFilters"
-                                        class="px-3 py-1.5 rounded-lg text-xs font-medium bg-muted/70 hover:bg-muted/80 text-muted-foreground border border-border flex items-center gap-2 cursor-pointer"
+                                        class="px-3 py-1.5 rounded-lg text-xs font-medium bg-muted/70 hover:bg-muted/80 text-muted-foreground border border-border flex items-center gap-2 cursor-pointer transition-all"
                                         :class="{ 'bg-primary/10 text-primary border-primary/30': hasActiveFilters }"
                                     >
                                         <FilterIcon class="w-3.5 h-3.5" />
@@ -581,7 +580,7 @@
                                         <label class="block text-xs font-medium text-muted-foreground mb-1.5">Sort By Date</label>
                                         <button
                                             @click="toggleSortOrder"
-                                            class="w-full px-3 py-2 bg-background border border-border rounded-lg text-sm hover:bg-muted/50 flex items-center justify-between cursor-pointer"
+                                            class="w-full px-3 py-2 bg-background border border-border rounded-lg text-sm hover:bg-muted/50 flex items-center justify-between cursor-pointer transition-all"
                                         >
                                             <span>
                                                 {{ sortOrder === 'asc' ? 'Oldest First' : sortOrder === 'desc' ? 'Newest First' : 'Recent First' }}
@@ -611,7 +610,7 @@
                                 <button
                                     v-if="hasActiveFilters"
                                     @click="clearFilters"
-                                    class="w-full px-4 py-2 border border-border bg-destructive/10 hover:bg-destructive/20 text-destructive rounded-lg text-sm font-medium flex items-center justify-center gap-2 cursor-pointer"
+                                    class="w-full px-4 py-2 border border-border bg-destructive/10 hover:bg-destructive/20 text-destructive rounded-lg text-sm font-medium flex items-center justify-center gap-2 cursor-pointer transition-all"
                                 >
                                     <XIcon class="w-4 h-4" />
                                     Clear All Filters
@@ -622,7 +621,7 @@
                         <div ref="scrollContainer" @scroll="handleScroll" class="p-4 sm:p-6 max-h-[800px] overflow-y-auto custom-scrollbar">
                             <div v-if="allTransactions.length === 0" class="text-center py-12">
                                 <div class="w-16 h-16 rounded-full bg-muted/70 mx-auto mb-4 flex items-center justify-center">
-                                    <HistoryIcon class="w-8 h-8 text-muted-foreground" />
+                                    <HistoryIcon class="w-full h-full text-muted-foreground" />
                                 </div>
                                 <h4 class="text-lg font-semibold text-card-foreground mb-2">No Transactions</h4>
                                 <p class="text-sm text-muted-foreground">No transactions recorded on the platform yet.</p>
@@ -634,7 +633,7 @@
                                 </div>
                                 <h4 class="text-lg font-semibold text-card-foreground mb-2">No Transactions Found</h4>
                                 <p class="text-sm text-muted-foreground mb-4">Try adjusting your search or filter criteria.</p>
-                                <button @click="clearFilters" class="px-4 py-2 bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg text-sm font-medium cursor-pointer">
+                                <button @click="clearFilters" class="px-4 py-2 bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg text-sm font-medium cursor-pointer transition-all">
                                     Clear Filters
                                 </button>
                             </div>
@@ -642,7 +641,7 @@
                             <div v-else class="space-y-4">
                                 <div
                                     v-for="tx in displayedTransactions"
-                                    :key="tx.id"
+                                    :key="tx.compositeId"
                                     class="group bg-gradient-to-br from-card to-muted/20 border border-border rounded-xl p-5 transition-all duration-200 hover:border-primary/30"
                                 >
                                     <div class="flex flex-col lg:flex-row items-start justify-between gap-4 mb-4">
@@ -663,9 +662,8 @@
                                         </div>
                                     </div>
 
-                                    <!-- User Information Card -->
-                                    <div v-if="tx.user_id" class="mb-4 p-3 bg-primary/5 rounded-lg border border-primary/20 flex items-center justify-between">
-                                        <div class="flex items-center gap-3 flex-1">
+                                    <div v-if="tx.user_id" class="mb-4 p-3 bg-primary/5 rounded-lg border border-primary/20 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                                        <div class="flex items-center gap-3 flex-1 w-full">
                                             <div class="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0">
                                                 <span class="text-sm font-bold text-primary">{{ (tx.user_name || 'U').charAt(0).toUpperCase() }}</span>
                                             </div>
@@ -675,7 +673,7 @@
                                             </div>
                                         </div>
                                         <TextLink :href="route('admin.users.show', tx.user_id)"
-                                            class="px-3 py-1.5 text-xs font-medium bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg cursor-pointer transition-all whitespace-nowrap ml-2">
+                                                  class="w-full sm:w-auto px-3 py-1.5 text-xs font-medium bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg cursor-pointer transition-all whitespace-nowrap sm:ml-2 text-center">
                                             View Profile
                                         </TextLink>
                                     </div>
@@ -711,22 +709,22 @@
                                                 </a>
                                             </div>
                                         </div>
-                                        <div v-if="(tx.status === 'pending' || tx.status === 'processing')" class="bg-warning/10 border border-warning/30 rounded-lg p-3 sm:col-span-2 flex items-center gap-3">
-                                            <AlertCircleIcon class="w-4 h-4 text-warning flex-shrink-0" />
-                                            <div class="flex-1">
+                                        <div v-if="(tx.status === 'pending' || tx.status === 'processing')" class="bg-warning/10 border border-warning/30 rounded-lg p-3 sm:col-span-2 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                                            <div class="flex items-center gap-3 flex-shrink-0">
+                                                <AlertCircleIcon class="w-4 h-4 text-warning" />
                                                 <p class="text-xs text-warning font-medium">Awaiting approval</p>
                                             </div>
-                                            <div class="flex gap-2">
+                                            <div class="flex gap-2 w-full sm:w-auto">
                                                 <button
                                                     @click="openActionModal(tx, 'approve')"
-                                                    class="px-3 py-1.5 bg-success hover:bg-success/90 text-white rounded-lg text-xs font-medium flex items-center gap-1.5 cursor-pointer transition-all"
+                                                    class="flex-1 px-3 py-1.5 bg-success hover:bg-success/90 text-white rounded-lg text-xs font-medium flex items-center justify-center gap-1.5 cursor-pointer transition-all"
                                                 >
                                                     <ThumbsUpIcon class="w-3.5 h-3.5" />
                                                     Approve
                                                 </button>
                                                 <button
                                                     @click="openActionModal(tx, 'reject')"
-                                                    class="px-3 py-1.5 bg-destructive hover:bg-destructive/90 text-white rounded-lg text-xs font-medium flex items-center gap-1.5 cursor-pointer transition-all"
+                                                    class="flex-1 px-3 py-1.5 bg-destructive hover:bg-destructive/90 text-white rounded-lg text-xs font-medium flex items-center justify-center gap-1.5 cursor-pointer transition-all"
                                                 >
                                                     <ThumbsDownIcon class="w-3.5 h-3.5" />
                                                     Reject
@@ -773,22 +771,22 @@
                                                 </a>
                                             </div>
                                         </div>
-                                        <div v-if="(tx.status === 'pending' || tx.status === 'processing')" class="bg-warning/10 border border-warning/30 rounded-lg p-3 sm:col-span-2 flex items-center gap-3">
-                                            <AlertCircleIcon class="w-4 h-4 text-warning flex-shrink-0" />
-                                            <div class="flex-1">
+                                        <div v-if="(tx.status === 'pending' || tx.status === 'processing')" class="bg-warning/10 border border-warning/30 rounded-lg p-3 sm:col-span-2 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                                            <div class="flex items-center gap-3 flex-shrink-0">
+                                                <AlertCircleIcon class="w-4 h-4 text-warning" />
                                                 <p class="text-xs text-warning font-medium">Awaiting approval</p>
                                             </div>
-                                            <div class="flex gap-2">
+                                            <div class="flex gap-2 w-full sm:w-auto">
                                                 <button
                                                     @click="openActionModal(tx, 'approve')"
-                                                    class="px-3 py-1.5 bg-success hover:bg-success/90 text-white rounded-lg text-xs font-medium flex items-center gap-1.5 cursor-pointer transition-all"
+                                                    class="flex-1 px-3 py-1.5 bg-success hover:bg-success/90 text-white rounded-lg text-xs font-medium flex items-center justify-center gap-1.5 cursor-pointer transition-all"
                                                 >
                                                     <ThumbsUpIcon class="w-3.5 h-3.5" />
                                                     Approve
                                                 </button>
                                                 <button
                                                     @click="openActionModal(tx, 'reject')"
-                                                    class="px-3 py-1.5 bg-destructive hover:bg-destructive/90 text-white rounded-lg text-xs font-medium flex items-center gap-1.5 cursor-pointer transition-all"
+                                                    class="flex-1 px-3 py-1.5 bg-destructive hover:bg-destructive/90 text-white rounded-lg text-xs font-medium flex items-center justify-center gap-1.5 cursor-pointer transition-all"
                                                 >
                                                     <ThumbsDownIcon class="w-3.5 h-3.5" />
                                                     Reject
@@ -839,22 +837,22 @@
                                                 </a>
                                             </div>
                                         </div>
-                                        <div v-if="(tx.status === 'pending' || tx.status === 'processing')" class="bg-warning/10 border border-warning/30 rounded-lg p-3 sm:col-span-2 flex items-center gap-3">
-                                            <AlertCircleIcon class="w-4 h-4 text-warning flex-shrink-0" />
-                                            <div class="flex-1">
+                                        <div v-if="(tx.status === 'pending' || tx.status === 'processing')" class="bg-warning/10 border border-warning/30 rounded-lg p-3 sm:col-span-2 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                                            <div class="flex items-center gap-3 flex-shrink-0">
+                                                <AlertCircleIcon class="w-4 h-4 text-warning" />
                                                 <p class="text-xs text-warning font-medium">Awaiting approval</p>
                                             </div>
-                                            <div class="flex gap-2">
+                                            <div class="flex gap-2 w-full sm:w-auto">
                                                 <button
                                                     @click="openActionModal(tx, 'approve')"
-                                                    class="px-3 py-1.5 bg-success hover:bg-success/90 text-white rounded-lg text-xs font-medium flex items-center gap-1.5 cursor-pointer transition-all"
+                                                    class="flex-1 px-3 py-1.5 bg-success hover:bg-success/90 text-white rounded-lg text-xs font-medium flex items-center justify-center gap-1.5 cursor-pointer transition-all"
                                                 >
                                                     <ThumbsUpIcon class="w-3.5 h-3.5" />
                                                     Approve
                                                 </button>
                                                 <button
                                                     @click="openActionModal(tx, 'reject')"
-                                                    class="px-3 py-1.5 bg-destructive hover:bg-destructive/90 text-white rounded-lg text-xs font-medium flex items-center gap-1.5 cursor-pointer transition-all"
+                                                    class="flex-1 px-3 py-1.5 bg-destructive hover:bg-destructive/90 text-white rounded-lg text-xs font-medium flex items-center justify-center gap-1.5 cursor-pointer transition-all"
                                                 >
                                                     <ThumbsDownIcon class="w-3.5 h-3.5" />
                                                     Reject
@@ -882,7 +880,6 @@
         </div>
     </AppLayout>
 
-    <!-- Action Confirmation Modal -->
     <QuickActionModal
         :is-open="showActionModal"
         :title="actionType === 'approve' ? 'Review & Approve Transaction' : 'Reject Transaction'"
@@ -890,7 +887,6 @@
         @close="closeActionModal">
 
         <div class="space-y-5">
-            <!-- Icon and Title -->
             <div class="flex items-center gap-3">
                 <div v-if="actionType === 'approve'" class="w-10 h-10 rounded-full bg-success/10 flex items-center justify-center">
                     <ThumbsUpIcon class="w-5 h-5 text-success" />
@@ -903,7 +899,6 @@
                 </h3>
             </div>
 
-            <!-- Transaction Details Card -->
             <div v-if="selectedTransaction" class="p-4 bg-muted/30 rounded-lg border border-border/50 space-y-3">
                 <div class="flex justify-between items-center">
                     <span class="text-xs font-medium text-muted-foreground">Transaction Type</span>
@@ -929,11 +924,10 @@
                 </div>
             </div>
 
-            <!-- Amount Input for Received Transactions -->
             <div v-if="actionType === 'approve' && selectedTransaction?.type === 'received'" class="space-y-3">
                 <div class="p-3 bg-info/10 border border-info/30 rounded-lg">
                     <p class="text-xs text-info font-medium">⚠ Received Transaction</p>
-                    <p class="text-xs text-info/80 mt-1">Enter the actual amount that was received from the customer. This amount will be recorded and the transaction will be marked as completed.</p>
+                    <p class="text-xs text-info/80 mt-1">Enter the actual amount that was received from the user. This amount will be recorded and the transaction will be marked as completed.</p>
                 </div>
 
                 <div>
@@ -941,11 +935,9 @@
                     <div class="relative">
                         <input
                             v-model="approvalAmount"
-                            type="number"
-                            step="0.00000001"
-                            min="0"
+                            type="text"
                             placeholder="0.00"
-                            class="w-full px-4 py-3 bg-background border border-border rounded-lg text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                            class="input-crypto w-full text-sm"
                             :class="{ 'border-destructive/50': validationErrors.amount }"
                         />
                         <span v-if="selectedTransaction?.token_symbol" class="absolute right-4 top-1/2 -translate-y-1/2 text-sm font-medium text-muted-foreground">
@@ -953,30 +945,21 @@
                         </span>
                     </div>
                     <InputError v-if="validationErrors.amount" :message="validationErrors.amount" />
-                    <p class="text-xs text-muted-foreground mt-2">This is the amount the customer actually transferred. Ensure accuracy before confirming.</p>
+                    <p class="text-xs text-muted-foreground mt-2">This is the amount the user actually transferred. Ensure accuracy before confirming.</p>
                 </div>
             </div>
 
-            <!-- Confirmation Message for Other Transactions -->
             <div v-else-if="actionType === 'approve'" class="p-3 bg-success/10 border border-success/30 rounded-lg">
                 <p class="text-xs text-success font-medium">✓ Ready to Approve</p>
                 <p class="text-xs text-success/80 mt-1">This transaction will be marked as approved and completed in the system. This action cannot be undone.</p>
             </div>
 
-            <!-- Rejection Warning -->
             <div v-if="actionType === 'reject'" class="p-3 bg-destructive/10 border border-destructive/30 rounded-lg">
                 <p class="text-xs text-destructive font-medium">⚠ Rejection Warning</p>
-                <p class="text-xs text-destructive/80 mt-1">Once rejected, this transaction will be marked as failed and cannot be recovered. The customer will be notified of the rejection.</p>
+                <p class="text-xs text-destructive/80 mt-1">Once rejected, this transaction will be marked as failed and cannot be recovered. The user will be notified of the rejection.</p>
             </div>
 
-            <!-- Action Buttons -->
             <div class="flex gap-3 pt-2">
-                <button
-                    @click="closeActionModal"
-                    class="flex-1 px-4 py-2.5 bg-muted hover:bg-muted/80 text-card-foreground rounded-lg font-medium text-sm cursor-pointer transition-all"
-                >
-                    Cancel
-                </button>
                 <button
                     @click="confirmAction"
                     :disabled="isProcessing || (actionType === 'approve' && selectedTransaction?.type === 'received' && !approvalAmount)"

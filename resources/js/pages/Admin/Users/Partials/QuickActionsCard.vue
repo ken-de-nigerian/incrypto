@@ -1,5 +1,5 @@
 <script setup lang="ts">
-    import { defineAsyncComponent, DefineComponent } from 'vue';
+    import { DefineComponent } from 'vue';
     import { AlertTriangle, CheckCircle2, Copy, RotateCw } from 'lucide-vue-next';
     import { ref, computed } from 'vue';
     import QuickActionModal from '@/components/QuickActionModal.vue';
@@ -7,13 +7,8 @@
     import ActionButton from '@/components/ActionButton.vue';
     import { useForm } from '@inertiajs/vue3';
     import InputError from '@/components/InputError.vue';
-    import("@vueup/vue-quill/dist/vue-quill.snow.css");
-
-    const QuillEditor = defineAsyncComponent(() =>
-        import("@vueup/vue-quill").then(module => {
-            return module.QuillEditor;
-        })
-    );
+    import "@vueup/vue-quill/dist/vue-quill.snow.css";
+    import { QuillEditor } from "@vueup/vue-quill";
 
     interface ActionButton {
         label: string;

@@ -26,6 +26,7 @@
         fee?: number;
         status: string;
         created_at: string;
+        compositeId?: string;
     }
 
     const props = defineProps({
@@ -62,18 +63,28 @@
     const itemsPerLoad = 12;
     const loadBuffer = 300;
 
-    // Combine all transactions with type labels
     const allTransactions = computed(() => {
-        const swaps = props.transactions.swaps.map(tx => ({ ...tx, type: 'swap' as const }));
-        const received = props.transactions.received.map(tx => ({ ...tx, type: 'received' as const }));
-        const sent = props.transactions.sent.map(tx => ({ ...tx, type: 'sent' as const }));
+        const swaps = (props.transactions.swaps || []).map(tx => ({
+            ...tx,
+            type: 'swap' as const,
+            compositeId: `swap-${tx.id}`
+        }));
+        const received = (props.transactions.received || []).map(tx => ({
+            ...tx,
+            type: 'received' as const,
+            compositeId: `received-${tx.id}`
+        }));
+        const sent = (props.transactions.sent || []).map(tx => ({
+            ...tx,
+            type: 'sent' as const,
+            compositeId: `sent-${tx.id}`
+        }));
 
         return [...swaps, ...received, ...sent].sort((a, b) =>
             new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
         );
     });
 
-    // Filter transactions based on active tab
     const tabFilteredTransactions = computed(() => {
         switch (activeTab.value) {
             case 'swaps':
@@ -209,6 +220,7 @@
 
     const copyToClipboard = (text: string, id: number) => {
         navigator.clipboard.writeText(text);
+        // Using tx.id is fine here as it's outside the v-for key context
         copiedHash.value = `${id}`;
         setTimeout(() => {
             copiedHash.value = null;
@@ -273,11 +285,12 @@
         }
     };
 
+    // Modified tabs structure to include Inertia route parameters/logic
     const tabs = [
-        { id: 'all', label: 'All Transactions', icon: HistoryIcon },
-        { id: 'swaps', label: 'Swaps', icon: ArrowRightLeftIcon },
-        { id: 'received', label: 'Received', icon: ArrowDownLeftIcon },
-        { id: 'sent', label: 'Sent', icon: ArrowUpRightIcon }
+        { id: 'all', label: 'All Transactions', icon: HistoryIcon, params: {} },
+        { id: 'swaps', label: 'Swaps', icon: ArrowRightLeftIcon, params: { tab: 'swaps' } },
+        { id: 'received', label: 'Received', icon: ArrowDownLeftIcon, params: { tab: 'received' } },
+        { id: 'sent', label: 'Sent', icon: ArrowUpRightIcon, params: { tab: 'sent' } }
     ];
 
     const securityFeatures = [
@@ -345,18 +358,21 @@
                 <div class="bg-card rounded-2xl border border-border overflow-hidden margin-bottom">
                     <div class="bg-muted/30 px-4 sm:px-6 py-4 border-b border-border">
                         <div class="flex items-center gap-2 overflow-x-auto hide-scrollbar">
-                            <button
+                            <TextLink
                                 v-for="tab in tabs"
                                 :key="tab.id"
-                                @click="activeTab = tab.id as typeof activeTab"
-                                class="flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium text-sm transition-all whitespace-nowrap cursor-pointer"
+                                :href="route('user.transactions.index', tab.params)"
+                                class="flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium text-sm transition-all duration-200 whitespace-nowrap cursor-pointer"
                                 :class="activeTab === tab.id
-                                    ? 'bg-primary text-primary-foreground shadow-sm'
+                                    ? 'bg-primary text-primary-foreground shadow-sm scale-105'
                                     : 'text-muted-foreground hover:bg-muted/70 hover:text-card-foreground'"
+                                preserve-scroll
+                                preserve-state
+                                @click="activeTab = tab.id as typeof activeTab"
                             >
                                 <component :is="tab.icon" class="w-4 h-4" />
                                 {{ tab.label }}
-                            </button>
+                            </TextLink>
                         </div>
                     </div>
 
@@ -474,7 +490,7 @@
                         <div v-else class="space-y-4">
                             <div
                                 v-for="tx in displayedTransactions"
-                                :key="tx.id"
+                                :key="tx.compositeId"
                                 class="group bg-gradient-to-br from-card to-muted/20 border border-border rounded-xl p-5 transition-all duration-200 hover:border-primary/30"
                             >
                                 <div class="flex flex-col lg:flex-row items-start justify-between gap-4 mb-4">

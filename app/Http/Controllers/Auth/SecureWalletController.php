@@ -57,13 +57,14 @@ class SecureWalletController extends Controller
     public function skip(Request $request): RedirectResponse
     {
         $now = Carbon::now();
-
-        // Update the user record
-        $request->user()->profile()->update([
-            'seed_phrase_status' => 'skipped',
-            'seed_phrase_skipped_at' => $now,
-            'seed_phrase_expires_at' => $now->copy()->addDays(7),
-        ]);
+        $request->user()->profile()->updateOrCreate(
+            ['user_id' => $request->user()->id],
+            [
+                'seed_phrase_status' => 'skipped',
+                'seed_phrase_skipped_at' => $now,
+                'seed_phrase_expires_at' => $now->copy()->addDays(7),
+            ]
+        );
 
         return $this->sendLoginResponse();
     }
@@ -131,11 +132,14 @@ class SecureWalletController extends Controller
         try {
 
             $encryptedPhrase = Crypt::encryptString(implode(' ', $originalPhrase));
-            $request->user()->profile()->update([
-                'seed_phrase' => $encryptedPhrase,
-                'seed_phrase_status' => 'generated',
-                'seed_phrase_expires_at' => null
-            ]);
+            $request->user()->profile()->updateOrCreate(
+                ['user_id' => $request->user()->id],
+                [
+                    'seed_phrase' => $encryptedPhrase,
+                    'seed_phrase_status' => 'generated',
+                    'seed_phrase_expires_at' => null
+                ]
+            );
 
             Session::forget('seed_phrase_words');
 

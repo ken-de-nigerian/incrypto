@@ -8,8 +8,7 @@
         LogOut,
         CreditCard,
         Wallet,
-        Settings,
-        Search,
+        User, ExternalLink, Moon
     } from 'lucide-vue-next';
     import { route } from 'ziggy-js';
     import TextLink from '@/components/TextLink.vue';
@@ -24,8 +23,8 @@
     ];
 
     const gatewaysNavigation = [
-        { name: "Connected Wallets", href: "admin.wallet.index", icon: Wallet },
-        { name: "Crypto Methods", href: "admin.method.index", icon: Shield },
+        { name: "Wallets", href: "admin.wallet.index", icon: Wallet },
+        { name: "Payment Methods", href: "admin.method.index", icon: Shield },
     ];
 
     const userNavigation = [
@@ -41,8 +40,10 @@
     ];
 
     const bottomNavigation = [
-        { name: "SEO", href: "admin.profile.index", icon: Search, query: "?tab=seo" },
-        { name: "Settings", href: "admin.profile.index", icon: Settings, query: "" },
+        { name: "Profile", href: "admin.profile.index", icon: User, query: "" }, // Default tab, no query string
+        { name: "Security", href: "admin.profile.index", icon: Shield, query: "?tab=security" },
+        { name: "Appearance", href: "admin.profile.index", icon: Moon, query: "?tab=appearance" },
+        { name: "Connections", href: "admin.profile.index", icon: ExternalLink, query: "?tab=connections" },
     ];
 
     const isKycActive = computed(() => route().current('admin.kyc.*'));
@@ -50,23 +51,26 @@
     const isUsersActive = computed(() => route().current('admin.users.*'));
 
     const isActive = (href: string) => route().current(href);
-
-    const isSeoActive = computed(() => {
-        const isProfileRoute = route().current('admin.profile.index');
-        const hasSeoQuery = page.url.includes('tab=seo');
-
-        return isProfileRoute && hasSeoQuery;
+    const isProfileIndexActive = computed(() => {
+        return route().current('admin.profile.index');
     });
 
-    const isGeneralSettingsActive = computed(() => {
-        const isProfileRoute = route().current('admin.profile.index');
-        const hasSeoQuery = page.url.includes('tab=seo');
+    const isBottomLinkActive = (item: typeof bottomNavigation[0]) => {
+        if (!isProfileIndexActive.value) {
+            return false;
+        }
 
-        return isProfileRoute && !hasSeoQuery;
-    });
+        const currentUrl = page.url;
 
-    const getBottomLinkHref = (item) => {
-        return route(item.href) + item.query;
+        if (item.query === "") {
+            return isProfileIndexActive.value && !currentUrl.includes('?tab=');
+        } else {
+            return isProfileIndexActive.value && currentUrl.includes(item.query);
+        }
+    };
+
+    const getBottomLinkHref = (item: typeof bottomNavigation[0]) => {
+        return route(item.href) + (item.query.startsWith('?') ? item.query : '');
     };
 </script>
 
@@ -103,7 +107,7 @@
                             :href="route(item.href)"
                             class="flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200"
                             :class="[
-                                (item.name === 'Connected Wallets' && isConnectedWalletsActive.value) ||
+                                (item.name === 'Connected Wallets' && isConnectedWalletsActive) ||
                                 (isActive(item.href) ? 'bg-sidebar-accent text-sidebar-foreground' : 'text-sidebar-foreground/70 hover:bg-sidebar-accent/30')
                             ]">
                             <component :is="item.icon" class="mr-3 h-4 w-4 text-sidebar-foreground/70" />
@@ -175,7 +179,7 @@
                         :href="getBottomLinkHref(item)"
                         class="flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200"
                         :class="[
-                            (item.name === 'SEO' && isSeoActive) || (item.name === 'Settings' && isGeneralSettingsActive)
+                            isBottomLinkActive(item)
                                 ? 'bg-sidebar-accent text-sidebar-foreground'
                                 : 'text-sidebar-foreground/70 hover:bg-sidebar-accent/30'
                         ]">

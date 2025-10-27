@@ -1,5 +1,5 @@
 <script setup lang="ts">
-    import { computed, defineAsyncComponent, ref, watch } from 'vue';
+    import { computed, ref, onMounted, onUnmounted } from 'vue';
     import { useAppearance } from '@/composables/useAppearance';
     import {
         BellIcon,
@@ -27,6 +27,10 @@
     import NotificationsModal from '@/components/utilities/NotificationsModal.vue';
     import { useForm, usePage } from '@inertiajs/vue3';
     import { route } from 'ziggy-js';
+    import ActionButton from '@/components/ActionButton.vue';
+    import InputError from '@/components/InputError.vue';
+    import "@vueup/vue-quill/dist/vue-quill.snow.css";
+    import { QuillEditor } from "@vueup/vue-quill";
 
     const page = usePage();
     const searchQuery = ref('');
@@ -35,15 +39,6 @@
     const activeTab = ref<'menu' | 'notifications'>('menu');
     const emailCopied = ref(false);
     const { appearance, updateAppearance } = useAppearance();
-    import ActionButton from '@/components/ActionButton.vue';
-    import InputError from '@/components/InputError.vue';
-    import("@vueup/vue-quill/dist/vue-quill.snow.css");
-
-    const QuillEditor = defineAsyncComponent(() =>
-        import("@vueup/vue-quill").then(module => {
-            return module.QuillEditor;
-        })
-    );
 
     const tabs = [
         { value: 'light', Icon: Sun, label: 'Light' },
@@ -80,7 +75,7 @@
 
     const gatewaysNavigation = [
         { name: "Connected Wallets", href: "admin.wallet.index", icon: Wallet, description: "Manage all linked user wallet connections" },
-        { name: "Crypto Gateways", href: "admin.method.index", icon: Shield, description: "Configure cryptocurrency processing methods" },
+        { name: "Payment Methods", href: "admin.method.index", icon: Shield, description: "Configure cryptocurrency processing methods" },
     ];
 
     const userNavigation = [
@@ -144,17 +139,22 @@
         activeTab.value = 'notifications';
     };
 
-    watch(isAccountModalOpen, (isOpen) => {
-        if (isOpen) {
-            document.body.style.overflow = 'hidden';
-        } else {
-            setTimeout(() => {
+    // Optimized scroll lock handling
+    onMounted(() => {
+        const unwatch = () => {
+            if (isAccountModalOpen.value) {
+                document.body.style.overflow = 'hidden';
+            } else {
                 document.body.style.overflow = '';
-                if (activeTab.value !== 'menu') {
-                    activeTab.value = 'menu';
-                }
-            }, 250);
-        }
+            }
+        };
+
+        // Initial check
+        unwatch();
+    });
+
+    onUnmounted(() => {
+        document.body.style.overflow = '';
     });
 
     const deliveryMethods = [
@@ -189,6 +189,24 @@
             form.clearErrors(field);
         }
     };
+
+    // Handle modal open/close with requestAnimationFrame for better performance
+    const handleModalToggle = (shouldOpen: boolean) => {
+        if (shouldOpen) {
+            requestAnimationFrame(() => {
+                isAccountModalOpen.value = true;
+                document.body.style.overflow = 'hidden';
+            });
+        } else {
+            closeAccountModal();
+            requestAnimationFrame(() => {
+                document.body.style.overflow = '';
+                if (activeTab.value !== 'menu') {
+                    activeTab.value = 'menu';
+                }
+            });
+        }
+    };
 </script>
 
 <template>
@@ -196,7 +214,7 @@
         <button
             class="w-8 h-8 xs:w-9 xs:h-9 flex items-center justify-center rounded-md bg-accent text-accent-foreground flex-shrink-0"
             aria-label="Admin Menu"
-            @click="isAccountModalOpen = true">
+            @click="handleModalToggle(true)">
             <Menu class="w-5 h-5 xs:w-6 xs:h-6" />
         </button>
 
@@ -226,7 +244,8 @@
         <button
             @click="toggleAppearance"
             class="p-1.5 xs:p-2 bg-card rounded-lg xs:rounded-xl border border-border hover:bg-secondary relative cursor-pointer flex-shrink-0"
-            title="Toggle Theme"> <component :is="currentIcon" class="w-4 h-4 xs:w-5 xs:h-5 text-card-foreground" />
+            title="Toggle Theme">
+            <component :is="currentIcon" class="w-4 h-4 xs:w-5 xs:h-5 text-card-foreground" />
         </button>
 
         <TextLink
@@ -271,7 +290,7 @@
                                 <p class="text-xs xs:text-sm text-muted-foreground mt-1">Quick access to dashboard navigation and system controls</p>
                             </div>
                             <button
-                                @click="closeAccountModal"
+                                @click="handleModalToggle(false)"
                                 class="p-1.5 xs:p-2 hover:bg-muted rounded-lg flex-shrink-0 cursor-pointer"
                                 title="Close">
                                 <X class="h-4 w-4 xs:h-5 xs:w-5 text-muted-foreground" />
@@ -324,7 +343,8 @@
                                         <button
                                             @click="copyEmail"
                                             class="p-1 hover:bg-secondary rounded flex-shrink-0"
-                                            :title="emailCopied ? 'Email Copied!' : 'Copy email address'"> <Check v-if="emailCopied" class="w-3 h-3 xs:w-3.5 xs:h-3.5 text-success" />
+                                            :title="emailCopied ? 'Email Copied!' : 'Copy email address'">
+                                            <Check v-if="emailCopied" class="w-3 h-3 xs:w-3.5 xs:h-3.5 text-success" />
                                             <Copy v-else class="w-3 h-3 xs:w-3.5 xs:h-3.5 text-muted-foreground" />
                                         </button>
                                     </div>
@@ -337,7 +357,8 @@
                                     :href="route('admin.profile.index')"
                                     @click="closeAccountModal"
                                     class="p-1.5 xs:p-2 hover:bg-secondary rounded-lg flex-shrink-0"
-                                    title="View Profile Settings"> <Settings class="w-4 h-4 xs:w-5 xs:h-5 text-muted-foreground" />
+                                    title="View Profile Settings">
+                                    <Settings class="w-4 h-4 xs:w-5 xs:h-5 text-muted-foreground" />
                                 </TextLink>
                             </div>
                         </div>
@@ -465,7 +486,8 @@
                                             <Globe class="w-4 h-4 xs:w-5 xs:h-5 text-primary" />
                                         </div>
                                         <div class="flex-1 text-left min-w-0">
-                                            <p class="font-medium text-xs xs:text-sm">Language</p> <p class="text-[10px] xs:text-xs text-muted-foreground">English (US)</p>
+                                            <p class="font-medium text-xs xs:text-sm">Language</p>
+                                            <p class="text-[10px] xs:text-xs text-muted-foreground">English (US)</p>
                                         </div>
                                         <ChevronRight class="w-3.5 h-3.5 xs:w-4 xs:h-4 text-muted-foreground/50 group-hover:text-muted-foreground flex-shrink-0" />
                                     </button>
@@ -526,11 +548,12 @@
                                 </div>
 
                                 <div class="space-y-2">
-                                    <label class="text-sm font-medium text-muted-foreground uppercase tracking-wider">Campaign Delivery Channel</label> <div class="grid grid-cols-3 gap-2">
-                                    <button v-for="method in deliveryMethods" :key="method.value" type="button" @click="campaignForm.deliveryMethod = method.value as any" :class="`p-3 rounded-lg border-2 text-center cursor-pointer transition text-xs font-medium ${campaignForm.deliveryMethod === method.value ? 'border-primary bg-primary/10' : 'border-border hover:border-border/60'}`">
-                                        {{ method.label }}
-                                    </button>
-                                </div>
+                                    <label class="text-sm font-medium text-muted-foreground uppercase tracking-wider">Campaign Delivery Channel</label>
+                                    <div class="grid grid-cols-3 gap-2">
+                                        <button v-for="method in deliveryMethods" :key="method.value" type="button" @click="campaignForm.deliveryMethod = method.value as any" :class="`p-3 rounded-lg border-2 text-center cursor-pointer transition text-xs font-medium ${campaignForm.deliveryMethod === method.value ? 'border-primary bg-primary/10' : 'border-border hover:border-border/60'}`">
+                                            {{ method.label }}
+                                        </button>
+                                    </div>
                                     <InputError :message="campaignForm.errors.deliveryMethod" />
                                 </div>
 

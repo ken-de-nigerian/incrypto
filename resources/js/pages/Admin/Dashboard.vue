@@ -1,11 +1,20 @@
 <script setup lang="ts">
-    import { Sun, Moon, Monitor, SearchIcon, BellIcon, Users, DollarSign, ListChecks, Activity } from 'lucide-vue-next';
+    import {
+        Sun,
+        Moon,
+        Monitor,
+        SearchIcon,
+        BellIcon,
+        Users,
+        Send, Download, Repeat
+    } from 'lucide-vue-next';
     import AdminStatsCard from '@/components/layout/admin/dashboard/AdminStatsCard.vue';
-    import SystemHealthCard from '@/components/layout/admin/dashboard/SystemHealthCard.vue';
     import RecentActivityCard from '@/components/layout/admin/dashboard/RecentActivityCard.vue';
     import PendingActionsCard from '@/components/layout/admin/dashboard/PendingActionsCard.vue';
     import UserGrowthChartCard from '@/components/layout/admin/dashboard/UserGrowthChartCard.vue';
     import NotificationsModal from '@/components/utilities/NotificationsModal.vue';
+    import QuickActionsCard from '@/components/layout/admin/dashboard/QuickActionsCard.vue';
+    import UsersOverview from '@/components/layout/admin/dashboard/UsersOverview.vue';
 
     import { computed, ref } from 'vue';
     import { Head, usePage } from '@inertiajs/vue3';
@@ -13,6 +22,31 @@
     import TextLink from '@/components/TextLink.vue';
     import { useAppearance } from '@/composables/useAppearance';
     import { route } from 'ziggy-js';
+
+    const props = defineProps<{
+        adminStatsData: {
+            total_users: number;
+            total_active_users: number;
+            total_suspended_users: number;
+            total_sent: number;
+            total_received: number;
+            total_swaps: number;
+        };
+        pendingActions: Array<{
+            id: string | number;
+            type: string;
+            user: string;
+            link: string;
+        }>;
+        recentUsers: Array<{
+            id: number;
+            first_name: string;
+            last_name: string;
+            email: string;
+            status: string;
+            registered_at: string;
+        }>;
+    }>();
 
     const { appearance, updateAppearance } = useAppearance();
 
@@ -50,23 +84,36 @@
         return '';
     });
 
-    const adminStats = ref([
-        { title: 'Total Users', value: '15,450', change: '+12%', Icon: Users, color: 'text-primary', trend: 'up' },
-        { title: 'Total Revenue', value: '$850k', change: '-3%', Icon: DollarSign, color: 'text-destructive', trend: 'down' },
-        { title: 'Pending Withdrawals', value: '45', change: '24 hr delay', Icon: ListChecks, color: 'text-warning', trend: 'flat' },
-        { title: 'System Load', value: '65%', change: 'Normal', Icon: Activity, color: 'text-muted-foreground', trend: 'up' },
-    ]);
+    // Helper function to format large numbers
+    const formatNumber = (num: number): string => {
+        return new Intl.NumberFormat('en-US', { notation: 'compact', minimumFractionDigits: 0, maximumFractionDigits: 1 }).format(num);
+    };
 
-    const pendingActions = ref([
-        { id: 1, type: 'KYC Review', user: 'Jane Doe', link: '#' },
-        { id: 2, type: 'Withdrawal Approval', user: 'John Smith', link: '#' },
-        { id: 3, type: 'New Ticket', user: 'Alex Johnson', link: '#' },
-    ]);
-
-    const recentActivity = ref([
-        { id: 1, desc: 'User #101 created new account.', time: '2 mins ago' },
-        { id: 2, desc: 'System backup initiated.', time: '1 hour ago' },
-        { id: 3, desc: 'Admin ABC updated fees structure.', time: '3 hours ago' },
+    const adminStats = computed(() => [
+        {
+            title: 'Total Users',
+            value: formatNumber(props.adminStatsData.total_users),
+            Icon: Users,
+            color: 'text-primary',
+        },
+        {
+            title: 'Total Sent',
+            value: formatNumber(props.adminStatsData.total_sent),
+            Icon: Send,
+            color: 'text-destructive',
+        },
+        {
+            title: 'Total Received',
+            value: formatNumber(props.adminStatsData.total_received),
+            Icon: Download,
+            color: 'text-warning',
+        },
+        {
+            title: 'Crypto Swaps',
+            value: formatNumber(props.adminStatsData.total_swaps),
+            Icon: Repeat,
+            color: 'text-muted-foreground',
+        },
     ]);
 
     const openNotificationsModal = () => {
@@ -130,39 +177,22 @@
                     :change="stat.change"
                     :Icon="stat.Icon"
                     :color="stat.color"
-                    :trend="stat.trend"
                 />
             </div>
 
             <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6">
                 <div class="lg:col-span-4 space-y-4 sm:space-y-6">
-                    <UserGrowthChartCard />
-                    <SystemHealthCard />
+                    <UserGrowthChartCard :user-stats="props.adminStatsData" />
+                    <PendingActionsCard :actions="props.pendingActions" />
                 </div>
 
                 <div class="lg:col-span-5 space-y-4 sm:space-y-6">
-                    <PendingActionsCard :actions="pendingActions" />
-                    <div class="card-crypto p-6">
-                        <h2 class="text-xl font-semibold text-card-foreground mb-4">Users Overview</h2>
-                        <p class="text-sm text-muted-foreground">Detailed list of recent user registrations and their status.</p>
-                        <ul class="mt-4 space-y-3">
-                            <li class="flex justify-between text-sm text-card-foreground/80"><span>User ID 1045 - Verified</span><span class="font-medium text-muted-foreground">10 min ago</span></li>
-                            <li class="flex justify-between text-sm text-card-foreground/80"><span>User ID 1046 - Pending KYC</span><span class="font-medium text-muted-foreground">3 hours ago</span></li>
-                            <li class="flex justify-between text-sm text-card-foreground/80"><span>User ID 1047 - Active</span><span class="font-medium text-muted-foreground">1 day ago</span></li>
-                        </ul>
-                    </div>
+                    <UsersOverview :users="props.recentUsers" />
                 </div>
 
                 <div class="lg:col-span-3 space-y-4 sm:space-y-6">
-                    <RecentActivityCard :activities="recentActivity" />
-                    <div class="card-crypto p-6">
-                        <h2 class="text-xl font-semibold text-card-foreground mb-4">Admin Links</h2>
-                        <ul class="space-y-2">
-                            <li><TextLink :href="route('admin.profile.index')" class="text-sm text-primary hover:text-primary/80">System Settings</TextLink></li>
-                            <li><TextLink :href="route('admin.dashboard')" class="text-sm text-primary hover:text-primary/80">Financial Reports</TextLink></li>
-                            <li><TextLink :href="route('admin.users.index')" class="text-sm text-primary hover:text-primary/80">Manage Users</TextLink></li>
-                        </ul>
-                    </div>
+                    <QuickActionsCard />
+                    <RecentActivityCard />
                 </div>
             </div>
         </div>

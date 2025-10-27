@@ -1,5 +1,5 @@
 <script setup lang="ts">
-    import { computed, ref, watch } from 'vue';
+    import { computed, ref, onMounted, onUnmounted } from 'vue';
     import { useAppearance } from '@/composables/useAppearance';
     import {
         BellIcon,
@@ -143,19 +143,20 @@
         }
     };
 
-    // Watcher to manage body overflow
-    watch(isAccountModalOpen, (isOpen) => {
-        if (isOpen) {
-            document.body.style.overflow = 'hidden';
-        } else {
-            setTimeout(() => {
+    // Optimized scroll lock with lifecycle hooks
+    onMounted(() => {
+        const checkScroll = () => {
+            if (isAccountModalOpen.value) {
+                document.body.style.overflow = 'hidden';
+            } else {
                 document.body.style.overflow = '';
-                // Reset to menu tab when account modal closes
-                if (activeTab.value !== 'menu') {
-                    activeTab.value = 'menu';
-                }
-            }, 250);
-        }
+            }
+        };
+        checkScroll();
+    });
+
+    onUnmounted(() => {
+        document.body.style.overflow = '';
     });
 
     interface WalletItem {
@@ -197,27 +198,23 @@
         }
     };
 
-    watch(() => page.props.auth.user?.wallet_balance, parseWalletBalances, { immediate: true });
+    onMounted(() => {
+        parseWalletBalances();
+    });
 
     const toggleWalletVisibility = (key: string) => {
         const wallet = wallets.value.find(w => w.key === key);
         if (!wallet || wallet.is_updating) return;
 
-        // Set loading state
         wallet.is_updating = true;
 
-        // Determine new status based on CURRENT status (invert it)
         const newStatus = wallet.status === '1' ? '0' : '1';
-
-        // Store previous state for rollback
         const previousStatus = wallet.status;
         const previousIsVisible = wallet.is_visible;
 
-        // Optimistically update local UI state
         wallet.status = newStatus;
         wallet.is_visible = newStatus === '1';
 
-        // Send request to backend
         router.patch(route('user.profile.update.wallet.status'), {
             wallet_key: key,
             wallet_status: newStatus,
@@ -255,12 +252,15 @@
         activeTab.value = 'menu';
     };
 
-    const getIconSymbol = (symbol: string) => {
-        const lowerSymbol = symbol.toLowerCase();
-        if (lowerSymbol.includes('usdt')) {
-            return 'usdt';
-        }
-        return lowerSymbol;
+    // Handle modal close with reset
+    const handleModalClose = () => {
+        closeAccountModal();
+        requestAnimationFrame(() => {
+            document.body.style.overflow = '';
+            if (activeTab.value !== 'menu') {
+                activeTab.value = 'menu';
+            }
+        });
     };
 </script>
 
@@ -361,7 +361,7 @@
                                 <p class="text-xs xs:text-sm text-muted-foreground mt-1">Manage your account and preferences</p>
                             </div>
                             <button
-                                @click="closeAccountModal"
+                                @click="handleModalClose"
                                 class="p-1.5 xs:p-2 hover:bg-muted/70 rounded-lg flex-shrink-0 cursor-pointer"
                                 title="Close">
                                 <X class="h-4 w-4 xs:h-5 xs:w-5 text-muted-foreground" />
@@ -451,7 +451,7 @@
                                         v-for="item in navigation"
                                         :key="item.name"
                                         :href="route(item.href)"
-                                        @click="closeAccountModal"
+                                        @click="handleModalClose"
                                         class="flex flex-col items-center justify-center p-2 xs:p-3 rounded-lg xs:rounded-xl bg-secondary/50 hover:bg-secondary/70 active:scale-95 border border-border hover:border-border/60 transition-all group"
                                     >
                                         <div class="w-8 h-8 xs:w-10 xs:h-10 rounded-lg xs:rounded-xl bg-primary/10 flex items-center justify-center mb-1.5 xs:mb-2 group-hover:bg-primary/20">
@@ -469,7 +469,7 @@
                                         v-for="item in accountLinks"
                                         :key="item.name"
                                         :href="route(item.href, item.params)"
-                                        @click="closeAccountModal"
+                                        @click="handleModalClose"
                                         class="flex items-center gap-2.5 xs:gap-3 p-2.5 xs:p-3 rounded-lg xs:rounded-xl hover:bg-secondary/70 active:bg-secondary/90 transition-all group"
                                     >
                                         <div class="w-8 h-8 xs:w-10 xs:h-10 rounded-lg bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 flex-shrink-0">
@@ -540,7 +540,7 @@
                                         v-for="item in supportLinks"
                                         :key="item.name"
                                         :href="route(item.href)"
-                                        @click="closeAccountModal"
+                                        @click="handleModalClose"
                                         class="flex items-center gap-2.5 xs:gap-3 p-2.5 xs:p-3 rounded-lg xs:rounded-xl hover:bg-secondary/70 active:bg-secondary/90 transition-all group"
                                     >
                                         <component :is="item.icon" class="w-4 h-4 xs:w-5 xs:h-5 text-muted-foreground flex-shrink-0" />
@@ -582,7 +582,7 @@
                                     <div class="flex items-center gap-3 flex-1 min-w-0">
                                         <div class="w-10 h-10 xs:w-12 xs:h-12 flex-shrink-0 rounded-full overflow-hidden bg-background border border-border">
                                             <img
-                                                :src="`https://cdn.jsdelivr.net/gh/atomiclabs/cryptocurrency-icons@1a63530be6e374711a8554f31b17e4cb92c25fa5/128/color/${getIconSymbol(wallet.symbol)}.png`"
+                                                :src="`https://coin-images.coingecko.com${wallet.image}.png`"
                                                 :alt="`${wallet.name} icon`"
                                                 class="h-full w-full object-cover"
                                                 @error="(e) => (e.target as HTMLImageElement).src = 'https://cdn.jsdelivr.net/gh/atomiclabs/cryptocurrency-icons@1a63530be6e374711a8554f31b17e4cb92c25fa5/128/color/generic.png'"

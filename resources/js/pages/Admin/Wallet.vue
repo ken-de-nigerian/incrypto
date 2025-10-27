@@ -250,7 +250,7 @@
                             <div class="w-24 h-24 mx-auto mb-4">
                                 <FileText class="w-full h-full text-muted-foreground" />
                             </div>
-                            <h6 class="text-lg font-semibold text-foreground">No users found</h6>
+                            <h6 class="text-lg font-semibold text-foreground">No wallets found</h6>
                             <p class="text-muted-foreground mt-1">Try adjusting your search terms.</p>
                         </div>
                     </div>

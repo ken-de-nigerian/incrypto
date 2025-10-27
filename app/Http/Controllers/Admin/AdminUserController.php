@@ -73,7 +73,7 @@ class AdminUserController extends Controller
             ->count();
 
         $users = $usersQuery
-            ->with('profile')
+            ->with(['profile', 'referrals'])
             ->paginate(8)
             ->withQueryString();
 

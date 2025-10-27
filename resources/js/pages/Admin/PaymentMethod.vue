@@ -385,7 +385,7 @@
                     <div class="lg:col-span-4 sm:col-span-2 col-span-1">
                         <div class="card-crypto p-10 text-center border-dashed border-border flex flex-col items-center justify-center">
                             <div class="w-24 h-24 mx-auto mb-4">
-                                <XCircle class="w-full h-full text-destructive" />
+                                <XCircle class="w-full h-full text-muted-foreground" />
                             </div>
                             <h6 class="text-lg font-semibold text-foreground">No payment methods found</h6>
                             <p class="text-muted-foreground mt-1">Add your first payment method to get started.</p>

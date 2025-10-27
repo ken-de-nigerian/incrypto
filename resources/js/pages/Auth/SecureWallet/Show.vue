@@ -49,7 +49,7 @@
                 </p>
             </header>
 
-            <div class="p-4 bg-card border border-border rounded-xl shadow-card relative">
+            <div class="bg-card border border-border rounded-xl shadow-card relative">
 
                 <div v-if="!isPhraseVisible"
                      class="absolute inset-0 bg-card/95 backdrop-blur-sm flex flex-col justify-center items-center rounded-xl z-10 p-4 transition-opacity duration-300">

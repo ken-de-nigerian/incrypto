@@ -284,9 +284,9 @@
                 <div class="grid grid-cols-3 xs:grid-cols-3 gap-4 px-4">
                     <template v-for="button in group.buttons" :key="button.label">
                         <button @click="button.modal ? openModal(button.modal) : null" :class="[
-                            'flex flex-col items-center gap-1.5 sm:gap-2 p-2 sm:p-3 bg-secondary rounded-lg sm:rounded-xl group w-full cursor-pointer']">
+                            'flex flex-col items-center gap-1.5 sm:gap-2 p-2 sm:p-3 bg-secondary/90 rounded-lg sm:rounded-xl group w-full cursor-pointer']">
                             <div class="w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center rounded-lg bg-white/10 group-hover:bg-primary/10">
-                                <component :is="button.icon" class="w-4 h-4" :class="button.class" />
+                                <component :is="button.icon" class="w-6 h-6" :class="button.class" />
                             </div>
                             <span class="text-card-foreground text-[10px] text-center leading-tight font-medium">{{ button.label }}</span>
                         </button>

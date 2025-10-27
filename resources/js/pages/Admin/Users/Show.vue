@@ -2,16 +2,12 @@
     import { computed, ref, watch } from 'vue';
     import { Head, usePage, router } from '@inertiajs/vue3';
     import {
-        UserCheck,
         Lock,
-        Banknote,
         DollarSign,
         Repeat,
-        Trash2,
         ArrowDownCircle,
-        UserX,
         Mail,
-        Send,
+        Send, Wallet2, Trash, UserCheck2, UserX2
     } from 'lucide-vue-next';
 
     import AppLayout from '@/components/layout/admin/dashboard/AppLayout.vue';
@@ -227,12 +223,12 @@
     const adminActionGroups = computed(() => [
         {
             buttons: [
-                { label: 'Adjust Balance', icon: Banknote, modal: '#fundsModal', class: 'text-primary' },
-                { label: 'Send Email', icon: Mail, modal: '#sendEmailModal', class: 'text-accent' },
-                { label: 'Reset Password', icon: Lock, modal: '#userPasswordModal', class: 'text-warning' },
-                { label: 'Login As User', icon: UserCheck, modal: '#loginAsUserModal', class: 'text-success' },
-                { label: props.user.status === 'active' ? 'Suspend' : 'Unsuspend', icon: UserX, modal: props.user.status === 'active' ? '#suspendModal' : '#unsuspendModal', class: 'text-destructive' },
-                { label: 'Delete Account', icon: Trash2, modal: '#deleteModal', class: 'text-destructive' },
+                { label: 'Adjust Balance', icon: Wallet2, modal: '#fundsModal', class: 'text-secondary-foreground' },
+                { label: 'Send Email', icon: Mail, modal: '#sendEmailModal', class: 'text-secondary-foreground' },
+                { label: 'Reset Password', icon: Lock, modal: '#userPasswordModal', class: 'text-secondary-foreground' },
+                { label: 'Login As User', icon: UserCheck2, modal: '#loginAsUserModal', class: 'text-secondary-foreground' },
+                { label: props.user.status === 'active' ? 'Suspend' : 'Unsuspend', icon: UserX2, modal: props.user.status === 'active' ? '#suspendModal' : '#unsuspendModal', class: 'text-secondary-foreground' },
+                { label: 'Delete Account', icon: Trash, modal: '#deleteModal', class: 'text-secondary-foreground' },
             ]
         }
     ]);

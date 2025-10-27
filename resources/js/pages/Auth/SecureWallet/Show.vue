@@ -68,7 +68,7 @@
                         :key="index"
                         class="flex items-center space-x-2 bg-secondary text-secondary-foreground p-3 rounded-sm">
                         <span class="text-xs text-muted-foreground font-semibold w-4 text-left">{{ index + 1 }}.</span>
-                        <span>{{ word }}</span>
+                        <span class="text-xs">{{ word }}</span>
                     </div>
                 </div>
             </div>

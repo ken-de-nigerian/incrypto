@@ -387,7 +387,7 @@
         <div v-if="selectedKyc" class="space-y-6">
             <div class="space-y-3">
                 <h3 class="text-sm font-semibold text-foreground uppercase tracking-wider">Personal Information</h3>
-                <div class="grid grid-cols-2 gap-4 p-3 bg-muted/50 rounded-lg">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 p-3 bg-muted/50 rounded-lg">
                     <div>
                         <p class="text-xs text-muted-foreground">First Name</p>
                         <p class="text-sm font-medium text-foreground">{{ selectedKyc.first_name }}</p>
@@ -404,8 +404,7 @@
                         <p class="text-xs text-muted-foreground">Phone</p>
                         <p class="text-sm font-medium text-foreground">{{ selectedKyc.phone_number }}</p>
                     </div>
-                    <div>
-                        <p class="text-xs text-muted-foreground">Date of Birth</p>
+                    <div class="sm:col-span-2"> <p class="text-xs text-muted-foreground">Date of Birth</p>
                         <p class="text-sm font-medium text-foreground">{{ selectedKyc.date_of_birth }}</p>
                     </div>
                 </div>
@@ -413,7 +412,7 @@
 
             <div class="space-y-3">
                 <h3 class="text-sm font-semibold text-foreground uppercase tracking-wider">Address Information</h3>
-                <div class="grid grid-cols-2 gap-4 p-3 bg-muted/50 rounded-lg">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 p-3 bg-muted/50 rounded-lg">
                     <div>
                         <p class="text-xs text-muted-foreground">Country</p>
                         <p class="text-sm font-medium text-foreground">{{ selectedKyc.country }}</p>
@@ -426,7 +425,7 @@
                         <p class="text-xs text-muted-foreground">City</p>
                         <p class="text-sm font-medium text-foreground">{{ selectedKyc.city }}</p>
                     </div>
-                    <div class="col-span-2">
+                    <div class="col-span-1 sm:col-span-2">
                         <p class="text-xs text-muted-foreground">Address</p>
                         <p class="text-sm font-medium text-foreground">{{ selectedKyc.address }}</p>
                     </div>
@@ -438,7 +437,7 @@
 
                 <div class="p-3 bg-muted/50 rounded-lg space-y-2">
                     <p class="text-xs font-semibold text-foreground">ID Proof ({{ selectedKyc.id_proof_type }})</p>
-                    <div class="flex gap-2">
+                    <div class="flex flex-col sm:flex-row gap-2">
                         <a :href="selectedKyc.id_front_proof_url" target="_blank" class="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-secondary hover:bg-secondary/90 text-secondary-foreground rounded-lg text-xs font-medium transition-colors">
                             <FileText class="w-4 h-4" />
                             Front
@@ -470,13 +469,13 @@
             <div class="p-3 bg-muted/50 rounded-lg">
                 <p class="text-xs text-muted-foreground mb-2">Current Status</p>
                 <span class="inline-flex items-center space-x-2 text-xs font-semibold rounded-full px-3 py-1" :class="getStatusClass(selectedKyc.status)">
-                    <component :is="getStatusIcon(selectedKyc.status)" class="w-4 h-4" />
-                    <span>{{ selectedKyc.status.charAt(0).toUpperCase() + selectedKyc.status.slice(1) }}</span>
-                </span>
+                <component :is="getStatusIcon(selectedKyc.status)" class="w-4 h-4" />
+                <span>{{ selectedKyc.status.charAt(0).toUpperCase() + selectedKyc.status.slice(1) }}</span>
+            </span>
             </div>
 
             <div v-if="selectedKyc.status === 'pending'" class="space-y-3 margin-bottom">
-                <div class="flex gap-2">
+                <div class="flex flex-col sm:flex-row gap-2">
                     <ActionButton @click="approveKyc(selectedKyc.id)" :processing="approveForm.processing">
                         Approve
                     </ActionButton>
@@ -486,7 +485,7 @@
                     <label class="text-sm font-medium text-muted-foreground uppercase tracking-wider">Rejection Reason (if rejecting)</label>
                     <textarea v-model="rejectForm.rejection_reason" @focus="clearError(rejectForm, 'rejection_reason')" placeholder="Enter reason for rejection..." class="input-crypto w-full resize-none" rows="3" />
                     <InputError :message="rejectForm.errors.rejection_reason" />
-                    <ActionButton @click="rejectKyc(selectedKyc.id)" :processing="rejectForm.processing" class="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                    <ActionButton @click="rejectKyc(selectedKyc.id)" :processing="rejectForm.processing" class="w-full bg-destructive text-destructive-foreground hover:bg-destructive/90">
                         Reject
                     </ActionButton>
                 </div>

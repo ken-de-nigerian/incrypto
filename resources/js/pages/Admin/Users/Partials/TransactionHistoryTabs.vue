@@ -113,7 +113,7 @@
 
             <div v-else-if="activeTab === 'swaps'">
                 <div v-if="cryptoSwaps.length === 0" class="text-center p-6 sm:p-10 bg-muted/50 rounded-lg border border-border text-muted-foreground text-sm">
-                    <History class="w-8 h-8 mx-auto mb-3 text-muted-foreground/70" />
+                    <Repeat2 class="w-8 h-8 mx-auto mb-3 text-muted-foreground/70" />
                     <p class="font-semibold text-base text-foreground">No Swap History Yet</p>
                     <p class="mt-1">It looks like the user hasn't made any crypto swaps.</p>
                 </div>

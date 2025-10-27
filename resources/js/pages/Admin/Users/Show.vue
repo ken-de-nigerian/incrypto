@@ -5,9 +5,8 @@
         Lock,
         DollarSign,
         Repeat,
-        ArrowDownCircle,
         Mail,
-        Send, Wallet2, Trash, UserCheck2, UserX2
+        Send, Wallet2, Trash, UserCheck2, UserX2, Download
     } from 'lucide-vue-next';
 
     import AppLayout from '@/components/layout/admin/dashboard/AppLayout.vue';
@@ -217,7 +216,7 @@
         { label: 'Balance (USD)', value: `$${props.wallet_balances?.totalUsdValue ?? '0.00'}`, icon: DollarSign, color: 'text-primary' },
         { label: 'Sent (Txs)', value: props.sentCryptos.total, icon: Send, color: 'text-destructive' },
         { label: 'Swaps Done', value: props.cryptoSwaps.total, icon: Repeat, color: 'text-accent' },
-        { label: 'Received (Txs)', value: props.receivedCryptos.total, icon: ArrowDownCircle, color: 'text-success' },
+        { label: 'Received (Txs)', value: props.receivedCryptos.total, icon: Download, color: 'text-success' },
     ]);
 
     const adminActionGroups = computed(() => [

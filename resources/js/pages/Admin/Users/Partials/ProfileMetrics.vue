@@ -19,7 +19,6 @@
              :class="[
                 'p-3 sm:p-4 flex flex-col h-full',
                 'md:border-b-0',
-                // Conditional styling for layout only
                 (index % 2 !== 0) && 'border-l-0',
                 (index < 2 && metrics.length > 2) && 'border-b',
              ]">

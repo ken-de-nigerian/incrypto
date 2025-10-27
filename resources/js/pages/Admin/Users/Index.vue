@@ -284,7 +284,7 @@
                             <p class="text-sm font-medium text-muted-foreground">Active Users</p>
                             <p class="text-3xl font-bold text-foreground mt-1">{{ totalActiveUsers }}</p>
                         </div>
-                        <CheckCircleIcon class="w-14 h-14 text-success opacity-20 fill-success" />
+                        <CheckCircleIcon class="w-14 h-14 text-success opacity-20" />
                     </div>
                 </div>
 

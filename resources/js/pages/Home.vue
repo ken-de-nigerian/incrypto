@@ -35,7 +35,6 @@ const FloatingCoins = defineComponent({
                     h('span', { class: 'font-bold' }, 'Ł')
                 ]),
 
-                // Stars (Compliant)
                 h('div', {
                     class: 'absolute -top-4 -left-8 w-4 h-4 text-accent animate-pulse'
                 }, '✦'),

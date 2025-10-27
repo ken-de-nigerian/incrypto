@@ -322,6 +322,7 @@
             <img
                 v-if="user.profile?.profile_photo_path"
                 :src="user.profile.profile_photo_path"
+                loading="lazy"
                 alt="Profile picture"
                 class="h-full w-full object-cover"
             />
@@ -402,6 +403,7 @@
                                         <img
                                             v-if="user.profile?.profile_photo_path"
                                             :src="user.profile.profile_photo_path"
+                                            loading="lazy"
                                             :alt="`${user.first_name} ${user.last_name}`"
                                             class="h-full w-full object-cover">
                                         <span
@@ -583,6 +585,7 @@
                                         <div class="w-10 h-10 xs:w-12 xs:h-12 flex-shrink-0 rounded-full overflow-hidden bg-background border border-border">
                                             <img
                                                 :src="`https://coin-images.coingecko.com${wallet.image}.png`"
+                                                loading="lazy"
                                                 :alt="`${wallet.name} icon`"
                                                 class="h-full w-full object-cover"
                                                 @error="(e) => (e.target as HTMLImageElement).src = 'https://cdn.jsdelivr.net/gh/atomiclabs/cryptocurrency-icons@1a63530be6e374711a8554f31b17e4cb92c25fa5/128/color/generic.png'"

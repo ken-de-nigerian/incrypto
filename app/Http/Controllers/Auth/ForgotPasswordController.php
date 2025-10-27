@@ -46,10 +46,13 @@ class ForgotPasswordController extends Controller
 
         if ($status === Password::RESET_LINK_SENT) {
             RateLimiter::hit($throttleKey); // 60-second cooldown
-            return back()->with('success', __($status));
+            return $this->notify('success', __($status))->toBack();
         }
 
-        return back()->withErrors(['email' => __($status)]);
+        return $this->notifyErrorWithValidation(
+            'Validation failed',
+            ['email' => __($status)]
+        );
     }
 
     /**
@@ -76,7 +79,10 @@ class ForgotPasswordController extends Controller
         });
 
         if ($status !== Password::PASSWORD_RESET) {
-            return back()->withErrors(['email' => __($status)]);
+            return $this->notifyErrorWithValidation(
+                'Validation failed',
+                ['email' => __($status)]
+            );
         }
 
         $user = User::where('email', $request->email)->first();
@@ -87,9 +93,11 @@ class ForgotPasswordController extends Controller
         // Invalidate all other browser sessions for the user
         Auth::logoutOtherDevices($request->password);
 
+        $notification = $this->notify('success', __($status));
+
         return match ($user->role) {
-            'admin' => redirect()->route('admin.dashboard')->with('success', __($status)),
-            'user' => redirect()->route('user.dashboard')->with('success', __($status)),
+            'admin' => $notification->toRoute('admin.dashboard'),
+            'user' => $notification->toRoute('user.dashboard'),
             default => redirect()->route('login'),
         };
     }

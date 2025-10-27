@@ -73,7 +73,7 @@
         <div class="w-full max-w-md mx-auto">
             <header class="mb-6 text-center">
                 <TextLink :href="route('home')" aria-label="Forgot Password" class="inline-flex items-center gap-2 select-none">
-                    <img class="w-[110px]" src="/assets/images/logo.png" alt="logo">
+                    <img class="w-[110px]" src="/assets/images/logo.png" loading="lazy" alt="logo">
                 </TextLink>
                 <h1 class="mt-4 text-2xl font-semibold">Forgot Password</h1>
                 <p class="mt-1 text-sm text-muted-foreground">Enter your email to reset your password.</p>

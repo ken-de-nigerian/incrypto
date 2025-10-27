@@ -342,6 +342,7 @@
                                 <div class="w-20 h-20 rounded-full mx-auto bg-secondary/70 overflow-hidden flex items-center justify-center border border-border">
                                     <img
                                         :src="method.image"
+                                        loading="lazy"
                                         :alt="method.name"
                                         class="h-full w-full object-cover"
                                         @error="(e) => (e.target as HTMLImageElement).src = 'https://cdn.jsdelivr.net/gh/atomiclabs/cryptocurrency-icons@1a63530be6e374711a8554f31b17e4cb92c25fa5/128/color/generic.png'"
@@ -424,6 +425,7 @@
                             <div class="flex items-center gap-3">
                                 <img
                                     :src="selectedCryptoData.image"
+                                    loading="lazy"
                                     :alt="selectedCryptoData.symbol"
                                     class="h-8 w-8 object-cover rounded-full"
                                     @error="(e) => (e.target as HTMLImageElement).src = 'https://cdn.jsdelivr.net/gh/atomiclabs/cryptocurrency-icons@1a63530be6e374711a8554f31b17e4cb92c25fa5/128/color/generic.png'"
@@ -443,6 +445,7 @@
                         <div class="flex items-center gap-3 w-full">
                             <img
                                 :src="option.image"
+                                loading="lazy"
                                 :alt="option.symbol"
                                 class="h-8 w-8 object-cover rounded-full flex-shrink-0"
                                 @error="(e) => (e.target as HTMLImageElement).src = 'https://cdn.jsdelivr.net/gh/atomiclabs/cryptocurrency-icons@1a63530be6e374711a8554f31b17e4cb92c25fa5/128/color/generic.png'"

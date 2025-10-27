@@ -125,6 +125,7 @@
                 <img
                     v-if="user.profile?.profile_photo_path"
                     :src="user.profile.profile_photo_path"
+                    loading="lazy"
                     alt="Profile picture"
                     class="h-full w-full object-cover"
                 />

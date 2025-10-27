@@ -334,7 +334,7 @@
                         <div class="p-4">
                             <div class="text-center space-y-2">
                                 <div class="w-20 h-20 rounded-full mx-auto bg-secondary/70 overflow-hidden flex items-center justify-center border border-border">
-                                    <img v-if="user.profile?.profile_photo_path" :src="user.profile?.profile_photo_path" :alt="user.first_name" class="h-full w-full object-cover">
+                                    <img v-if="user.profile?.profile_photo_path" :src="user.profile?.profile_photo_path" :alt="user.first_name" loading="lazy" class="h-full w-full object-cover">
                                     <span v-else class="text-3xl font-bold text-foreground">{{ user.first_name.charAt(0) }}{{ user.last_name.charAt(0) }}</span>
                                 </div>
 
@@ -515,7 +515,7 @@
             <div v-for="referral in selectedUserForReferrals.referrals" :key="referral.id" class="p-3 bg-muted/50 border border-border rounded-lg hover:bg-muted transition-colors">
                 <div class="flex items-center gap-3">
                     <div class="w-12 h-12 rounded-full bg-secondary/70 overflow-hidden flex items-center justify-center border border-border flex-shrink-0">
-                        <img v-if="referral.profile?.profile_photo_path" :src="referral.profile?.profile_photo_path" :alt="referral.first_name" class="h-full w-full object-cover">
+                        <img v-if="referral.profile?.profile_photo_path" :src="referral.profile?.profile_photo_path" :alt="referral.first_name" loading="lazy" class="h-full w-full object-cover">
                         <span v-else class="text-lg font-bold text-foreground">{{ referral.first_name.charAt(0) }}{{ referral.last_name.charAt(0) }}</span>
                     </div>
 

@@ -50,6 +50,9 @@ class ManageUserReceiveCryptoController extends Controller
         // Dispatch the event with the new transaction data
         event(new CryptoReceived($receivedCrypto));
 
-        return $receivedCrypto;
+        return $this->notify(
+            'success',
+            __('Transaction record created. We will monitor the deposit for confirmation.')
+        )->toBack();
     }
 }

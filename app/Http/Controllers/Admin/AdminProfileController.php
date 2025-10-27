@@ -36,7 +36,7 @@ class AdminProfileController extends Controller
             $request->validated(),
             $request->file('avatar')
         );
-        return back()->with('success', 'Your personal details have been updated successfully.');
+        return $this->notify('success', 'Your personal details have been updated successfully.')->toBack();
     }
 
     /**
@@ -56,6 +56,6 @@ class AdminProfileController extends Controller
         // Invalidate all other browser sessions for the user
         Auth::logoutOtherDevices($request->password);
 
-        return back()->with('success', 'Your password has been updated successfully.');
+        return $this->notify('success', 'Your password has been updated successfully.')->toBack();
     }
 }

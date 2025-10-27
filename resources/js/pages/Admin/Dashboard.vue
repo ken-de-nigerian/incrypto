@@ -155,7 +155,7 @@
                     </button>
 
                     <TextLink :href="route('admin.profile.index')" class="w-9 h-9 bg-accent rounded-xl relative cursor-pointer overflow-hidden flex items-center justify-center" title="Admin Profile">
-                        <img v-if="user.profile?.profile_photo_path" :src="user.profile.profile_photo_path" alt="Admin picture" class="h-full w-full object-cover" />
+                        <img v-if="user.profile?.profile_photo_path" :src="user.profile.profile_photo_path" alt="Admin picture" loading="lazy" class="h-full w-full object-cover" />
                         <span v-else class="text-sm text-accent-foreground font-semibold select-none">
                             {{ initials }}
                         </span>

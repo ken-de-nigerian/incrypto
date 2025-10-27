@@ -48,7 +48,7 @@ class SessionController extends Controller
 
         Auth::logoutOtherDevices($request->password);
 
-        return back()->with('success', __('All other browser sessions have been logged out.'));
+        return $this->notify('success', __('All other browser sessions have been logged out.'))->toBack();
     }
 
     /**
@@ -58,7 +58,7 @@ class SessionController extends Controller
     public function unlinkSocialAccount(Request $request, string $provider): RedirectResponse
     {
         if (!in_array($provider, $this->supportedProviders)) {
-            return back()->with('error',  __('auth.unsupported_provider', ['provider' => $provider]));
+            return $this->notify('error', __('auth.unsupported_provider', ['provider' => $provider]))->toBack();
         }
 
         $request->user()->update([
@@ -66,7 +66,7 @@ class SessionController extends Controller
             'social_login_id' => null
         ]);
 
-        return back()->with('success', __('Successfully unlinked your :Provider account.', ['provider' => ucfirst($provider)]));
+        return $this->notify('success', __('Successfully unlinked your :Provider account.', ['provider' => ucfirst($provider)]))->toBack();
     }
 
     public function exitUserSession()
@@ -83,10 +83,10 @@ class SessionController extends Controller
 
             session()->forget('admin_id');
 
-            return redirect()->route('admin.dashboard');
+            return $this->notify('success', __('You have successfully returned to your admin session.'))->toRoute('admin.dashboard');
         } catch (Exception $e) {
             Log::error('Exit user session failed', ['error' => $e->getMessage()]);
-            return redirect()->back();
+            return $this->notify('error', __('Failed to exit user session. Please try logging in again.'))->toBack();
         }
     }
 }

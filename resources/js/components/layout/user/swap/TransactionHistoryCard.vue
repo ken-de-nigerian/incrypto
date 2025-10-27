@@ -23,10 +23,7 @@
     // Function to format the token symbol
     const formatSymbol = (symbol: string): string => {
         if (!symbol) return '';
-
-        // Regex to find USDT_ followed by BEP20, ERC20, or TRC20 (case-insensitive)
         const formatted = symbol.replace(/USDT_(BEP20|ERC20|TRC20)/i, (match) => {
-            // Replace the underscore with a space only in the matched segment
             return match.replace('_', ' ');
         });
 

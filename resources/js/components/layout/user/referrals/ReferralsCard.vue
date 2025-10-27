@@ -411,7 +411,7 @@
                                 <div class="flex flex-col lg:flex-row items-start justify-between gap-4">
                                     <div class="flex items-start gap-4 flex-1">
                                         <div class="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0 border border-border">
-                                            <img v-if="user.avatar" :src="user.avatar" :alt="user.name" class="w-12 h-12 rounded-xl object-cover" />
+                                            <img v-if="user.avatar" :src="user.avatar" :alt="user.name" loading="lazy" class="w-12 h-12 rounded-xl object-cover" />
                                             <span v-else class="text-sm font-bold text-primary">{{ getInitials(user.name) }}</span>
                                         </div>
 

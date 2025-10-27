@@ -319,7 +319,7 @@
                         <div class="p-4">
                             <div class="text-center space-y-2">
                                 <div class="w-20 h-20 rounded-full mx-auto bg-secondary/70 overflow-hidden flex items-center justify-center border border-border">
-                                    <img v-if="kyc.user.profile?.profile_photo_path" :src="kyc.user.profile?.profile_photo_path" :alt="kyc.first_name" class="h-full w-full object-cover">
+                                    <img v-if="kyc.user.profile?.profile_photo_path" :src="kyc.user.profile?.profile_photo_path" :alt="kyc.first_name" loading="lazy" class="h-full w-full object-cover">
                                     <span v-else class="text-3xl font-bold text-foreground">{{ kyc.first_name.charAt(0) }}{{ kyc.last_name.charAt(0) }}</span>
                                 </div>
 

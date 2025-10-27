@@ -217,7 +217,7 @@
                         <div class="p-4">
                             <div class="text-center space-y-2">
                                 <div class="w-20 h-20 rounded-full mx-auto bg-secondary/70 overflow-hidden flex items-center justify-center border border-border">
-                                    <img v-if="userData.profile?.profile_photo_path" :src="userData.profile?.profile_photo_path" :alt="`${userData.first_name} ${userData.last_name}`" class="h-full w-full object-cover">
+                                    <img v-if="userData.profile?.profile_photo_path" :src="userData.profile?.profile_photo_path" :alt="`${userData.first_name} ${userData.last_name}`" loading="lazy" class="h-full w-full object-cover">
                                     <span v-else class="text-3xl font-bold text-foreground">{{ userData.first_name.charAt(0) }}{{ userData.last_name.charAt(0) }}</span>
                                 </div>
 
@@ -301,7 +301,7 @@
 
                 <div v-for="wallet in selectedUser.wallets" :key="wallet.id" class="p-4 bg-muted/50 rounded-lg space-y-3 border border-border/50">
                     <div class="flex items-center gap-3 pb-3 border-b border-border/50">
-                        <img v-if="wallet.wallet_logo" :src="`https://www.cryptocompare.com${wallet.wallet_logo}`" :alt="wallet.wallet_name" class="w-8 h-8 rounded object-contain">
+                        <img v-if="wallet.wallet_logo" :src="`https://www.cryptocompare.com${wallet.wallet_logo}`" :alt="wallet.wallet_name" loading="lazy" class="w-8 h-8 rounded object-contain">
                         <div class="flex-1">
                             <p class="text-xs text-muted-foreground">Wallet Name</p>
                             <p class="text-sm font-semibold text-foreground">{{ wallet.wallet_name }}</p>

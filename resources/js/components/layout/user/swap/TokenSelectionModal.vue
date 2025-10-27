@@ -108,7 +108,7 @@
                         @click="selectToken(token)"
                         class="p-4 hover:bg-muted/70 cursor-pointer flex items-center justify-between">
                         <div class="flex items-center gap-3">
-                            <img :src="token.logo" :alt="token.symbol" class="w-8 h-8 rounded-full" />
+                            <img :src="token.logo" :alt="token.symbol" loading="lazy" class="w-8 h-8 rounded-full" />
                             <div>
                                 <div class="font-semibold text-card-foreground">{{ formatSymbol(token.symbol) }}</div>
                                 <div class="text-xs text-muted-foreground">{{ token.name }}</div>

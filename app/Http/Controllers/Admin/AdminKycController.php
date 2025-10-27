@@ -78,16 +78,16 @@ class AdminKycController extends Controller
     public function approve(Request $request, KycSubmission $kyc, ApproveUserKycService $approveUserKycService)
     {
         if ($kyc->status !== 'pending') {
-            return redirect()->back()->with('error', 'Only pending KYC submissions can be approved.');
+            return $this->notify('error', 'Only pending KYC submissions can be approved.')->toBack();
         }
 
         try {
             $approveUserKycService->approve(
                 $kyc
             );
-            return back()->with('success', 'KYC submission approved successfully.');
+            return $this->notify('success', 'KYC submission approved successfully.')->toBack();
         } catch (Exception $e) {
-            return redirect()->back()->with('error', __($e->getMessage()));
+            return $this->notify('error', __($e->getMessage()))->toBack();
         }
     }
 
@@ -97,7 +97,7 @@ class AdminKycController extends Controller
     public function reject(RejectUserKycRequest $request, KycSubmission $kyc, RejectUserKycService $rejectUserKycService)
     {
         if ($kyc->status !== 'pending') {
-            return redirect()->back()->with('error', 'Only pending KYC submissions can be rejected.');
+            return $this->notify('error', 'Only pending KYC submissions can be rejected.')->toBack();
         }
 
         try {
@@ -105,9 +105,9 @@ class AdminKycController extends Controller
                 $kyc,
                 $request->validated()
             );
-            return back()->with('success', 'KYC submission rejected successfully.');
+            return $this->notify('success', 'KYC submission rejected successfully.')->toBack();
         } catch (Exception $e) {
-            return redirect()->back()->with('error', __($e->getMessage()));
+            return $this->notify('error', __($e->getMessage()))->toBack();
         }
     }
 }

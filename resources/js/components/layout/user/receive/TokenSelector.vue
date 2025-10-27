@@ -106,7 +106,7 @@
             >
                 <div class="flex items-center justify-between">
                     <div class="flex items-center gap-3 flex-1 min-w-0">
-                        <img :src="token.logo" :alt="token.symbol" class="w-10 h-10 rounded-full flex-shrink-0" />
+                        <img :src="token.logo" :alt="token.symbol" loading="lazy" class="w-10 h-10 rounded-full flex-shrink-0" />
                         <div class="min-w-0 flex-1">
                             <div class="flex items-center gap-2">
                                 <div class="font-semibold text-card-foreground">{{ formatSymbol(token.symbol) }}</div>

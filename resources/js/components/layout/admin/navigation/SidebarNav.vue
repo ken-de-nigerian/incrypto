@@ -80,7 +80,7 @@
             <div class="flex items-center px-4 py-4 pb-10">
                 <div class="flex items-center">
                     <TextLink :href="route('admin.dashboard')" aria-label="Admin Dashboard" class="inline-flex items-center gap-2 select-none">
-                        <img class="w-[150px]" src="/assets/images/logo.png" alt="Admin logo">
+                        <img class="w-[150px]" src="/assets/images/logo.png" loading="lazy" alt="Admin logo">
                     </TextLink>
                 </div>
             </div>

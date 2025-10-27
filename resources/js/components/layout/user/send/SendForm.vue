@@ -177,7 +177,7 @@
             <div class="relative" ref="dropdownRef">
                 <button @click="showAssetDropdown = !showAssetDropdown" class="w-full p-4 bg-muted border border-border rounded-lg flex items-center justify-between hover:bg-muted/80 cursor-pointer">
                     <div v-if="selectedAssetToSend" class="flex items-center gap-3">
-                        <img :src="selectedAssetToSend.logo" :alt="selectedAssetToSend.symbol" class="w-8 h-8 rounded-full" />
+                        <img :src="selectedAssetToSend.logo" :alt="selectedAssetToSend.symbol" loading="lazy" class="w-8 h-8 rounded-full" />
                         <div class="text-left">
                             <div class="font-semibold text-card-foreground">{{ formatSymbol(selectedAssetToSend.symbol) }}</div>
                             <div class="text-xs text-muted-foreground">Balance: {{ selectedBalance.toFixed(6) }}</div>
@@ -197,7 +197,7 @@
                         <div v-if="filteredAssets.length === 0" class="p-4 text-center text-sm text-muted-foreground">No assets with balance found</div>
                         <button v-for="asset in filteredAssets" :key="asset.symbol" @click="selectAsset(asset)" class="w-full p-3 hover:bg-muted/50 flex items-center justify-between cursor-pointer">
                             <div class="flex items-center gap-3">
-                                <img :src="asset.logo" :alt="asset.symbol" class="w-8 h-8 rounded-full" />
+                                <img :src="asset.logo" :alt="asset.symbol" loading="lazy" class="w-8 h-8 rounded-full" />
                                 <div class="text-left">
                                     <div class="font-medium text-card-foreground">{{ formatSymbol(asset.symbol) }}</div>
                                     <div class="text-xs text-muted-foreground">{{ asset.name }}</div>

@@ -126,10 +126,12 @@
 
                 <div class="flex items-center flex-wrap gap-4">
                     <div class="rounded-xl h-20 w-20 object-cover border border-border overflow-hidden bg-secondary/20 flex items-center justify-center">
-                        <img v-if="photoPreview || props.userProfile.profile?.profile_photo_path"
-                             :src="photoPreview || props.userProfile.profile?.profile_photo_path"
-                             :alt="`${props.userProfile.first_name} ${props.userProfile.last_name}`"
-                             class="h-full w-full object-cover">
+                        <img
+                            v-if="photoPreview || props.userProfile.profile?.profile_photo_path"
+                            :src="photoPreview || props.userProfile.profile?.profile_photo_path"
+                            loading="lazy"
+                            :alt="`${props.userProfile.first_name} ${props.userProfile.last_name}`"
+                            class="h-full w-full object-cover">
                         <span v-else class="text-3xl font-bold text-secondary-foreground">{{ initials }}</span>
                     </div>
 

@@ -48,12 +48,13 @@ class RegisterController extends Controller
             RateLimiter::hit($this->throttleKey($email)); // 60-second cooldown
             $request->session()->put('verification_email', $email);
 
-            return redirect()->route('verify')
-                ->with('success', __('A verification code has been sent to your email.'));
+            return $this->notify('success', __('A verification code has been sent to your email.'))
+                ->toRoute('verify');
 
         } catch (Exception $e) {
             Log::error(__('Failed to send OTP email'), ['email' => $email, 'error' => $e->getMessage()]);
-            return redirect()->back()->with('error', __('Failed to send the code. Please try again later.'));
+            return $this->notify('error', __('Failed to send the code. Please try again later.'))->toBack();
+
         }
     }
 

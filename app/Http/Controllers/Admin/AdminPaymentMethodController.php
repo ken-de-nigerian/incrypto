@@ -67,7 +67,7 @@ class AdminPaymentMethodController extends Controller
 
                 if ($statusValueToFilter !== null) {
                     $collection = $collection->filter(function ($wallet) use ($statusValueToFilter) {
-                        return $wallet['status'] === $statusValueToFilter;
+                        return ($wallet['status'] ?? null) === $statusValueToFilter;
                     });
                 }
             }
@@ -156,9 +156,9 @@ class AdminPaymentMethodController extends Controller
 
         try {
             $storePaymentGatewayService->store($validated);
-            return redirect()->back()->with('success', __('Payment method created successfully!'));
+            return $this->notify('success', __('Payment method created successfully!'))->toBack();
         } catch (Exception $e) {
-            return redirect()->back()->with('error', __($e->getMessage()));
+            return $this->notify('error', __($e->getMessage()))->toBack();
         }
     }
 
@@ -171,9 +171,9 @@ class AdminPaymentMethodController extends Controller
 
         try {
             $updatePaymentGatewayService->update($validated);
-            return redirect()->back()->with('success', __('Payment method updated successfully!'));
+            return $this->notify('success', __('Payment method updated successfully!'))->toBack();
         } catch (Exception $e) {
-            return redirect()->back()->with('error', __($e->getMessage()));
+            return $this->notify('error', __($e->getMessage()))->toBack();
         }
     }
 }

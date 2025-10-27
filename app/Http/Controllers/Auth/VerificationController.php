@@ -31,9 +31,8 @@ class VerificationController extends Controller
         $email = $request->session()->get('verification_email');
 
         if (!$email || !$this->registrationService->isVerificationPending($email)) {
-            return redirect()
-                ->route('register')
-                ->with('error', __('Your verification session has expired or is invalid. Please request a new one.'));
+            return $this->notify('error', __('Your verification session has expired or is invalid. Please request a new one.'))
+                ->toRoute('register');
         }
 
         return Inertia::render('Auth/Verify');
@@ -47,13 +46,15 @@ class VerificationController extends Controller
         $email = $request->session()->get('verification_email');
 
         if (!$email || !$this->registrationService->isVerificationPending($email)) {
-            return redirect()
-                ->route('register')
-                ->with('error', __('Your verification session has expired or is invalid.'));
+            return $this->notify('error', __('Your verification session has expired or is invalid.'))
+                ->toRoute('register');
         }
 
         if (!$this->registrationService->verifyCode($email, $request->validated('otp'))) {
-            return back()->withErrors(['otp' => __('Invalid verification code.')]);
+            return $this->notifyErrorWithValidation(
+                'Verification failed',
+                ['otp' => __('Invalid verification code.')]
+            );
         }
 
         // Clear the verification data
@@ -63,9 +64,8 @@ class VerificationController extends Controller
         // Store verified email for the next step (onboarding)
         $request->session()->put('verified_email', $email);
 
-        return redirect()->route('onboarding')->with([
-            'success' => __('Your email has been verified successfully.'),
-        ]);
+        return $this->notify('success', __('Your email has been verified successfully.'))
+            ->toRoute('onboarding');
     }
 
     /**

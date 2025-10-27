@@ -280,7 +280,7 @@
                                 <div class="flex flex-col sm:flex-row items-stretch sm:items-start justify-between gap-4">
                                     <div class="flex items-start gap-4 flex-1">
                                         <div class="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0 border border-border">
-                                            <img v-if="wallet.wallet_logo" :src="`https://www.cryptocompare.com${wallet.wallet_logo}`" :alt="wallet.wallet_name" class="w-8 h-8 rounded-lg" />
+                                            <img v-if="wallet.wallet_logo" :src="`https://www.cryptocompare.com${wallet.wallet_logo}`" loading="lazy" :alt="wallet.wallet_name" class="w-8 h-8 rounded-lg" />
                                             <span v-else class="text-sm font-bold text-primary">{{ getInitials(wallet.wallet_name) }}</span>
                                         </div>
                                         <div class="flex-1 min-w-0">
@@ -414,7 +414,7 @@
                                 </span>
                                 <div class="flex items-start gap-4 mb-4">
                                     <div class="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0 border border-border group-hover:ring-primary/40 transition-all">
-                                        <img v-if="wallet.logo" :src="`https://www.cryptocompare.com${wallet.logo}`" :alt="wallet.name" class="w-8 h-8 rounded-lg" />
+                                        <img v-if="wallet.logo" :src="`https://www.cryptocompare.com${wallet.logo}`" :alt="wallet.name" loading="lazy" class="w-8 h-8 rounded-lg" />
                                         <span v-else class="text-sm font-bold text-primary">{{ getInitials(wallet.name) }}</span>
                                     </div>
 

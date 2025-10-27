@@ -252,10 +252,13 @@
             :href="route('admin.profile.index')"
             class="w-8 h-8 xs:w-9 xs:h-9 bg-accent rounded-lg xs:rounded-xl relative cursor-pointer overflow-hidden flex items-center justify-center flex-shrink-0"
             title="Admin Profile Settings">
-            <img v-if="user.profile?.profile_photo_path"
-                 :src="user.profile.profile_photo_path"
-                 alt="Profile picture"
-                 class="h-full w-full object-cover" />
+            <img
+                v-if="user.profile?.profile_photo_path"
+                :src="user.profile.profile_photo_path"
+                loading="lazy"
+                alt="Profile picture"
+                class="h-full w-full object-cover"
+            />
             <span v-else class="text-xs xs:text-sm text-accent-foreground font-semibold select-none">
                 {{ initials }}
             </span>
@@ -326,7 +329,7 @@
                             <div class="flex items-start gap-3 xs:gap-4 p-3 xs:p-4 rounded-xl xs:rounded-2xl bg-gradient-to-br from-primary/10 via-primary/10 to-transparent border border-border">
                                 <div class="relative flex-shrink-0">
                                     <div class="rounded-full h-12 w-12 xs:h-16 xs:w-16 object-cover border border-border overflow-hidden bg-secondary flex items-center justify-center">
-                                        <img v-if="user.profile?.profile_photo_path" :src="user.profile.profile_photo_path" :alt="`${user.first_name} ${user.last_name}`" class="h-full w-full object-cover">
+                                        <img v-if="user.profile?.profile_photo_path" :src="user.profile.profile_photo_path" :alt="`${user.first_name} ${user.last_name}`" loading="lazy" class="h-full w-full object-cover">
                                         <span v-else class="text-base xs:text-xl font-bold text-muted-foreground">
                                             {{ initials }}
                                         </span>

@@ -64,7 +64,7 @@
             <div class="flex items-center px-4 py-4 pb-[50px]">
                 <div class="flex items-center">
                     <TextLink :href="route('home')" aria-label="Dashboard" class="inline-flex items-center gap-2 select-none">
-                        <img class="w-[150px]" src="/assets/images/logo.png" alt="logo">
+                        <img class="w-[150px]" src="/assets/images/logo.png" loading="lazy" alt="logo">
                     </TextLink>
                 </div>
             </div>

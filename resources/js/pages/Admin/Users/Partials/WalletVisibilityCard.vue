@@ -40,9 +40,10 @@
                             <div class="w-8 h-8 flex-shrink-0 rounded-full overflow-hidden bg-background border border-border">
                                 <img
                                     :src="`https://coin-images.coingecko.com${wallet.image}.png`"
-                                     :alt="`${wallet.name} icon`"
-                                     class="h-full w-full object-cover"
-                                     @error="(e) => (e.target as HTMLImageElement).src = 'https://cdn.jsdelivr.net/gh/atomiclabs/cryptocurrency-icons@1a63530be6e374711a8554f31b17e4cb92c25fa5/128/color/generic.png'"
+                                    loading="lazy"
+                                    :alt="`${wallet.name} icon`"
+                                    class="h-full w-full object-cover"
+                                    @error="(e) => (e.target as HTMLImageElement).src = 'https://cdn.jsdelivr.net/gh/atomiclabs/cryptocurrency-icons@1a63530be6e374711a8554f31b17e4cb92c25fa5/128/color/generic.png'"
                                 />
                             </div>
 

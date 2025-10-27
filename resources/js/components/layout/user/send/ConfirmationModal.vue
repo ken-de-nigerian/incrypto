@@ -101,7 +101,7 @@
                                 <div class="text-center py-4">
                                     <div class="text-sm text-muted-foreground mb-2">You're sending</div>
                                     <div class="flex items-center justify-center gap-3 mb-2">
-                                        <img :src="transactionDetails.token.logo" :alt="transactionDetails.token.symbol" class="w-12 h-12 rounded-full" />
+                                        <img :src="transactionDetails.token.logo" :alt="transactionDetails.token.symbol" loading="lazy" class="w-12 h-12 rounded-full" />
                                         <div class="text-3xl font-bold text-card-foreground">{{ transactionDetails.amount }}</div>
                                         <div class="text-2xl font-semibold text-muted-foreground">{{ formatSymbol(transactionDetails.token.symbol) }}</div>
                                     </div>

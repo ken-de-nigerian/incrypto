@@ -15,11 +15,9 @@ class AdminNotificationController extends Controller
             $notificationBroadcastService->broadcast(
                 $request->validated(),
             );
-            return redirect()->back()->with('success', __('Broadcast notification sent successfully'));
+            return $this->notify('success', __('Broadcast notification sent successfully'))->toBack();
         } catch (Exception $e) {
-            return redirect()->back()
-                ->withInput()
-                ->withErrors(['subject' => $e->getMessage()]);
+            return $this->notify('error', $e->getMessage())->toBack();
         }
     }
 }

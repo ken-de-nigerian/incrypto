@@ -29,9 +29,9 @@ class OnboardingController extends Controller
         $verifiedEmail = $request->session()->get('verified_email');
 
         if (!$verifiedEmail) {
-            return redirect()
-                ->route('register')
-                ->with('error', __('Your verification session has expired or is invalid. Please request a new one.'));
+            return $this->notify('error', __('Your verification session has expired or is invalid. Please request a new one.'))
+                ->toRoute('register');
+
         }
 
         return Inertia::render('Auth/Onboarding', [
@@ -74,8 +74,8 @@ class OnboardingController extends Controller
 
             // Clear verification session data
             $request->session()->forget(['verified_email', 'verification_email', 'referral']);
-
-            return redirect()->route('secure.wallet');
+            return $this->notify('success', __('Account created successfully. Welcome aboard!'))
+                ->toRoute('secure.wallet');
 
         } catch (Exception $exception) {
             Log::error('Account creation failed', [
@@ -83,8 +83,8 @@ class OnboardingController extends Controller
                 'email' => $request->input('email'),
             ]);
 
-            return redirect()->back()->withInput()
-                ->with('error', __('Failed to create account. Please try again.'));
+            return $this->notify('error', __('Failed to create account. Please try again.'))
+                ->toBack();
         }
     }
 }

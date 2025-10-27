@@ -17,25 +17,17 @@ class StorePaymentGatewayService
      */
     public function store(array $validated): void
     {
-        // Get the WALLET_ADDRESSES
         $wallets = config('gateways.wallet_addresses');
 
-        // Ensure $wallets is an array
         if (!is_array($wallets)) {
             $wallets = [];
         }
 
-        // Check if abbreviation already exists to ensure uniqueness
-        foreach ($wallets as $wallet) {
-            if (isset($wallet['abbreviation']) && $wallet['abbreviation'] === $validated['abbreviation']) {
-                throw new Exception(
-                    "Wallet abbreviation already exists."
-                );
-            }
-        }
+        // Check if abbreviation already exists
+        $this->validateAbbreviationUniqueness($wallets, $validated['abbreviation']);
 
         $newWallet = [
-            'method_code' => $this->uniqueid(),
+            'method_code' => $this->generateUniqueId(),
             'name' => $validated['name'],
             'abbreviation' => $validated['abbreviation'],
             'coingecko_id' => $validated['coingecko_id'],
@@ -45,29 +37,11 @@ class StorePaymentGatewayService
 
         $wallets[] = $newWallet;
 
-        // Add a new wallet to all existing users inside transaction
-        DB::transaction(function () use ($newWallet) {
+        // Perform operations in transaction to ensure consistency
+        DB::transaction(function () use ($newWallet, $wallets) {
             $this->addWalletToAllUsers($newWallet);
+            $this->updateEnvConfiguration($wallets);
         });
-
-        // Update the.env file only after users are successfully updated
-        $envPath = base_path('.env');
-        $envContent = File::get($envPath);
-
-        // Update WALLET_ADDRESSES line
-        $newEnvContent = preg_replace(
-            '/^WALLET_ADDRESSES=.*/m',
-            'WALLET_ADDRESSES=\'' . json_encode($wallets) . '\'',
-            $envContent
-        );
-
-        File::put($envPath, $newEnvContent);
-
-        try {
-            Artisan::call('config:clear');
-        } catch (Exception $e) {
-            Log::warning('Failed to clear config cache: ' . $e->getMessage());
-        }
     }
 
     /**
@@ -75,41 +49,23 @@ class StorePaymentGatewayService
      */
     public function update(array $validated): void
     {
-        // Get the WALLET_ADDRESSES
         $wallets = config('gateways.wallet_addresses');
 
-        // Ensure $wallets is an array
         if (!is_array($wallets)) {
             $wallets = [];
         }
 
         // Find the wallet to update
-        $walletIndex = null;
-        $oldAbbreviation = null;
-
-        foreach ($wallets as $index => $wallet) {
-            if (isset($wallet['method_code']) && $wallet['method_code'] === $validated['method_code']) {
-                $walletIndex = $index;
-                $oldAbbreviation = $wallet['abbreviation'];
-                break;
-            }
-        }
+        $walletIndex = $this->findWalletIndexByMethodCode($wallets, $validated['method_code']);
 
         if ($walletIndex === null) {
             throw new Exception("Wallet not found.");
         }
 
-        // Check if new abbreviation already exists (excluding current wallet)
-        foreach ($wallets as $wallet) {
-            if (isset($wallet['abbreviation']) &&
-                isset($wallet['method_code']) &&
-                $wallet['abbreviation'] === $validated['abbreviation'] &&
-                $wallet['method_code'] !== $validated['method_code']) {
-                throw new Exception(
-                    "Wallet abbreviation already exists."
-                );
-            }
-        }
+        $oldAbbreviation = $wallets[$walletIndex]['abbreviation'];
+
+        // Validate new abbreviation doesn't exist elsewhere
+        $this->validateAbbreviationUniqueness($wallets, $validated['abbreviation'], $validated['method_code']);
 
         $updatedWallet = [
             'method_code' => $validated['method_code'],
@@ -120,31 +76,86 @@ class StorePaymentGatewayService
             'status' => $validated['status'],
         ];
 
-        // Update wallet in array
         $wallets[$walletIndex] = $updatedWallet;
 
-        // Update users' wallet_balance inside transaction
-        DB::transaction(function () use ($updatedWallet, $oldAbbreviation) {
+        // Perform operations in transaction to ensure consistency
+        DB::transaction(function () use ($updatedWallet, $oldAbbreviation, $wallets) {
             $this->updateWalletForAllUsers($updatedWallet, $oldAbbreviation);
+            $this->updateEnvConfiguration($wallets);
         });
+    }
 
-        // Update .env file only after users are successfully updated
-        $envPath = base_path('.env');
-        $envContent = File::get($envPath);
+    /**
+     * Validate that abbreviation is unique across wallets
+     *
+     * @param array $wallets
+     * @param string $abbreviation
+     * @param string|null $excludeMethodCode
+     * @return void
+     * @throws Exception
+     */
+    private function validateAbbreviationUniqueness(array $wallets, string $abbreviation, ?string $excludeMethodCode = null): void
+    {
+        foreach ($wallets as $wallet) {
+            if (isset($wallet['abbreviation']) && $wallet['abbreviation'] === $abbreviation) {
+                // If excluding a specific method_code, allow if it matches
+                if ($excludeMethodCode && isset($wallet['method_code']) && $wallet['method_code'] === $excludeMethodCode) {
+                    continue;
+                }
+                throw new Exception("Wallet abbreviation already exists.");
+            }
+        }
+    }
 
-        // Update WALLET_ADDRESSES line
-        $newEnvContent = preg_replace(
-            '/^WALLET_ADDRESSES=.*/m',
-            'WALLET_ADDRESSES=\'' . json_encode($wallets) . '\'',
-            $envContent
-        );
+    /**
+     * Find wallet index by method_code
+     *
+     * @param array $wallets
+     * @param string $methodCode
+     * @return int|null
+     */
+    private function findWalletIndexByMethodCode(array $wallets, string $methodCode): ?int
+    {
+        foreach ($wallets as $index => $wallet) {
+            if (isset($wallet['method_code']) && $wallet['method_code'] === $methodCode) {
+                return $index;
+            }
+        }
+        return null;
+    }
 
-        File::put($envPath, $newEnvContent);
-
+    /**
+     * Update .env configuration and clear cache
+     *
+     * @param array $wallets
+     * @return void
+     * @throws Exception
+     */
+    private function updateEnvConfiguration(array $wallets): void
+    {
         try {
-            Artisan::call('config:clear');
+            $envPath = base_path('.env');
+            if (!File::exists($envPath)) {
+                throw new Exception(".env file not found.");
+            }
+
+            $envContent = File::get($envPath);
+            $newEnvContent = preg_replace(
+                '/^WALLET_ADDRESSES=.*/m',
+                'WALLET_ADDRESSES=\'' . json_encode($wallets) . '\'',
+                $envContent
+            );
+
+            File::put($envPath, $newEnvContent);
+
+            try {
+                Artisan::call('config:clear');
+            } catch (Exception $e) {
+                Log::warning('Failed to clear config cache: ' . $e->getMessage());
+            }
         } catch (Exception $e) {
-            Log::warning('Failed to clear config cache: ' . $e->getMessage());
+            Log::error('Failed to update .env configuration: ' . $e->getMessage());
+            throw $e;
         }
     }
 
@@ -159,7 +170,6 @@ class StorePaymentGatewayService
         $path = parse_url($url, PHP_URL_PATH);
         $query = parse_url($url, PHP_URL_QUERY);
 
-        // Append query string if it exists
         return $query ? $path . '?' . $query : $path;
     }
 
@@ -185,6 +195,40 @@ class StorePaymentGatewayService
             Log::warning("Failed to fetch crypto image for $coingeckoId: " . $e->getMessage());
         }
 
+        return null;
+    }
+
+    /**
+     * Generate wallet key based on name and network
+     *
+     * @param string $name
+     * @param string $abbreviation
+     * @return string
+     */
+    private function generateWalletKey(string $name, string $abbreviation): string
+    {
+        if (str_contains($name, 'TRC20') || str_contains($name, 'TRC 20')) {
+            return trim(str_replace(['TRC20', 'TRC 20'], '', $name)) . '_TRC20';
+        } elseif (str_contains($name, 'ERC20') || str_contains($name, 'ERC 20')) {
+            return trim(str_replace(['ERC20', 'ERC 20'], '', $name)) . '_ERC20';
+        } elseif (str_contains($name, 'BEP20') || str_contains($name, 'BEP 20')) {
+            return trim(str_replace(['BEP20', 'BEP 20'], '', $name)) . '_BEP20';
+        }
+
+        return $abbreviation;
+    }
+
+    /**
+     * Extract network type from cryptocurrency name.
+     *
+     * @param string $name
+     * @return string|null
+     */
+    private function getNetworkFromName(string $name): ?string
+    {
+        if (str_contains($name, 'TRC 20')) return 'TRC20';
+        if (str_contains($name, 'BEP 20')) return 'BEP20';
+        if (str_contains($name, 'ERC 20')) return 'ERC20';
         return null;
     }
 
@@ -242,37 +286,34 @@ class StorePaymentGatewayService
     private function addWalletToUser(User $user, array $newWallet): void
     {
         try {
-            // Get the user's current wallet balance
             $walletBalance = $user->wallet_balance;
-
-            // Decode the JSON
             $wallets = is_string($walletBalance)
                 ? json_decode($walletBalance, true)
                 : (is_array($walletBalance) ? $walletBalance : []);
 
-            // Create the key using abbreviation (e.g., "BTC", "ETH")
-            $key = $newWallet['abbreviation'];
+            if (!is_array($wallets)) {
+                $wallets = [];
+            }
 
-            // Check if wallet already exists for this user
+            $key = $this->generateWalletKey($newWallet['name'], $newWallet['abbreviation']);
+            $image = $this->getCryptoImage($newWallet['coingecko_id']);
+
+            // Check if wallet already exists
             if (isset($wallets[$key])) {
+                Log::info("Wallet key '$key' already exists for user $user->id");
                 return;
             }
 
-            // Get the image for this wallet
-            $image = $this->getCryptoImage($newWallet['coingecko_id']);
-
-            // Add the new wallet with initial balance of 0
             $wallets[$key] = [
                 'id' => $newWallet['method_code'],
                 'name' => $newWallet['name'],
                 'symbol' => $newWallet['abbreviation'],
-                'network' => $newWallet['gateway_parameter'],
+                'network' => $this->getNetworkFromName($newWallet['name']),
                 'balance' => 0,
                 'status' => $newWallet['status'],
                 'image' => $image,
             ];
 
-            // Update user's wallet_balance
             $user->update([
                 'wallet_balance' => json_encode($wallets),
             ]);
@@ -294,48 +335,51 @@ class StorePaymentGatewayService
     private function updateWalletForUser(User $user, array $updatedWallet, string $oldAbbreviation): void
     {
         try {
-            // Get the user's current wallet balance
             $walletBalance = $user->wallet_balance;
-
-            // Decode the JSON
             $wallets = is_string($walletBalance)
                 ? json_decode($walletBalance, true)
                 : (is_array($walletBalance) ? $walletBalance : []);
 
-            // Get the image for this wallet
-            $image = $this->getCryptoImage($updatedWallet['coingecko_id']);
+            if (!is_array($wallets)) {
+                $wallets = [];
+            }
 
-            // If abbreviation changed, remove old key and add new one
-            if ($oldAbbreviation !== $updatedWallet['abbreviation']) {
-                if (isset($wallets[$oldAbbreviation])) {
-                    $wallets[$updatedWallet['abbreviation']] = [
-                        'id' => $updatedWallet['method_code'],
-                        'name' => $updatedWallet['name'],
-                        'symbol' => $updatedWallet['abbreviation'],
-                        'network' => $updatedWallet['gateway_parameter'],
-                        'balance' => $wallets[$oldAbbreviation]['balance'],
-                        'status' => $updatedWallet['status'],
-                        'image' => $image,
-                    ];
-                    unset($wallets[$oldAbbreviation]);
-                }
-            } else {
-                // Only update the wallet details, preserve balance
-                $key = $updatedWallet['abbreviation'];
-                if (isset($wallets[$key])) {
-                    $wallets[$key] = [
-                        'id' => $updatedWallet['method_code'],
-                        'name' => $updatedWallet['name'],
-                        'symbol' => $updatedWallet['abbreviation'],
-                        'network' => $updatedWallet['gateway_parameter'],
-                        'balance' => $wallets[$key]['balance'],
-                        'status' => $updatedWallet['status'],
-                        'image' => $image,
-                    ];
+            $image = $this->getCryptoImage($updatedWallet['coingecko_id']);
+            $newKey = $this->generateWalletKey($updatedWallet['name'], $updatedWallet['abbreviation']);
+
+            // Find wallet by method_code (id)
+            $oldKey = null;
+            $currentBalance = 0;
+
+            foreach ($wallets as $key => $wallet) {
+                if (isset($wallet['id']) && $wallet['id'] === $updatedWallet['method_code']) {
+                    $oldKey = $key;
+                    $currentBalance = $wallet['balance'] ?? 0;
+                    break;
                 }
             }
 
-            // Update user's wallet_balance
+            if ($oldKey === null) {
+                Log::warning("Wallet with method_code '{$updatedWallet['method_code']}' not found for user $user->id");
+                return;
+            }
+
+            // Remove old key if different from new key
+            if ($oldKey !== $newKey) {
+                unset($wallets[$oldKey]);
+            }
+
+            // Add/update with new key
+            $wallets[$newKey] = [
+                'id' => $updatedWallet['method_code'],
+                'name' => $updatedWallet['name'],
+                'symbol' => $updatedWallet['abbreviation'],
+                'network' => $this->getNetworkFromName($updatedWallet['name']),
+                'balance' => $currentBalance,
+                'status' => $updatedWallet['status'],
+                'image' => $image,
+            ];
+
             $user->update([
                 'wallet_balance' => json_encode($wallets),
             ]);
@@ -346,15 +390,13 @@ class StorePaymentGatewayService
     }
 
     /**
-     * Generate a unique ID
+     * Generate a unique ID using secure random generation
      *
-     * This method generates a unique ID, which can be used for various purposes.
-     *
-     * @return string The generated unique ID.
+     * @return string
      */
-    private function uniqueid(): string
+    private function generateUniqueId(): string
     {
-        // Generate a unique ID based on the current timestamp and a random number
-        return substr(number_format(time() * rand(), 0, '', ''), 0, 12);
+        // Use uniqid with more entropy for better collision avoidance
+        return uniqid('gateway_', true);
     }
 }

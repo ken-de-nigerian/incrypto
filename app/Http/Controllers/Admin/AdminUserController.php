@@ -103,9 +103,9 @@ class AdminUserController extends Controller
             $userData['ref_by'] = null;
 
             $authService->registerUser($userData);
-            return redirect()->back()->with('success', __("Account for $request->first_name $request->last_name has been created successfully."));
+            return $this->notify('success', __("Account for $request->first_name $request->last_name has been created successfully."))->toBack();
         } catch (Exception $e) {
-            return redirect()->back()->with('error', __($e->getMessage()));
+            return $this->notify('error', __($e->getMessage()))->toBack();
         }
     }
 
@@ -160,9 +160,9 @@ class AdminUserController extends Controller
                 $request->validated(),
                 $request->file('avatar')
             );
-            return back()->with('success', 'User personal details have been updated successfully.');
+            return $this->notify('success', 'User personal details have been updated successfully.')->toBack();
         } catch (Exception $e) {
-            return redirect()->back()->with('error', __($e->getMessage()));
+            return $this->notify('error', __($e->getMessage()))->toBack();
         }
     }
 
@@ -176,11 +176,12 @@ class AdminUserController extends Controller
                 $user,
                 $request->validated(),
             );
-            return redirect()->back()->with('success', __('User wallet balance updated successfully.'));
+            return $this->notify('success', __('User wallet balance updated successfully.'))->toBack();
         } catch (Exception $e) {
-            return redirect()->back()
-                ->withInput()
-                ->withErrors(['amount' => $e->getMessage()]);
+            return $this->notifyErrorWithValidation(
+                'Adjustment failed',
+                ['amount' => $e->getMessage()]
+            );
         }
     }
 
@@ -191,11 +192,9 @@ class AdminUserController extends Controller
                 $user,
                 $request->validated(),
             );
-            return redirect()->back()->with('success', __('Email sent successfully'));
+            return $this->notify('success', __('Email sent successfully'))->toBack();
         } catch (Exception $e) {
-            return redirect()->back()
-                ->withInput()
-                ->withErrors(['subject' => $e->getMessage()]);
+            return $this->notify('error', __($e->getMessage()))->toBack();
         }
     }
 
@@ -206,9 +205,9 @@ class AdminUserController extends Controller
                 $user,
                 $request->validated(),
             );
-            return redirect()->back()->with('success', __('Password has been reset successfully'));
+            return $this->notify('success', __('Password has been reset successfully'))->toBack();
         } catch (Exception $e) {
-            return redirect()->back()->with('error', __($e->getMessage()));
+            return $this->notify('error', __($e->getMessage()))->toBack();
         }
     }
 
@@ -219,9 +218,9 @@ class AdminUserController extends Controller
                 $user,
                 $request->validated(),
             );
-            return redirect()->back()->with('success', __('Account has been suspended successfully'));
+            return $this->notify('success', __('Account has been suspended successfully'))->toBack();
         } catch (Exception $e) {
-            return redirect()->back()->with('error', __($e->getMessage()));
+            return $this->notify('error', __($e->getMessage()))->toBack();
         }
     }
 
@@ -229,9 +228,9 @@ class AdminUserController extends Controller
     {
         try {
             $suspendUserService->unSuspendUser($user);
-            return redirect()->back()->with('success', __('Account has been unsuspended successfully'));
+            return $this->notify('success', __('Account has been unsuspended successfully'))->toBack();
         } catch (Exception $e) {
-            return redirect()->back()->with('error', __($e->getMessage()));
+            return $this->notify('error', __($e->getMessage()))->toBack();
         }
     }
 
@@ -244,10 +243,10 @@ class AdminUserController extends Controller
 
         try {
             $deleteUserAccountService->destroy($user);
-            return redirect()->route('admin.users.index')
-                ->with('success', __('User account has been deleted successfully'));
+            return $this->notify('success', __('User account has been deleted successfully'))
+                ->toRoute('admin.users.index');
         } catch (Exception $e) {
-            return redirect()->back()->with('error', __($e->getMessage()));
+            return $this->notify('error', __($e->getMessage()))->toBack();
         }
     }
 
@@ -256,11 +255,9 @@ class AdminUserController extends Controller
         try {
             session(['admin_id' => Auth::id()]);
             Auth::guard('web')->login($user);
-
             return redirect()->route('user.dashboard');
         } catch (Exception $e) {
-            Log::error('Login as user failed', ['error' => $e->getMessage()]);
-            return redirect()->back()->with('error', __($e->getMessage()));
+            return $this->notify('error', __($e->getMessage()))->toBack();
         }
     }
 
@@ -273,10 +270,9 @@ class AdminUserController extends Controller
             $user,
             $request->validated(),
         );
-        return back();
+        return $this->notify('success', __('Wallet status updated successfully.'))->toBack();
     }
 
-    // Keep the helper methods as they are (returning a Query Builder)
     public function cryptoSwaps($user)
     {
         return $user->cryptoSwaps()

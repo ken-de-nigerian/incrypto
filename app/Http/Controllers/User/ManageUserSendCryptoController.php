@@ -49,43 +49,51 @@ class ManageUserSendCryptoController extends Controller
     {
         $validatedData = $request->validated();
 
-        $user = auth()->user();
-        $token = strtoupper($validatedData['token']['symbol']);
-        $amount = (float) $validatedData['amount'] + (float) $validatedData['fee'];
-        $baseToken = $this->marketDataService->getBaseSymbol($token);
+        try {
+            $user = auth()->user();
+            $token = strtoupper($validatedData['token']['symbol']);
+            $amount = (float) $validatedData['amount'] + (float) $validatedData['fee'];
+            $baseToken = $this->marketDataService->getBaseSymbol($token);
 
-        if (!$this->marketDataService->isValidToken($baseToken)) {
-            throw new Exception('Invalid token provided.');
-        }
-
-        $walletService = new WalletService($user, $this->gatewayHandler);
-
-        $sendCrypto = DB::transaction(function () use ($user, $walletService, $token, $amount, $validatedData) {
-
-            if (!$walletService->hasSufficientBalance($token, $amount)) {
-                $currentBalance = $walletService->getBalance($token);
-                throw new Exception(
-                    "Cannot debit $amount $token. The wallet only has $currentBalance $token available. " .
-                    "Please reduce the amount or select a different wallet."
-                );
+            if (!$this->marketDataService->isValidToken($baseToken)) {
+                return $this->notify('error', 'Invalid token provided.')->toBack();
             }
 
-            $walletService->debit($token, $amount);
-            $walletService->save();
+            $walletService = new WalletService($user, $this->gatewayHandler);
 
-            return SendCrypto::create([
-                'user_id' => $user->id,
-                'token_symbol' => $validatedData['token']['symbol'],
-                'recipient_address' => $validatedData['recipient_address'],
-                'amount' => $validatedData['amount'],
-                'fee' => $validatedData['fee'],
-                'status' => 'pending',
-            ]);
-        });
+            $sendCrypto = DB::transaction(function () use ($user, $walletService, $token, $amount, $validatedData) {
 
-        // Dispatch the event with the new transaction data
-        event(new CryptoSent($sendCrypto));
+                if (!$walletService->hasSufficientBalance($token, $amount)) {
+                    $currentBalance = $walletService->getBalance($token);
+                    // Throw an exception to be caught and flashed back to the user
+                    throw new Exception(
+                        "Cannot debit $amount $token. The wallet only has $currentBalance $token available. " .
+                        "Please reduce the amount or select a different wallet."
+                    );
+                }
 
-        return $sendCrypto;
+                $walletService->debit($token, $amount);
+                $walletService->save();
+
+                return SendCrypto::create([
+                    'user_id' => $user->id,
+                    'token_symbol' => $validatedData['token']['symbol'],
+                    'recipient_address' => $validatedData['recipient_address'],
+                    'amount' => $validatedData['amount'],
+                    'fee' => $validatedData['fee'],
+                    'status' => 'pending',
+                ]);
+            });
+
+            // Dispatch the event with the new transaction data
+            event(new CryptoSent($sendCrypto));
+
+            return $this->notify(
+                'success',
+                __('Transaction initiated and is now pending approval.')
+            )->toBack();
+        } catch (Exception $e) {
+            return $this->notify('error', __($e->getMessage()))->toBack();
+        }
     }
 }

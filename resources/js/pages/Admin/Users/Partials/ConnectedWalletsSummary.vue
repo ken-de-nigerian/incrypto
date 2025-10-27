@@ -75,6 +75,7 @@
                 <div class="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 border border-primary/20 mt-1">
                     <img v-if="wallet.wallet_logo"
                          :src="`https://www.cryptocompare.com${wallet.wallet_logo}`"
+                         loading="lazy"
                          :alt="wallet.wallet_name"
                          class="w-7 h-7 rounded-full object-contain"
                     />

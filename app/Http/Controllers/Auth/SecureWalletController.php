@@ -26,18 +26,18 @@ class SecureWalletController extends Controller
      */
     protected function sendLoginResponse(): RedirectResponse
     {
+        $notification = $this->notify('success', __('Wallet secured. Redirecting to your dashboard.'));
         if (Gate::allows('access-admin-dashboard')) {
-            $redirectUrl = route('admin.dashboard');
+            return $notification->toRoute('admin.dashboard');
         } elseif (Gate::allows('access-user-dashboard')) {
-            $redirectUrl = route('user.dashboard');
+            return $notification->toRoute('user.dashboard');
         } else {
             Auth::logout();
-            return redirect()->route('login')->withErrors([
-                'email' => __('Your account does not have access to any dashboard.')
-            ]);
+            return $this->notifyErrorWithValidation(
+                'Access Denied',
+                ['email' => __('Your account does not have access to any dashboard.')]
+            );
         }
-
-        return redirect()->intended($redirectUrl);
     }
 
     /**
@@ -66,6 +66,7 @@ class SecureWalletController extends Controller
             ]
         );
 
+        // MODIFIED: Use the modified sendLoginResponse
         return $this->sendLoginResponse();
     }
 
@@ -85,10 +86,10 @@ class SecureWalletController extends Controller
                 $mnemonic = $bip39->Generate();
             } catch (WordListException $e) {
                 Log::error('BIP39 Wordlist failed to load/read: ' . $e->getMessage());
-                return redirect()->back()->with('error', 'Critical wallet generation error: Wordlist failed to load. Please contact support.');
+                return $this->notify('error', 'Critical wallet generation error: Wordlist failed to load. Please contact support.')->toBack();
             } catch (Exception $e) {
                 Log::error('BIP39 Mnemonic generation failed: ' . $e->getMessage());
-                return redirect()->back()->with('error', 'Critical wallet generation error. Please contact support.');
+                return $this->notify('error', 'Critical wallet generation error. Please contact support.')->toBack();
             }
 
             // Store the phrase in the session
@@ -142,11 +143,10 @@ class SecureWalletController extends Controller
             );
 
             Session::forget('seed_phrase_words');
-
             return $this->sendLoginResponse();
         } catch (Exception $e) {
             Log::error('Seed confirmation failed: ' . $e->getMessage());
-            return back()->with('error', 'Wallet setup failed due to a server error.');
+            return $this->notify('error', 'Wallet setup failed due to a server error.')->toBack();
         }
     }
 }

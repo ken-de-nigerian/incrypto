@@ -174,7 +174,7 @@
         <template #header>
             <header class="mb-6 text-center">
                 <TextLink :href="route('home')" aria-label="Verify" class="inline-flex items-center gap-2 select-none">
-                    <img class="w-[110px]" src="/assets/images/logo.png" alt="logo">
+                    <img class="w-[110px]" src="/assets/images/logo.png" loading="lazy" alt="logo">
                 </TextLink>
                 <h1 class="mt-4 text-2xl font-semibold">Verify Email</h1>
                 <p class="mt-1 text-sm text-muted-foreground">Enter the 6-digit code sent to your email.</p>

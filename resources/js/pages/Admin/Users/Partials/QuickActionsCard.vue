@@ -248,6 +248,7 @@
             balance: wallet.balance.toFixed(4),
             usd_value: wallet.usd_value.toFixed(2),
             symbol: wallet.symbol,
+            image: wallet.image,
             id: wallet.id,
         }));
     });
@@ -256,14 +257,6 @@
         { value: 'credit', label: 'Credit (Add Funds)' },
         { value: 'debit', label: 'Debit (Remove Funds)' },
     ]);
-
-    const getIconSymbol = (symbol: string) => {
-        const lowerSymbol = symbol.toLowerCase();
-        if (lowerSymbol.includes('usdt')) {
-            return 'usdt';
-        }
-        return lowerSymbol;
-    };
 
     const clearError = (form: any, field: string) => {
         if (form.errors[field]) {
@@ -308,20 +301,6 @@
                 <span class="font-semibold text-card-foreground">{{ user.first_name }}</span>. Specify the wallet, action type, and amount.
             </p>
 
-            <div class="p-3 bg-blue-500/10 border border-blue-500/30 rounded-lg text-sm">
-                <span class="font-semibold block mb-2 text-blue-600">User Information</span>
-                <div class="grid grid-cols-2 gap-2 text-xs text-muted-foreground">
-                    <div>
-                        <span class="text-xs text-muted-foreground">User Name</span>
-                        <div class="font-medium text-card-foreground">{{ user.first_name }} {{ user.last_name }}</div>
-                    </div>
-                    <div>
-                        <span class="text-xs text-muted-foreground">Email</span>
-                        <div class="font-medium text-card-foreground text-xs">{{ user.email }}</div>
-                    </div>
-                </div>
-            </div>
-
             <div class="space-y-2">
                 <label class="text-sm font-medium text-muted-foreground uppercase tracking-wider">Select Wallet</label>
                 <CustomSelectDropdown
@@ -333,7 +312,8 @@
                         <template v-if="selectedOption">
                             <div class="flex items-center gap-3">
                                 <img
-                                    :src="`https://cdn.jsdelivr.net/gh/atomiclabs/cryptocurrency-icons@1a63530be6e374711a8554f31b17e4cb92c25fa5/128/color/${getIconSymbol(selectedOption.symbol)}.png`"
+                                    :src="`https://coin-images.coingecko.com${selectedOption.image}.png`"
+                                    loading="lazy"
                                     :alt="selectedOption.symbol"
                                     class="h-8 w-8 object-cover"
                                     @error="(e) => (e.target as HTMLImageElement).src = 'https://cdn.jsdelivr.net/gh/atomiclabs/cryptocurrency-icons@1a63530be6e374711a8554f31b17e4cb92c25fa5/128/color/generic.png'"
@@ -356,7 +336,8 @@
                     <template #option="{ option }">
                         <div class="flex items-center gap-3">
                             <img
-                                :src="`https://cdn.jsdelivr.net/gh/atomiclabs/cryptocurrency-icons@1a63530be6e374711a8554f31b17e4cb92c25fa5/128/color/${getIconSymbol(option.symbol)}.png`"
+                                :src="`https://coin-images.coingecko.com${option.image}.png`"
+                                loading="lazy"
                                 :alt="option.symbol"
                                 class="h-8 w-8 object-cover"
                                 @error="(e) => (e.target as HTMLImageElement).src = 'https://cdn.jsdelivr.net/gh/atomiclabs/cryptocurrency-icons@1a63530be6e374711a8554f31b17e4cb92c25fa5/128/color/generic.png'"
@@ -373,9 +354,6 @@
                     </template>
                 </CustomSelectDropdown>
                 <InputError :message="fundsForm.errors.wallet_symbol" />
-                <p v-if="walletOptions.length === 0" class="text-sm text-warning p-2 rounded-lg bg-warning/10 border border-warning/30">
-                    No wallets found for this user.
-                </p>
             </div>
 
             <div class="space-y-2">
@@ -421,20 +399,6 @@
                 <span class="font-semibold text-card-foreground">{{ user.email }}</span>.
             </p>
 
-            <div class="p-3 bg-blue-500/10 border border-blue-500/30 rounded-lg text-sm">
-                <span class="font-semibold block mb-2 text-blue-600">User Information</span>
-                <div class="grid grid-cols-2 gap-2 text-xs text-muted-foreground">
-                    <div>
-                        <span class="text-xs text-muted-foreground">User Name</span>
-                        <div class="font-medium text-card-foreground">{{ user.first_name }} {{ user.last_name }}</div>
-                    </div>
-                    <div>
-                        <span class="text-xs text-muted-foreground">Email Address</span>
-                        <div class="font-medium text-card-foreground text-xs">{{ user.email }}</div>
-                    </div>
-                </div>
-            </div>
-
             <div class="space-y-2">
                 <label for="subject" class="text-sm font-medium text-muted-foreground uppercase tracking-wider">Subject</label>
                 <input id="subject" v-model="emailForm.subject" @focus="clearError(emailForm, 'subject')" type="text" placeholder="Important Account Notice" class="input-crypto w-full text-sm" />
@@ -465,20 +429,6 @@
                 Generate a new password for user
                 <span class="font-semibold text-card-foreground">{{ user.first_name }}</span>. They will use this to log back in.
             </p>
-
-            <div class="p-3 bg-blue-500/10 border border-blue-500/30 rounded-lg text-sm">
-                <span class="font-semibold block mb-2 text-blue-600">User Information</span>
-                <div class="grid grid-cols-2 gap-2 text-xs text-muted-foreground">
-                    <div>
-                        <span class="text-xs text-muted-foreground">User Name</span>
-                        <div class="font-medium text-card-foreground">{{ user.first_name }} {{ user.last_name }}</div>
-                    </div>
-                    <div>
-                        <span class="text-xs text-muted-foreground">Email</span>
-                        <div class="font-medium text-card-foreground">{{ user.email }}</div>
-                    </div>
-                </div>
-            </div>
 
             <div class="space-y-2">
                 <label for="generated-password" class="text-sm font-medium text-muted-foreground uppercase tracking-wider">Generated Password</label>
@@ -524,20 +474,6 @@
                 <span class="font-semibold text-card-foreground">{{ user.first_name }}</span>, gaining full access to their account session. This action is logged for security purposes.
             </p>
 
-            <div class="p-3 bg-blue-500/10 border border-blue-500/30 rounded-lg text-sm">
-                <span class="font-semibold block mb-2 text-blue-600">User Information</span>
-                <div class="grid grid-cols-2 gap-2 text-xs text-muted-foreground">
-                    <div>
-                        <span class="text-xs text-muted-foreground">User Name</span>
-                        <div class="font-medium text-card-foreground">{{ user.first_name }} {{ user.last_name }}</div>
-                    </div>
-                    <div>
-                        <span class="text-xs text-muted-foreground">Email</span>
-                        <div class="font-medium text-card-foreground text-xs">{{ user.email }}</div>
-                    </div>
-                </div>
-            </div>
-
             <div class="p-3 bg-warning/10 border border-warning/30 rounded-lg text-sm text-warning-foreground">
                 <span class="font-semibold block mb-2 flex items-center gap-2">
                     <AlertTriangle class="w-5 h-5 text-destructive" /> Warning
@@ -570,20 +506,6 @@
                 <span class="font-semibold text-card-foreground">suspend</span> the account for user
                 <span class="font-semibold text-card-foreground">{{ user.first_name }}</span>?
             </p>
-
-            <div class="p-3 bg-blue-500/10 border border-blue-500/30 rounded-lg text-sm">
-                <span class="font-semibold block mb-2 text-blue-600">User Information</span>
-                <div class="grid grid-cols-2 gap-2 text-xs text-muted-foreground">
-                    <div>
-                        <span class="text-xs text-muted-foreground">User Name</span>
-                        <div class="font-medium text-card-foreground">{{ user.first_name }} {{ user.last_name }}</div>
-                    </div>
-                    <div>
-                        <span class="text-xs text-muted-foreground">Email</span>
-                        <div class="font-medium text-card-foreground text-xs">{{ user.email }}</div>
-                    </div>
-                </div>
-            </div>
 
             <div class="p-3 bg-warning/10 border border-warning/30 rounded-lg text-sm text-warning-foreground">
                 <span class="font-semibold block mb-2 flex items-center gap-2">
@@ -623,20 +545,6 @@
                 <span class="font-semibold text-card-foreground">{{ user.first_name }}</span>?
             </p>
 
-            <div class="p-3 bg-blue-500/10 border border-blue-500/30 rounded-lg text-sm">
-                <span class="font-semibold block mb-2 text-blue-600">Account Details</span>
-                <div class="grid grid-cols-2 gap-2 text-xs text-muted-foreground">
-                    <div>
-                        <span class="text-xs text-muted-foreground">User Name</span>
-                        <div class="font-medium text-card-foreground">{{ user.first_name }} {{ user.last_name }}</div>
-                    </div>
-                    <div>
-                        <span class="text-xs text-muted-foreground">Email</span>
-                        <div class="font-medium text-card-foreground">{{ user.email }}</div>
-                    </div>
-                </div>
-            </div>
-
             <div class="p-3 bg-success/10 border border-success/30 rounded-lg text-sm text-success-foreground">
                 <span class="font-semibold block mb-1 flex items-center gap-2">
                     <CheckCircle2 class="w-5 h-5 text-success" /> Confirmation
@@ -663,20 +571,6 @@
                 <span class="font-semibold text-card-foreground">{{ user.first_name }}</span>, please type
                 <span class="bg-destructive/10 text-destructive font-mono text-xs px-2 py-1 rounded">DELETE</span> below.
             </p>
-
-            <div class="p-3 bg-blue-500/10 border border-blue-500/30 rounded-lg text-sm">
-                <span class="font-semibold block mb-2 text-blue-600">User Information</span>
-                <div class="grid grid-cols-2 gap-2 text-xs text-muted-foreground">
-                    <div>
-                        <span class="text-xs text-muted-foreground">User Name</span>
-                        <div class="font-medium text-card-foreground">{{ user.first_name }} {{ user.last_name }}</div>
-                    </div>
-                    <div>
-                        <span class="text-xs text-muted-foreground">Email</span>
-                        <div class="font-medium text-card-foreground text-xs">{{ user.email }}</div>
-                    </div>
-                </div>
-            </div>
 
             <div class="p-3 bg-warning/10 border border-warning/30 rounded-lg text-sm text-warning-foreground">
                 <span class="font-semibold block mb-1 flex items-center gap-2">

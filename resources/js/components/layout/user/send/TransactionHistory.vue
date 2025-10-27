@@ -15,7 +15,6 @@
     const getStatusColor = (status: string) => {
         switch (status) {
             case 'completed': return 'text-primary';
-            // UPDATED: Replaced hardcoded yellow with semantic warning
             case 'pending': return 'text-warning';
             case 'failed': return 'text-destructive';
             default: return 'text-muted-foreground';
@@ -26,7 +25,6 @@
     const getBgClass = (status: string) => {
         switch (status) {
             case 'completed': return 'bg-primary/10';
-            // UPDATED: Replaced hardcoded yellow with semantic warning/10
             case 'pending': return 'bg-warning/10';
             case 'failed': return 'bg-destructive/10';
             default: return 'bg-muted/10';
@@ -59,10 +57,7 @@
     // Function to format the token symbol
     const formatSymbol = (symbol: string): string => {
         if (!symbol) return '';
-
-        // Regex to find USDT_ followed by BEP20, ERC20, or TRC20 (case-insensitive)
         const formatted = symbol.replace(/USDT_(BEP20|ERC20|TRC20)/i, (match) => {
-            // Replace the underscore with a space only in the matched segment
             return match.replace('_', ' ');
         });
 

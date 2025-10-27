@@ -50,7 +50,7 @@
             <div class="bg-card border border-border rounded-2xl shadow-sm">
                 <div class="p-6 sm:p-8 border-b border-border flex items-center gap-4">
                     <div class="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0 border border-border group-hover:ring-primary/40 transition-all">
-                        <img v-if="wallet.LogoUrl" :src="`https://www.cryptocompare.com${wallet.LogoUrl}`" :alt="wallet.Name" class="w-8 h-8 rounded-lg" />
+                        <img v-if="wallet.LogoUrl" :src="`https://www.cryptocompare.com${wallet.LogoUrl}`" :alt="wallet.Name" loading="lazy" class="w-8 h-8 rounded-lg" />
                     </div>
 
                     <div>

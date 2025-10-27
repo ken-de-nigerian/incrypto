@@ -51,7 +51,7 @@
     <div class="p-4 card-crypto rounded-b-xl mt-8 relative z-10">
         <div class="flex flex-col md:flex-row items-start md:items-center gap-4">
             <div class="w-20 h-20 sm:w-28 sm:h-28 flex-shrink-0 md:mt-0 rounded-full bg-secondary/70 overflow-hidden border border-border">
-                <img v-if="user.profile?.profile_photo_path" :src="user.profile?.profile_photo_path" :alt="user.first_name" class="h-full w-full object-cover">
+                <img v-if="user.profile?.profile_photo_path" :src="user.profile?.profile_photo_path" :alt="user.first_name" loading="lazy" class="h-full w-full object-cover">
                 <span v-else class="text-3xl lg:text-4xl font-bold text-foreground h-full w-full flex items-center justify-center">
                     {{ (user.first_name || '').charAt(0) }}{{ (user.last_name || '').charAt(0) }}
                 </span>

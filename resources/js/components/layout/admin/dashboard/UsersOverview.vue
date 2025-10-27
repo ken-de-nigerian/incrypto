@@ -45,7 +45,7 @@
             >
                 <div class="flex items-center gap-3">
                     <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-secondary/70 overflow-hidden flex items-center justify-center border border-border flex-shrink-0">
-                        <img v-if="user.profile?.profile_photo_path" :src="user.profile?.profile_photo_path" :alt="user.first_name" class="h-full w-full object-cover">
+                        <img v-if="user.profile?.profile_photo_path" :src="user.profile?.profile_photo_path" :alt="user.first_name" loading="lazy" class="h-full w-full object-cover">
                         <span v-else class="text-base sm:text-lg font-bold text-card-foreground">
                         {{ (user.first_name?.charAt(0) ?? '').toUpperCase() }}{{ (user.last_name?.charAt(0) ?? '').toUpperCase() }}
                     </span>

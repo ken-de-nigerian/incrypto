@@ -111,7 +111,7 @@
                                 <button @click="handleClose" class="p-2 hover:bg-muted/70 rounded-lg"><XIcon class="w-5 h-5 text-muted-foreground" /></button>
                             </div>
                             <div class="flex items-center gap-3">
-                                <img :src="token.logo" :alt="token.symbol" class="w-12 h-12 rounded-full flex-shrink-0" />
+                                <img :src="token.logo" :alt="token.symbol" loading="lazy" class="w-12 h-12 rounded-full flex-shrink-0" />
                                 <div class="flex-1 min-w-0">
                                     <div class="font-semibold text-card-foreground truncate">{{ token.name }}</div>
                                     <div class="text-sm text-muted-foreground flex items-center gap-2"><span>{{ balance.toFixed(6) }} {{ formatSymbol(token.symbol) }}</span></div>

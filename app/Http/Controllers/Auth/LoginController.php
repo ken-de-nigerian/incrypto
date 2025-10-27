@@ -60,6 +60,7 @@ class LoginController extends Controller
             return $this->sendLoginResponse();
         }
 
+
         // Increment login attempts if failed
         $this->incrementLoginAttempts($request);
 
@@ -74,9 +75,6 @@ class LoginController extends Controller
         return $request->only('email', 'password');
     }
 
-    /**
-     * Attempt to log in with provided credentials.
-     */
     /**
      * Attempt to log in with provided credentials.
      */
@@ -118,18 +116,19 @@ class LoginController extends Controller
      */
     protected function sendLoginResponse(): RedirectResponse
     {
+        $notification = $this->notify('success', __('Welcome back! You have successfully logged in.'));
+
         if (Gate::allows('access-admin-dashboard')) {
-            $redirectUrl = route('admin.dashboard');
+            return $notification->toRoute('admin.dashboard');
         } elseif (Gate::allows('access-user-dashboard')) {
-            $redirectUrl = route('user.dashboard');
+            return $notification->toRoute('user.dashboard');
         } else {
             Auth::logout();
-            return redirect()->route('login')->withErrors([
-                'email' => __('Your account does not have access to any dashboard.')
-            ]);
+            return $this->notifyErrorWithValidation(
+                'Access Denied',
+                ['email' => __('Your account does not have access to any dashboard.')]
+            );
         }
-
-        return redirect()->intended($redirectUrl);
     }
 
     /**
@@ -138,8 +137,6 @@ class LoginController extends Controller
     protected function sendFailedLoginResponse(Request $request): RedirectResponse
     {
         $errorMessage = __('These credentials do not match our records.');
-
-        // Always redirect back with errors
         return redirect()->back()
             ->withInput($request->only('email'))
             ->withErrors(['email' => $errorMessage]);

@@ -28,10 +28,10 @@
         <h3 class="text-card-foreground font-semibold mb-3 sm:mb-4 text-sm sm:text-base">Quick Actions</h3>
         <div class="grid grid-cols-4 gap-2 sm:gap-3">
             <TextLink v-for="item in navigation" :key="item.name" :href="route(item.href)"
-                      :class="[
-                          'flex flex-col items-center gap-1.5 sm:gap-2 p-2 sm:p-3 rounded-lg sm:rounded-xl cursor-pointer',
-                          'bg-secondary/50 hover:bg-secondary/70 group'
-                      ]">
+                  :class="[
+                      'flex flex-col items-center gap-1.5 sm:gap-2 p-2 sm:p-3 rounded-lg sm:rounded-xl cursor-pointer',
+                      'bg-secondary/50 hover:bg-secondary/70 group'
+                  ]">
                 <div
                     :class="[
                         'w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center rounded-lg transition-all',

@@ -41,7 +41,8 @@ class ManageUserProfileController extends Controller
             $request->validated(),
             $request->file('avatar')
         );
-        return back()->with('success', 'Your personal details have been updated successfully.');
+
+        return $this->notify('success', 'Your personal details have been updated successfully.')->toBack();
     }
 
     /**
@@ -61,7 +62,7 @@ class ManageUserProfileController extends Controller
         // Invalidate all other browser sessions for the user
         Auth::logoutOtherDevices($request->password);
 
-        return back()->with('success', 'Your password has been updated successfully.');
+        return $this->notify('success', 'Your password has been updated successfully.')->toBack();
     }
 
     /**
@@ -73,7 +74,8 @@ class ManageUserProfileController extends Controller
             $request->user(),
             $request->validated(),
         );
-        return back();
+
+        return $this->notify('success', 'Wallet status updated successfully.')->toBack();
     }
 
     public function destroy(DeleteAccountRequest $request)
@@ -86,6 +88,6 @@ class ManageUserProfileController extends Controller
         Auth::logout();
         $user->delete();
 
-        return redirect()->back()->with('success', 'Your account has been deleted.');
+        return $this->notify('success', 'Your account has been deleted.')->toRoute('login');
     }
 }

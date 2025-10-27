@@ -1,54 +1,108 @@
 <script setup lang="ts">
-    import { ref, watch } from 'vue';
+    import { watch } from 'vue';
     import { usePage } from '@inertiajs/vue3';
+    import { useFlash } from '@/composables/useFlash';
     import CheckCircleIcon from '@/components/utilities/CheckCircleIcon.vue';
     import XCircleIcon from '@/components/utilities/XCircleIcon.vue';
-    import InformationCircleIcon from '@/components/utilities/InformationCircleIcon.vue';
+    import AlertTriangleIcon from '@/components/utilities/AlertTriangleIcon.vue';
+    import AlertCircleIcon from '@/components/utilities/AlertCircleIcon.vue';
 
-    const notifications = ref([])
-    const page = usePage()
-    let nextId = 1;
+    interface Notification {
+        id: number;
+        type: 'success' | 'error' | 'info' | 'warning';
+        message: string;
+        title?: string;
+        duration?: number;
+        dismissible?: boolean;
+        action?: {
+            label: string;
+            callback: () => void;
+        };
+    }
+
+    const page = usePage();
+    const { notifications, removeNotification, notify } = useFlash();
 
     const getIconComponent = (type: string) => {
         switch (type) {
             case 'success': return CheckCircleIcon;
             case 'error': return XCircleIcon;
-            default: return InformationCircleIcon;
+            case 'warning': return AlertTriangleIcon;
+            default: return AlertCircleIcon;
         }
     };
 
     const getTypeClasses = (type: string) => {
         switch (type) {
             case 'success':
-                return 'bg-success/80 border-success/50 text-success-foreground';
+                return {
+                    bg: 'bg-green-500/90',
+                    border: 'border-green-400/50',
+                    text: 'text-white',
+                    icon: 'text-white',
+                    iconBg: 'bg-white/20',
+                };
             case 'error':
-                return 'bg-destructive/80 border-destructive/50 text-destructive-foreground';
+                return {
+                    bg: 'bg-red-500/90',
+                    border: 'border-red-400/50',
+                    text: 'text-white',
+                    icon: 'text-white',
+                    iconBg: 'bg-white/20',
+                };
+            case 'warning':
+                return {
+                    bg: 'bg-yellow-500/90',
+                    border: 'border-yellow-400/50',
+                    text: 'text-white',
+                    icon: 'text-white',
+                    iconBg: 'bg-white/20',
+                };
             default:
-                return 'bg-muted/80 border-border/50 text-foreground';
+                return {
+                    bg: 'bg-blue-500/90',
+                    border: 'border-blue-400/50',
+                    text: 'text-white',
+                    icon: 'text-white',
+                    iconBg: 'bg-white/20',
+                };
         }
     };
 
-    const removeNotification = (id: number) => {
-        notifications.value = notifications.value.filter(n => n.id !== id);
-    }
+    const handleAction = (notification: Notification) => {
+        if (notification.action?.callback) {
+            notification.action.callback();
+        }
+        removeNotification(notification.id);
+    };
+
+    // Watch flash messages from Inertia
     watch(() => page.props.flash, (flash) => {
         if (!flash) return;
-        let type = 'info';
+
+        let type: 'success' | 'error' | 'info' | 'warning' = 'info';
         let message = '';
+
         if (flash.success) {
             type = 'success';
             message = flash.success;
         } else if (flash.error) {
             type = 'error';
             message = flash.error;
+        } else if (flash.warning) {
+            type = 'warning';
+            message = flash.warning;
         } else if (flash.info) {
             type = 'info';
-            message = flash.info
+            message = flash.info;
         }
+
         if (message) {
-            const id = nextId++;
-            notifications.value.push({ id, type, message });
-            setTimeout(() => removeNotification(id), 5000);
+            notify(type, message, {
+                title: flash.title,
+                duration: flash.duration ?? 5000,
+                dismissible: flash.dismissible !== false,
+            });
         }
     }, { deep: true, immediate: true });
 </script>
@@ -56,37 +110,74 @@
 <template>
     <TransitionGroup
         tag="div"
-        class="fixed top-4 left-4 right-4 z-50 space-y-3 sm:left-auto sm:w-full sm:max-w-sm sm:right-5"
-        enter-active-class="animate-[flip-in-x_0.5s_ease-in-out]"
-        leave-active-class="animate-[flip-out-x_0.5s_ease-in-out]">
+        class="fixed top-4 left-4 right-4 z-50 flex flex-col gap-3 sm:left-auto sm:w-full sm:max-w-md sm:right-4"
+        enter-active-class="transition-all duration-300"
+        enter-from-class="opacity-0 translate-x-full"
+        enter-to-class="opacity-100 translate-x-0"
+        leave-active-class="transition-all duration-300"
+        leave-from-class="opacity-100 translate-x-0"
+        leave-to-class="opacity-0 translate-x-full">
         <div
             v-for="notification in notifications"
             :key="notification.id"
-            class="pointer-events-auto"
-            style="perspective: 1000px; transform-style: preserve-3d;">
+            class="group pointer-events-auto">
             <div
-                class="group relative py-2 flex min-h-12 w-full items-center justify-between gap-4 overflow-hidden rounded-xl pr-2 pl-3 shadow-xl backdrop-blur-md"
-                :class="getTypeClasses(notification.type)">
-                <div class="relative flex flex-1 items-center gap-3">
-                    <div class="relative z-20 h-6 shrink-0">
-                        <component :is="getIconComponent(notification.type)" />
+                class="relative overflow-hidden rounded-lg border shadow-lg backdrop-blur-md transition-all duration-300"
+                :class="[
+                    getTypeClasses(notification.type).bg,
+                    getTypeClasses(notification.type).border,
+                    getTypeClasses(notification.type).text,
+                ]"
+                role="alert"
+                :aria-live="notification.type === 'error' ? 'assertive' : 'polite'">
+
+                <div class="flex gap-4 p-4">
+                    <div class="flex-shrink-0 pt-0.5">
+                        <div
+                            class="h-12 w-12 rounded-full flex items-center justify-center flex-shrink-0"
+                            :class="getTypeClasses(notification.type).iconBg">
+                            <component
+                                :is="getIconComponent(notification.type)"
+                                class="h-7 w-7 flex-shrink-0"
+                                :class="getTypeClasses(notification.type).icon"
+                                aria-hidden="true" />
+                        </div>
                     </div>
-                    <div class="text-sm font-medium" v-html="notification.message"></div>
+
+                    <div class="flex-1 min-w-0">
+                        <div
+                            v-if="notification.title"
+                            class="font-semibold text-sm mb-1">
+                            {{ notification.title }}
+                        </div>
+                        <div
+                            class="text-sm font-medium opacity-95"
+                            v-html="notification.message"></div>
+                    </div>
+
+                    <div class="flex-shrink-0 flex items-center gap-2">
+                        <button
+                            v-if="notification.action"
+                            @click="handleAction(notification)"
+                            type="button"
+                            class="px-3 py-1 text-xs font-semibold rounded-md bg-white/20 hover:bg-white/30 transition-colors duration-200 whitespace-nowrap">
+                            {{ notification.action.label }}
+                        </button>
+
+                        <button
+                            v-if="notification.dismissible"
+                            @click="removeNotification(notification.id)"
+                            type="button"
+                            class="inline-flex items-center justify-center p-1 rounded-md hover:bg-white/20 transition-colors duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/50">
+                            <span class="sr-only">Close notification</span>
+                            <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+                            </svg>
+                        </button>
+                    </div>
                 </div>
 
-                <button
-                    @click="removeNotification(notification.id)"
-                    type="button"
-                    class="relative isolate inline-flex items-center justify-center rounded-md p-1 font-medium whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-white/50 cursor-pointer">
-                    <span class="sr-only">Close</span>
-                    <svg class="size-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
-                    </svg>
-                </button>
 
-                <div class="absolute bottom-0 left-0 w-full h-1 overflow-hidden rounded-b-xl">
-                    <div class="absolute bottom-0 left-0 h-full bg-white/50 animate-[progress-bar-timer_5s_linear_forwards] group-hover:animate-pause"></div>
-                </div>
             </div>
         </div>
     </TransitionGroup>

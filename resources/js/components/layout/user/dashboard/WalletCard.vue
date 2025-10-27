@@ -191,6 +191,7 @@ interface WalletBalance {
                     <div class="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
                         <img
                             :src="`https://coin-images.coingecko.com${wallet.image}.png`"
+                            loading="lazy"
                             :alt="`${wallet.name} icon`" class="w-8 h-8 sm:w-8 sm:h-8 rounded-full flex-shrink-0 object-cover bg-secondary/70"
                             @error="(e) => (e.target as HTMLImageElement).src = 'https://cdn.jsdelivr.net/gh/atomiclabs/cryptocurrency-icons@1a63530be6e374711a8554f31b17e4cb92c25fa5/128/color/generic.png'"
                         />

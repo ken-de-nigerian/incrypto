@@ -29,7 +29,8 @@ class SocialLoginController extends Controller
     public function redirectToProvider(string $provider)
     {
         if (!in_array($provider, $this->supportedProviders)) {
-            return redirect()->route('register')->with('error', __('auth.unsupported_provider', ['provider' => $provider]));
+            return $this->notify('error', __('auth.unsupported_provider', ['provider' => $provider]))
+                ->toRoute('register');
         }
 
         return Socialite::driver($provider)->stateless()->redirect();
@@ -42,7 +43,8 @@ class SocialLoginController extends Controller
     public function handleProviderCallback(string $provider)
     {
         if (!in_array($provider, $this->supportedProviders)) {
-            return redirect()->route('register')->with('error', __('auth.unsupported_provider', ['provider' => $provider]));
+            return $this->notify('error', __('auth.unsupported_provider', ['provider' => $provider]))
+                ->toRoute('register');
         }
 
         try {
@@ -50,7 +52,8 @@ class SocialLoginController extends Controller
             $socialUser = Socialite::driver($provider)->stateless()->user();
 
             if (!$socialUser->getEmail()) {
-                return redirect()->route('register')->with('error', __('auth.no_email'));
+                return $this->notify('error', __('auth.no_email'))
+                    ->toRoute('register');
             }
 
             // Get referral info
@@ -74,12 +77,13 @@ class SocialLoginController extends Controller
             // Clear referral session data
             Session::forget(['referral']);
 
-            return redirect()->route('secure.wallet');
+            return $this->notify('success', __('Successfully logged in with :Provider.', ['provider' => ucfirst($provider)]))
+                ->toRoute('secure.wallet');
 
         } catch (Exception $e) {
             Log::error("Social login failed for $provider: " . $e->getMessage());
-            // Redirect back with a user-friendly error message from the service
-            return redirect()->route('register')->with('error', $e->getMessage());
+            return $this->notify('error', $e->getMessage())
+                ->toRoute('register');
         }
     }
 }

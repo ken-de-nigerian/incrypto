@@ -108,16 +108,15 @@ class ManageUserKycController extends Controller
     {
         try {
             $kycService->submitKyc($request->user(), $request->validated());
-
-            return redirect()->route('user.kyc.index')
-                ->with('success', 'Your KYC information has been submitted for review.');
+            return $this->notify('success', 'Your KYC information has been submitted for review.')
+                ->toRoute('user.kyc.index');
         } catch (Exception $e) {
             Log::error('KYC Submission failed', [
                 'user_id' => $request->user()->id,
                 'error' => $e->getMessage()
             ]);
 
-            return back()->with('error', 'There was a problem submitting your information. Please try again.');
+            return $this->notify('error', 'There was a problem submitting your information. Please try again.')->toBack();
         }
     }
 
@@ -139,12 +138,11 @@ class ManageUserKycController extends Controller
     {
         try {
             $kycService->updateKyc($submission, $request->validated());
-
-            return redirect()->route('user.kyc.index')
-                ->with('success', 'Your KYC information has been resubmitted for review.');
+            return $this->notify('success', 'Your KYC information has been resubmitted for review.')
+                ->toRoute('user.kyc.index');
         } catch (Exception $e) {
             Log::error('KYC Update failed', ['submission_id' => $submission->id, 'error' => $e->getMessage()]);
-            return back()->with('error', 'There was a problem updating your information. Please try again.');
+            return $this->notify('error', 'There was a problem updating your information. Please try again.')->toBack();
         }
     }
 }

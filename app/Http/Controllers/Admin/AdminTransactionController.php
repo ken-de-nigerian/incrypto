@@ -155,9 +155,9 @@ class AdminTransactionController extends Controller
                 default => throw new Exception('Invalid transaction type')
             };
 
-            return back()->with('success', 'Transaction approved successfully.');
+            return $this->notify('success', 'Transaction approved successfully.')->toBack();
         } catch (Exception $e) {
-            return back()->with('error', $e->getMessage());
+            return $this->notify('error', $e->getMessage())->toBack();
         }
     }
 
@@ -176,9 +176,9 @@ class AdminTransactionController extends Controller
                 default => throw new Exception('Invalid transaction type')
             };
 
-            return back()->with('success', 'Transaction rejected successfully.');
+            return $this->notify('success', 'Transaction rejected successfully.')->toBack();
         } catch (Exception $e) {
-            return back()->with('error', $e->getMessage());
+            return $this->notify('error', $e->getMessage())->toBack();
         }
     }
 

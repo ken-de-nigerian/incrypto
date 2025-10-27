@@ -10,16 +10,12 @@
         readonly?: boolean;
     }>();
 
-    // FIX: Assigned the result of defineEmits to the 'emit' constant
     const emit = defineEmits(['update:amount', 'open-modal', 'set-max']);
 
     // Function to format the token symbol
     const formatSymbol = (symbol: string): string => {
         if (!symbol) return '';
-
-        // Regex to find USDT_ followed by BEP20, ERC20, or TRC20 (case-insensitive)
         const formatted = symbol.replace(/USDT_(BEP20|ERC20|TRC20)/i, (match) => {
-            // Replace the underscore with a space only in the matched segment
             return match.replace('_', ' ');
         });
 
@@ -37,7 +33,7 @@
             <button
                 @click="emit('open-modal')"
                 class="flex items-center gap-2 px-2 sm:px-3 py-1 sm:py-2 bg-background border border-border rounded-lg hover:bg-muted/70 cursor-pointer">
-                <img v-if="token" :src="token.logo" :alt="token.symbol" class="w-6 h-6 rounded-full" />
+                <img v-if="token" :src="token.logo" :alt="token.symbol" loading="lazy" class="w-6 h-6 rounded-full" />
                 <span class="font-semibold text-card-foreground text-xs sm:text-sm">{{ formatSymbol(token?.symbol) || 'Select' }}</span>
                 <ChevronDownIcon class="w-4 h-4 text-muted-foreground" />
             </button>

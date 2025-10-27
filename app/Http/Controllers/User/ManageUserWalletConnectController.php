@@ -39,7 +39,7 @@ class ManageUserWalletConnectController extends Controller
         // Get the wallet details from market data
         $wallet = (new GatewayHandlerService())->getWallet($request->id);
         if (!$wallet){
-            return back()->with('error', 'Wallet data not found');
+            return $this->notify('error', 'Wallet data not found')->toBack();
         }
 
         return Inertia::render('User/Wallet/Create', [
@@ -60,10 +60,10 @@ class ManageUserWalletConnectController extends Controller
         );
 
         if (!$connection) {
-            return back()->with('error', 'Could not retrieve wallet details. Please try again.');
+            return $this->notify('error', 'Could not retrieve wallet details. Please try again.')->toBack();
         }
 
-        return redirect()->route('user.wallet.index')
-            ->with('success', 'Wallet connected successfully!');
+        return $this->notify('success', 'Wallet connected successfully!')
+            ->toRoute('user.wallet.index');
     }
 }

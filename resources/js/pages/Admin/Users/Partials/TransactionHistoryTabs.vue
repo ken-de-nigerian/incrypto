@@ -8,7 +8,6 @@
         Calendar,
         Circle,
         Wallet,
-        History,
         ExternalLink,
     } from 'lucide-vue-next';
     import TextLink from '@/components/TextLink.vue';

@@ -5,11 +5,11 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title inertia>{{ config('app.name', 'Laravel') }}</title>
 
-        <meta name="description" content="Buy, sell & trade Bitcoin, Ethereum and other cryptocurrencies with InCrypto. Secure crypto exchange platform with advanced trading tools." />
-        <meta name="author" content="InCrypto" />
+        <meta name="description" content="Buy, sell & trade Bitcoin, Ethereum and other cryptocurrencies with {{ config('app.name', 'Laravel') }}. Secure crypto exchange platform with advanced trading tools." />
+        <meta name="author" content="{{ config('app.name', 'Laravel') }}" />
 
-        <meta property="og:title" content="InCrypto - Cryptocurrency Exchange & Trading Platform" />
-        <meta property="og:description" content="Buy, sell & trade Bitcoin, Ethereum and other cryptocurrencies with InCrypto. Secure crypto exchange platform with advanced trading tools." />
+        <meta property="og:title" content="{{ config('app.name', 'Laravel') }} - Cryptocurrency Exchange & Trading Platform" />
+        <meta property="og:description" content="Buy, sell & trade Bitcoin, Ethereum and other cryptocurrencies with {{ config('app.name', 'Laravel') }}. Secure crypto exchange platform with advanced trading tools." />
         <meta property="og:type" content="website" />
         <meta property="og:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
 

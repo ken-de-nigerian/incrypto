@@ -37,12 +37,10 @@ class SocialLoginService
                 ->first();
 
             if (!$user && $email = $socialUser->getEmail()) {
-                $user = User::withTrashed()->where('email', $email)->first();
+                // A user with this email will either exist or not.
+                $user = User::where('email', $email)->first();
 
-                if ($user && $user->trashed()) {
-                    throw new Exception(__('auth.account_deleted'));
-                }
-
+                // If the user exists and has a social provider, check for conflict.
                 if ($user && $user->social_login_provider && $user->social_login_provider !== $provider) {
                     throw new Exception(__('auth.provider_conflict', ['provider' => $user->social_login_provider]));
                 }

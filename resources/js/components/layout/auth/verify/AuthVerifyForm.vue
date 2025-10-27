@@ -5,32 +5,10 @@
     import ActionButton from '@/components/ActionButton.vue';
     import InputError from '@/components/InputError.vue';
     import { useForm } from '@inertiajs/vue3';
+    import { useFlash } from '@/composables/useFlash';
     import { ref, onMounted, onUnmounted, computed } from 'vue';
-    import iziToast from 'izitoast'
-    import 'izitoast/dist/css/iziToast.min.css'
 
-    // Configuration
-    const toastSettings = {
-        timeout: 5000,
-        resetOnHover: true,
-        position: 'topRight',
-        transitionIn: 'flipInX',
-        transitionOut: 'flipOutX'
-    };
-
-    const showError = (message: string) => {
-        iziToast.error({
-            ...toastSettings,
-            message: message
-        });
-    };
-
-    const showSuccess = (message: string) => {
-        iziToast.success({
-            ...toastSettings,
-            message: message
-        });
-    };
+    const { notify } = useFlash();
 
     const form = useForm({
         otp: '',
@@ -151,18 +129,24 @@
                     const now = Date.now();
                     countdown.value = Math.max(0, Math.floor((retryTime - now) / 1000));
                 } else {
-                    // Default to 5 minutes if no retryTime provided
-                    countdown.value = 5 * 60;
+                    // Default to 2 minutes if no retryTime provided
+                    countdown.value = 2 * 60;
                 }
 
                 saveCountdownToStorage(countdown.value);
                 startCountdown();
-                showSuccess(data.message);
+                notify('success', data.message, {
+                    duration: 5000,
+                    title: data.title || 'Success'
+                });
             } else {
-                showError('Failed to resend OTP. Please try again.');
+                notify('error', 'Failed to resend OTP. Please try again.', {
+                    duration: 5000,
+                    title: 'Error'
+                });
             }
         } catch (error) {
-            showError('Resend OTP error:', error);
+            notify('error', error, { duration: 5000 });
         } finally {
             isResending.value = false;
         }

@@ -225,7 +225,7 @@
                 v-model="searchQuery"
                 type="text"
                 class="flex-1 min-w-0 bg-transparent border-0 focus:ring-0 focus:outline-none text-xs text-foreground placeholder:text-muted-foreground ml-2"
-                placeholder="Search Administrative Panel"
+                placeholder="Search"
             />
             <X v-if="searchQuery" class="w-4 h-4 text-muted-foreground cursor-pointer hover:text-foreground flex-shrink-0" @click="clearSearch" />
         </div>

@@ -99,7 +99,8 @@ class VerificationController extends Controller
             return response()->json([
                 'status' => 'success',
                 'message' => __('A new OTP has been sent to your email.'),
-                'retryAfter' => $throttleDelay
+                'title' => 'Success',
+                'retryTime' => now()->addSeconds($throttleDelay)->toIso8601String()
             ]);
         } catch (Exception $e) {
             Log::error('Failed to resend OTP', ['email' => $email, 'error' => $e->getMessage()]);

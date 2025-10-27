@@ -45,7 +45,8 @@ class AdminTransactionController extends Controller
 
     protected function getCryptoSwaps()
     {
-        $cryptos = CryptoSwap::with('user')
+        $cryptos = CryptoSwap::whereHas('user')
+            ->with('user.profile')
             ->select([
                 'id',
                 'user_id',
@@ -79,7 +80,8 @@ class AdminTransactionController extends Controller
 
     protected function getReceivedCryptos()
     {
-        $cryptos = ReceivedCrypto::with('user')
+        $cryptos = ReceivedCrypto::whereHas('user')
+            ->with('user.profile')
             ->select([
                 'id',
                 'user_id',
@@ -109,7 +111,8 @@ class AdminTransactionController extends Controller
 
     protected function getSentCryptos()
     {
-        $cryptos = SendCrypto::with('user')
+        $cryptos = SendCrypto::whereHas('user')
+            ->with('user.profile')
             ->select([
                 'id',
                 'user_id',

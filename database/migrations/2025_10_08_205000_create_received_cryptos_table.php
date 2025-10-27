@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('received_cryptos', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('user_id')->constrained()->onDelete('cascade');
+            $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
             $table->string('token_symbol');
             $table->string('wallet_address');
             $table->decimal('amount', 28, 8)->nullable();

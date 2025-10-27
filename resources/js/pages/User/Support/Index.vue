@@ -5,7 +5,7 @@
     import Breadcrumb from '@/components/Breadcrumb.vue';
     import TextLink from '@/components/TextLink.vue';
     import { computed, ref } from 'vue';
-    import { MessageSquareIcon, MailIcon, MapPinIcon, PhoneIcon, HelpCircleIcon, ExternalLinkIcon, ClockIcon, ZapIcon, ArrowRightIcon, AlertTriangleIcon } from 'lucide-vue-next';
+    import { MapPinIcon, PhoneIcon, ExternalLinkIcon, ClockIcon, ZapIcon, AlertTriangleIcon } from 'lucide-vue-next';
 
     const page = usePage();
     const user = computed(() => page.props.auth?.user ?? null);
@@ -35,39 +35,6 @@
     const breadcrumbItems = [
         { label: 'Dashboard', href: route('user.dashboard') },
         { label: 'Support & Contact' }
-    ];
-
-    const supportChannels = [
-        {
-            icon: MailIcon,
-            title: 'General Support',
-            description: 'For technical issues, account help, and non-urgent inquiries.',
-            actionLabel: 'Email Support',
-            href: '#',
-            color: 'text-primary',
-            bg: 'bg-primary/10',
-            border: 'border-primary/20'
-        },
-        {
-            icon: HelpCircleIcon,
-            title: 'Help Center & FAQs',
-            description: 'Find instant answers, tutorials, and guides in our comprehensive knowledge base.',
-            actionLabel: 'Visit Knowledge Base',
-            href: "#",
-            color: 'text-success',
-            bg: 'bg-success/10',
-            border: 'border-success/20'
-        },
-        {
-            icon: MessageSquareIcon,
-            title: 'Live Chat',
-            description: 'Real-time assistance for urgent, account-specific queries (24/7 coverage).',
-            actionLabel: 'Start Chat',
-            href: '#',
-            color: 'text-accent',
-            bg: 'bg-accent/10',
-            border: 'border-accent/20'
-        },
     ];
 
     const legalContact = [
@@ -109,31 +76,6 @@
 
                             <div class="bg-card rounded-2xl border border-border overflow-hidden p-6 sm:p-8">
                                 <h3 class="text-lg sm:text-xl font-semibold text-card-foreground mb-6 border-b border-border/70 pb-3">
-                                    How Can We Help You?
-                                </h3>
-
-                                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                                    <div v-for="(channel, index) in supportChannels" :key="index"
-                                         :class="['p-4 rounded-xl space-y-3 transition-shadow', channel.bg, channel.border, 'border']">
-
-                                        <component :is="channel.icon" :class="['w-8 h-8', channel.color]" />
-
-                                        <h4 class="text-base font-semibold text-card-foreground">{{ channel.title }}</h4>
-
-                                        <p class="text-xs text-muted-foreground leading-relaxed">{{ channel.description }}</p>
-
-                                        <div class="pt-2">
-                                            <TextLink :href="channel.href" class="inline-flex items-center gap-1 text-sm font-medium text-primary hover:text-primary/80 transition-colors">
-                                                {{ channel.actionLabel }}
-                                                <ArrowRightIcon class="w-3 h-3 ml-1" />
-                                            </TextLink>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="bg-card rounded-2xl border border-border overflow-hidden p-6 sm:p-8">
-                                <h3 class="text-lg sm:text-xl font-semibold text-card-foreground mb-6 border-b border-border/70 pb-3">
                                     Business and Legal Inquiries
                                 </h3>
 
@@ -165,10 +107,6 @@
                                             <span class="font-medium text-card-foreground">24/7</span>
                                         </li>
                                         <li class="flex justify-between items-center">
-                                            <span class="text-muted-foreground">Live Chat:</span>
-                                            <span class="font-medium text-card-foreground">24/7</span>
-                                        </li>
-                                        <li class="flex justify-between items-center">
                                             <span class="text-muted-foreground">Compliance Inquiries:</span>
                                             <span class="font-medium text-card-foreground">Mon-Fri, 9am - 5pm EST</span>
                                         </li>
@@ -181,7 +119,7 @@
                                         Security Reminder
                                     </h5>
                                     <p class="text-xs text-muted-foreground">
-                                        **Never share your private keys, seed phrase, or account password with anyone**, including support staff. We will never ask you for this information.
+                                        Never share your private keys, seed phrase, or account password with anyone, including support staff. We will never ask you for this information.
                                     </p>
                                 </div>
 

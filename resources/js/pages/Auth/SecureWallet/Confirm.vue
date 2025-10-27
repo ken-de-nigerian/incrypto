@@ -248,21 +248,21 @@
                         </div>
 
                         <p class="text-sm text-muted-foreground pt-1">
-                            The information below is **critical** to guarantee your account security and recovery.
+                            The information below is critical to guarantee your account security and recovery.
                         </p>
                     </div>
 
                     <div class="flex flex-col gap-4 text-sm text-muted-foreground py-8">
                         <p>
-                            1. **Save your seed phrase carefully.** Avoid saving them on online storage, mobile phones, or any digital register.
+                            1. Save your seed phrase carefully. Avoid saving them on online storage, mobile phones, or any digital register.
                         </p>
 
                         <p>
-                            2. **Write the 12 words down and keep them safe.** You will only need them to restore your account. **If you lose them, you can't access your account anymore.**
+                            2. Write the 12 words down and keep them safe. You will only need them to restore your account. If you lose them, you can't access your account anymore.
                         </p>
 
                         <p>
-                            3. Your Seed is only for your personal use. We don't save it in our databases. **Don't share this sequence of words with anyone else!**
+                            3. Your Seed is only for your personal use. We don't save it in our databases. Don't share this sequence of words with anyone else!
                         </p>
                     </div>
 

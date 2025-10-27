@@ -35,9 +35,15 @@ class AdminDashboardController extends Controller
                 ->where('role', '!=', 'admin')
                 ->where('status', 'suspended')
                 ->count(),
-            'total_sent' => SendCrypto::query()->count(),
-            'total_received' => ReceivedCrypto::query()->count(),
-            'total_swaps' => CryptoSwap::query()->count(),
+            'total_sent' => SendCrypto::query()
+                ->whereHas('user')
+                ->count(),
+            'total_received' => ReceivedCrypto::query()
+                ->whereHas('user')
+                ->count(),
+            'total_swaps' => CryptoSwap::query()
+                ->whereHas('user')
+                ->count(),
         ];
     }
 
@@ -46,6 +52,7 @@ class AdminDashboardController extends Controller
         $kycActions = KycSubmission::where('status', 'pending')
             ->latest()
             ->limit(3)
+            ->whereHas('user')
             ->with('user:id,first_name,last_name')
             ->get()
             ->map(fn ($action) => [
@@ -59,6 +66,7 @@ class AdminDashboardController extends Controller
         $sentActions = SendCrypto::where('status', 'pending')
             ->latest()
             ->limit(3)
+            ->whereHas('user')
             ->with('user:id,first_name,last_name')
             ->get()
             ->map(fn ($action) => [
@@ -72,6 +80,7 @@ class AdminDashboardController extends Controller
         $receivedActions = ReceivedCrypto::where('status', 'pending')
             ->latest()
             ->limit(3)
+            ->whereHas('user')
             ->with('user:id,first_name,last_name')
             ->get()
             ->map(fn ($action) => [

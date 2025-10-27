@@ -27,7 +27,6 @@ return new class extends Migration
             $table->string('status')->default('active');
             $table->rememberToken();
             $table->timestamps();
-            $table->softDeletes();
 
             // Foreign key constraint for ref_by
             $table->foreign('ref_by')->references('id')->on('users')->onDelete('set null');

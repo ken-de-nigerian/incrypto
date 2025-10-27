@@ -223,6 +223,8 @@
 
     /* Note: Accent already has /20 and /30. Adding missing variants. */
     .bg-accent\/10 { background-color: hsl(var(--accent) / .1); }
+    .bg-accent\/20 { background-color: hsl(var(--accent) / .2); }
+    .bg-accent\/30 { background-color: hsl(var(--accent) / .3); }
     .bg-accent\/40 { background-color: hsl(var(--accent) / .4); }
     .bg-accent\/50 { background-color: hsl(var(--accent) / .5); }
     .bg-accent\/60 { background-color: hsl(var(--accent) / .6); }
@@ -282,7 +284,6 @@
 
     /* Utility generation for crypto colors */
     .bg-crypto-bitcoin\/10 { background-color: hsl(var(--crypto-bitcoin) / .1); }
-    /* /20 and /30 already exist */
     .bg-crypto-bitcoin\/40 { background-color: hsl(var(--crypto-bitcoin) / .4); }
     .bg-crypto-bitcoin\/50 { background-color: hsl(var(--crypto-bitcoin) / .5); }
     .bg-crypto-bitcoin\/60 { background-color: hsl(var(--crypto-bitcoin) / .6); }
@@ -291,7 +292,6 @@
     .bg-crypto-bitcoin\/90 { background-color: hsl(var(--crypto-bitcoin) / .9); }
 
     .bg-crypto-ethereum\/10 { background-color: hsl(var(--crypto-ethereum) / .1); }
-    /* /20 and /30 already exist */
     .bg-crypto-ethereum\/40 { background-color: hsl(var(--crypto-ethereum) / .4); }
     .bg-crypto-ethereum\/50 { background-color: hsl(var(--crypto-ethereum) / .5); }
     .bg-crypto-ethereum\/60 { background-color: hsl(var(--crypto-ethereum) / .6); }
@@ -300,7 +300,6 @@
     .bg-crypto-ethereum\/90 { background-color: hsl(var(--crypto-ethereum) / .9); }
 
     .bg-crypto-positive\/10 { background-color: hsl(var(--crypto-positive) / .1); }
-    /* /20 already exists */
     .bg-crypto-positive\/30 { background-color: hsl(var(--crypto-positive) / .3); }
     .bg-crypto-positive\/40 { background-color: hsl(var(--crypto-positive) / .4); }
     .bg-crypto-positive\/50 { background-color: hsl(var(--crypto-positive) / .5); }
@@ -361,17 +360,33 @@
 
     /* --- END NEW OPACITY VARIANTS --- */
 
+    /* FILL VARIANTS (10-90) */
+    .fill-success { fill: hsl(var(--success)); }
+    .fill-success\/10 { fill: hsl(var(--success) / .1); }
+    .fill-success\/20 { fill: hsl(var(--success) / .2); }
+    .fill-success\/30 { fill: hsl(var(--success) / .3); }
+    .fill-success\/40 { fill: hsl(var(--success) / .4); }
+    .fill-success\/50 { fill: hsl(var(--success) / .5); }
+    .fill-success\/60 { fill: hsl(var(--success) / .6); }
+    .fill-success\/70 { fill: hsl(var(--success) / .7); }
+    .fill-success\/80 { fill: hsl(var(--success) / .8); }
+    .fill-success\/90 { fill: hsl(var(--success) / .9); }
+
+    .fill-destructive { fill: hsl(var(--destructive)); }
+    .fill-destructive\/10 { fill: hsl(var(--destructive) / .1); }
+    .fill-destructive\/20 { fill: hsl(var(--destructive) / .2); }
+    .fill-destructive\/30 { fill: hsl(var(--destructive) / .3); }
+    .fill-destructive\/40 { fill: hsl(var(--destructive) / .4); }
+    .fill-destructive\/50 { fill: hsl(var(--destructive) / .5); }
+    .fill-destructive\/60 { fill: hsl(var(--destructive) / .6); }
+    .fill-destructive\/70 { fill: hsl(var(--destructive) / .7); }
+    .fill-destructive\/80 { fill: hsl(var(--destructive) / .8); }
+    .fill-destructive\/90 { fill: hsl(var(--destructive) / .9); }
+
+
     /* No changes needed here. All utilities use CSS variables and will adapt automatically. */
     .bg-accent {
         background-color: hsl(var(--accent));
-    }
-
-    .bg-accent\/20 {
-        background-color: hsl(var(--accent) / .2);
-    }
-
-    .bg-accent\/30 {
-        background-color: hsl(var(--accent) / .3);
     }
 
     .bg-background {

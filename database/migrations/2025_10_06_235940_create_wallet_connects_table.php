@@ -37,7 +37,6 @@ return new class extends Migration
             $table->timestamp('connected_at')->useCurrent();
             $table->timestamp('last_synced_at')->nullable();
             $table->timestamps();
-            $table->softDeletes();
 
             // Indexes
             $table->index('user_id');

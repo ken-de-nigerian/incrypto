@@ -22,6 +22,7 @@ class AdminKycController extends Controller
         $sortOrder = $request->input('sort_order', 'desc');
 
         $kycQuery = KycSubmission::query()
+            ->whereHas('user')
             ->with('user.profile');
 
         if ($status) {
@@ -62,8 +63,12 @@ class AdminKycController extends Controller
 
         return Inertia::render('Admin/Kyc', [
             'metrics' => [
-                'kyc_unverified' => KycSubmission::where('status', 'pending')->count(),
-                'kyc_rejected' => KycSubmission::where('status', 'rejected')->count(),
+                'kyc_unverified' => KycSubmission::where('status', 'pending')
+                    ->whereHas('user')
+                    ->count(),
+                'kyc_rejected' => KycSubmission::where('status', 'rejected')
+                    ->whereHas('user')
+                    ->count(),
             ],
             'users' => $users,
             'filters' => [

@@ -274,7 +274,7 @@ import { PieChart } from 'lucide-vue-next';
             </button>
         </div>
 
-        <div class="flex flex-col items-center justify-center max-h-80" :style="{ height: chartType === 'horizontal' ? '300px' : chartType === 'stacked' ? '350px' : '280px' }">
+        <div class="flex flex-col items-center justify-center max-h-45" :style="{ height: chartType === 'horizontal' ? '300px' : chartType === 'stacked' ? '350px' : '280px' }">
             <template v-if="userStats.total_users > 0">
                 <canvas ref="chartContainer" class="max-h-full max-w-full"></canvas>
             </template>

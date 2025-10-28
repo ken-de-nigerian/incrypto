@@ -96,12 +96,12 @@
     ];
 
     const quickLinks = [
-        { title: 'Forex Trading', icon: GlobeIcon, description: 'Trade major and exotic currency pairs with leverage.', route: route('user.dashboard') },
-        { title: 'Stock Trading', icon: BarChartIcon, description: 'Invest in global stocks and ETFs.', route: route('user.dashboard') },
-        { title: 'Crypto/Holdings', icon: WalletIcon, description: 'View and manage your crypto and fiat balances.', route: route('user.dashboard')},
-        { title: 'Investments & Staking', icon: PiggyBankIcon, description: 'Explore fixed-term investment plans and earn APY.', route: route('user.dashboard') },
-        { title: 'Copy Trading Network', icon: UsersIcon, description: 'Automatically copy top-performing traders.', route: route('user.dashboard') },
-        { title: 'Trade History', icon: ClockIcon, description: 'Review all past trades and orders.', route: route('user.dashboard') },
+        { title: 'Forex Trading', icon: GlobeIcon, description: 'Trade major and exotic currency pairs with leverage.', route: route('user.trade.forex') },
+        { title: 'Stock Trading', icon: BarChartIcon, description: 'Invest in global stocks and ETFs.', route: route('user.trade.stock') },
+        { title: 'Crypto/Holdings', icon: WalletIcon, description: 'View and manage your crypto and fiat balances.', route: route('user.trade.crypto') },
+        { title: 'Investments & Staking', icon: PiggyBankIcon, description: 'Explore fixed-term investment plans and earn APY.', route: route('user.trade.investment') },
+        { title: 'Copy Trading Network', icon: UsersIcon, description: 'Automatically copy top-performing traders.', route: route('user.trade.network') },
+        { title: 'Trade History', icon: ClockIcon, description: 'Review all past trades and orders.', route: route('user.trade.history') },
     ];
 
     const showAlert = (message: string, type: 'success' | 'error') => {

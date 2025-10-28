@@ -80,6 +80,12 @@ Route::prefix('user')
             ->controller(ManageUserTradeController::class)
             ->group(function () {
                 Route::get('/', 'index')->name('index');
+                Route::get('/forex', 'forex')->name('forex');
+                Route::get('/stock', 'stock')->name('stock');
+                Route::get('/crypto', 'crypto')->name('crypto');
+                Route::get('/investment', 'investment')->name('investment');
+                Route::get('/network', 'network')->name('network');
+                Route::get('/history', 'history')->name('history');
                 Route::post('/fund', 'fundAccount')->name('fund.account');
                 Route::post('/withdraw', 'withdrawAccount')->name('withdraw.account');
             });

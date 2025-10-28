@@ -21,6 +21,7 @@
     import AppLayout from '@/components/layout/user/dashboard/AppLayout.vue';
     import NotificationsModal from '@/components/utilities/NotificationsModal.vue';
     import TextLink from '@/components/TextLink.vue';
+    import QuickActionModal from '@/components/QuickActionModal.vue';
 
     interface Token {
         symbol: string;
@@ -109,7 +110,7 @@
                 value: balance * price,
                 assetType: isFiat ? 'fiat' : 'crypto'
             };
-        }).filter(h => h.balance > 0);
+        });
     });
 
     const cryptoHoldings = computed(() => holdings.value.filter(h => h.assetType === 'crypto'));
@@ -117,12 +118,27 @@
     const isFundingModalOpen = ref(false);
     const fundingAmount = ref<number | null>(1);
     const fundingSourceToken = ref('BTC');
+
+    const fundingSourceBalance = computed(() => holdings.value.find(h => h.symbol === fundingSourceToken.value)?.balance || 0);
     const fundingConversionRate = computed(() => pricesMap.value[fundingSourceToken.value] || 0);
+
+    // Fixed: Calculate total USD value based on amount and rate
+    const estimatedUSDFunds = computed(() => {
+        const amount = parseFloat(fundingAmount.value?.toString() || '0') || 0;
+        return (amount * fundingConversionRate.value).toFixed(2);
+    });
 
     const isWithdrawalModalOpen = ref(false);
     const withdrawalAmountUSD = ref<number | null>(100);
     const withdrawalTargetToken = ref('BTC');
     const fundingTargetTokenRate = computed(() => pricesMap.value[withdrawalTargetToken.value] || 0);
+
+    // Fixed: Calculate crypto amount from USD using conversion rate
+    const estimatedCryptoToReceive = computed(() => {
+        const amountUSD = parseFloat(withdrawalAmountUSD.value?.toString() || '0') || 0;
+        const rate = fundingTargetTokenRate.value;
+        return rate > 0 ? (amountUSD / rate).toFixed(8) : '0.00000000';
+    });
 
     const notificationCount = computed(() => page.props.auth?.notification_count || 0);
     const initials = computed(() => {
@@ -138,18 +154,6 @@
         { label: 'Dashboard', href: route('user.dashboard') },
         { label: 'Trading Hub' }
     ];
-
-    const fundingSourceBalance = computed(() => holdings.value.find(h => h.symbol === fundingSourceToken.value)?.balance || 0);
-    const estimatedUSDFunds = computed(() => {
-        const amount = parseFloat(fundingAmount.value?.toString() || '0') || 0;
-        return (amount * fundingConversionRate.value).toFixed(2);
-    });
-
-    const estimatedCryptoToReceive = computed(() => {
-        const amountUSD = parseFloat(withdrawalAmountUSD.value?.toString() || '0') || 0;
-        const rate = fundingTargetTokenRate.value;
-        return rate > 0 ? (amountUSD / rate).toFixed(8) : '0.00000000';
-    });
 
     const quickLinks = [
         { title: 'Forex Trading', icon: GlobeIcon, description: 'Trade major and exotic currency pairs with leverage.', route: route('user.dashboard') },
@@ -339,7 +343,7 @@
                             <button
                                 v-if="isLiveMode"
                                 @click="isFundingModalOpen = true; fundingError = ''"
-                                class="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-xl text-sm font-semibold transition-colors hover:bg-primary/90"
+                                class="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-xl text-sm font-semibold transition-colors hover:bg-primary/90 cursor-pointer"
                                 :disabled="isOrderProcessing">
                                 <WalletIcon class="w-4 h-4" />
                                 Deposit
@@ -348,7 +352,7 @@
                             <button
                                 v-if="isLiveMode"
                                 @click="openWithdrawalModal"
-                                class="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-background border border-border text-card-foreground rounded-xl text-sm font-semibold transition-colors hover:bg-muted"
+                                class="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-background border border-border text-card-foreground rounded-xl text-sm font-semibold transition-colors hover:bg-muted cursor-pointer"
                                 :disabled="isOrderProcessing">
                                 <DollarSignIcon class="w-4 h-4" />
                                 Withdraw
@@ -357,11 +361,11 @@
                             <div v-if="!isLiveMode" class="flex-1 md:flex-none h-10 w-full"></div>
                         </div>
 
-                        <div class="relative inline-flex rounded-xl p-1 shadow-inner w-full sm:w-auto" :class="isLiveMode ? 'bg-primary/20' : 'bg-muted/50'">
+                        <div class="relative inline-flex rounded-xl p-1 shadow-inner w-full sm:w-auto bg-primary/20">
                             <button
                                 @click="updateTradingMode('live')"
                                 :disabled="isOrderProcessing"
-                                :class="['flex-1 sm:flex-none px-3 py-1.5 text-sm font-semibold rounded-lg transition-colors flex items-center justify-center gap-1', isLiveMode ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-muted/70', isOrderProcessing ? 'opacity-70 cursor-wait' : '']">
+                                :class="['flex-1 sm:flex-none px-3 py-1.5 text-sm font-semibold rounded-lg transition-colors flex items-center justify-center gap-1 cursor-pointer', isLiveMode ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-muted/70', isOrderProcessing ? 'opacity-70' : '']">
                                 <ZapIcon class="w-4 h-4" />
                                 Live
                             </button>
@@ -369,7 +373,7 @@
                             <button
                                 @click="updateTradingMode('demo')"
                                 :disabled="isOrderProcessing"
-                                :class="['flex-1 sm:flex-none px-3 py-1.5 text-sm font-semibold rounded-lg transition-colors flex items-center justify-center gap-1', !isLiveMode ? 'bg-background text-card-foreground' : 'text-muted-foreground hover:bg-muted/70', isOrderProcessing ? 'opacity-70 cursor-wait' : '']">
+                                :class="['flex-1 sm:flex-none px-3 py-1.5 text-sm font-semibold rounded-lg transition-colors flex items-center justify-center gap-1 cursor-pointer', !isLiveMode ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-muted/70', isOrderProcessing ? 'opacity-70' : '']">
                                 <DollarSignIcon class="w-4 h-4" />
                                 Demo
                             </button>
@@ -377,7 +381,7 @@
                     </div>
                 </div>
 
-                <div>
+                <div class="margin-bottom">
                     <h2 class="text-xl sm:text-2xl font-bold text-card-foreground mb-4">Quick Trade Navigation</h2>
                     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
                         <TextLink
@@ -397,164 +401,176 @@
             </div>
         </div>
 
-        <Teleport to="body">
-            <div v-if="isFundingModalOpen" class="fixed inset-0 z-50 flex items-center justify-center p-0 sm:p-4 bg-black/50 backdrop-blur-sm" @click.self="isFundingModalOpen = false">
-                <div class="w-full h-full sm:h-auto sm:max-w-md bg-card border border-border rounded-none sm:rounded-2xl overflow-y-auto">
-                    <div class="p-4 border-b border-border flex items-center justify-between flex-shrink-0">
-                        <h3 class="text-lg font-bold text-card-foreground">Fund Live Trading Account</h3>
-                        <button @click="isFundingModalOpen = false" class="p-2 hover:bg-muted rounded-lg">
-                            <XIcon class="w-5 h-5 text-muted-foreground" />
-                        </button>
-                    </div>
+        <QuickActionModal
+            :is-open="isFundingModalOpen"
+            title="Fund Live Trading Account"
+            subtitle="Convert your crypto holdings into USD to boost your live trading balance"
+            @close="isFundingModalOpen = false">
 
-                    <div class="p-6 space-y-4">
-                        <div v-if="fundingError" class="p-3 rounded-lg bg-red-100 border border-red-400 text-red-700 text-sm font-semibold flex items-center gap-2">
-                            <XIcon class="w-4 h-4" />
-                            {{ fundingError }}
-                        </div>
+            <div class="space-y-4">
 
-                        <div class="bg-muted/30 p-3 rounded-lg space-y-2">
-                            <p class="text-sm font-semibold text-card-foreground flex items-center gap-2">
-                                <BriefcaseIcon class="w-4 h-4 text-primary" />
-                                Current Live Portfolio Value: <span class="text-primary">${{ liveBalance.toLocaleString('en-US', { minimumFractionDigits: 2 }) }}</span>
-                            </p>
-                            <p class="text-xs text-muted-foreground">
-                                Increase your margin by **converting your available crypto holdings** instantly into USD fiat for live trading.
-                            </p>
-                        </div>
+                <div v-if="fundingError" class="p-3 rounded-lg bg-red-100 border border-red-400 text-red-700 text-sm font-semibold flex items-center gap-2">
+                    <XIcon class="w-4 h-4" />
+                    {{ fundingError }}
+                </div>
 
-                        <div class="space-y-2">
-                            <h4 class="text-sm font-semibold text-card-foreground">1. Select Source Crypto to Convert:</h4>
-                            <div class="flex gap-3 overflow-x-auto pb-2 -mx-6 px-6">
-                                <button
-                                    v-for="holding in cryptoHoldings"
-                                    :key="holding.symbol"
-                                    @click="selectFundingToken(holding.symbol)"
-                                    :class="['flex-shrink-0 p-3 rounded-lg text-xs border transition-all', fundingSourceToken === holding.symbol ? 'bg-primary border-primary text-primary-foreground' : 'bg-background border-border text-muted-foreground hover:bg-muted/50']">
-                                    {{ holding.symbol }} ({{ holding.balance.toFixed(4) }})
-                                </button>
-                            </div>
-                        </div>
+                <div class="bg-muted/30 p-3 rounded-lg space-y-2">
+                    <p class="text-sm font-semibold text-card-foreground flex items-center gap-2">
+                        <BriefcaseIcon class="w-4 h-4 text-primary" />
+                        Current Live Portfolio Value: <span class="text-primary">${{ liveBalance.toLocaleString('en-US', { minimumFractionDigits: 2 }) }}</span>
+                    </p>
+                </div>
 
-                        <div class="space-y-2">
-                            <h4 class="text-sm font-semibold text-card-foreground">2. Amount to Convert:</h4>
-                            <div class="relative">
-                                <input
-                                    v-model.number.lazy="fundingAmount" type="number"
-                                    step="any"
-                                    min="0.00000001"
-                                    :max="fundingSourceBalance"
-                                    placeholder="Amount"
-                                    class="w-full p-3 pr-20 bg-muted/50 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-primary transition-all"
-                                    :class="{ 'border-destructive ring-destructive': fundingError }"
-                                    @change="validateFunding" />
-                                <span class="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">{{ fundingSourceToken }}</span>
-                            </div>
-                            <div class="flex justify-between items-center text-xs text-muted-foreground bg-muted/50 p-2 rounded-lg">
-                                <span>Balance: {{ fundingSourceBalance.toFixed(4) }} {{ fundingSourceToken }}</span>
-                                <span>Rate: 1 {{ fundingSourceToken }} = ${{ fundingConversionRate.toLocaleString() }} USD</span>
-                            </div>
-                        </div>
-
-                        <div class="flex items-center justify-between p-3 bg-primary/20 border border-primary/50 rounded-lg">
-                            <div class="text-sm font-medium text-card-foreground flex items-center gap-2">
-                                <RefreshCcwIcon class="w-4 h-4 text-primary" />
-                                Estimated USD Funds:
-                            </div>
-                            <span class="text-lg font-bold text-primary">${{ estimatedUSDFunds }}</span>
-                        </div>
-
+                <div class="space-y-2">
+                    <h4 class="text-sm font-semibold text-card-foreground">Select Source Crypto:</h4>
+                    <div class="flex gap-3 overflow-x-auto pb-2">
                         <button
-                            :disabled="!isWalletConnected || isOrderProcessing || !validateFunding()"
-                            @click="performFunding"
-                            :class="['w-full py-3 font-bold rounded-lg transition-opacity text-sm flex items-center justify-center gap-2', !isWalletConnected || isOrderProcessing || !validateFunding() ? 'bg-muted text-muted-foreground cursor-not-allowed' : 'bg-primary hover:opacity-90 text-primary-foreground']">
-                            <Loader2Icon v-if="isOrderProcessing" class="w-4 h-4 animate-spin" />
-                            <span>{{ isOrderProcessing ? 'Converting...' : `Convert ${fundingSourceToken} & Fund Live Account` }}</span>
+                            v-for="holding in cryptoHoldings"
+                            :key="holding.symbol"
+                            @click="selectFundingToken(holding.symbol)"
+                            :class="['flex-shrink-0 px-4 py-2 rounded-lg text-xs border transition-all flex items-center gap-2 cursor-pointer', fundingSourceToken === holding.symbol ? 'bg-primary border-primary text-primary-foreground' : 'bg-background border-border text-muted-foreground hover:bg-muted/50']">
+                            <img
+                                :src="holding.logo"
+                                loading="lazy"
+                                :alt="holding.symbol"
+                                class="h-6 w-6 object-contain flex-shrink-0"
+                                onerror="this.src='https://cdn.jsdelivr.net/gh/atomiclabs/cryptocurrency-icons@1a63530be6e374711a8554f31b17e4cb92c25fa5/128/color/generic.png'"
+                            />
+                            <div class="text-left">
+                                <div class="text-xs font-medium">{{ holding.symbol }}</div>
+                                <div class="text-xs opacity-75">{{ holding.balance.toLocaleString('en-US', { minimumFractionDigits: 4, maximumFractionDigits: 8 }) }}</div>
+                            </div>
                         </button>
                     </div>
                 </div>
-            </div>
-        </Teleport>
 
-        <Teleport to="body">
-            <div v-if="isWithdrawalModalOpen" class="fixed inset-0 z-50 flex items-center justify-center p-0 sm:p-4 bg-black/50 backdrop-blur-sm" @click.self="isWithdrawalModalOpen = false">
-                <div class="w-full h-full sm:h-auto sm:max-w-md bg-card border border-border rounded-none sm:rounded-2xl overflow-y-auto">
-                    <div class="p-4 border-b border-border flex items-center justify-between flex-shrink-0">
-                        <h3 class="text-lg font-bold text-card-foreground">Withdraw / Convert to Crypto</h3>
-                        <button @click="isWithdrawalModalOpen = false" class="p-2 hover:bg-muted rounded-lg">
-                            <XIcon class="w-5 h-5 text-muted-foreground" />
-                        </button>
+                <div class="space-y-2">
+                    <h4 class="text-sm font-semibold text-card-foreground">Amount to Convert:</h4>
+                    <div class="relative">
+                        <input
+                            v-model.number.lazy="fundingAmount"
+                            type="number"
+                            step="any"
+                            min="0.00000001"
+                            :max="fundingSourceBalance"
+                            placeholder="Amount"
+                            class="w-full p-3 pr-20 bg-muted/50 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-primary transition-all"
+                            :class="{ 'border-destructive ring-destructive': fundingError }"
+                            @change="validateFunding" />
+                        <span class="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">{{ fundingSourceToken }}</span>
                     </div>
-
-                    <div class="p-6 space-y-4">
-                        <div v-if="withdrawalError" class="p-3 rounded-lg bg-red-100 border border-red-400 text-red-700 text-sm font-semibold flex items-center gap-2">
-                            <XIcon class="w-4 h-4" />
-                            {{ withdrawalError }}
-                        </div>
-
-                        <div class="bg-primary/20 p-3 rounded-lg space-y-2">
-                            <p class="text-sm font-semibold text-card-foreground flex items-center gap-2">
-                                <BriefcaseIcon class="w-4 h-4 text-primary" />
-                                Available USD Value: <span class="text-primary">${{ liveBalance.toLocaleString('en-US', { minimumFractionDigits: 2 }) }}</span>
-                            </p>
-                            <p class="text-xs text-muted-foreground">
-                                Convert your available USD value into your preferred crypto holding.
-                            </p>
-                        </div>
-
-                        <div class="space-y-2">
-                            <h4 class="text-sm font-semibold text-card-foreground">1. Amount of USD to Convert:</h4>
-                            <div class="relative">
-                                <input
-                                    v-model.number.lazy="withdrawalAmountUSD" type="number"
-                                    step="any"
-                                    min="0.01"
-                                    :max="liveBalance"
-                                    placeholder="Amount in USD"
-                                    class="w-full p-3 pr-20 bg-muted/50 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-primary transition-all"
-                                    :class="{ 'border-destructive ring-destructive': withdrawalError }"
-                                    @change="validateWithdrawal" />
-                                <span class="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">USD</span>
-                            </div>
-                            <button @click="withdrawalAmountUSD = liveBalance; validateWithdrawal();" class="text-xs font-medium text-primary hover:underline">Use Max ($ {{ liveBalance.toFixed(2) }})</button>
-                        </div>
-
-                        <div class="space-y-2">
-                            <h4 class="text-sm font-semibold text-card-foreground">2. Select Target Crypto:</h4>
-                            <div class="flex gap-3 overflow-x-auto pb-2 -mx-6 px-6">
-                                <button
-                                    v-for="holding in cryptoHoldings"
-                                    :key="holding.symbol"
-                                    @click="selectWithdrawalToken(holding.symbol)"
-                                    :class="['flex-shrink-0 p-3 rounded-lg text-xs border transition-all', withdrawalTargetToken === holding.symbol ? 'bg-primary border-primary text-primary-foreground' : 'bg-background border-border text-muted-foreground hover:bg-muted/50']">
-                                    {{ withdrawalTargetToken === holding.symbol ? 'Selected' : holding.symbol }}
-                                </button>
-                            </div>
-                            <div class="flex justify-between items-center text-xs text-muted-foreground bg-muted/50 p-2 rounded-lg">
-                                <span>Current {{ withdrawalTargetToken }} Balance: {{ holdings.find(h => h.symbol === withdrawalTargetToken)?.balance.toFixed(4) || '0.0000' }}</span>
-                                <span>Rate: 1 {{ withdrawalTargetToken }} = ${{ fundingTargetTokenRate.toLocaleString() }} USD</span>
-                            </div>
-                        </div>
-
-                        <div class="flex items-center justify-between p-3 bg-secondary border border-border rounded-lg">
-                            <div class="text-sm font-medium text-card-foreground flex items-center gap-2">
-                                <ArrowUpRightIcon class="w-4 h-4 text-primary" />
-                                Estimated {{ withdrawalTargetToken }} to Receive:
-                            </div>
-                            <span class="text-lg font-bold text-primary">{{ estimatedCryptoToReceive }} {{ withdrawalTargetToken }}</span>
-                        </div>
-
-                        <button
-                            :disabled="!isWalletConnected || isOrderProcessing || !validateWithdrawal()"
-                            @click="performWithdrawal"
-                            :class="['w-full py-3 font-bold rounded-lg transition-opacity text-sm flex items-center justify-center gap-2', !isWalletConnected || isOrderProcessing || !validateWithdrawal() ? 'bg-muted text-muted-foreground cursor-not-allowed' : 'bg-primary hover:opacity-90 text-primary-foreground']">
-                            <Loader2Icon v-if="isOrderProcessing" class="w-4 h-4 animate-spin" />
-                            <span>{{ isOrderProcessing ? 'Processing Conversion...' : `Convert to ${withdrawalTargetToken} & Withdraw` }}</span>
-                        </button>
+                    <div class="flex justify-between items-center text-xs text-muted-foreground bg-muted/50 p-2 rounded-lg">
+                        <span>Balance: {{ fundingSourceBalance.toLocaleString('en-US', { minimumFractionDigits: 4, maximumFractionDigits: 8 }) }} {{ fundingSourceToken }}</span>
+                        <button @click="fundingAmount = fundingSourceBalance; validateFunding();" class="text-primary font-medium hover:underline cursor-pointer">Use Max</button>
                     </div>
                 </div>
+
+                <div class="flex items-center justify-between p-3 bg-primary/20 border border-primary/50 rounded-lg">
+                    <div class="text-sm font-medium text-card-foreground flex items-center gap-2">
+                        <RefreshCcwIcon class="w-4 h-4 text-primary" />
+                        Estimated USD Funds:
+                    </div>
+                    <span class="text-lg font-bold text-primary">${{ estimatedUSDFunds }}</span>
+                </div>
+
+                <button
+                    :disabled="!isWalletConnected || isOrderProcessing || !validateFunding()"
+                    @click="performFunding"
+                    :class="['w-full py-3 font-bold rounded-lg transition-opacity text-sm flex items-center justify-center gap-2 cursor-pointer', !isWalletConnected || isOrderProcessing || !validateFunding() ? 'bg-muted text-muted-foreground cursor-not-allowed' : 'bg-primary hover:opacity-90 text-primary-foreground']">
+                    <Loader2Icon v-if="isOrderProcessing" class="w-4 h-4 animate-spin" />
+                    <span>{{ isOrderProcessing ? 'Converting...' : `Convert ${fundingSourceToken} & Fund Live Account` }}</span>
+                </button>
+
             </div>
-        </Teleport>
+
+        </QuickActionModal>
+
+        <QuickActionModal
+            :is-open="isWithdrawalModalOpen"
+            title="Withdraw / Convert to Crypto"
+            subtitle="Convert your USD trading balance back into your preferred cryptocurrency"
+            @close="isWithdrawalModalOpen = false">
+
+            <div class="space-y-4">
+
+                <div v-if="withdrawalError" class="p-3 rounded-lg bg-red-100 border border-red-400 text-red-700 text-sm font-semibold flex items-center gap-2">
+                    <XIcon class="w-4 h-4" />
+                    {{ withdrawalError }}
+                </div>
+
+                <div class="bg-primary/20 p-3 rounded-lg space-y-2">
+                    <p class="text-sm font-semibold text-card-foreground flex items-center gap-2">
+                        <BriefcaseIcon class="w-4 h-4 text-primary" />
+                        Available USD Value: <span class="text-primary">${{ liveBalance.toLocaleString('en-US', { minimumFractionDigits: 2 }) }}</span>
+                    </p>
+                </div>
+
+                <div class="space-y-2">
+                    <h4 class="text-sm font-semibold text-card-foreground">Amount of USD to Convert:</h4>
+                    <div class="relative">
+                        <input
+                            v-model.number.lazy="withdrawalAmountUSD"
+                            type="number"
+                            step="any"
+                            min="0.01"
+                            :max="liveBalance"
+                            placeholder="Amount in USD"
+                            class="w-full p-3 pr-20 bg-muted/50 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-primary transition-all"
+                            :class="{ 'border-destructive ring-destructive': withdrawalError }"
+                            @change="validateWithdrawal" />
+                        <span class="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">USD</span>
+                    </div>
+                    <div class="flex justify-between items-center text-xs text-muted-foreground bg-muted/50 p-2 rounded-lg">
+                        <span>Available: ${{ liveBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}</span>
+                        <button @click="withdrawalAmountUSD = liveBalance; validateWithdrawal();" class="text-primary font-medium hover:underline cursor-pointer">Use Max</button>
+                    </div>
+                </div>
+
+                <div class="space-y-2">
+                    <h4 class="text-sm font-semibold text-card-foreground">Select Target Crypto:</h4>
+                    <div class="flex gap-3 overflow-x-auto pb-2">
+                        <button
+                            v-for="holding in cryptoHoldings"
+                            :key="holding.symbol"
+                            @click="selectWithdrawalToken(holding.symbol)"
+                            :class="['flex-shrink-0 px-4 py-2 rounded-lg text-xs border transition-all flex items-center gap-2 cursor-pointer', withdrawalTargetToken === holding.symbol ? 'bg-primary border-primary text-primary-foreground' : 'bg-background border-border text-muted-foreground hover:bg-muted/50']">
+                            <img
+                                :src="holding.logo"
+                                loading="lazy"
+                                :alt="holding.symbol"
+                                class="h-6 w-6 object-contain flex-shrink-0"
+                                onerror="this.src='https://cdn.jsdelivr.net/gh/atomiclabs/cryptocurrency-icons@1a63530be6e374711a8554f31b17e4cb92c25fa5/128/color/generic.png'"
+                            />
+                            <div class="text-left">
+                                <div class="text-xs font-medium">{{ withdrawalTargetToken === holding.symbol ? 'Selected' : holding.symbol }}</div>
+                            </div>
+                        </button>
+                    </div>
+                    <div class="flex justify-between items-center text-xs text-muted-foreground bg-muted/50 p-2 rounded-lg">
+                        <span>Current {{ withdrawalTargetToken }} Balance: {{ holdings.find(h => h.symbol === withdrawalTargetToken)?.balance.toLocaleString('en-US', { minimumFractionDigits: 4, maximumFractionDigits: 8 }) || '0.0000' }}</span>
+                        <span>Rate: 1 {{ withdrawalTargetToken }} = ${{ fundingTargetTokenRate.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}</span>
+                    </div>
+                </div>
+
+                <div class="flex items-center justify-between p-3 bg-secondary border border-border rounded-lg">
+                    <div class="text-sm font-medium text-card-foreground flex items-center gap-2">
+                        <ArrowUpRightIcon class="w-4 h-4 text-primary" />
+                        Estimated {{ withdrawalTargetToken }} to Receive:
+                    </div>
+                    <span class="text-lg font-bold text-primary">{{ estimatedCryptoToReceive }} {{ withdrawalTargetToken }}</span>
+                </div>
+
+                <button
+                    :disabled="!isWalletConnected || isOrderProcessing || !validateWithdrawal()"
+                    @click="performWithdrawal"
+                    :class="['w-full py-3 font-bold rounded-lg transition-opacity text-sm flex items-center justify-center gap-2 cursor-pointer', !isWalletConnected || isOrderProcessing || !validateWithdrawal() ? 'bg-muted text-muted-foreground cursor-not-allowed' : 'bg-primary hover:opacity-90 text-primary-foreground']">
+                    <Loader2Icon v-if="isOrderProcessing" class="w-4 h-4 animate-spin" />
+                    <span>{{ isOrderProcessing ? 'Processing Conversion...' : `Convert to ${withdrawalTargetToken} & Withdraw` }}</span>
+                </button>
+
+            </div>
+
+        </QuickActionModal>
 
         <NotificationsModal
             :is-open="isNotificationsModalOpen"
@@ -604,5 +620,11 @@
     select:focus-visible {
         outline: 2px solid hsl(var(--primary));
         outline-offset: 2px;
+    }
+
+    @media (max-width: 640px) {
+        .margin-bottom {
+            margin-bottom: 50px;
+        }
     }
 </style>

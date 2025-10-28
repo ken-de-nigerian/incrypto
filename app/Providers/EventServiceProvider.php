@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use App\Events\AccountDeleted;
+use App\Events\AccountFunded;
 use App\Events\BalanceAdjusted;
 use App\Events\CryptoReceived;
 use App\Events\CryptoSent;
@@ -30,6 +31,7 @@ use App\Listeners\SendReferralNotification;
 use App\Listeners\SendUserWalletNotification;
 use App\Listeners\SendWalletStatusUpdatedNotification;
 use App\Listeners\SendWelcomeEmailNotification;
+use App\Mail\AccountFundedConfirmation;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Support\ServiceProvider;
 
@@ -78,5 +80,8 @@ class EventServiceProvider extends ServiceProvider
         EmailNotificationDispatchedEvent::class => [
             EmailNotificationListener::class,
         ],
+        AccountFunded::class => [
+            AccountFundedConfirmation::class,
+        ]
     ];
 }

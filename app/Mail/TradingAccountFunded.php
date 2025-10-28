@@ -9,7 +9,7 @@ use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
 
-class AccountFundedConfirmation extends Mailable
+class TradingAccountFunded extends Mailable
 {
     use Queueable, SerializesModels;
 
@@ -35,7 +35,7 @@ class AccountFundedConfirmation extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'Account Funded Confirmation - ' . config('app.name'),
+            subject: 'Your trading account deposit confirmation',
         );
     }
 
@@ -47,7 +47,7 @@ class AccountFundedConfirmation extends Mailable
         return new Content(
             view: 'emails.account-funded-confirmation',
             with: [
-                'user' => $this->userProfile,
+                'user' => $this->userProfile->user,
                 'from_token' => $this->fromToken,
                 'from_amount' => $this->fromAmount,
                 'to_amount' => $this->toAmount,

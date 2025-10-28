@@ -5,7 +5,7 @@
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
         <meta http-equiv="X-UA-Compatible" content="IE=edge">
-        <title>Account deposit confirmation - {{ config('app.name') }}</title>
+        <title>Withdrawal confirmation - {{ config('app.name') }}</title>
         <style>
             body {
                 margin: 0;
@@ -62,8 +62,8 @@
             }
             .badge {
                 display: inline-block;
-                background-color: #dcfce7;
-                color: #166534;
+                background-color: #fef3c7;
+                color: #92400e;
                 padding: 8px 20px;
                 border-radius: 9999px;
                 font-size: 14px;
@@ -285,22 +285,31 @@
                             <a href="{{ config('app.url') }}" title="{{ config('app.name') }}">
                                 <img src="{{ asset('assets/images/logo.png') }}" alt="{{ config('app.name') }} Logo" class="logo-img">
                             </a>
-                            <div class="badge">Deposit Confirmed</div>
+                            <div class="badge">Withdrawal Confirmed</div>
                         </div>
 
                         <div class="content">
-                            <h1 class="greeting">Your deposit has been processed</h1>
-                            <p class="subtitle">Hello {{ $user->first_name }}, your account deposit has been successfully processed. {{ $to_amount }} USD from your cryptocurrency is now available in your account.</p>
+                            <h1 class="greeting">Your withdrawal has been processed</h1>
+                            <p class="subtitle">Hello {{ $user->first_name }}, your withdrawal request has been completed. ${{ $from_amount }} has been converted to {{ $to_amount }} {{ strtoupper($to_token) }}.</p>
 
                             <div class="details-card">
                                 <table class="details-table" role="presentation">
+                                    <tr>
+                                        <td class="label-cell">
+                                            <img src="https://img.icons8.com/material-rounded/24/475569/banknotes.png" alt="" class="icon">
+                                            <span class="label">USD Amount</span>
+                                        </td>
+                                        <td>
+                                            <span class="value">${{ $from_amount }}</span>
+                                        </td>
+                                    </tr>
                                     <tr>
                                         <td class="label-cell">
                                             <img src="https://img.icons8.com/material-rounded/24/475569/bitcoin.png" alt="" class="icon">
                                             <span class="label">Cryptocurrency</span>
                                         </td>
                                         <td>
-                                            <span class="value">{{ $from_token }}</span>
+                                            <span class="value">{{ strtoupper($to_token) }}</span>
                                         </td>
                                     </tr>
                                     <tr>
@@ -309,16 +318,7 @@
                                             <span class="label">Crypto Amount</span>
                                         </td>
                                         <td>
-                                            <span class="value">{{ $from_amount }}</span>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td class="label-cell">
-                                            <img src="https://img.icons8.com/material-rounded/24/475569/banknotes.png" alt="" class="icon">
-                                            <span class="label">USD Amount</span>
-                                        </td>
-                                        <td>
-                                            <span class="value">{{ $to_amount }} USD</span>
+                                            <span class="value">{{ $to_amount }}</span>
                                         </td>
                                     </tr>
                                     <tr>
@@ -339,8 +339,8 @@
                                     What's Next?
                                 </h3>
                                 <ul>
-                                    <li>Your account balance has been updated and is available for use.</li>
-                                    <li>Log in to your account to view your updated balance and account details.</li>
+                                    <li>Your account balance has been updated to reflect this withdrawal.</li>
+                                    <li>The {{ strtoupper($to_token) }} will arrive in your wallet shortly.</li>
                                     <li>For your security, we notify you of all account transactions.</li>
                                 </ul>
                             </div>

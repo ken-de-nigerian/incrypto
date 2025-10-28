@@ -2,7 +2,6 @@
     import { usePage } from '@inertiajs/vue3';
     import {
         LayoutDashboard,
-        Wallet,
         LifeBuoy,
         Bell,
         UserIcon,
@@ -10,7 +9,7 @@
         LogOut,
         Send,
         Download,
-        Repeat, Users
+        Repeat, Users, TrendingUp
     } from 'lucide-vue-next';
     import { route } from 'ziggy-js';
     import TextLink from '@/components/TextLink.vue';
@@ -29,12 +28,12 @@
         { name: "Send", href: "user.send.index", icon: Send },
         { name: "Receive", href: "user.receive.index", icon: Download },
         { name: "Swap", href: "user.swap.index", icon: Repeat },
-        { name: "Wallet Connect", href: "user.wallet.index", icon: Wallet },
+        { name: "Trading", href: "user.trade.index", icon: TrendingUp },
         { name: "Referrals", href: "user.rewards.index", icon: Users },
     ];
 
     const bottomNavigation = [
-        { name: "KYC Verification", href: "user.kyc.index", icon: LifeBuoy },
+        { name: "KYC", href: "user.kyc.index", icon: LifeBuoy },
         { name: "Settings", href: "user.profile.index", icon: Settings },
     ];
 

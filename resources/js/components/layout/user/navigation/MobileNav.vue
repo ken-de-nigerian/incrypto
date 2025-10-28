@@ -1,5 +1,5 @@
 <script setup lang="ts">
-    import { Home, User2, Send, Download, Wallet } from 'lucide-vue-next';
+import { Home, User2, Send, Download, TrendingUp } from 'lucide-vue-next';
     import { route } from 'ziggy-js';
     import TextLink from '@/components/TextLink.vue';
     import { computed } from 'vue';
@@ -7,8 +7,8 @@
     const navigation = [
         { name: 'Home', href: 'user.dashboard', icon: Home, group: 'user.dashboard', isDefault: true },
         { name: "Send", href: "user.send.index", icon: Send, group: 'user.send.' },
+        { name: "Trading", href: "user.trade.index", icon: TrendingUp, group: 'user.trade.' },
         { name: "Receive", href: "user.receive.index", icon: Download, group: 'user.receive.' },
-        { name: 'Wallets', href: 'user.wallet.index', icon: Wallet, group: 'user.wallet.' },
         { name: 'Account', href: 'user.profile.index', icon: User2, group: 'user.profile.' }
     ];
 

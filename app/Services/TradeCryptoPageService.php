@@ -2,7 +2,8 @@
 
 namespace App\Services;
 
-use App\Events\AccountFunded;
+use App\Events\TradingAccountDebited;
+use App\Events\TradingAccountFunded;
 use App\Http\Resources\TokenResource;
 use App\Models\User;
 use Exception;
@@ -43,8 +44,6 @@ class TradeCryptoPageService
             'tokens' => $tokens->resolve(),
             'userBalances' => (object) $userBalances,
             'prices' => (object) $this->marketDataService->getPrices(),
-            'portfolioChange24h' => $this->calculatePortfolioChange($userBalances, $marketData),
-            'popularTokens' => $this->marketDataService->getPopularTokens(6),
         ];
     }
 
@@ -70,7 +69,7 @@ class TradeCryptoPageService
             throw new Exception('Insufficient balance to perform this swap.');
         }
 
-        $userProfile = DB::transaction(function () use ($user, $walletService, $fromToken, $fromAmount, $toAmount, $validatedData) {
+        $userProfile = DB::transaction(function () use ($user, $walletService, $fromToken, $fromAmount, $toAmount) {
             $walletService->debit($fromToken, $fromAmount);
             $walletService->save();
 
@@ -80,29 +79,39 @@ class TradeCryptoPageService
         });
 
         // Dispatch the event with the new transaction data
-        event(new AccountFunded($userProfile, $fromToken, $fromAmount, $toAmount));
+        event(new TradingAccountFunded($userProfile, $fromToken, $fromAmount, $toAmount));
 
         return $userProfile;
     }
 
-    private function calculatePortfolioChange(array $userBalances, array $marketDataBySymbol): float
+    /**
+     * @throws Throwable
+     */
+    public function executeAccountFundWithdrawal(User $user, array $validatedData)
     {
-        $currentValue = 0;
-        $previousValue = 0;
+        $toToken = strtoupper($validatedData['target_symbol']);
+        $fromAmount = (float) $validatedData['usd_amount'];
+        $toAmount = (float) $validatedData['estimated_crypto'];
+        $baseFromToken = $this->marketDataService->getBaseSymbol($toToken);
 
-        foreach ($userBalances as $symbol => $balance) {
-            $baseSymbol = $this->marketDataService->getBaseSymbol($symbol);
-            $coin = $marketDataBySymbol[$baseSymbol] ?? [];
-            $currentPrice = $coin['current_price'] ?? 0;
-            $priceChange = $coin['price_change_percentage_24h'] ?? 0;
-
-            if ($currentPrice > 0) {
-                $currentValue += $balance * $currentPrice;
-                $previousPrice = $currentPrice / (1 + ($priceChange / 100));
-                $previousValue += $balance * $previousPrice;
-            }
+        if (!$this->marketDataService->isValidToken($baseFromToken)) {
+            throw new Exception('Invalid token provided.');
         }
 
-        return $previousValue > 0 ? (($currentValue - $previousValue) / $previousValue) * 100 : 0;
+        $walletService = new WalletService($user, $this->gatewayHandler);
+
+        $userProfile = DB::transaction(function () use ($user, $walletService, $toToken, $fromAmount, $toAmount) {
+            $walletService->credit($toToken, $toAmount);
+            $walletService->save();
+
+            $user->profile->decrement('live_trading_balance', $fromAmount);
+
+            return $user->profile;
+        });
+
+        // Dispatch the event with the new transaction data
+        event(new TradingAccountDebited($userProfile, $toToken, $fromAmount, $toAmount));
+
+        return $userProfile;
     }
 }

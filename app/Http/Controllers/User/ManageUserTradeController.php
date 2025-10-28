@@ -4,6 +4,7 @@ namespace App\Http\Controllers\User;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\FundAccountRequest;
+use App\Http\Requests\WithdrawAccountRequest;
 use App\Services\TradeCryptoPageService;
 use App\Services\WalletService;
 use Exception;
@@ -41,59 +42,34 @@ class ManageUserTradeController extends Controller
     public function fundAccount(FundAccountRequest $request)
     {
         try {
-
             $this->tradeCrypto->executeAccountFund(
                 Auth::user(),
                 $request->validated()
             );
 
-            return back()->with('success', 'Your account has been successfully funded.');
-
+            return $this->notify('success', 'Your account has been successfully funded.')->toBack();
         } catch (Exception $e) {
-            return back()->withErrors([$e->getMessage()]);
+            return $this->notify('error', __($e->getMessage()))->toBack();
         }
     }
 
-//    /**
-//     * Handle withdrawal (USD to Crypto conversion).
-//     * @param \Illuminate\Http\Request $request
-//     * @return \Illuminate\Http\RedirectResponse
-//     */
-//    public function withdrawAccount(Request $request)
-//    {
-//        dd($request->all());
-//        $user = Auth::user();
-//
-//        $request->validate([
-//            'target_symbol' => ['required', 'string', 'max:10'],
-//            'usd_amount' => ['required', 'numeric', 'min:0.01', 'max:' . $user->profile->live_trading_balance], // Check against current balance
-//        ]);
-//
-//        // --- Core Business Logic (Simplified Placeholder) ---
-//        try {
-//            // 1. Get current price for conversion
-//            $conversionRate = app(TradeCryptoPageService::class)->marketDataService->getPrice($request->target_symbol);
-//            if ($conversionRate <= 0) {
-//                return back()->withErrors(['target_symbol' => 'Invalid or zero-priced token for withdrawal.']);
-//            }
-//            $cryptoAmount = $request->usd_amount / $conversionRate;
-//
-//            // 2. Perform balance check and updates
-//            // Deduct $request->usd_amount from user's live_trading_balance (checked in validation)
-//
-//            // 3. Update balances
-//            $user->profile->decrement('live_trading_balance', $request->usd_amount);
-//
-//            // Add $cryptoAmount to user's crypto balance (target_symbol)
-//            // NOTE: You would need a method in your WalletService to handle balance incrementing
-//            // Example: app(WalletService::class)->creditBalance($user, $request->target_symbol, $cryptoAmount);
-//
-//
-//            return back()->with('success', "Converted \${$request->usd_amount} USD to {$cryptoAmount} {$request->target_symbol}.");
-//
-//        } catch (Exception $e) {
-//            // Log the error
-//            return back()->withErrors(['error' => 'Withdrawal failed: ' . $e->getMessage()]);
-//        }
-//    }
+    /**
+     * Handle withdrawal (USD to Crypto conversion).
+     * @throws Throwable
+     */
+    public function withdrawAccount(WithdrawAccountRequest $request)
+    {
+        $validated = $request->validated();
+
+        try {
+            $this->tradeCrypto->executeAccountFundWithdrawal(
+                Auth::user(),
+                $validated
+            );
+
+            return $this->notify('success', "Converted \$" . $validated['usd_amount'] . " USD to " . $validated['estimated_crypto'] . " " . $validated['target_symbol'])->toBack();
+        } catch (Exception $e) {
+            return $this->notify('error', __($e->getMessage()))->toBack();
+        }
+    }
 }

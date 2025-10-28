@@ -24,7 +24,7 @@
         Send,
         Settings,
         Shield,
-        Sun,
+        Sun, TrendingUp,
         Users,
         Wallet,
         X
@@ -85,6 +85,7 @@
         { name: "Security", href: "user.profile.index", params: { tab: 'security' }, icon: Shield, description: "Password & 2FA" },
     ];
 
+    const tradeLink = { name: "Trading", href: "user.trade.index", icon: TrendingUp, description: "Trade currency pairs" };
     const walletLink = { name: "Payment Methods", icon: CreditCard, description: "Manage wallet visibility" };
 
     const supportLinks = [
@@ -460,6 +461,24 @@
                                             <component :is="item.icon" class="w-4 h-4 xs:w-5 xs:h-5 text-primary" />
                                         </div>
                                         <span class="text-[10px] xs:text-xs font-medium text-center leading-tight">{{ item.name }}</span>
+                                    </TextLink>
+                                </div>
+                            </div>
+
+                            <div>
+                                <h3 class="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 xs:mb-3 px-1">Trading Hub</h3>
+                                <div class="space-y-0.5 xs:space-y-1">
+                                    <TextLink
+                                        :href="route(tradeLink.href)"
+                                        class="flex items-center gap-2.5 xs:gap-3 p-2.5 xs:p-3 rounded-lg xs:rounded-xl hover:bg-secondary/70 active:bg-secondary/90 transition-all group">
+                                        <div class="w-8 h-8 xs:w-10 xs:h-10 rounded-lg bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 flex-shrink-0">
+                                            <component :is="tradeLink.icon" class="w-4 h-4 xs:w-5 xs:h-5 text-primary" />
+                                        </div>
+                                        <div class="flex-1 min-w-0">
+                                            <p class="font-medium text-xs xs:text-sm">{{ tradeLink.name }}</p>
+                                            <p class="text-[10px] xs:text-xs text-muted-foreground truncate">{{ tradeLink.description }}</p>
+                                        </div>
+                                        <ChevronRight class="w-3.5 h-3.5 xs:w-4 xs:h-4 text-muted-foreground/50 group-hover:text-muted-foreground flex-shrink-0" />
                                     </TextLink>
                                 </div>
                             </div>

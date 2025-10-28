@@ -3,7 +3,8 @@
 namespace App\Providers;
 
 use App\Events\AccountDeleted;
-use App\Events\AccountFunded;
+use App\Events\TradingAccountDebited;
+use App\Events\TradingAccountFunded;
 use App\Events\BalanceAdjusted;
 use App\Events\CryptoReceived;
 use App\Events\CryptoSent;
@@ -24,6 +25,8 @@ use App\Listeners\SendAdminWalletNotification;
 use App\Listeners\SendBalanceAdjustedNotification;
 use App\Listeners\SendCryptoReceivedNotifications;
 use App\Listeners\SendCryptoSentNotifications;
+use App\Listeners\SendDebitedSuccessfulNotification;
+use App\Listeners\SendFundedSuccessfulNotification;
 use App\Listeners\SendKycConfirmationToUser;
 use App\Listeners\SendPasswordChangeNotification;
 use App\Listeners\SendPasswordResetConfirmation;
@@ -31,7 +34,6 @@ use App\Listeners\SendReferralNotification;
 use App\Listeners\SendUserWalletNotification;
 use App\Listeners\SendWalletStatusUpdatedNotification;
 use App\Listeners\SendWelcomeEmailNotification;
-use App\Mail\AccountFundedConfirmation;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Support\ServiceProvider;
 
@@ -71,6 +73,12 @@ class EventServiceProvider extends ServiceProvider
         BalanceAdjusted::class => [
             SendBalanceAdjustedNotification::class,
         ],
+        TradingAccountFunded::class => [
+            SendFundedSuccessfulNotification::class,
+        ],
+        TradingAccountDebited::class => [
+            SendDebitedSuccessfulNotification::class,
+        ],
         DatabaseAndEmailNotificationDispatchedEvent::class => [
             DatabaseAndEmailNotificationListener::class,
         ],
@@ -80,8 +88,5 @@ class EventServiceProvider extends ServiceProvider
         EmailNotificationDispatchedEvent::class => [
             EmailNotificationListener::class,
         ],
-        AccountFunded::class => [
-            AccountFundedConfirmation::class,
-        ]
     ];
 }

@@ -6,7 +6,7 @@ use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\Auth;
 
-class FundAccountRequest extends FormRequest
+class WithdrawAccountRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -24,9 +24,9 @@ class FundAccountRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'source_symbol' => ['required', 'string', 'max:10'],
-            'source_amount' => ['required', 'numeric', 'min:0.00000001', 'regex:/^\d+(\.\d{1,8})?$/'],
-            'estimated_funds' => ['required', 'numeric', 'min:1'],
+            'target_symbol' => ['required', 'string', 'max:10'],
+            'usd_amount' => ['required', 'numeric', 'min:0.01', 'max:' . auth()->user()->profile->live_trading_balance, 'regex:/^\d+(\.\d{1,2})?$/'],
+            'estimated_crypto' => ['required', 'numeric', 'min:0.00000001'],
         ];
     }
 }

@@ -1,5 +1,4 @@
 <script setup lang="ts">
-    import { defineProps } from 'vue';
     import { Users, Circle, Eye } from 'lucide-vue-next';
     import TextLink from '@/components/TextLink.vue';
 

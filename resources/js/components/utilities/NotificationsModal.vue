@@ -1,5 +1,5 @@
 <script setup lang="ts">
-    import { computed, defineProps, watch } from 'vue';
+    import { computed, watch } from 'vue';
     import { router, usePage } from '@inertiajs/vue3';
     import { formatDistanceToNow } from 'date-fns';
     import { Bell, CheckCircle, XCircle, X } from 'lucide-vue-next';

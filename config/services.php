@@ -76,4 +76,10 @@ return [
     'coinpaprika' => [
         'url' => env('COINPAPRIK_API_URL', 'https://api.coinpaprika.com'),
     ],
+    'twelvedata' => [
+        'key' => env('TWELVEDATA_API_KEY'),
+    ],
+    'polygon' => [
+        'key' => env('POLYGON_API_KEY'),
+    ],
 ];

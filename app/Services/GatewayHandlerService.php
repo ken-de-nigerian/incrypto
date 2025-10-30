@@ -20,6 +20,7 @@ class GatewayHandlerService
         'WALLET_DATA' => 43200,    // 12 hours
         'CHART_DATA' => 300,       // 5 minutes
         'CRYPTOS_LIST' => 3600,    // 1 hour
+        'FOREX_PAIRS' => 120,     // 2 minutes
     ];
 
     /**
@@ -69,6 +70,266 @@ class GatewayHandlerService
             'coinmarketcap' => 'ETH',
         ],
     ];
+
+    /**
+     * Fetch Forex pairs with smart batching to respect Polygon rate limits
+     */
+    public function fetchForexPairs(): array
+    {
+        $cacheKey = 'forex_pairs_complete_data';
+        $ttl = self::CACHE_TTL['FOREX_PAIRS'];
+
+        return Cache::remember($cacheKey, $ttl, function () use ($ttl) {
+            $allPairs = $this->getAllPairs();
+            $existingData = Cache::get('forex_pairs_stored_data', []);
+
+            // Use rotation to determine which batch to update this cycle
+            $rotationIndex = Cache::get('forex_rotation_index', 0);
+            $batchSize = 5; // Polygon allows 5 requests per minute
+
+            // Calculate which pairs to update in this cycle
+            $totalBatches = ceil(count($allPairs) / $batchSize);
+            $currentBatchIndex = $rotationIndex % $totalBatches;
+
+            // Get the pairs for this batch
+            $startIndex = $currentBatchIndex * $batchSize;
+            $pairsBatch = array_slice($allPairs, $startIndex, $batchSize);
+
+            // Fetch live data for this batch
+            $liveBatchData = $this->fetchPairsBatchFromPolygon($pairsBatch);
+
+            // Merge with existing data
+            $updatedData = $this->mergeForexData($existingData, $liveBatchData, $allPairs);
+
+            // Store the complete dataset for next time (longer TTL than cache)
+            Cache::put('forex_pairs_stored_data', $updatedData, $ttl + 3600);
+
+            // Update rotation for next cycle
+            $nextIndex = ($rotationIndex + 1);
+            Cache::put('forex_rotation_index', $nextIndex, 86400);
+
+            Log::info("Forex data rotation updated", [
+                'batch' => $currentBatchIndex + 1 . '/' . $totalBatches,
+                'pairs_updated' => count($liveBatchData),
+                'total_pairs' => count($updatedData),
+                'next_batch' => ($nextIndex % $totalBatches) + 1
+            ]);
+
+            return $updatedData;
+        });
+    }
+
+    /**
+     * Get all available forex pairs
+     */
+    private function getAllPairs(): array
+    {
+        return [
+            ['symbol' => 'EUR/USD', 'polygon' => 'C:EURUSD', 'name' => 'Euro vs US Dollar'],
+            ['symbol' => 'GBP/USD', 'polygon' => 'C:GBPUSD', 'name' => 'British Pound vs US Dollar'],
+            ['symbol' => 'USD/JPY', 'polygon' => 'C:USDJPY', 'name' => 'US Dollar vs Japanese Yen'],
+            ['symbol' => 'USD/CHF', 'polygon' => 'C:USDCHF', 'name' => 'US Dollar vs Swiss Franc'],
+            ['symbol' => 'AUD/USD', 'polygon' => 'C:AUDUSD', 'name' => 'Australian Dollar vs US Dollar'],
+            ['symbol' => 'USD/CAD', 'polygon' => 'C:USDCAD', 'name' => 'US Dollar vs Canadian Dollar'],
+            ['symbol' => 'NZD/USD', 'polygon' => 'C:NZDUSD', 'name' => 'New Zealand Dollar vs US Dollar'],
+            ['symbol' => 'EUR/GBP', 'polygon' => 'C:EURGBP', 'name' => 'Euro vs British Pound'],
+            ['symbol' => 'EUR/JPY', 'polygon' => 'C:EURJPY', 'name' => 'Euro vs Japanese Yen'],
+            ['symbol' => 'GBP/JPY', 'polygon' => 'C:GBPJPY', 'name' => 'British Pound vs Japanese Yen'],
+            ['symbol' => 'EUR/CHF', 'polygon' => 'C:EURCHF', 'name' => 'Euro vs Swiss Franc'],
+            ['symbol' => 'GBP/CHF', 'polygon' => 'C:GBPCHF', 'name' => 'British Pound vs Swiss Franc'],
+            ['symbol' => 'AUD/JPY', 'polygon' => 'C:AUDJPY', 'name' => 'Australian Dollar vs Japanese Yen'],
+            ['symbol' => 'CAD/JPY', 'polygon' => 'C:CADJPY', 'name' => 'Canadian Dollar vs Japanese Yen'],
+            ['symbol' => 'CHF/JPY', 'polygon' => 'C:CHFJPY', 'name' => 'Swiss Franc vs Japanese Yen'],
+            ['symbol' => 'NZD/JPY', 'polygon' => 'C:NZDJPY', 'name' => 'New Zealand Dollar vs Japanese Yen'],
+            ['symbol' => 'EUR/AUD', 'polygon' => 'C:EURAUD', 'name' => 'Euro vs Australian Dollar'],
+            ['symbol' => 'EUR/CAD', 'polygon' => 'C:EURCAD', 'name' => 'Euro vs Canadian Dollar'],
+            ['symbol' => 'EUR/NZD', 'polygon' => 'C:EURNZD', 'name' => 'Euro vs New Zealand Dollar'],
+            ['symbol' => 'GBP/AUD', 'polygon' => 'C:GBPAUD', 'name' => 'British Pound vs Australian Dollar'],
+            ['symbol' => 'GBP/CAD', 'polygon' => 'C:GBPCAD', 'name' => 'British Pound vs Canadian Dollar'],
+            ['symbol' => 'AUD/CAD', 'polygon' => 'C:AUDCAD', 'name' => 'Australian Dollar vs Canadian Dollar'],
+            ['symbol' => 'AUD/NZD', 'polygon' => 'C:AUDNZD', 'name' => 'Australian Dollar vs New Zealand Dollar'],
+            ['symbol' => 'CAD/CHF', 'polygon' => 'C:CADCHF', 'name' => 'Canadian Dollar vs Swiss Franc'],
+            ['symbol' => 'NZD/CAD', 'polygon' => 'C:NZDCAD', 'name' => 'New Zealand Dollar vs Canadian Dollar'],
+            ['symbol' => 'USD/SGD', 'polygon' => 'C:USDSGD', 'name' => 'US Dollar vs Singapore Dollar'],
+            ['symbol' => 'USD/HKD', 'polygon' => 'C:USDHKD', 'name' => 'US Dollar vs Hong Kong Dollar'],
+            ['symbol' => 'USD/DKK', 'polygon' => 'C:USDDKK', 'name' => 'US Dollar vs Danish Krone'],
+            ['symbol' => 'USD/NOK', 'polygon' => 'C:USDNOK', 'name' => 'US Dollar vs Norwegian Krone'],
+            ['symbol' => 'USD/SEK', 'polygon' => 'C:USDSEK', 'name' => 'US Dollar vs Swedish Krona'],
+            ['symbol' => 'USD/ZAR', 'polygon' => 'C:USDZAR', 'name' => 'US Dollar vs South African Rand'],
+            ['symbol' => 'USD/TRY', 'polygon' => 'C:USDTRY', 'name' => 'US Dollar vs Turkish Lira'],
+            ['symbol' => 'USD/MXN', 'polygon' => 'C:USDMXN', 'name' => 'US Dollar vs Mexican Peso'],
+            ['symbol' => 'USD/PLN', 'polygon' => 'C:USDPLN', 'name' => 'US Dollar vs Polish Zloty'],
+            ['symbol' => 'USD/HUF', 'polygon' => 'C:USDHUF', 'name' => 'US Dollar vs Hungarian Forint'],
+            ['symbol' => 'USD/CZK', 'polygon' => 'C:USDCZK', 'name' => 'US Dollar vs Czech Koruna'],
+            ['symbol' => 'USD/RUB', 'polygon' => 'C:USDRUB', 'name' => 'US Dollar vs Russian Ruble'],
+            ['symbol' => 'USD/CNH', 'polygon' => 'C:USDCNH', 'name' => 'US Dollar vs Chinese Yuan'],
+            ['symbol' => 'USD/INR', 'polygon' => 'C:USDINR', 'name' => 'US Dollar vs Indian Rupee'],
+            ['symbol' => 'USD/BRL', 'polygon' => 'C:USDBRL', 'name' => 'US Dollar vs Brazilian Real'],
+            ['symbol' => 'USD/KRW', 'polygon' => 'C:USDKRW', 'name' => 'US Dollar vs South Korean Won'],
+            ['symbol' => 'USD/THB', 'polygon' => 'C:USDTHB', 'name' => 'US Dollar vs Thai Baht'],
+            ['symbol' => 'USD/MYR', 'polygon' => 'C:USDMYR', 'name' => 'US Dollar vs Malaysian Ringgit'],
+            ['symbol' => 'USD/IDR', 'polygon' => 'C:USDIDR', 'name' => 'US Dollar vs Indonesian Rupiah'],
+            ['symbol' => 'USD/ARS', 'polygon' => 'C:USDARS', 'name' => 'US Dollar vs Argentine Peso'],
+            ['symbol' => 'USD/CLP', 'polygon' => 'C:USDCLP', 'name' => 'US Dollar vs Chilean Peso'],
+            ['symbol' => 'USD/COP', 'polygon' => 'C:USDCOP', 'name' => 'US Dollar vs Colombian Peso'],
+            ['symbol' => 'USD/PEN', 'polygon' => 'C:USDPEN', 'name' => 'US Dollar vs Peruvian Sol'],
+        ];
+    }
+
+    /**
+     * Merge existing forex data with new batch data
+     */
+    private function mergeForexData(array $existingData, array $newData, array $allPairs): array
+    {
+        // Create a map of existing data by symbol for easy merging
+        $existingMap = [];
+        foreach ($existingData as $item) {
+            $existingMap[$item['symbol']] = $item;
+        }
+
+        // Update with new data
+        foreach ($newData as $item) {
+            $existingMap[$item['symbol']] = $item;
+        }
+
+        // Ensure we have all pairs, even if some are missing data
+        $result = [];
+        foreach ($allPairs as $pair) {
+            $symbol = $pair['symbol'];
+            if (isset($existingMap[$symbol])) {
+                $result[] = $existingMap[$symbol];
+            } else {
+                // Fallback data for pairs not yet fetched
+                $result[] = [
+                    'symbol' => $pair['symbol'],
+                    'name' => $pair['name'],
+                    'price' => '0.00000',
+                    'change' => '0.00',
+                    'high' => '0.00000',
+                    'low' => '0.00000',
+                    'volume' => '0',
+                    'stale' => true, // Mark as stale data
+                    'updated_at' => now()->subDays()->toISOString(),
+                ];
+            }
+        }
+
+        return $result;
+    }
+
+    /**
+     * Fetch specific batch of pairs from Polygon
+     */
+    private function fetchPairsBatchFromPolygon(array $pairsBatch): array
+    {
+        $apiKey = config('services.polygon.key');
+        if (!$apiKey) {
+            Log::warning('Polygon API key not configured');
+            return [];
+        }
+
+        $forexData = [];
+        $successfulRequests = 0;
+
+        foreach ($pairsBatch as $pairData) {
+            // Stop if we're approaching rate limits (5 requests per minute)
+            if ($successfulRequests >= 5) {
+                Log::warning('Approaching Polygon rate limit, stopping batch');
+                break;
+            }
+
+            try {
+                $url = "https://api.polygon.io/v2/aggs/ticker/{$pairData['polygon']}/prev";
+
+                $response = Http::timeout(10)->get($url, [
+                    'adjusted' => 'true',
+                    'apiKey' => $apiKey
+                ]);
+
+                if ($response->status() === 429) {
+                    Log::warning("Rate limited on Polygon.io - stopping batch");
+                    break;
+                }
+
+                if (!$response->successful()) {
+                    Log::warning("Failed to fetch {$pairData['symbol']} from Polygon", [
+                        'status' => $response->status()
+                    ]);
+                    continue;
+                }
+
+                $data = $response->json();
+                if (($data['status'] ?? '') !== 'OK' || empty($data['results'])) {
+                    Log::warning("No data for {$pairData['symbol']} from Polygon");
+                    continue;
+                }
+
+                $result = $data['results'][0];
+                $open = $result['o'] ?? 0;
+                $close = $result['c'] ?? 0;
+                $high = $result['h'] ?? 0;
+                $low = $result['l'] ?? 0;
+
+                $change = $open > 0 ? (($close - $open) / $open) * 100 : 0;
+
+                $forexData[] = [
+                    'symbol' => $pairData['symbol'],
+                    'name' => $pairData['name'],
+                    'price' => (string) round($close, 5),
+                    'change' => (string) round($change, 2),
+                    'high' => (string) round($high, 5),
+                    'low' => (string) round($low, 5),
+                    'volume' => (string) round($result['v'] ?? 0),
+                    'updated_at' => now()->toISOString(),
+                ];
+
+                $successfulRequests++;
+
+                // Be nice to the API - wait 1 second between requests to stay within limits
+                if ($successfulRequests < count($pairsBatch)) {
+                    sleep(1);
+                }
+
+            } catch (Throwable $e) {
+                Log::warning("Error fetching {$pairData['symbol']} from Polygon", [
+                    'error' => $e->getMessage()
+                ]);
+                continue;
+            }
+        }
+
+        Log::info("Fetched forex batch from Polygon", [
+            'requested' => count($pairsBatch),
+            'successful' => count($forexData),
+            'failed' => count($pairsBatch) - count($forexData)
+        ]);
+
+        return $forexData;
+    }
+
+    /**
+     * Get current forex update progress (optional helper method)
+     */
+    public function getForexUpdateProgress(): array
+    {
+        $allPairs = $this->getAllPairs();
+        $rotationIndex = Cache::get('forex_rotation_index', 0);
+        $batchSize = 5;
+        $totalBatches = ceil(count($allPairs) / $batchSize);
+        $currentBatch = $rotationIndex % $totalBatches;
+        $updatedPairs = $currentBatch * $batchSize;
+
+        return [
+            'total_pairs' => count($allPairs),
+            'updated_pairs' => min($updatedPairs, count($allPairs)),
+            'batch_size' => $batchSize,
+            'total_batches' => $totalBatches,
+            'current_batch' => $currentBatch + 1,
+            'progress_percentage' => round(($updatedPairs / count($allPairs)) * 100, 1),
+            'next_batch' => (($currentBatch + 1) % $totalBatches) + 1,
+            'next_update_in' => '2 minutes',
+        ];
+    }
 
     /**
      * Gets market prices via CoinGecko API without pagination and caches results.
@@ -168,7 +429,7 @@ class GatewayHandlerService
             // Get cryptos data
             $cryptos = $this->getCryptos();
 
-            // Create a map of coingecko_id => crypto data for quick lookup
+            // Create a map of coingecko_id => crypto data for a quick lookup
             $cryptoMap = collect($cryptos)
                 ->keyBy('id')
                 ->all();

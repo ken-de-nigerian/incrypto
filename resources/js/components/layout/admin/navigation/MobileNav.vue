@@ -21,7 +21,6 @@
         });
     });
 
-
     const isActive = (item: typeof navigation[0]) => {
         let active: boolean;
         if (item.group) {

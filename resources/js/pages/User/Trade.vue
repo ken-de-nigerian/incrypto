@@ -5,7 +5,6 @@
         ChevronDownIcon,
         DollarSignIcon,
         UsersIcon,
-        XIcon,
         WalletIcon,
         PiggyBankIcon,
         BarChartIcon,
@@ -50,7 +49,6 @@
     const isNotificationsModalOpen = ref(false);
     const isFundingModalOpen = ref(false);
     const isWithdrawalModalOpen = ref(false);
-    const globalAlert = ref<{ message: string; type: 'success' | 'error' | ''; show: boolean }>({ message: '', type: '', show: false });
 
     const page = usePage();
     const user = computed(() => page.props.auth?.user);
@@ -104,16 +102,8 @@
         { title: 'Trade History', icon: ClockIcon, description: 'Review all past trades and orders.', route: route('user.trade.history') },
     ];
 
-    const showAlert = (message: string, type: 'success' | 'error') => {
-        globalAlert.value = { message, type, show: true };
-        setTimeout(() => {
-            globalAlert.value = { message: '', type: '', show: false };
-        }, 5000);
-    };
-
     const handleFundingClick = () => {
         if (!isLiveMode.value) {
-            showAlert("You must be in Live Trading mode to fund the account.", 'error');
             return;
         }
         isFundingModalOpen.value = true;
@@ -121,7 +111,6 @@
 
     const handleWithdrawalClick = () => {
         if (!isLiveMode.value) {
-            showAlert("Withdrawal is only available in Live Trading mode.", 'error');
             return;
         }
         isWithdrawalModalOpen.value = true;
@@ -133,7 +122,7 @@
 </script>
 
 <template>
-    <Head title="Trading Hub Dashboard" />
+    <Head title="Trading Hub" />
 
     <AppLayout>
         <div class="lg:ml-64 pt-5 lg:pt-10 p-4 sm:p-6 lg:p-8 pb-24 lg:pb-8">
@@ -144,15 +133,6 @@
                 :initials="initials"
                 @open-notifications="isNotificationsModalOpen = true"
             />
-
-            <Transition name="fade" mode="out-in">
-                <div v-if="globalAlert.show" :class="['fixed top-4 right-4 z-50 p-4 rounded-lg text-sm font-semibold shadow-lg max-w-sm flex items-center gap-2', globalAlert.type === 'success' ? 'bg-green-100 border border-green-400 text-green-700' : 'bg-red-100 border border-red-400 text-red-700']">
-                    <span>{{ globalAlert.message }}</span>
-                    <button @click="globalAlert.show = false" class="ml-auto p-1 hover:bg-black/10 rounded">
-                        <XIcon class="w-4 h-4" />
-                    </button>
-                </div>
-            </Transition>
 
             <div class="grid grid-cols-1 gap-6 mt-6">
                 <!-- Trading Balance Card -->
@@ -174,7 +154,7 @@
                             <button
                                 v-if="isLiveMode"
                                 @click="handleFundingClick"
-                                class="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-xl text-sm font-semibold transition-colors hover:bg-primary/90 cursor-pointer">
+                                class="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-background border border-border text-card-foreground rounded-xl text-sm font-semibold transition-colors hover:bg-muted cursor-pointer">
                                 <WalletIcon class="w-4 h-4" />
                                 Deposit
                             </button>
@@ -193,7 +173,6 @@
                             :live-balance="liveBalance"
                             :demo-balance="demoBalance"
                             @update:is-live-mode="isLiveMode = $event"
-                            @show-alert="showAlert"
                         />
                     </div>
                 </div>
@@ -226,7 +205,7 @@
             :crypto-holdings="cryptoHoldings"
             :prices-map="pricesMap"
             @close="isFundingModalOpen = false"
-            @show-alert="showAlert" />
+        />
 
         <WithdrawalModal
             :is-open="isWithdrawalModalOpen"
@@ -234,7 +213,7 @@
             :crypto-holdings="cryptoHoldings"
             :prices-map="pricesMap"
             @close="isWithdrawalModalOpen = false"
-            @show-alert="showAlert" />
+        />
 
         <NotificationsModal
             :is-open="isNotificationsModalOpen"

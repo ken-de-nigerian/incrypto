@@ -1,5 +1,4 @@
 <script setup lang="ts">
-    import { defineProps } from 'vue';
     import type { Icon as LucideIcon } from 'lucide-vue-next';
 
     interface AdminStat {

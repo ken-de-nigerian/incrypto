@@ -13,7 +13,6 @@
     interface Emits {
         (e: 'update:isLiveMode', value: boolean): void;
         (e: 'mode-changed', mode: 'live' | 'demo'): void;
-        (e: 'show-alert', message: string, type: 'success' | 'error'): void;
     }
 
     const props = withDefaults(defineProps<Props>(), {
@@ -34,12 +33,10 @@
             onSuccess: () => {
                 emit('update:isLiveMode', mode === 'live');
                 emit('mode-changed', mode);
-                emit('show-alert', `Successfully switched to ${mode === 'live' ? 'Live Trading' : 'Demo Mode'}.`, 'success');
                 isProcessing.value = false;
             },
             onError: (errors) => {
                 console.error("Failed to change trading mode:", errors);
-                emit('show-alert', errors?.status || "Failed to change trading mode.", 'error');
                 isProcessing.value = false;
             }
         });

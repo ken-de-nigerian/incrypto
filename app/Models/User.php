@@ -113,6 +113,11 @@ class User extends Authenticatable
         return $this->hasMany(SendCrypto::class);
     }
 
+    public function trades()
+    {
+        return $this->hasMany(Trade::class);
+    }
+
     public function referralLink(): string
     {
         $referralCode = optional($this->profile)->referral_code ?? '';

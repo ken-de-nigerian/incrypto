@@ -13,7 +13,6 @@
 
     interface Emits {
         (e: 'close'): void;
-        (e: 'show-alert', message: string, type: 'success' | 'error'): void;
     }
 
     const props = defineProps<Props>();
@@ -73,12 +72,10 @@
             preserveState: false,
             onSuccess: () => {
                 isOrderProcessing.value = false;
-                emit('show-alert', `Successfully funded ${amountUSD} USD to your live trading account.`, 'success');
                 handleClose();
             },
             onError: (errors) => {
                 fundingError.value = Object.values(errors)[0] || 'An unexpected error occurred.';
-                emit('show-alert', fundingError.value, 'error');
                 isOrderProcessing.value = false;
             }
         });

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-    import { defineProps, ref } from 'vue';
+    import { ref } from 'vue';
     import { useForm } from '@inertiajs/vue3';
     import { route } from 'ziggy-js';
     import ActionButton from '@/components/ActionButton.vue';

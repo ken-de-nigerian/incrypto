@@ -564,7 +564,7 @@
                     <!-- Right Sidebar - Available Pairs -->
                     <div class="space-y-6">
                         <!-- Forex Pairs List -->
-                        <div class="bg-card border border-border rounded-2xl overflow-hidden">
+                        <div class="bg-card border border-border rounded-2xl overflow-hidden margin-bottom">
                             <div class="bg-muted/30 px-6 py-4 border-b border-border">
                                 <div class="flex items-center justify-between mb-3">
                                     <div class="flex items-center gap-3">
@@ -626,7 +626,7 @@
                                 </div>
                             </div>
 
-                            <div ref="scrollContainer" @scroll="handleScroll" class="p-4 max-h-96 overflow-y-auto custom-scrollbar space-y-2">
+                            <div ref="scrollContainer" @scroll="handleScroll" class="p-4 max-h-[500px] overflow-y-auto custom-scrollbar space-y-2">
                                 <div v-if="displayedPairs.length === 0" class="text-center py-6 text-muted-foreground text-xs">
                                     No pairs found
                                 </div>

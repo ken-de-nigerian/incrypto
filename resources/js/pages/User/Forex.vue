@@ -3,7 +3,6 @@
     import { Head, usePage } from '@inertiajs/vue3';
     import {
         DollarSignIcon,
-        XIcon,
         WalletIcon,
         TrendingUp,
         ZapIcon,
@@ -13,7 +12,6 @@
         SortDescIcon,
         ArrowUpDownIcon,
         Loader2Icon,
-        AlertCircleIcon
     } from 'lucide-vue-next';
     import Breadcrumb from '@/components/Breadcrumb.vue';
     import AppLayout from '@/components/layout/user/dashboard/AppLayout.vue';
@@ -21,6 +19,7 @@
     import TradingModeSwitcher from '@/components/TradingModeSwitcher.vue';
     import FundingModal from '@/components/FundingModal.vue';
     import WithdrawalModal from '@/components/WithdrawalModal.vue';
+    import TradeModal from '@/components/TradeModal.vue';
 
     interface Token {
         symbol: string;
@@ -56,17 +55,6 @@
         volume: string;
     }
 
-    interface TradeModal {
-        isOpen: boolean;
-        type: 'Buy' | 'Sell' | null;
-        pair: string;
-        price: string;
-        change: string;
-        high: string;
-        low: string;
-        volume: string;
-    }
-
     interface TradingStatItem {
         icon: any;
         label: string;
@@ -95,11 +83,15 @@
     const isNotificationsModalOpen = ref(false);
     const isFundingModalOpen = ref(false);
     const isWithdrawalModalOpen = ref(false);
-    const globalAlert = ref<{ message: string; type: 'success' | 'error' | ''; show: boolean }>({ message: '', type: '', show: false });
+    const globalAlert = ref<{ message: string; type: 'success' | 'error' | ''; show: boolean }>({
+        message: '',
+        type: '',
+        show: false
+    });
 
-    const tradeModal = ref<TradeModal>({
-        isOpen: false,
-        type: null,
+    const isTradeModalOpen = ref(false);
+    const tradeModalData = ref({
+        type: null as 'Buy' | 'Sell' | null,
         pair: '',
         price: '',
         change: '',
@@ -107,16 +99,6 @@
         low: '',
         volume: ''
     });
-
-    const tradeFormData = ref({
-        amount: 0,
-        leverage: 50,
-        stopLoss: 0,
-        takeProfit: 0
-    });
-
-    const tradeError = ref('');
-    const isExecutingTrade = ref(false);
 
     const page = usePage();
     const user = computed(() => page.props.auth?.user);
@@ -313,13 +295,12 @@
         isWithdrawalModalOpen.value = true;
     };
 
-    watch([isFundingModalOpen, isWithdrawalModalOpen, () => tradeModal.value.isOpen], ([fundingOpen, withdrawalOpen, tradeOpen]) => {
+    watch([isFundingModalOpen, isWithdrawalModalOpen, isTradeModalOpen], ([fundingOpen, withdrawalOpen, tradeOpen]) => {
         document.body.style.overflow = fundingOpen || withdrawalOpen || tradeOpen ? 'hidden' : '';
     });
 
     const openTradeModal = (pairData: ForexPair, type: 'Buy' | 'Sell') => {
-        tradeModal.value = {
-            isOpen: true,
+        tradeModalData.value = {
             type,
             pair: pairData.symbol,
             price: pairData.price,
@@ -328,40 +309,15 @@
             low: pairData.low,
             volume: pairData.volume
         };
-        tradeFormData.value = {
-            amount: 0,
-            leverage: 50,
-            stopLoss: 0,
-            takeProfit: 0
-        };
-        tradeError.value = '';
+        isTradeModalOpen.value = true;
     };
 
     const closeTradeModal = () => {
-        tradeModal.value.isOpen = false;
-        tradeError.value = '';
+        isTradeModalOpen.value = false;
     };
 
-    const executeTrade = async () => {
-        if (!tradeFormData.value.amount) {
-            tradeError.value = 'Please enter a valid amount';
-            return;
-        }
-        if (tradeFormData.value.amount > availableMargin.value) {
-            tradeError.value = 'Insufficient margin available';
-            return;
-        }
-
-        isExecutingTrade.value = true;
-        try {
-            await new Promise(resolve => setTimeout(resolve, 1500));
-            showAlert(`${tradeModal.value.type} order on ${tradeModal.value.pair} executed successfully!`, 'success');
-            closeTradeModal();
-        } catch (error) {
-            tradeError.value = error;
-        } finally {
-            isExecutingTrade.value = false;
-        }
+    const handleTradeExecute = (tradeData: any) => {
+        showAlert(`${tradeData.type} order on ${tradeData.pair} executed successfully!`, 'success');
     };
 </script>
 
@@ -381,8 +337,8 @@
             <Transition name="fade" mode="out-in">
                 <div v-if="globalAlert.show" :class="['fixed top-4 right-4 z-50 p-4 rounded-lg text-sm font-semibold shadow-lg max-w-sm flex items-center gap-2', globalAlert.type === 'success' ? 'bg-green-100 border border-green-400 text-green-700' : 'bg-red-100 border border-red-400 text-red-700']">
                     <span>{{ globalAlert.message }}</span>
-                    <button @click="globalAlert.show = false" class="ml-auto p-1 hover:bg-black/10 rounded">
-                        <XIcon class="w-4 h-4" />
+                    <button @click="globalAlert.show = false" class="ml-auto p-1 hover:bg-black/10 rounded cursor-pointer">
+                        ✕
                     </button>
                 </div>
             </Transition>
@@ -425,7 +381,6 @@
                         :live-balance="liveBalance"
                         :demo-balance="demoBalance"
                         @update:is-live-mode="isLiveMode = $event"
-                        @show-alert="showAlert"
                     />
                 </div>
             </div>
@@ -581,19 +536,18 @@
                                         :key="tab.id"
                                         @click="activeTab = tab.id"
                                         :class="[
-                            'text-xs px-2.5 py-1 rounded-lg transition whitespace-nowrap font-medium',
-                            activeTab === tab.id
-                              ? 'bg-primary text-primary-foreground'
-                              : 'text-muted-foreground hover:bg-muted/50 border border-border'
-                          ]"
-                                    >
+                                            'text-xs px-2.5 py-1 rounded-lg transition whitespace-nowrap font-medium cursor-pointer',
+                                            activeTab === tab.id
+                                              ? 'bg-primary text-primary-foreground'
+                                              : 'text-muted-foreground hover:bg-muted/50 border border-border'
+                                          ]">
                                         {{ tab.label.split(' ')[0] }}
                                     </button>
                                 </div>
 
                                 <button
                                     @click="showFilters = !showFilters"
-                                    class="w-full px-3 py-1.5 rounded-lg text-xs font-medium bg-muted/70 hover:bg-muted/80 text-muted-foreground border border-border flex items-center gap-2"
+                                    class="w-full px-3 py-1.5 rounded-lg text-xs font-medium bg-muted/70 hover:bg-muted/80 text-muted-foreground border border-border flex items-center gap-2 cursor-pointer"
                                     :class="{ 'bg-primary/10 text-primary border-primary/30': hasActiveFilters }"
                                 >
                                     <FilterIcon class="w-3.5 h-3.5" />
@@ -614,13 +568,13 @@
                                                 {{ tf }}
                                             </option>
                                         </select>
-                                        <button @click="toggleSortOrder" class="flex-1 px-2 py-1.5 bg-background border border-border rounded-lg text-xs hover:bg-muted/50 flex items-center justify-center gap-1">
+                                        <button @click="toggleSortOrder" class="flex-1 px-2 py-1.5 bg-background border border-border rounded-lg text-xs hover:bg-muted/50 flex items-center justify-center gap-1 cursor-pointer">
                                             <SortAscIcon v-if="sortOrder === 'asc'" class="w-3 h-3 text-primary" />
                                             <SortDescIcon v-else-if="sortOrder === 'desc'" class="w-3 h-3 text-primary" />
                                             <ArrowUpDownIcon v-else class="w-3 h-3 text-muted-foreground" />
                                         </button>
                                     </div>
-                                    <button v-if="hasActiveFilters" @click="clearFilters" class="w-full px-3 py-1.5 bg-destructive/10 hover:bg-destructive/20 text-destructive rounded-lg text-xs font-medium">
+                                    <button v-if="hasActiveFilters" @click="clearFilters" class="w-full px-3 py-1.5 bg-destructive/10 hover:bg-destructive/20 text-destructive rounded-lg text-xs font-medium cursor-pointer">
                                         Clear
                                     </button>
                                 </div>
@@ -631,20 +585,18 @@
                                     No pairs found
                                 </div>
 
-                                <div v-for="pair in displayedPairs" :key="pair.symbol" class="group bg-gradient-to-br from-card to-muted/20 border border-border hover:border-primary/30 rounded-lg p-3 transition cursor-pointer">
+                                <div v-for="pair in displayedPairs" :key="pair.symbol" class="group bg-gradient-to-br from-card to-muted/20 border border-border hover:border-primary/30 rounded-lg p-3 transition">
                                     <div class="flex items-start justify-between mb-2">
                                         <div class="flex-1 min-w-0">
                                             <p class="text-xs font-semibold text-card-foreground">{{ pair.symbol }}</p>
                                             <p class="text-xs text-muted-foreground">{{ pair.name }}</p>
                                         </div>
-                                        <div
-                                            :class="[
-                        'text-xs font-semibold px-2 py-1 rounded',
-                        parseFloat(pair.change) >= 0
-                          ? 'bg-emerald-500/20 text-emerald-400'
-                          : 'bg-rose-500/20 text-rose-400'
-                      ]"
-                                        >
+                                        <div :class="[
+                                            'text-xs font-semibold px-2 py-1 rounded',
+                                            parseFloat(pair.change) >= 0
+                                              ? 'bg-emerald-500/20 text-emerald-400'
+                                              : 'bg-rose-500/20 text-rose-400'
+                                          ]">
                                             {{ parseFloat(pair.change) >= 0 ? '+' : '' }}{{ pair.change }}%
                                         </div>
                                     </div>
@@ -657,12 +609,12 @@
                                     <div class="flex gap-2">
                                         <button
                                             @click="openTradeModal(pair, 'Buy')"
-                                            class="flex-1 px-2 py-1.5 bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-400 rounded-lg text-xs font-medium transition border border-emerald-500/30">
+                                            class="flex-1 px-2 py-1.5 bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-400 rounded-lg text-xs font-medium transition border border-emerald-500/30 cursor-pointer">
                                             Buy
                                         </button>
                                         <button
                                             @click="openTradeModal(pair, 'Sell')"
-                                            class="flex-1 px-2 py-1.5 bg-rose-500/20 hover:bg-rose-500/30 text-rose-400 rounded-lg text-xs font-medium transition border border-rose-500/30">
+                                            class="flex-1 px-2 py-1.5 bg-rose-500/20 hover:bg-rose-500/30 text-rose-400 rounded-lg text-xs font-medium transition border border-rose-500/30 cursor-pointer">
                                             Sell
                                         </button>
                                     </div>
@@ -678,14 +630,13 @@
             </div>
         </div>
 
-        <!-- Reusable Components -->
         <FundingModal
             :is-open="isFundingModalOpen"
             :live-balance="liveBalance"
             :crypto-holdings="cryptoHoldings"
             :prices-map="pricesMap"
             @close="isFundingModalOpen = false"
-            @show-alert="showAlert" />
+        />
 
         <WithdrawalModal
             :is-open="isWithdrawalModalOpen"
@@ -693,162 +644,26 @@
             :crypto-holdings="cryptoHoldings"
             :prices-map="pricesMap"
             @close="isWithdrawalModalOpen = false"
-            @show-alert="showAlert" />
+        />
+
+        <TradeModal
+            :is-open="isTradeModalOpen"
+            :type="tradeModalData.type"
+            :pair="tradeModalData.pair"
+            :price="tradeModalData.price"
+            :change="tradeModalData.change"
+            :high="tradeModalData.high"
+            :low="tradeModalData.low"
+            :volume="tradeModalData.volume"
+            :available-margin="availableMargin"
+            @close="closeTradeModal"
+            @execute="handleTradeExecute"
+        />
 
         <NotificationsModal
             :is-open="isNotificationsModalOpen"
             @close="isNotificationsModalOpen = false"
         />
-
-        <!-- Trade Modal (Buy/Sell) -->
-        <div v-if="tradeModal.isOpen" class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-            <div class="bg-card border border-border rounded-2xl max-w-md w-full max-h-[90vh] overflow-y-auto custom-scrollbar">
-                <!-- Modal Header -->
-                <div class="bg-muted/30 px-6 py-4 border-b border-border flex items-center justify-between sticky top-0 z-10">
-                    <div>
-                        <h3 class="text-lg font-semibold text-card-foreground">
-                            {{ tradeModal.type === 'Buy' ? 'Buy' : 'Sell' }} {{ tradeModal.pair }}
-                        </h3>
-                        <p class="text-xs text-muted-foreground mt-1">Open a {{ tradeModal.type?.toLowerCase() }} position</p>
-                    </div>
-                    <button @click="closeTradeModal" class="p-2 hover:bg-muted/50 rounded-lg transition">
-                        <XIcon class="w-5 h-5 text-muted-foreground" />
-                    </button>
-                </div>
-
-                <div class="p-6 space-y-4">
-                    <!-- Error Alert -->
-                    <div v-if="tradeError" class="p-4 rounded-xl flex items-start gap-3 bg-destructive/10 border border-destructive/20">
-                        <AlertCircleIcon class="w-5 h-5 flex-shrink-0 mt-0.5 text-destructive" />
-                        <p class="text-sm font-semibold text-destructive">{{ tradeError }}</p>
-                    </div>
-
-                    <!-- Pair Info -->
-                    <div class="bg-muted/30 p-4 rounded-lg space-y-2">
-                        <div class="flex items-center justify-between">
-                            <span class="text-sm text-muted-foreground">Current Price</span>
-                            <span class="text-lg font-bold text-primary">{{ tradeModal.price }}</span>
-                        </div>
-                        <div class="grid grid-cols-3 gap-2 text-xs">
-                            <div>
-                                <p class="text-muted-foreground mb-1">24h Change</p>
-                                <p :class="[
-                                    'font-semibold',
-                                    parseFloat(tradeModal.change) >= 0 ? 'text-emerald-400' : 'text-rose-400'
-                                ]">
-                                    {{ parseFloat(tradeModal.change) >= 0 ? '+' : '' }}{{ tradeModal.change }}%
-                                </p>
-                            </div>
-                            <div>
-                                <p class="text-muted-foreground mb-1">High</p>
-                                <p class="font-semibold text-card-foreground">{{ tradeModal.high }}</p>
-                            </div>
-                            <div>
-                                <p class="text-muted-foreground mb-1">Low</p>
-                                <p class="font-semibold text-card-foreground">{{ tradeModal.low }}</p>
-                            </div>
-                        </div>
-                        <div class="pt-2 border-t border-border">
-                            <p class="text-xs text-muted-foreground">Volume: {{ tradeModal.volume }}</p>
-                        </div>
-                    </div>
-
-                    <!-- Chart Placeholder -->
-                    <div class="bg-gradient-to-br from-muted to-muted/50 rounded-lg p-8 text-center">
-                        <div class="text-muted-foreground">
-                            <div class="text-sm font-medium mb-2">Price Chart</div>
-                            <div class="text-xs opacity-75">TradingView widget placeholder</div>
-                        </div>
-                    </div>
-
-                    <!-- Trade Amount -->
-                    <div class="space-y-2">
-                        <h4 class="text-sm font-semibold text-card-foreground">Amount (USD)</h4>
-                        <input
-                            v-model.number="tradeFormData.amount"
-                            type="number"
-                            step="0.01"
-                            min="0"
-                            :max="availableMargin"
-                            placeholder="Enter amount"
-                            class="w-full px-3 py-2 bg-background border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
-                        />
-                        <div class="flex justify-between items-center text-xs text-muted-foreground bg-muted/50 p-2 rounded-lg">
-                            <span>Available Margin: ${{ availableMargin.toFixed(2) }}</span>
-                            <button @click="tradeFormData.amount = availableMargin" class="text-primary font-medium hover:underline cursor-pointer">
-                                Use Max
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- Leverage -->
-                    <div class="space-y-2">
-                        <div class="flex items-center justify-between">
-                            <h4 class="text-sm font-semibold text-card-foreground">Leverage</h4>
-                            <span class="text-sm font-bold text-primary">1:{{ tradeFormData.leverage }}</span>
-                        </div>
-                        <input
-                            v-model.number="tradeFormData.leverage"
-                            type="range"
-                            min="1"
-                            max="500"
-                            class="w-full"
-                        />
-                        <div class="text-xs text-muted-foreground">Position Size: {{ (tradeFormData.amount * tradeFormData.leverage).toFixed(2) }} USD</div>
-                    </div>
-
-                    <!-- Stop Loss -->
-                    <div class="space-y-2">
-                        <h4 class="text-sm font-semibold text-card-foreground">Stop Loss (Price)</h4>
-                        <input
-                            v-model.number="tradeFormData.stopLoss"
-                            type="number"
-                            step="0.0001"
-                            min="0"
-                            placeholder="Optional"
-                            class="w-full px-3 py-2 bg-background border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
-                        />
-                    </div>
-
-                    <!-- Take Profit -->
-                    <div class="space-y-2">
-                        <h4 class="text-sm font-semibold text-card-foreground">Take Profit (Price)</h4>
-                        <input
-                            v-model.number="tradeFormData.takeProfit"
-                            type="number"
-                            step="0.0001"
-                            min="0"
-                            placeholder="Optional"
-                            class="w-full px-3 py-2 bg-background border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
-                        />
-                    </div>
-
-                    <!-- Execute Button -->
-                    <button
-                        :disabled="isExecutingTrade || !tradeFormData.amount || tradeFormData.amount > availableMargin"
-                        @click="executeTrade"
-                        :class="[
-                            'w-full py-3 font-bold rounded-lg transition-opacity text-sm flex items-center justify-center gap-2',
-                            isExecutingTrade || !tradeFormData.amount || tradeFormData.amount > availableMargin
-                                ? 'bg-muted text-muted-foreground cursor-not-allowed'
-                                : tradeModal.type === 'Buy'
-                                ? 'bg-emerald-500 hover:bg-emerald-600 text-white'
-                                : 'bg-rose-500 hover:bg-rose-600 text-white'
-                        ]"
-                    >
-                        <Loader2Icon v-if="isExecutingTrade" class="w-4 h-4 animate-spin" />
-                        <span>{{ isExecutingTrade ? 'Executing...' : `Execute ${tradeModal.type} Trade` }}</span>
-                    </button>
-
-                    <button
-                        @click="closeTradeModal"
-                        class="w-full py-2 border border-border text-muted-foreground rounded-lg text-sm font-medium hover:bg-muted/50 transition"
-                    >
-                        Cancel
-                    </button>
-                </div>
-            </div>
-        </div>
     </AppLayout>
 </template>
 

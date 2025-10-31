@@ -39,6 +39,7 @@
         "date-fns": "^4.1.0",
         "izitoast": "^1.4.0",
         "laravel-vite-plugin": "^2.0.0",
+        "lightweight-charts": "^5.0.9",
         "lodash": "^4.17.21",
         "lucide-vue-next": "^0.544.0",
         "qrcode-vue3": "^1.7.1",

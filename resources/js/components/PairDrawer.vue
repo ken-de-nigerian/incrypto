@@ -171,7 +171,7 @@
                                 {{ parseFloat(pair.change) >= 0 ? '+' : '' }}{{ pair.change }}%
                             </div>
                         </div>
-                        <p class="text-sm font-bold text-white">{{ pair.price }}</p>
+                        <p class="text-sm font-bold text-muted-foreground">{{ pair.price }}</p>
                     </div>
 
                     <div v-if="isLoadingMore" class="flex justify-center py-4">

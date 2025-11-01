@@ -5,8 +5,8 @@
 
     interface Props {
         isLiveMode: boolean;
-        liveBalance: number;
-        demoBalance: number;
+        liveBalance: number | string;
+        demoBalance: number | string;
         isOrderProcessing?: boolean;
     }
 

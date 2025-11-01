@@ -24,29 +24,44 @@
     const user = computed(() => page.props.auth.user);
 
     const navigation = [
-        { name: "Dashboard", href: "user.dashboard", icon: LayoutDashboard },
-        { name: "Send", href: "user.send.index", icon: Send },
-        { name: "Receive", href: "user.receive.index", icon: Download },
-        { name: "Swap", href: "user.swap.index", icon: Repeat },
-        { name: "Trading", href: "user.trade.index", icon: TrendingUp },
-        { name: "Referrals", href: "user.rewards.index", icon: Users },
+        { name: "Dashboard", href: "user.dashboard", icon: LayoutDashboard, group: 'user.dashboard' },
+        { name: "Send", href: "user.send.index", icon: Send, group: 'user.send.' },
+        { name: "Receive", href: "user.receive.index", icon: Download, group: 'user.receive.' },
+        { name: "Swap", href: "user.swap.index", icon: Repeat, group: 'user.swap.' },
+        { name: "Trading", href: "user.trade.index", icon: TrendingUp, group: 'user.trade.' },
+        { name: "Referrals", href: "user.rewards.index", icon: Users, group: 'user.rewards.' },
     ];
 
     const bottomNavigation = [
-        { name: "KYC", href: "user.kyc.index", icon: LifeBuoy },
-        { name: "Settings", href: "user.profile.index", icon: Settings },
+        { name: "KYC", href: "user.kyc.index", icon: LifeBuoy, group: 'user.kyc.' },
+        { name: "Settings", href: "user.profile.index", icon: Settings, group: 'user.profile.' },
     ];
 
-    const isKycActive = computed(() => {
-        return route().current('user.kyc.index')
-            || route().current('user.kyc.create')
-            || route().current('user.kyc.edit');
+    const isAnyItemActive = computed(() => {
+        return navigation.some(item => {
+            if (item.isDefault) return false;
+            if (item.group) {
+                return route().current(item.group + '*');
+            }
+            return route().current(item.href);
+        });
     });
 
-    const isWalletActive = computed(() => {
-        return route().current('user.wallet.index')
-            || route().current('user.wallet.create');
-    });
+    const isActive = (item: typeof navigation[0]) => {
+        let active: boolean;
+
+        if (item.group) {
+            active = route().current(item.group + '*');
+        } else {
+            active = route().current(item.href);
+        }
+
+        if (!active && item.isDefault && !isAnyItemActive.value) {
+            active = true;
+        }
+
+        return active;
+    }
 
     const openNotificationsModal = () => {
         isNotificationsModalOpen.value = true;
@@ -74,11 +89,10 @@
                     :key="item.name"
                     :href="route(item.href)"
                     class="flex items-center px-3 py-2 text-md font-sm rounded-lg transition-all duration-200"
-                    :class="[
-                        item.name === 'Wallet Connect'
-                            ? (isWalletActive ? 'bg-sidebar-accent text-sidebar-foreground' : 'text-sidebar-foreground/70 hover:bg-sidebar-accent/30')
-                            : (route().current(item.href) ? 'bg-sidebar-accent text-sidebar-foreground' : 'text-sidebar-foreground/70 hover:bg-sidebar-accent/30')
-                    ]">
+                    :class="{
+                        'bg-sidebar-accent text-sidebar-foreground': isActive(item),
+                        'text-sidebar-foreground/70 hover:bg-sidebar-accent/30': !isActive(item),
+                    }">
                     <component :is="item.icon" class="mr-5 h-5 w-5 text-sidebar-foreground/70" />
                     {{ item.name }}
                 </TextLink>
@@ -90,11 +104,10 @@
                     :key="item.name"
                     :href="route(item.href)"
                     class="flex items-center px-3 py-2 text-md font-sm rounded-lg transition-all duration-200"
-                    :class="[
-                        item.name === 'KYC Verification'
-                            ? (isKycActive ? 'bg-sidebar-accent text-sidebar-foreground' : 'text-sidebar-foreground/70 hover:bg-sidebar-accent/30')
-                            : (route().current(item.href) ? 'bg-sidebar-accent text-sidebar-foreground' : 'text-sidebar-foreground/70 hover:bg-sidebar-accent/30')
-                    ]">
+                    :class="{
+                        'bg-sidebar-accent text-sidebar-foreground': isActive(item),
+                        'text-sidebar-foreground/70 hover:bg-sidebar-accent/30': !isActive(item),
+                    }">
                     <component :is="item.icon" class="mr-5 h-5 w-5 text-sidebar-foreground/70" />
                     {{ item.name }}
                 </TextLink>

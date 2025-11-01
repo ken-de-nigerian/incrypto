@@ -1,0 +1,201 @@
+<script setup lang="ts">
+    import { computed } from 'vue';
+    import { ArrowDown, ArrowUp, Loader2Icon } from 'lucide-vue-next';
+
+    interface TradingPair {
+        pair: string
+        price: number
+        change: number
+        high: number
+        low: number
+        volume: string
+    }
+
+    interface TradeFormData {
+        duration: string
+        amount: number
+        type: 'Up' | 'Down' | ''
+    }
+
+    interface Props {
+        selectedPair: TradingPair | null
+        tradeFormData: TradeFormData
+        durations: string[]
+        availableMargin: number
+        isExecutingTrade: boolean
+        tradeError: string
+    }
+
+    const props = defineProps<Props>()
+
+    const emit = defineEmits<{
+        'update:duration': [duration: string]
+        'update:amount': [amount: number]
+        'update:type': [type: 'Up' | 'Down']
+        'execute-trade': []
+        'set-max-amount': []
+    }>()
+
+    const isFormValid = computed(() => {
+        return props.tradeFormData.amount > 0 &&
+            props.tradeFormData.type !== '' &&
+            props.tradeFormData.duration !== ''
+    })
+
+    const setTradeType = (type: 'Up' | 'Down') => {
+        emit('update:type', type)
+    }
+
+    const setMaxAmount = () => {
+        emit('set-max-amount')
+    }
+
+    const executeTrade = () => {
+        if (isFormValid.value && !props.isExecutingTrade) {
+            emit('execute-trade')
+        }
+    }
+
+    const updateDuration = (duration: string) => {
+        emit('update:duration', duration)
+    }
+
+    const updateAmount = (event: Event) => {
+        const value = parseFloat((event.target as HTMLInputElement).value) || 0
+        emit('update:amount', value)
+    }
+</script>
+
+<template>
+    <div class="hidden lg:block w-80 bg-muted/20 border-l border-border p-4 flex-shrink-0">
+
+        <div v-if="!selectedPair" class="text-center text-muted-foreground text-sm py-4">
+            Select a pair to start trading
+        </div>
+
+        <div v-else class="space-y-4">
+            <!-- Error Alert -->
+            <Transition name="fade">
+                <div
+                    v-if="tradeError"
+                    class="p-3 rounded-lg flex items-start gap-2 bg-destructive/10 border border-destructive/20">
+                    <p class="text-xs font-semibold text-destructive">{{ tradeError }}</p>
+                </div>
+            </Transition>
+
+            <!-- Pair Info -->
+            <div class="grid grid-cols-3 gap-2 text-xs bg-background p-3 rounded-lg border border-border">
+                <div>
+                    <p class="text-muted-foreground mb-1">High</p>
+                    <p class="font-semibold text-card-foreground">{{ selectedPair.high }}</p>
+                </div>
+                <div>
+                    <p class="text-muted-foreground mb-1">Low</p>
+                    <p class="font-semibold text-card-foreground">{{ selectedPair.low }}</p>
+                </div>
+                <div>
+                    <p class="text-muted-foreground mb-1">Vol</p>
+                    <p class="font-semibold text-card-foreground">{{ selectedPair.volume }}</p>
+                </div>
+            </div>
+
+            <!-- Duration Selection -->
+            <div class="space-y-2">
+                <label class="text-xs font-semibold text-card-foreground">Duration</label>
+                <div class="grid grid-cols-7 gap-1">
+                    <button
+                        v-for="duration in durations"
+                        :key="duration"
+                        @click="updateDuration(duration)"
+                        :class="[
+                            'py-1.5 rounded-lg font-bold text-xs transition cursor-pointer border',
+                            tradeFormData.duration === duration
+                                ? 'bg-accent text-accent-foreground border-accent'
+                                : 'bg-muted/30 border-border text-card-foreground'
+                        ]">
+                        {{ duration }}
+                    </button>
+                </div>
+            </div>
+
+            <!-- Amount -->
+            <div class="space-y-2">
+                <label class="text-xs font-semibold text-card-foreground">Amount (USD)</label>
+                <input
+                    :value="tradeFormData.amount"
+                    @input="updateAmount"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    :max="availableMargin"
+                    placeholder="Enter amount"
+                    class="w-full px-3 py-2 bg-background border border-border rounded-lg text-sm input-crypto"
+                />
+                <div class="flex justify-between items-center text-xs text-muted-foreground">
+                    <span>Available Margin: ${{ availableMargin.toFixed(2) }}</span>
+                    <button
+                        @click="setMaxAmount"
+                        class="text-primary font-medium hover:underline cursor-pointer">
+                        Max
+                    </button>
+                </div>
+            </div>
+
+            <!-- Up/Down Buttons -->
+            <div class="grid grid-cols-2 gap-3">
+                <button
+                    @click="setTradeType('Up')"
+                    :class="[
+                        'py-3 rounded-lg font-semibold text-sm transition cursor-pointer border flex items-center justify-center gap-2',
+                        tradeFormData.type === 'Up'
+                            ? 'bg-emerald-500 text-white border-emerald-600'
+                            : 'bg-background border-border text-card-foreground hover:border-emerald-500/50'
+                    ]">
+                    <ArrowUp class="w-4 h-4" />
+                    Up
+                </button>
+                <button
+                    @click="setTradeType('Down')"
+                    :class="[
+                        'py-3 rounded-lg font-semibold text-sm transition cursor-pointer border flex items-center justify-center gap-2',
+                        tradeFormData.type === 'Down'
+                            ? 'bg-rose-500 text-white border-rose-600'
+                            : 'bg-background border-border text-card-foreground hover:border-rose-500/50'
+                    ]">
+                    <ArrowDown class="w-4 h-4" />
+                    Down
+                </button>
+            </div>
+
+            <!-- Execute Button -->
+            <button
+                :disabled="isExecutingTrade || !isFormValid"
+                @click="executeTrade"
+                :class="[
+                    'w-full py-3 font-bold rounded-lg transition text-sm flex items-center justify-center gap-2 cursor-pointer',
+                    isExecutingTrade || !isFormValid
+                        ? 'bg-muted text-muted-foreground cursor-not-allowed'
+                        : tradeFormData.type === 'Up'
+                        ? 'bg-emerald-500 hover:bg-emerald-600 text-white'
+                        : 'bg-rose-500 hover:bg-rose-600 text-white'
+                ]">
+                <Loader2Icon v-if="isExecutingTrade" class="w-4 h-4 animate-spin" />
+                <span>{{ isExecutingTrade ? 'Executing...' : `Execute ${tradeFormData.type || 'Trade'}` }}</span>
+            </button>
+        </div>
+    </div>
+</template>
+
+<style scoped>
+    .fade-enter-active, .fade-leave-active {
+        transition: opacity 0.3s ease;
+    }
+    .fade-enter-from, .fade-leave-to {
+        opacity: 0;
+    }
+
+    input[type="number"]::-webkit-inner-spin-button,
+    input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+    input[type="number"] { -moz-appearance: textfield; }
+    input[type="range"] { accent-color: hsl(var(--primary)); }
+</style>

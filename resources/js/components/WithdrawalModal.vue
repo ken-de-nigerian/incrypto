@@ -6,7 +6,7 @@
 
     interface Props {
         isOpen: boolean;
-        liveBalance: number;
+        liveBalance: number | string;
         cryptoHoldings: Array<any>;
         pricesMap: Record<string, number>;
     }

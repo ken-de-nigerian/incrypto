@@ -64,8 +64,9 @@
     // --- CONSTANTS ---
     const CANDLE_SPACING = 15
     const MIN_CANDLE_BODY = 1.5
-    const TICK_MS = 100
+    const TICK_MS = 200
     const AXIS_SPACE_Y = 100
+    const TOP_SPACE = 40
     const BOTTOM_SPACE = 40
     const CANDLE_INTERVAL_MS = 5_000
     const FRICTION = 0.95
@@ -222,7 +223,7 @@
         ctx.fillRect(0, 0, width, height)
 
         const { candleWidth, chartWidth } = getChartMetrics(width)
-        const mainHeight = height - BOTTOM_SPACE
+        const mainHeight = height - BOTTOM_SPACE - TOP_SPACE
 
         const startCandleIdx = Math.max(0, Math.floor(panX.value / candleWidth))
         const maxCandles = Math.ceil(chartWidth / candleWidth) + 2
@@ -240,7 +241,7 @@
         const paddedMin = minP - range * 0.05
         const priceScale = paddedMax - paddedMin
 
-        const priceToY = (price: number) => mainHeight - ((price - paddedMin) / priceScale) * mainHeight
+        const priceToY = (price: number) => TOP_SPACE + mainHeight - ((price - paddedMin) / priceScale) * mainHeight
 
         ctx.strokeStyle = gridColor.value
         ctx.fillStyle = textColor.value
@@ -250,7 +251,7 @@
 
         const numHGridLines = isMobile.value ? 4 : 6
         for (let i = 0; i <= numHGridLines; i++) {
-            const y = (mainHeight / numHGridLines) * i
+            const y = TOP_SPACE + (mainHeight / numHGridLines) * i
             const price = paddedMax - priceScale * (i / numHGridLines)
 
             ctx.beginPath()
@@ -327,8 +328,8 @@
             if (isMobile.value ? (i % 20 === 0) : (i % 10 === 0)) {
                 ctx.strokeStyle = gridColor.value
                 ctx.beginPath()
-                ctx.moveTo(x, 0)
-                ctx.lineTo(x, mainHeight)
+                ctx.moveTo(x, TOP_SPACE)
+                ctx.lineTo(x, TOP_SPACE + mainHeight)
                 ctx.stroke()
 
                 const label = new Date(c.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
@@ -341,7 +342,8 @@
             crosshair.value.visible &&
             crosshair.value.x >= axisSpaceX &&
             crosshair.value.x <= width - AXIS_SPACE_Y &&
-            crosshair.value.y <= mainHeight
+            crosshair.value.y >= TOP_SPACE &&
+            crosshair.value.y <= TOP_SPACE + mainHeight
         ) {
             const chartX = crosshair.value.x - axisSpaceX + panX.value
             const candleIdx = Math.floor(chartX / candleWidth)
@@ -355,8 +357,8 @@
                 ctx.lineWidth = 1
                 ctx.setLineDash([3, 3])
                 ctx.beginPath()
-                ctx.moveTo(snappedX, 0)
-                ctx.lineTo(snappedX, mainHeight)
+                ctx.moveTo(snappedX, TOP_SPACE)
+                ctx.lineTo(snappedX, TOP_SPACE + mainHeight)
                 ctx.stroke()
 
                 ctx.beginPath()
@@ -365,7 +367,7 @@
                 ctx.stroke()
                 ctx.setLineDash([])
 
-                const priceAtCrosshair = paddedMax - (crosshair.value.y / mainHeight) * priceScale
+                const priceAtCrosshair = paddedMax - ((crosshair.value.y - TOP_SPACE) / mainHeight) * priceScale
                 const priceLabel = priceAtCrosshair.toFixed(isMobile.value ? 3 : 5)
 
                 ctx.fillStyle = crosshairColor
@@ -398,8 +400,6 @@
                 ctx.fillText(tip, snappedX + 15, crosshair.value.y - 17)
             }
         }
-
-
     }
 
     const applyKineticScrolling = () => {
@@ -434,7 +434,7 @@
         const mouseX = e.clientX - rect.left
         const mouseY = e.clientY - rect.top
 
-        const constrainedY = Math.max(0, Math.min(mouseY, canvas.value.clientHeight - BOTTOM_SPACE))
+        const constrainedY = Math.max(TOP_SPACE, Math.min(mouseY, TOP_SPACE + canvas.value.clientHeight - BOTTOM_SPACE - TOP_SPACE))
 
         crosshair.value = {
             x: mouseX,
@@ -678,16 +678,13 @@
 <template>
     <div class="w-full">
         <!-- Control Bar -->
-        <div :class="[ 'flex gap-3 p-3 rounded-t-lg border-b items-center overflow-x-auto',
-            isDark ? 'bg-muted/30' : 'bg-gray-50 border-gray-200' ]">
-
+        <div :class="[ 'flex gap-3 p-3 rounded-t-lg border-b items-center overflow-x-auto', isDark ? 'bg-muted/30' : 'bg-gray-50 border-gray-200' ]">
             <!-- Pair & Price Info -->
             <div class="flex items-center gap-2 py-2 flex-shrink-0">
                 <span :class="['text-sm font-bold', isDark ? 'text-gray-200' : 'text-gray-900']">
                     {{ props.pair }}
                 </span>
-
-                <span :class="['text-xs px-2 py-1 rounded font-semibold',
+                    <span :class="['text-xs px-2 py-1 rounded font-semibold',
                     isBullish ? (isDark ? 'bg-teal-900/40 text-teal-300' : 'bg-teal-100 text-teal-700')
                     : (isDark ? 'bg-red-900/40 text-red-300' : 'bg-red-100 text-red-700')
                 ]">
@@ -702,11 +699,10 @@
             <button
                 @click="zoomOut"
                 :class="[
-                    'p-2 rounded transition-colors flex items-center justify-center cursor-pointer flex-shrink-0',
-                    isDark
-                        ? 'bg-gray-800 hover:bg-gray-700 text-gray-300'
-                        : 'bg-white hover:bg-gray-100 text-gray-700 border border-gray-300'
-                ]"
+                'ml-auto p-2 rounded transition-colors flex items-center justify-center cursor-pointer flex-shrink-0',
+                isDark
+                    ? 'bg-gray-800 hover:bg-gray-700 text-gray-300'
+                    : 'bg-white hover:bg-gray-100 text-gray-700 border border-gray-300']"
                 title="Zoom Out">
                 <ZoomOut :size="18" />
             </button>
@@ -714,11 +710,10 @@
             <button
                 @click="zoomIn"
                 :class="[
-                    'p-2 rounded transition-colors flex items-center justify-center cursor-pointer flex-shrink-0',
-                    isDark
-                        ? 'bg-gray-800 hover:bg-gray-700 text-gray-300'
-                        : 'bg-white hover:bg-gray-100 text-gray-700 border border-gray-300'
-                ]"
+                'p-2 rounded transition-colors flex items-center justify-center cursor-pointer flex-shrink-0',
+                isDark
+                    ? 'bg-gray-800 hover:bg-gray-700 text-gray-300'
+                    : 'bg-white hover:bg-gray-100 text-gray-700 border border-gray-300']"
                 title="Zoom In">
                 <ZoomIn :size="18" />
             </button>
@@ -726,11 +721,10 @@
             <button
                 @click="fitToScreen"
                 :class="[
-                    'p-2 rounded transition-colors flex items-center justify-center cursor-pointer flex-shrink-0',
-                    isDark
-                        ? 'bg-gray-800 hover:bg-gray-700 text-gray-300'
-                        : 'bg-white hover:bg-gray-100 text-gray-700 border border-gray-300'
-                ]"
+                'p-2 rounded transition-colors flex items-center justify-center cursor-pointer flex-shrink-0',
+                isDark
+                    ? 'bg-gray-800 hover:bg-gray-700 text-gray-300'
+                    : 'bg-white hover:bg-gray-100 text-gray-700 border border-gray-300']"
                 title="Fit to Screen">
                 <Maximize2 :size="18" />
             </button>
@@ -738,24 +732,17 @@
             <button
                 @click="jumpToLive"
                 :class="[
-                    'p-2 rounded transition-colors flex items-center justify-center cursor-pointer flex-shrink-0',
-                    isDark
-                        ? 'bg-blue-900 hover:bg-blue-800 text-blue-300'
-                        : 'bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-300'
-                ]"
+                'p-2 rounded transition-colors flex items-center justify-center cursor-pointer flex-shrink-0',
+                isDark
+                    ? 'bg-blue-900 hover:bg-blue-800 text-blue-300'
+                    : 'bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-300' ]"
                 title="Jump to Live Data">
                 <Radio :size="18" />
             </button>
-
-            <!-- Zoom indicator -->
-            <div :class="['ml-auto text-xs px-2 py-1 rounded flex-shrink-0 font-medium',
-                isDark ? 'bg-gray-800 text-gray-400' : 'bg-gray-100 text-gray-600']">
-                {{ zoom.toFixed(2) }}x
-            </div>
         </div>
 
         <!-- Canvas Container -->
-        <div ref="container" class="relative w-full bg-card rounded-b-lg overflow-hidden" :style="{ height: isMobile ? '300px' : '400px' }">
+        <div ref="container" :style="{ height: isMobile ? '300px' : '400px' }">
             <canvas ref="canvas" class="w-full h-full cursor-crosshair select-none touch-none" />
         </div>
     </div>

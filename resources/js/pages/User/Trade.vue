@@ -28,8 +28,8 @@
     }
 
     interface UserProfile {
-        live_trading_balance: number;
-        demo_trading_balance: number;
+        live_trading_balance: number | string;
+        demo_trading_balance: number | string;
         trading_status: 'live' | 'demo';
     }
 

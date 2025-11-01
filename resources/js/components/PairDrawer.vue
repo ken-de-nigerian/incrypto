@@ -144,7 +144,7 @@
                 <div
                     ref="scrollEl"
                     @scroll="onScroll"
-                    class="flex-1 max-h-[90vh] padding-bottom padding-bottom p-4"
+                    class="flex-1 max-h-[90vh] overflow-y-auto custom-scrollbar padding-bottom p-4"
                 >
                     <div v-if="displayedPairs.length === 0" class="text-center py-6 text-muted-foreground text-xs">
                         No pairs found
@@ -236,7 +236,7 @@
                 <div
                     ref="scrollEl"
                     @scroll="onScroll"
-                    class="flex-1 max-h-[90vh] padding-bottom padding-bottom p-4"
+                    class="flex-1 max-h-[90vh] overflow-y-auto custom-scrollbar padding-bottom p-4"
                 >
                     <div v-if="displayedPairs.length === 0" class="text-center py-6 text-muted-foreground text-xs">
                         No pairs found
@@ -262,7 +262,7 @@
                                 {{ parseFloat(pair.change) >= 0 ? '+' : '' }}{{ pair.change }}%
                             </div>
                         </div>
-                        <p class="text-sm font-bold text-secondary-foreground">{{ pair.price }}</p>
+                        <p class="text-sm font-bold text-muted-foreground">{{ pair.price }}</p>
                     </div>
 
                     <div v-if="isLoadingMore" class="flex justify-center py-4">

@@ -9,7 +9,7 @@ trait FlashNotification
     protected string|null $redirectTo = null;
     protected array $flashData = [];
 
-    public function notify($type, $message, $title = null, $duration = 5000): static
+    public function notify($type, $message = null, $title = null, $duration = 5000): static
     {
         $this->flashData = [
             $type => $message,

@@ -26,6 +26,7 @@ return new class extends Migration
             $table->enum('trading_mode', ['live', 'demo'])->default('demo');
             $table->timestamp('opened_at')->useCurrent();
             $table->timestamp('closed_at')->nullable();
+            $table->boolean('is_auto_close')->default(false);
             $table->timestamp('expiry_time');
             $table->timestamps();
 

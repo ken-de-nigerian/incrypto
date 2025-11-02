@@ -37,8 +37,13 @@ class TradeExecuted extends Notification
      */
     public function toMail(object $notifiable): MailMessage
     {
+        $pairName = $this->data['pair_name'] ?? $this->data['pair'];
+        $type = ucfirst($this->data['type']);
+
+        $subject = "$type Trade Executed: $pairName (Expiry: $this->expiryTime)";
+
         return (new MailMessage)
-            ->subject('Trade Executed')
+            ->subject($subject)
             ->view('emails.forex_trade_executed', [
                 'user' => $notifiable,
                 'expiryTime' => $this->expiryTime,

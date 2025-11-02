@@ -116,7 +116,7 @@ class LoginController extends Controller
      */
     protected function sendLoginResponse(): RedirectResponse
     {
-        $notification = $this->notify('success', __('Welcome back! You have successfully logged in.'));
+        $notification = $this->notify('success');
 
         if (Gate::allows('access-admin-dashboard')) {
             return $notification->toRoute('admin.dashboard');

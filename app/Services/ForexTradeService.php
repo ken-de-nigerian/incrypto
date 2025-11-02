@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Events\ForexTradeClosed;
 use App\Events\ForexTradeExecuted;
 use App\Models\Trade;
 use App\Models\User;
@@ -20,12 +21,10 @@ class ForexTradeService
     {
         $profile = $user->profile;
 
-        // Check trading mode matches
         if ($data['trading_mode'] !== $profile->trading_status) {
             throw new Exception('Trading mode mismatch. Please refresh the page.');
         }
 
-        // Get the appropriate balance
         $balance = $data['trading_mode'] === 'live'
             ? $profile->live_trading_balance
             : $profile->demo_trading_balance;
@@ -41,7 +40,6 @@ class ForexTradeService
             throw new Exception('Insufficient margin available. Maximum: $' . number_format($availableMargin, 2));
         }
 
-        // Calculate expiry time based on duration
         $expiryTime = $this->calculateExpiryTime($data['duration']);
 
         $execution = DB::transaction(function () use ($user, $data, $profile, $expiryTime) {
@@ -77,21 +75,55 @@ class ForexTradeService
     }
 
     /**
+     * @throws Exception
+     * @throws Throwable
+     */
+    public function closeForex(User $user, array $data, Trade $trade)
+    {
+        if ($trade->status !== 'Open') {
+            throw new Exception('This trade is already closed.');
+        }
+
+        $closed = DB::transaction(function () use ($user, $data, $trade) {
+
+            $updated = $trade->update([
+                'exit_price' => $data['exit_price'],
+                'pnl' => $data['pnl'],
+                'status' => 'Closed',
+                'closed_at' => $data['closed_at'],
+                'is_auto_close' => $data['is_auto_close'] ?? false
+            ]);
+
+            $balanceField = $trade->trading_mode === 'live'
+                ? 'live_trading_balance'
+                : 'demo_trading_balance';
+
+            $user->profile->increment($balanceField, $trade->amount + $data['pnl']);
+
+            return $updated;
+        });
+
+        // Dispatch the event with the new transaction data
+        event(new ForexTradeClosed($user, $trade));
+
+        return $closed;
+    }
+
+    /**
      * Calculate expiry time based on duration
      */
     private function calculateExpiryTime(string $duration): DateTime
     {
-        $now = now();
-
+        // FIX: Ensure each duration starts from a fresh 'now()' instance to prevent mutation bugs.
         return match($duration) {
-            '1m' => $now->addMinutes(),
-            '5m' => $now->addMinutes(5),
-            '15m' => $now->addMinutes(15),
-            '30m' => $now->addMinutes(30),
-            '1h' => $now->addHour(),
-            '4h' => $now->addHours(4),
-            '1d' => $now->addDay(),
-            default => $now->addMinutes(5)
+            '1m' => now()->addMinute(),
+            '5m' => now()->addMinutes(5),
+            '15m' => now()->addMinutes(15),
+            '30m' => now()->addMinutes(30),
+            '1h' => now()->addHour(),
+            '4h' => now()->addHours(4),
+            '1d' => now()->addDay(),
+            default => now()->addMinutes(5)
         };
     }
 }

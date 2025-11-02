@@ -74,7 +74,7 @@ class OnboardingController extends Controller
 
             // Clear verification session data
             $request->session()->forget(['verified_email', 'verification_email', 'referral']);
-            return $this->notify('success', __('Account created successfully. Welcome aboard!'))
+            return $this->notify('success')
                 ->toRoute('secure.wallet');
 
         } catch (Exception $exception) {

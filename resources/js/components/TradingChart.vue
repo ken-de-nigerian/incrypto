@@ -1,6 +1,6 @@
 <script setup lang="ts">
     import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
-    import { ZoomOut, ZoomIn, Maximize2, Radio } from 'lucide-vue-next'
+    import { ZoomOut, ZoomIn, Maximize2, Radio, RotateCcw } from 'lucide-vue-next'
     import { useChartStore, OpenTrade, TradeWithPnL } from '@/stores/chartStore'
     import { router } from '@inertiajs/vue3'
 
@@ -63,6 +63,8 @@
 
     let animationId: number | null = null
     let tickInterval: ReturnType<typeof setInterval> | null = null
+    let healthCheckInterval: ReturnType<typeof setInterval> | null = null
+    let tradeExpiryCheckInterval: ReturnType<typeof setInterval> | null = null
     let resizeObserver: ResizeObserver | null = null
     let dragging = false
     let dragStartX = 0
@@ -84,6 +86,8 @@
     const CANDLE_INTERVAL_MS = 5_000
     const FRICTION = 0.95
     const VELOCITY_THRESHOLD = 0.5
+    const HEALTH_CHECK_INTERVAL = 30000 // 30 seconds
+    const TRADE_EXPIRY_CHECK_INTERVAL = 1000 // Check every second
 
     const bgColor = computed(() => (isDark.value ? '#1a1a1a4d' : '#ffffff'))
     const gridColor = computed(() => isDark.value ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)')
@@ -102,23 +106,138 @@
     const tooltipPos = ref<{ x: number; y: number }>({ x: 0, y: 0 })
     const tooltipCloseRects = ref<{ tradeId: number, x: number, y: number, w: number, h: number }[]>([])
 
-    const closeTrade = (tradeId: number) => {
-        router.post(route('user.trade.forex.close'), { trade_id: tradeId }, {
+    // Validation function
+    const validateChartState = (): boolean => {
+        // Validate zoom
+        if (!isFinite(zoom.value) || zoom.value <= 0) {
+            console.warn('Invalid zoom detected, resetting')
+            chartStore.resetView()
+            return false
+        }
+
+        // Validate pan
+        if (!isFinite(panX.value)) {
+            console.warn('Invalid panX detected, resetting')
+            chartStore.setPanX(0)
+            return false
+        }
+
+        // Validate current price
+        if (!isFinite(currentPrice.value) || currentPrice.value <= 0) {
+            console.warn('Invalid price detected for', props.pair)
+            return false
+        }
+
+        // Validate candles
+        if (candles.value.some(c =>
+            !isFinite(c.open) || !isFinite(c.high) ||
+            !isFinite(c.low) || !isFinite(c.close)
+        )) {
+            console.warn('Invalid candle data detected')
+            return false
+        }
+
+        return true
+    }
+
+    const closeTrade = (tradeId: number, isAutoClose: boolean = false) => {
+        const trade = props.openTrades?.find(t => t.id === tradeId)
+        if (!trade) return
+
+        // Calculate P&L for the trade
+        const diff = trade.type === 'Up'
+            ? currentPrice.value - trade.entry_price
+            : trade.entry_price - currentPrice.value
+        const pnl = diff * trade.amount
+
+        // Prepare closure data
+        const closeData = {
+            exit_price: currentPrice.value,
+            pnl: pnl,
+            closed_at: new Date().toISOString(),
+            is_auto_close: isAutoClose
+        }
+
+        if (isAutoClose) {
+            console.log(`Auto-closing trade #${tradeId} at price ${currentPrice.value.toFixed(5)} with P&L: ${pnl.toFixed(2)}`)
+        }
+
+        router.patch(route('user.trade.forex.close', { trade: tradeId }), closeData, {
             preserveScroll: true,
             onSuccess: () => {
                 chartStore.setOpenTrades(chartStore.openTrades.filter(t => t.id !== tradeId))
                 hoveredTrades.value = hoveredTrades.value.filter(t => t.id !== tradeId)
+            },
+            onError: (errors) => {
+                console.error('Failed to close trade:', errors)
             }
         })
+    }
+
+    // Function to parse duration string to milliseconds
+    const parseDurationToMs = (duration: string): number => {
+        const value = parseInt(duration)
+        const unit = duration.slice(-1)
+
+        switch(unit) {
+            case 'm': return value * 60 * 1000 // minutes
+            case 'h': return value * 60 * 60 * 1000 // hours
+            case 'd': return value * 24 * 60 * 60 * 1000 // days
+            default: return value * 60 * 1000 // default to minutes
+        }
+    }
+
+    // Function to check and auto-close expired trades
+    const checkExpiredTrades = () => {
+        const now = new Date().getTime()
+
+        props.openTrades?.forEach(trade => {
+            // Calculate expiry time from opened_at and duration
+            const openedAt = new Date(trade.opened_at).getTime()
+
+            // Get duration from trade or calculate from expiry_time
+            let expiryTime: number
+
+            if ('expiry_time' in trade && trade.expiry_time) {
+                expiryTime = new Date(trade.expiry_time).getTime()
+            } else if ('duration' in trade && trade.duration) {
+                const durationMs = parseDurationToMs(trade.duration)
+                expiryTime = openedAt + durationMs
+            } else {
+                // Default to 5 minutes if no duration specified
+                expiryTime = openedAt + (5 * 60 * 1000)
+            }
+
+            // Check if trade has expired
+            if (now >= expiryTime) {
+                console.log(`Auto-closing expired trade #${trade.id}`)
+                closeTrade(trade.id, true) // Pass true for isAutoClose
+            }
+        })
+    }
+
+    // Start monitoring trade expiry
+    const startTradeExpiryMonitoring = () => {
+        tradeExpiryCheckInterval = setInterval(() => {
+            checkExpiredTrades()
+        }, TRADE_EXPIRY_CHECK_INTERVAL)
     }
 
     const initPrice = () => {
         const base = parseFloat(String(props.price)) || 1.085
         const parsedPrice = parseFloat(base.toFixed(5))
+
+        // Validate parsed price
+        if (!isFinite(parsedPrice) || parsedPrice <= 0) {
+            console.error('Invalid price received:', props.price)
+            return
+        }
+
         externalChange.value = parseFloat(String(props.change)) || 0
         externalLow.value = parseFloat(String(props.low)) || 0
         externalHigh.value = parseFloat(String(props.high)) || 0
         externalVolume.value = parseFloat(String(props.volume)) || 0
+
         if (!chartStore.hasPairData) {
             chartStore.initializePairData(props.pair, parsedPrice)
             lastPrice.value = parsedPrice
@@ -133,8 +252,16 @@
             if (container.value) autoPan(container.value.clientWidth)
             return
         }
+
         const data: Candle[] = []
         let price = currentPrice.value
+
+        // Validate starting price
+        if (!isFinite(price) || price <= 0) {
+            console.error('Cannot generate candles with invalid price')
+            return
+        }
+
         const now = Date.now()
         for (let i = count - 1; i >= 0; i--) {
             const time = now - i * CANDLE_INTERVAL_MS
@@ -144,6 +271,7 @@
             const close = price + change
             const high = Math.max(open, close) + Math.random() * 0.0001 * price
             const low = Math.min(open, close) - Math.random() * 0.0001 * price
+
             data.push({
                 time,
                 open: parseFloat(open.toFixed(5)),
@@ -154,11 +282,13 @@
             })
             price = close
         }
+
         chartStore.updatePairData(props.pair, {
             candles: data,
             lastCandleTime: now,
             basePrice: data[0]?.open || currentPrice.value
         })
+
         if (container.value) autoPan(container.value.clientWidth)
     }
 
@@ -203,13 +333,33 @@
         if (container.value) autoPan(container.value.clientWidth)
     }
 
+    const resetView = () => {
+        chartStore.resetView()
+        velocity = 0
+        if (container.value) autoPan(container.value.clientWidth)
+    }
+
     const startTicking = () => {
         tickInterval = setInterval(() => {
+            // Validate state before updating
+            if (!validateChartState()) {
+                console.warn('Invalid state detected during tick, skipping update')
+                return
+            }
+
             lastPrice.value = currentPrice.value
             const change = (Math.random() - 0.5) * 0.00008 * currentPrice.value
             const newPrice = parseFloat((currentPrice.value + change).toFixed(5))
+
+            // Validate new price
+            if (!isFinite(newPrice) || newPrice <= 0) {
+                console.warn('Generated invalid price, skipping update')
+                return
+            }
+
             chartStore.updateCurrentPrice(props.pair, newPrice)
             const now = Date.now()
+
             if (now - lastCandleTime.value >= CANDLE_INTERVAL_MS) {
                 const lastClose = newPrice
                 chartStore.addCandle(props.pair, {
@@ -223,11 +373,12 @@
                 chartStore.updateLastCandleTime(props.pair, now)
                 if (!dragging && container.value) autoPan(container.value.clientWidth)
             } else if (candles.value.length) {
+                const lastCandle = candles.value[candles.value.length - 1]
                 chartStore.updateLastCandle(props.pair, {
                     close: newPrice,
-                    high: Math.max(candles.value[candles.value.length - 1].high, newPrice),
-                    low: Math.min(candles.value[candles.value.length - 1].low, newPrice),
-                    volume: candles.value[candles.value.length - 1].volume + Math.floor(Math.random() * 20)
+                    high: Math.max(lastCandle.high, newPrice),
+                    low: Math.min(lastCandle.low, newPrice),
+                    volume: lastCandle.volume + Math.floor(Math.random() * 20)
                 })
             }
         }, TICK_MS)
@@ -235,59 +386,101 @@
 
     const draw = () => {
         if (!canvas.value || !container.value) return
+
+        // Validate chart state before drawing
+        if (!validateChartState()) {
+            console.error('Chart state invalid, skipping draw')
+            return
+        }
+
         const ctx = canvas.value.getContext('2d')
         if (!ctx) return
+
         const rect = canvas.value.getBoundingClientRect()
         const width = Math.floor(rect.width)
         const canvasHeight = Math.floor(rect.height)
         const dpr = window.devicePixelRatio || 1
         const axisSpaceX = AXIS_SPACE_X.value
+
         canvas.value.width = Math.max(1, Math.floor(width * dpr))
         canvas.value.height = Math.max(1, Math.floor(canvasHeight * dpr))
         ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
+
         ctx.clearRect(0, 0, width, canvasHeight)
         ctx.fillStyle = bgColor.value
         ctx.fillRect(0, 0, width, canvasHeight)
+
         const { candleWidth, chartWidth } = getChartMetrics(width)
         const mainHeight = canvasHeight - BOTTOM_SPACE - TOP_SPACE
+
         const startCandleIdx = Math.max(0, Math.floor(panX.value / candleWidth))
         const maxCandles = Math.ceil(chartWidth / candleWidth) + 2
         const endCandleIdx = Math.min(candles.value.length, startCandleIdx + maxCandles)
         const visible = candles.value.slice(startCandleIdx, endCandleIdx)
+
         if (!visible.length) return
+
         const allPrices = visible.flatMap(c => [c.high, c.low])
         const maxP = Math.max(...allPrices, currentPrice.value)
         const minP = Math.min(...allPrices, currentPrice.value)
+
+        // Validate price range
+        if (!isFinite(maxP) || !isFinite(minP)) {
+            console.error('Invalid price range detected')
+            return
+        }
+
         const range = Math.max(0.0000001, maxP - minP)
         const paddedMax = maxP + range * 0.05
         const paddedMin = minP - range * 0.05
         const priceScale = paddedMax - paddedMin
-        const priceToY = (price: number) => TOP_SPACE + mainHeight - ((price - paddedMin) / priceScale) * mainHeight
+
+        const priceToY = (price: number) => {
+            const y = TOP_SPACE + mainHeight - ((price - paddedMin) / priceScale) * mainHeight
+            return isFinite(y) ? y : TOP_SPACE + mainHeight / 2
+        }
+
+        // Draw grid
         ctx.strokeStyle = gridColor.value
         ctx.fillStyle = textColor.value
         ctx.font = isMobile.value ? '9px Inter, sans-serif' : '11px Inter, sans-serif'
         ctx.lineWidth = 0.5
         ctx.textAlign = isMobile.value ? 'right' : 'left'
+
         const numHGridLines = isMobile.value ? 4 : 6
         for (let i = 0; i <= numHGridLines; i++) {
             const y = TOP_SPACE + (mainHeight / numHGridLines) * i
             const price = paddedMax - priceScale * (i / numHGridLines)
+
+            if (!isFinite(price)) continue
+
             ctx.beginPath()
             ctx.moveTo(axisSpaceX, y)
             ctx.lineTo(width - AXIS_SPACE_Y, y)
             ctx.stroke()
+
             const labelX = isMobile.value ? width - 4 : 8
             ctx.fillText(price.toFixed(isMobile.value ? 3 : 5), labelX, y + 3)
         }
+
+        // Draw candles
         const bodyWidth = Math.max(MIN_CANDLE_BODY, candleWidth * 0.7)
         visible.forEach((c, i) => {
             const chartX = (i + startCandleIdx) * candleWidth - panX.value
             const x = axisSpaceX + chartX + candleWidth / 2
+
             if (x > width - AXIS_SPACE_Y || x < axisSpaceX) return
+
             const openY = priceToY(c.open)
             const closeY = priceToY(c.close)
             const highY = priceToY(c.high)
             const lowY = priceToY(c.low)
+
+            // Validate Y coordinates
+            if (!isFinite(openY) || !isFinite(closeY) || !isFinite(highY) || !isFinite(lowY)) {
+                return
+            }
+
             const isUp = c.close >= c.open
             ctx.strokeStyle = isUp ? upColor : downColor
             ctx.lineWidth = 1
@@ -295,6 +488,7 @@
             ctx.moveTo(x, highY)
             ctx.lineTo(x, lowY)
             ctx.stroke()
+
             const bodyTop = Math.min(openY, closeY)
             const bodyHeight = Math.max(MIN_CANDLE_BODY, Math.abs(closeY - openY))
             ctx.fillStyle = isUp ? upColor : downColor
@@ -303,7 +497,11 @@
             ctx.strokeStyle = isUp ? upColor : downColor
             ctx.strokeRect(x - bodyWidth / 2, bodyTop, bodyWidth, bodyHeight)
         })
+
+        // Draw current price line
         const curY = priceToY(currentPrice.value)
+        if (!isFinite(curY)) return
+
         const currentPriceColor = priceMovementColor.value
         ctx.strokeStyle = currentPriceColor
         ctx.setLineDash([5, 5])
@@ -312,36 +510,45 @@
         ctx.lineTo(width - AXIS_SPACE_Y, curY)
         ctx.stroke()
         ctx.setLineDash([])
+
         ctx.fillStyle = currentPriceColor
         ctx.fillRect(width - AXIS_SPACE_Y, curY - 10, AXIS_SPACE_Y, 20)
         ctx.fillStyle = 'white'
         ctx.font = isMobile.value ? 'bold 10px Inter' : 'bold 12px Inter'
         ctx.textAlign = 'center'
         ctx.fillText(`${currentPrice.value.toFixed(isMobile.value ? 3 : 5)}`, width - AXIS_SPACE_Y / 2, curY + 4)
+
+        // Draw time labels
         ctx.textAlign = 'center'
         ctx.fillStyle = textColor.value
         ctx.font = isMobile.value ? '8px Inter, sans-serif' : '11px Inter, sans-serif'
+
         visible.forEach((c, i) => {
             const chartX = (i + startCandleIdx) * candleWidth - panX.value
             const x = axisSpaceX + chartX + candleWidth / 2
+
             if (isMobile.value ? (i % 20 === 0) : (i % 10 === 0)) {
                 ctx.strokeStyle = gridColor.value
                 ctx.beginPath()
                 ctx.moveTo(x, TOP_SPACE)
                 ctx.lineTo(x, TOP_SPACE + mainHeight)
                 ctx.stroke()
+
                 const label = new Date(c.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
                 ctx.fillText(label, x, canvasHeight - 10)
             }
         })
+
+        // Draw trades
         const trades = chartStore.openTradesForPair
         const entryLineColor = (t: TradeWithPnL) => t.type === 'Up' ? upColor : downColor
         const pnlColor = (t: TradeWithPnL) => t.pnl >= 0 ? upColor : downColor
 
-        // Group trades by similar price levels (within 3 pixels)
         const priceGroups: TradeWithPnL[][] = []
         trades.forEach(trade => {
             const y = priceToY(trade.entry_price)
+            if (!isFinite(y)) return
+
             let found = false
             for (const group of priceGroups) {
                 const groupY = priceToY(group[0].entry_price)
@@ -357,6 +564,8 @@
         priceGroups.forEach(group => {
             group.forEach((trade, index) => {
                 const y = priceToY(trade.entry_price)
+                if (!isFinite(y)) return
+
                 const offset = index * 2
                 const adjustedY = y + offset
                 const color = entryLineColor(trade)
@@ -372,7 +581,6 @@
                 ctx.setLineDash([])
                 ctx.globalAlpha = 1
 
-                // Draw entry price badge on the left
                 const entryText = trade.entry_price.toFixed(isMobile.value ? 3 : 5)
                 ctx.font = isMobile.value ? 'bold 9px Inter' : 'bold 10px Inter'
                 const entryWidth = ctx.measureText(entryText).width
@@ -382,18 +590,15 @@
                 const badgeX = axisSpaceX + 4
                 const badgeY = adjustedY - badgeHeight / 2
 
-                // Badge background
                 ctx.fillStyle = color
                 ctx.beginPath()
                 ctx.roundRect(badgeX, badgeY, badgeWidth, badgeHeight, 3)
                 ctx.fill()
 
-                // Badge text
                 ctx.fillStyle = 'white'
                 ctx.textAlign = 'center'
                 ctx.fillText(entryText, badgeX + badgeWidth / 2, adjustedY + 4)
 
-                // Add count badge if multiple trades
                 if (group.length > 1 && index === 0) {
                     const countBadgeSize = isMobile.value ? 16 : 18
                     const countX = badgeX + badgeWidth + 4
@@ -431,16 +636,16 @@
                 ctx.lineWidth = 1.5
                 ctx.stroke()
 
-                // PnL text
                 ctx.fillStyle = pnlColorValue
                 ctx.textAlign = 'center'
                 ctx.fillText(pnlText, pnlBadgeX + pnlBadgeWidth / 2, adjustedY + 4)
             })
         })
+
+        // Draw tooltips
         if (hoveredTrades.value.length > 0 && tooltipPos.value) {
             tooltipCloseRects.value = []
 
-            // Calculate dimensions based on device
             const padding = isMobile.value ? 10 : 12
             const headerHeight = isMobile.value ? 28 : 32
             const rowHeight = isMobile.value ? 22 : 24
@@ -451,19 +656,14 @@
             const tooltipHeight = headerHeight + rowHeight * 3 + separatorHeight + footerHeight
             const tooltipSpacing = isMobile.value ? 6 : 8
 
-            // Calculate total height needed for all tooltips
             const totalTooltipsHeight = hoveredTrades.value.length * tooltipHeight + (hoveredTrades.value.length - 1) * tooltipSpacing
             const availableHeight = canvasHeight - TOP_SPACE - BOTTOM_SPACE - 20
 
-            // Determine starting Y position
             let startY: number
             if (totalTooltipsHeight > availableHeight) {
-                // Stack from top if too many tooltips
                 startY = TOP_SPACE + 10
             } else {
-                // Center around cursor position
                 startY = tooltipPos.value.y - totalTooltipsHeight / 2
-                // Constrain to visible area
                 if (startY < TOP_SPACE + 10) startY = TOP_SPACE + 10
                 if (startY + totalTooltipsHeight > canvasHeight - BOTTOM_SPACE - 10) {
                     startY = canvasHeight - BOTTOM_SPACE - 10 - totalTooltipsHeight
@@ -474,7 +674,6 @@
                 const tradeColor = t.type === 'Up' ? upColor : downColor
                 const pnlColorValue = pnlColor(t)
 
-                // Position tooltip
                 let tooltipX = tooltipPos.value.x + 12
                 if (tooltipX + tooltipWidth > width - 20) {
                     tooltipX = tooltipPos.value.x - tooltipWidth - 12
@@ -483,13 +682,11 @@
 
                 const tooltipY = startY + index * (tooltipHeight + tooltipSpacing)
 
-                // Draw shadow
                 ctx.shadowColor = 'rgba(0,0,0,0.4)'
                 ctx.shadowBlur = 12
                 ctx.shadowOffsetX = 0
                 ctx.shadowOffsetY = 4
 
-                // Draw main background with gradient
                 const gradient = ctx.createLinearGradient(tooltipX, tooltipY, tooltipX, tooltipY + tooltipHeight)
                 if (isDark.value) {
                     gradient.addColorStop(0, 'rgba(30,30,35,0.98)')
@@ -503,14 +700,12 @@
                 ctx.roundRect(tooltipX, tooltipY, tooltipWidth, tooltipHeight, 8)
                 ctx.fill()
 
-                // Draw colored border
                 ctx.strokeStyle = tradeColor
                 ctx.lineWidth = 2
                 ctx.stroke()
 
                 ctx.shadowColor = 'transparent'
 
-                // Header section with trade type
                 const headerGradient = ctx.createLinearGradient(tooltipX, tooltipY, tooltipX, tooltipY + headerHeight)
                 headerGradient.addColorStop(0, tradeColor + '20')
                 headerGradient.addColorStop(1, tradeColor + '10')
@@ -519,19 +714,16 @@
                 ctx.roundRect(tooltipX, tooltipY, tooltipWidth, headerHeight, [8, 8, 0, 0])
                 ctx.fill()
 
-                // Trade type badge
                 ctx.fillStyle = tradeColor
                 ctx.font = isMobile.value ? 'bold 11px Inter' : 'bold 12px Inter'
                 ctx.textAlign = 'left'
                 ctx.fillText(t.type.toUpperCase(), tooltipX + padding, tooltipY + headerHeight / 2 + 4)
 
-                // Trade ID
                 ctx.fillStyle = isDark.value ? '#9ca3af' : '#6b7280'
                 ctx.font = isMobile.value ? '9px Inter' : '10px Inter'
                 ctx.textAlign = 'right'
                 ctx.fillText(`#${t.id}`, tooltipX + tooltipWidth - padding, tooltipY + headerHeight / 2 + 4)
 
-                // Data rows
                 const rowStartY = tooltipY + headerHeight
                 const rows = [
                     { label: 'Amount', value: `${t.amount.toFixed(2)}` },
@@ -542,26 +734,22 @@
                 rows.forEach((row, i) => {
                     const y = rowStartY + i * rowHeight
 
-                    // Alternating row background
                     if (i % 2 === 0) {
                         ctx.fillStyle = isDark.value ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.02)'
                         ctx.fillRect(tooltipX, y, tooltipWidth, rowHeight)
                     }
 
-                    // Label
                     ctx.fillStyle = isDark.value ? '#9ca3af' : '#6b7280'
                     ctx.font = isMobile.value ? '9px Inter' : '10px Inter'
                     ctx.textAlign = 'left'
                     ctx.fillText(row.label, tooltipX + padding, y + rowHeight / 2 + 3)
 
-                    // Value
                     ctx.fillStyle = isDark.value ? '#e5e7eb' : '#1f2937'
                     ctx.font = isMobile.value ? 'bold 10px Inter' : 'bold 11px Inter'
                     ctx.textAlign = 'right'
                     ctx.fillText(row.value, tooltipX + tooltipWidth - padding, y + rowHeight / 2 + 3)
                 })
 
-                // Separator line
                 const separatorY = rowStartY + rowHeight * 3
                 ctx.strokeStyle = isDark.value ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'
                 ctx.lineWidth = 1
@@ -570,42 +758,35 @@
                 ctx.lineTo(tooltipX + tooltipWidth - padding, separatorY)
                 ctx.stroke()
 
-                // Footer section with PnL
                 const footerY = separatorY + separatorHeight
 
-                // PnL background with gradient
                 const pnlGradient = ctx.createLinearGradient(tooltipX, footerY, tooltipX, footerY + footerHeight)
                 pnlGradient.addColorStop(0, pnlColorValue + '15')
                 pnlGradient.addColorStop(1, pnlColorValue + '08')
                 ctx.fillStyle = pnlGradient
                 ctx.fillRect(tooltipX, footerY, tooltipWidth, footerHeight - 8)
 
-                // PnL label
                 ctx.fillStyle = isDark.value ? '#9ca3af' : '#6b7280'
                 ctx.font = isMobile.value ? '8px Inter' : '9px Inter'
                 ctx.textAlign = 'left'
                 ctx.fillText('PROFIT/LOSS', tooltipX + padding, footerY + 12)
 
-                // PnL value - large and prominent
                 const pnlText = `${t.pnl >= 0 ? '+' : ''}${Math.abs(t.pnl).toFixed(2)}`
                 ctx.fillStyle = pnlColorValue
                 ctx.font = isMobile.value ? 'bold 13px Inter' : 'bold 14px Inter'
                 ctx.textAlign = 'left'
                 ctx.fillText(pnlText, tooltipX + padding, footerY + 28)
 
-                // PnL percentage
                 const pnlPctText = `(${t.pnlPct}%)`
                 ctx.font = isMobile.value ? 'bold 10px Inter' : 'bold 11px Inter'
                 const pnlTextWidth = ctx.measureText(pnlText).width
                 ctx.fillText(pnlPctText, tooltipX + padding + pnlTextWidth + 6, footerY + 28)
 
-                // Close button - modern pill shape
                 const btnWidth = isMobile.value ? 56 : 64
                 const btnHeight = isMobile.value ? 22 : 24
                 const btnX = tooltipX + tooltipWidth - btnWidth - padding
                 const btnY = footerY + (footerHeight - btnHeight) / 2 - 2
 
-                // Button gradient
                 const btnGradient = ctx.createLinearGradient(btnX, btnY, btnX, btnY + btnHeight)
                 btnGradient.addColorStop(0, '#ef4444')
                 btnGradient.addColorStop(1, '#dc2626')
@@ -614,12 +795,10 @@
                 ctx.roundRect(btnX, btnY, btnWidth, btnHeight, btnHeight / 2)
                 ctx.fill()
 
-                // Button border
                 ctx.strokeStyle = 'rgba(255,255,255,0.2)'
                 ctx.lineWidth = 1
                 ctx.stroke()
 
-                // Button text
                 ctx.fillStyle = '#ffffff'
                 ctx.font = isMobile.value ? 'bold 9px Inter' : 'bold 10px Inter'
                 ctx.textAlign = 'center'
@@ -630,13 +809,17 @@
         } else {
             tooltipCloseRects.value = []
         }
+
+        // Draw crosshair
         if (crosshair.value.visible && crosshair.value.x >= axisSpaceX && crosshair.value.x <= width - AXIS_SPACE_Y && crosshair.value.y >= TOP_SPACE && crosshair.value.y <= TOP_SPACE + mainHeight) {
             const chartX = crosshair.value.x - axisSpaceX + panX.value
             const candleIdx = Math.floor(chartX / candleWidth)
             const relativeIdx = candleIdx - startCandleIdx
+
             if (relativeIdx >= 0 && relativeIdx < visible.length) {
                 const c = visible[relativeIdx]
                 const snappedX = axisSpaceX + relativeIdx * candleWidth - panX.value + candleWidth / 2
+
                 ctx.strokeStyle = crosshairColor
                 ctx.lineWidth = 1
                 ctx.setLineDash([3, 3])
@@ -649,14 +832,19 @@
                 ctx.lineTo(width, crosshair.value.y)
                 ctx.stroke()
                 ctx.setLineDash([])
+
                 const priceAtCrosshair = paddedMax - ((crosshair.value.y - TOP_SPACE) / mainHeight) * priceScale
-                const priceLabel = priceAtCrosshair.toFixed(isMobile.value ? 3 : 5)
-                ctx.fillStyle = crosshairColor
-                ctx.fillRect(width - AXIS_SPACE_Y, crosshair.value.y - 10, AXIS_SPACE_Y, 20)
-                ctx.fillStyle = 'white'
-                ctx.font = isMobile.value ? '9px Inter' : '11px Inter'
-                ctx.textAlign = 'center'
-                ctx.fillText(priceLabel, width - AXIS_SPACE_Y / 2, crosshair.value.y + 4)
+
+                if (isFinite(priceAtCrosshair)) {
+                    const priceLabel = priceAtCrosshair.toFixed(isMobile.value ? 3 : 5)
+                    ctx.fillStyle = crosshairColor
+                    ctx.fillRect(width - AXIS_SPACE_Y, crosshair.value.y - 10, AXIS_SPACE_Y, 20)
+                    ctx.fillStyle = 'white'
+                    ctx.font = isMobile.value ? '9px Inter' : '11px Inter'
+                    ctx.textAlign = 'center'
+                    ctx.fillText(priceLabel, width - AXIS_SPACE_Y / 2, crosshair.value.y + 4)
+                }
+
                 const timeLabel = new Date(c.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
                 const timeTextWidth = ctx.measureText(timeLabel).width
                 ctx.fillStyle = crosshairColor
@@ -664,6 +852,7 @@
                 ctx.fillStyle = 'white'
                 ctx.font = isMobile.value ? '8px Inter' : '11px Inter'
                 ctx.fillText(timeLabel, snappedX, canvasHeight - 15)
+
                 const tip = isMobile.value
                     ? `O:${c.open.toFixed(3)} H:${c.high.toFixed(3)} L:${c.low.toFixed(3)} C:${c.close.toFixed(3)}`
                     : `O:${c.open} H:${c.high} L:${c.low} C:${c.close} V:${c.volume}`
@@ -683,11 +872,14 @@
             velocity = 0
             return
         }
+
         if (!canvas.value) return
+
         const { maxPan } = getChartMetrics(canvas.value.getBoundingClientRect().width)
         panX.value += velocity
         panX.value = Math.max(0, Math.min(maxPan, panX.value))
         velocity *= FRICTION
+
         if (panX.value === 0 || panX.value === maxPan) velocity = 0
     }
 
@@ -700,11 +892,13 @@
     const handleMouseMove = (e: MouseEvent) => {
         if (dragging) return
         if (!canvas.value) return
+
         const rect = canvas.value.getBoundingClientRect()
         const mouseX = e.clientX - rect.left
         const mouseY = e.clientY - rect.top
         const constrainedY = Math.max(TOP_SPACE, Math.min(mouseY, TOP_SPACE + canvas.value.clientHeight - BOTTOM_SPACE - TOP_SPACE))
         crosshair.value = { x: mouseX, y: constrainedY, visible: true }
+
         const overButton = findTradeAt(e.clientX, e.clientY, false)
         if (overButton) {
             canvas.value.style.cursor = 'pointer'
@@ -723,6 +917,7 @@
         const oldZoom = zoom.value
         const factor = e.deltaY > 0 ? 0.9 : 1.1
         const newZoom = Math.max(0.2, Math.min(3, zoom.value * factor))
+
         if (canvas.value) {
             const rect = canvas.value.getBoundingClientRect()
             const pointerX = e.clientX - rect.left
@@ -730,17 +925,21 @@
             const worldX = panX.value + chartCenter
             const zoomRatio = newZoom / oldZoom
             panX.value = Math.max(0, worldX * zoomRatio - chartCenter)
+
             const { maxPan } = getChartMetrics(rect.width)
             panX.value = Math.min(maxPan, panX.value)
         }
+
         zoom.value = newZoom
         velocity = 0
     }
 
     const handleMouseDown = (e: MouseEvent) => {
         if (!canvas.value) return
+
         const rect = canvas.value.getBoundingClientRect()
         if (e.clientX - rect.left < AXIS_SPACE_X.value || e.clientX - rect.left > rect.width - AXIS_SPACE_Y) return
+
         dragging = true
         dragStartX = e.clientX
         lastDragX = e.clientX
@@ -758,11 +957,14 @@
 
     const handleMouseDrag = (e: MouseEvent) => {
         if (!dragging || !canvas.value) return
+
         const now = Date.now()
         const delta = e.clientX - dragStartX
         const newPanX = panStart - delta
+
         const { maxPan } = getChartMetrics(canvas.value.getBoundingClientRect().width)
         panX.value = Math.max(0, Math.min(maxPan, newPanX))
+
         const timeDelta = now - lastDragTime
         if (timeDelta > 0) velocity = (lastDragX - e.clientX) / timeDelta
         lastDragX = e.clientX
@@ -780,8 +982,10 @@
         if (e.touches.length === 1) {
             const rect = canvas.value?.getBoundingClientRect()
             if (!rect) return
+
             const touchX = e.touches[0].clientX - rect.left
             if (touchX < AXIS_SPACE_X.value || touchX > rect.width - AXIS_SPACE_Y) return
+
             dragging = true
             dragStartX = e.touches[0].clientX
             lastDragX = e.touches[0].clientX
@@ -803,8 +1007,10 @@
             const now = Date.now()
             const delta = e.touches[0].clientX - dragStartX
             const newPanX = panStart - delta
+
             const { maxPan } = getChartMetrics(canvas.value?.getBoundingClientRect().width || 0)
             panX.value = Math.max(0, Math.min(maxPan, newPanX))
+
             const timeDelta = now - lastDragTime
             if (timeDelta > 0) velocity = (lastDragX - e.touches[0].clientX) / timeDelta
             lastDragX = e.touches[0].clientX
@@ -813,9 +1019,11 @@
             e.preventDefault()
             const currentDistance = getTouchDistance(e.touches)
             if (currentDistance === 0) return
+
             const oldZoom = zoom.value
             const pinchRatio = currentDistance / touchStartDistance
             const newZoom = Math.max(0.2, Math.min(3, touchStartZoom * pinchRatio))
+
             if (canvas.value) {
                 const rect = canvas.value.getBoundingClientRect()
                 const pointerX = touchStartX - rect.left
@@ -823,9 +1031,11 @@
                 const worldX = panX.value + chartCenter
                 const zoomRatio = newZoom / oldZoom
                 panX.value = Math.max(0, worldX * zoomRatio - chartCenter)
+
                 const { maxPan } = getChartMetrics(rect.width)
                 panX.value = Math.min(maxPan, panX.value)
             }
+
             zoom.value = newZoom
         }
     }
@@ -843,6 +1053,7 @@
         const rect = canvas.value!.getBoundingClientRect()
         const x = clientX - rect.left
         const y = clientY - rect.top
+
         for (const r of tooltipCloseRects.value) {
             if (x >= r.x && x <= r.x + r.w && y >= r.y && y <= r.y + r.h) {
                 if (isClick) {
@@ -851,6 +1062,7 @@
                 overCloseButton = true
             }
         }
+
         const width = rect.width
         const canvasHeight = rect.height
         const mainHeight = canvasHeight - BOTTOM_SPACE - TOP_SPACE
@@ -859,7 +1071,9 @@
         const maxCandles = Math.ceil((width - AXIS_SPACE_X.value - AXIS_SPACE_Y) / candleWidth) + 2
         const endCandleIdx = Math.min(candles.value.length, startCandleIdx + maxCandles)
         const visible = candles.value.slice(startCandleIdx, endCandleIdx)
+
         if (!visible.length) return overCloseButton
+
         const allPrices = visible.flatMap(c => [c.high, c.low])
         const maxP = Math.max(...allPrices, currentPrice.value)
         const minP = Math.min(...allPrices, currentPrice.value)
@@ -867,15 +1081,19 @@
         const paddedMax = maxP + range * 0.05
         const paddedMin = minP - range * 0.05
         const priceScale = paddedMax - paddedMin
+
         const priceToY = (price: number) => TOP_SPACE + mainHeight - ((price - paddedMin) / priceScale) * mainHeight
+
         const trades = chartStore.openTradesForPair
         const closeTrades = trades.filter(trade => Math.abs(y - priceToY(trade.entry_price)) <= (isMobile.value ? 15 : 10))
+
         if (closeTrades.length > 0) {
             hoveredTrades.value = closeTrades
             tooltipPos.value = { x: clientX - rect.left, y: clientY - rect.top }
         } else if (isClick) {
             hoveredTrades.value = []
         }
+
         return overCloseButton
     }
 
@@ -908,21 +1126,37 @@
     onMounted(() => {
         checkMobile()
         window.addEventListener('resize', checkMobile)
+
         isDark.value = document.documentElement.classList.contains('dark')
+
         if (chartStore.selectedPair && chartStore.selectedPair !== props.pair) {
             emit('update:pair', chartStore.selectedPair)
         } else {
             chartStore.setPair(props.pair)
         }
+
         chartStore.setOpenTrades(props.openTrades ?? [])
         initPrice()
         generateCandles()
         startTicking()
         animate()
+
+        // Start trade expiry monitoring
+        startTradeExpiryMonitoring()
+
+        // Add periodic health check
+        healthCheckInterval = setInterval(() => {
+            if (!chartStore.validateDataIntegrity()) {
+                console.warn('Data integrity issues detected, resetting view')
+                chartStore.resetView()
+            }
+        }, HEALTH_CHECK_INTERVAL)
+
         resizeObserver = new ResizeObserver(() => {
             if (container.value && !dragging) autoPan(container.value.clientWidth)
         })
         if (container.value) resizeObserver.observe(container.value)
+
         canvas.value?.addEventListener('mousemove', handleMouseMove)
         canvas.value?.addEventListener('mouseleave', handleMouseLeave)
         canvas.value?.addEventListener('wheel', handleWheel, { passive: false })
@@ -933,10 +1167,12 @@
         canvas.value?.addEventListener('touchend', handleTouchEnd, { passive: true })
         window.addEventListener('mousemove', handleMouseDrag)
         window.addEventListener('mouseup', handleMouseUp)
+
         const mo = new MutationObserver(() => {
             isDark.value = document.documentElement.classList.contains('dark')
         })
         mo.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] })
+
         onBeforeUnmount(() => mo.disconnect())
     })
 
@@ -944,6 +1180,8 @@
         window.removeEventListener('resize', checkMobile)
         if (animationId) cancelAnimationFrame(animationId)
         if (tickInterval) clearInterval(tickInterval)
+        if (healthCheckInterval) clearInterval(healthCheckInterval)
+        if (tradeExpiryCheckInterval) clearInterval(tradeExpiryCheckInterval)
         resizeObserver?.disconnect()
         canvas.value?.removeEventListener('mousemove', handleMouseMove)
         canvas.value?.removeEventListener('mouseleave', handleMouseLeave)
@@ -1004,6 +1242,11 @@
             <button @click="fitToScreen" :class="['p-2 rounded transition-colors flex items-center justify-center cursor-pointer flex-shrink-0',
                 isDark ? 'bg-gray-800 hover:bg-gray-700 text-gray-300' : 'bg-white hover:bg-gray-100 text-gray-700 border border-gray-300']" title="Fit to Screen">
                 <Maximize2 :size="18" />
+            </button>
+
+            <button @click="resetView" :class="['p-2 rounded transition-colors flex items-center justify-center cursor-pointer flex-shrink-0',
+                isDark ? 'bg-gray-800 hover:bg-gray-700 text-gray-300' : 'bg-white hover:bg-gray-100 text-gray-700 border border-gray-300']" title="Reset View">
+                <RotateCcw :size="18" />
             </button>
 
             <button @click="jumpToLive" :class="['p-2 rounded transition-colors flex items-center justify-center cursor-pointer flex-shrink-0',

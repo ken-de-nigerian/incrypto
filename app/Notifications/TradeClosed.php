@@ -2,8 +2,8 @@
 
 namespace App\Notifications;
 
+use App\Models\Trade;
 use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
@@ -11,12 +11,14 @@ class TradeClosed extends Notification
 {
     use Queueable;
 
+    public Trade $trade;
+
     /**
      * Create a new notification instance.
      */
-    public function __construct()
+    public function __construct(Trade $trade)
     {
-        //
+        $this->trade = $trade;
     }
 
     /**
@@ -26,7 +28,7 @@ class TradeClosed extends Notification
      */
     public function via(object $notifiable): array
     {
-        return ['mail'];
+        return ['mail', 'database'];
     }
 
     /**
@@ -34,10 +36,17 @@ class TradeClosed extends Notification
      */
     public function toMail(object $notifiable): MailMessage
     {
+        $pnl_sign = $this->trade->pnl >= 0 ? '+' : '';
+        $pnl_formatted = number_format($this->trade->pnl, 2);
+
+        $subject = 'Trade Closed: ' . $this->trade->pair . ' Result: ' . $pnl_sign . '$' . $pnl_formatted;
+
         return (new MailMessage)
-            ->line('The introduction to the notification.')
-            ->action('Notification Action', url('/'))
-            ->line('Thank you for using our application!');
+            ->subject($subject)
+            ->view('emails.forex_trade_closed', [
+                'user' => $notifiable,
+                'trade' => $this->trade
+            ]);
     }
 
     /**
@@ -47,8 +56,31 @@ class TradeClosed extends Notification
      */
     public function toArray(object $notifiable): array
     {
+        $pairName = $this->trade->pair;
+        $type = ucfirst($this->trade->type);
+        $pnl = number_format($this->trade->pnl, 2);
+
+        $pnl_status = $this->trade->pnl >= 0 ? 'profit' : 'loss';
+        $pnl_sign = $this->trade->pnl >= 0 ? '+' : '-';
+
+        // Notification message
+        $content = "Your $type trade on $pairName has closed. You realized a $pnl_status of $pnl_sign\$$pnl.";
+
         return [
-            //
+            'type' => 'trade_closed',
+            'title' => 'Forex Trade Closed Successfully',
+            'content' => $content,
+            'trade_details' => [
+                'pair' => $this->trade->pair,
+                'amount' => $this->trade->amount,
+                'type' => $this->trade->type,
+                'entry_price' => $this->trade->entry_price,
+                'exit_price' => $this->trade->exit_price,
+                'pnl' => $this->trade->pnl,
+                'trading_mode' => $this->trade->trading_mode,
+                'closed_at' => $this->trade->closed_at,
+                'is_auto_close' => $this->trade->is_auto_close,
+            ]
         ];
     }
 }

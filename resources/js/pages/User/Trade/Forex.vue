@@ -142,8 +142,10 @@
             amount: parseFloat(t.amount),
             entry_price: parseFloat(t.entry_price),
             opened_at: t.opened_at,
+            duration: t.duration,
+            expiry_time: t.expiry_time
         }))
-    );
+    )
 
     watch(openTrades, (val) => chartStore.setOpenTrades(val), { immediate: true });
 

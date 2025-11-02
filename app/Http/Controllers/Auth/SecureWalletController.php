@@ -26,7 +26,7 @@ class SecureWalletController extends Controller
      */
     protected function sendLoginResponse(): RedirectResponse
     {
-        $notification = $this->notify('success', __('Wallet secured. Redirecting to your dashboard.'));
+        $notification = $this->notify('success');
         if (Gate::allows('access-admin-dashboard')) {
             return $notification->toRoute('admin.dashboard');
         } elseif (Gate::allows('access-user-dashboard')) {

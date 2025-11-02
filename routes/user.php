@@ -83,7 +83,7 @@ Route::prefix('user')
 
                 Route::get('/forex', 'forex')->name('forex');
                 Route::post('/forex/execute', 'executeForex')->name('forex.execute');
-                Route::patch('/forex/close', 'closeForex')->name('forex.close');
+                Route::patch('/forex/{trade}/close', 'closeForex')->name('forex.close');
 
                 Route::get('/stock', 'stock')->name('stock');
                 Route::post('/stock/execute', 'executeStock')->name('stock.execute');

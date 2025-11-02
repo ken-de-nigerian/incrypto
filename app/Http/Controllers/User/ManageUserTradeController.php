@@ -3,9 +3,11 @@
 namespace App\Http\Controllers\User;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\closeForexRequest;
 use App\Http\Requests\executeForexRequest;
 use App\Http\Requests\FundAccountRequest;
 use App\Http\Requests\WithdrawAccountRequest;
+use App\Models\Trade;
 use App\Services\ForexTradeService;
 use App\Services\GatewayHandlerService;
 use App\Services\TradeCryptoPageService;
@@ -80,6 +82,24 @@ class ManageUserTradeController extends Controller
 
             return $this->notify('success', 'Trade executed successfully')->toBack();
         } catch (Exception $e) {
+            return $this->notify('error', __($e->getMessage()))->toBack();
+        }
+    }
+
+    /**
+     * @throws Throwable
+     */
+    public function closeForex(closeForexRequest $request, Trade $trade, ForexTradeService $forexTradeService)
+    {
+        try {
+            $forexTradeService->closeForex(
+                $request->user(),
+                $request->validated(),
+                $trade
+            );
+
+            return $this->notify('success', 'Trade closed successfully')->toBack();
+        }catch (Exception $e) {
             return $this->notify('error', __($e->getMessage()))->toBack();
         }
     }

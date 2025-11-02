@@ -30,6 +30,7 @@ class Trade extends Model
         'opened_at',
         'closed_at',
         'expiry_time',
+        'is_auto_close'
     ];
 
     /**
@@ -45,6 +46,7 @@ class Trade extends Model
         'opened_at' => 'datetime',
         'closed_at' => 'datetime',
         'expiry_time' => 'datetime',
+        'is_auto_close' => 'boolean'
     ];
 
     /**

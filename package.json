@@ -42,6 +42,8 @@
         "lightweight-charts": "^5.0.9",
         "lodash": "^4.17.21",
         "lucide-vue-next": "^0.544.0",
+        "pinia": "^3.0.3",
+        "pinia-plugin-persistedstate": "^4.7.1",
         "qrcode-vue3": "^1.7.1",
         "quill": "^2.0.3",
         "tailwind-merge": "^3.2.0",

@@ -25,7 +25,7 @@ class ManageUserWalletConnectController extends Controller
         // Get All Wallets Listed
         $wallets = (new GatewayHandlerService())->getWallets();
 
-        return Inertia::render('User/Wallet', [
+        return Inertia::render('User/Wallet/Index', [
             'userWallet' => auth()->user()->load(['wallets']),
             'wallets' => $wallets,
         ]);

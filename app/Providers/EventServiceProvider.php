@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use App\Events\AccountDeleted;
+use App\Events\ForexTradeExecuted;
 use App\Events\TradingAccountDebited;
 use App\Events\TradingAccountFunded;
 use App\Events\BalanceAdjusted;
@@ -26,6 +27,7 @@ use App\Listeners\SendBalanceAdjustedNotification;
 use App\Listeners\SendCryptoReceivedNotifications;
 use App\Listeners\SendCryptoSentNotifications;
 use App\Listeners\SendDebitedSuccessfulNotification;
+use App\Listeners\SendForexTradeExecutedNotification;
 use App\Listeners\SendFundedSuccessfulNotification;
 use App\Listeners\SendKycConfirmationToUser;
 use App\Listeners\SendPasswordChangeNotification;
@@ -78,6 +80,9 @@ class EventServiceProvider extends ServiceProvider
         ],
         TradingAccountDebited::class => [
             SendDebitedSuccessfulNotification::class,
+        ],
+        ForexTradeExecuted::class => [
+            SendForexTradeExecutedNotification::class,
         ],
         DatabaseAndEmailNotificationDispatchedEvent::class => [
             DatabaseAndEmailNotificationListener::class,

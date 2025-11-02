@@ -80,12 +80,25 @@ Route::prefix('user')
             ->controller(ManageUserTradeController::class)
             ->group(function () {
                 Route::get('/', 'index')->name('index');
+
                 Route::get('/forex', 'forex')->name('forex');
+                Route::post('/forex/execute', 'executeForex')->name('forex.execute');
+
                 Route::get('/stock', 'stock')->name('stock');
+                Route::post('/stock/execute', 'executeStock')->name('stock.execute');
+
                 Route::get('/crypto', 'crypto')->name('crypto');
+                Route::post('/crypto/execute', 'executeCrypto')->name('crypto.execute');
+
                 Route::get('/investment', 'investment')->name('investment');
+                Route::post('/investment/execute', 'executeInvestment')->name('investment.execute');
+
                 Route::get('/network', 'network')->name('network');
+                Route::post('/network/execute', 'executeNetwork')->name('network.execute');
+
                 Route::get('/history', 'history')->name('history');
+                Route::post('/history/execute', 'executeHistory')->name('history.execute');
+
                 Route::post('/fund', 'fundAccount')->name('fund.account');
                 Route::post('/withdraw', 'withdrawAccount')->name('withdraw.account');
             });

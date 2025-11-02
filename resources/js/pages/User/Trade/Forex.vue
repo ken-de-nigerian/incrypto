@@ -1,6 +1,6 @@
 <script setup lang="ts">
     import { computed, ref, watch, onMounted } from 'vue';
-    import { Head, usePage } from '@inertiajs/vue3';
+    import { Head, router, usePage } from '@inertiajs/vue3';
     import {
         DollarSignIcon,
         WalletIcon,
@@ -22,11 +22,48 @@
     import MobileTradingPanel from '@/components/MobileTradingPanel.vue';
     import PairDrawer from '@/components/PairDrawer.vue';
     import TradesDrawer from '@/components/TradesDrawer.vue';
+    import { useChartStore } from '@/stores/chartStore';
 
-    interface Token { symbol: string; name: string; logo: string; decimals: number; price_change_24h: number; }
-    interface UserProfile { live_trading_balance: number | string; demo_trading_balance: number | string; trading_status: 'live' | 'demo'; }
-    interface Trade { id: number; pair: string; pairName: string; type: 'Buy' | 'Sell'; status: 'Open' | 'Closed'; pnl: number; timestamp: string; }
-    interface ForexPair { symbol: string; name: string; price: string; change: string; high: string; low: string; volume: string; }
+    interface Token {
+        symbol: string;
+        name: string;
+        logo: string;
+        decimals: number;
+        price_change_24h: number;
+    }
+
+    interface UserProfile {
+        live_trading_balance: number | string;
+        demo_trading_balance: number | string;
+        trading_status: 'live' | 'demo';
+    }
+
+    interface Trade {
+        id: number;
+        pair: string;
+        pair_name: string;
+        type: 'Up' | 'Down';
+        amount: string;
+        duration: string;
+        entry_price: string;
+        exit_price: string | null;
+        status: 'Open' | 'Closed';
+        pnl: string;
+        trading_mode: 'demo' | 'live';
+        opened_at: string;
+        closed_at: string | null;
+        expiry_time: string;
+    }
+
+    interface ForexPair {
+        symbol: string;
+        name: string;
+        price: string;
+        change: string;
+        high: string;
+        low: string;
+        volume: string;
+    }
 
     const props = defineProps<{
         tokens: Array<Token>;
@@ -35,10 +72,16 @@
         forexPairs: Array<ForexPair>;
         trades: Array<Trade>;
         auth: {
-            user: { profile: UserProfile; first_name: string; last_name: string };
+            user: {
+                profile: UserProfile;
+                first_name: string;
+                last_name: string
+            };
             notification_count: number;
         };
     }>();
+
+    const chartStore = useChartStore();
 
     const isNotificationsModalOpen = ref(false);
     const isFundingModalOpen = ref(false);
@@ -47,6 +90,7 @@
     const isRightDrawerOpen = ref(false);
 
     const selectedPair = ref<ForexPair | null>(null);
+    const selectedPairSymbol = ref<string>('');
     const tradeFormData = ref({ type: null as 'Up' | 'Down' | null, amount: 0, duration: '5m' });
     const tradeError = ref('');
     const isExecutingTrade = ref(false);
@@ -89,6 +133,20 @@
         { label: 'Trading' }
     ];
 
+    const openTrades = computed(() => props.trades
+        .filter(t => t.status === 'Open' && t.trading_mode === (isLiveMode.value ? 'live' : 'demo'))
+        .map(t => ({
+            id: t.id,
+            pair: t.pair,
+            type: t.type,
+            amount: parseFloat(t.amount),
+            entry_price: parseFloat(t.entry_price),
+            opened_at: t.opened_at,
+        }))
+    );
+
+    watch(openTrades, (val) => chartStore.setOpenTrades(val), { immediate: true });
+
     const handleFundingClick = () => { if (!isLiveMode.value) return; isFundingModalOpen.value = true; };
     const handleWithdrawalClick = () => { if (!isLiveMode.value) return; isWithdrawalModalOpen.value = true; };
 
@@ -103,13 +161,40 @@
     const executeTrade = async () => {
         if (!validateTrade() || !selectedPair.value) return;
         isExecutingTrade.value = true;
+        tradeError.value = '';
         try {
-            await new Promise(r => setTimeout(r, 1500));
-            tradeFormData.value = { type: null, amount: 0, duration: '5m' };
-            tradeError.value = '';
+            const tradeData = {
+                pair: selectedPair.value.symbol,
+                pair_name: selectedPair.value.name,
+                type: tradeFormData.value.type,
+                amount: tradeFormData.value.amount,
+                duration: tradeFormData.value.duration,
+                entry_price: parseFloat(selectedPair.value.price),
+                trading_mode: isLiveMode.value ? 'live' : 'demo'
+            };
+            await new Promise((resolve, reject) => {
+                router.post(route('user.trade.forex.execute'), tradeData, {
+                    preserveScroll: true,
+                    preserveState: true,
+                    onSuccess: (page) => {
+                        tradeFormData.value = { type: null, amount: 0, duration: '5m' };
+                        tradeError.value = '';
+                        resolve(page);
+                    },
+                    onError: (errors) => {
+                        if (errors.amount) tradeError.value = errors.amount;
+                        else if (errors.pair) tradeError.value = errors.pair;
+                        else if (errors.type) tradeError.value = errors.type;
+                        else tradeError.value = 'Failed to execute trade. Please try again.';
+                        reject(errors);
+                    },
+                    onFinish: () => {
+                        isExecutingTrade.value = false;
+                    }
+                });
+            });
         } catch (e: any) {
-            tradeError.value = 'Trade execution failed: ' + e.message;
-        } finally {
+            tradeError.value = e.message || 'Trade execution failed. Please try again.';
             isExecutingTrade.value = false;
         }
     };
@@ -125,15 +210,29 @@
         if (isRightDrawerOpen.value) isLeftDrawerOpen.value = false;
     };
 
-    // Prevent body scroll when any modal/drawer is open
     watch([isFundingModalOpen, isWithdrawalModalOpen, isLeftDrawerOpen, isRightDrawerOpen],
-    ([f, w, l, r]) => {
-        document.body.style.overflow = f || w || l || r ? 'hidden' : '';
+        ([f, w, l, r]) => {
+            document.body.style.overflow = f || w || l || r ? 'hidden' : '';
+        });
+
+    watch(selectedPairSymbol, (newSymbol) => {
+        const pair = props.forexPairs.find(p => p.symbol === newSymbol);
+        if (pair) selectedPair.value = pair;
     });
 
     onMounted(() => {
+        const persistedSymbol = chartStore.selectedPair;
+        if (persistedSymbol) {
+            const persistedPair = props.forexPairs.find(p => p.symbol === persistedSymbol);
+            if (persistedPair) {
+                selectedPair.value = persistedPair;
+                selectedPairSymbol.value = persistedSymbol;
+                return;
+            }
+        }
         if (props.forexPairs.length) {
             selectedPair.value = props.forexPairs[0];
+            selectedPairSymbol.value = props.forexPairs[0].symbol;
         }
     });
 </script>
@@ -144,7 +243,6 @@
     <AppLayout>
         <div class="lg:ml-64 pt-5 lg:pt-10 p-4 sm:p-6 lg:p-8 pb-20 sm:pb-8 h-screen flex flex-col">
 
-            <!-- Breadcrumb & Balance -->
             <Breadcrumb
                 :items="breadcrumbItems"
                 :user="user"
@@ -173,10 +271,12 @@
                         <button v-if="isLiveMode" @click="handleFundingClick" class="flex-1 sm:flex-none flex items-center justify-center gap-2 px-3 sm:px-4 py-2 bg-background border border-border text-card-foreground rounded-xl text-xs sm:text-sm font-semibold hover:bg-muted cursor-pointer">
                             <WalletIcon class="w-4 h-4" /> <span>Deposit</span>
                         </button>
+
                         <button v-if="isLiveMode" @click="handleWithdrawalClick" class="flex-1 sm:flex-none flex items-center justify-center gap-2 px-3 sm:px-4 py-2 bg-background border border-border text-card-foreground rounded-xl text-xs sm:text-sm font-semibold hover:bg-muted cursor-pointer">
                             <DollarSignIcon class="w-4 h-4" /> <span>Withdraw</span>
                         </button>
                     </div>
+
                     <TradingModeSwitcher
                         :is-live-mode="isLiveMode"
                         :live-balance="liveBalance"
@@ -186,31 +286,19 @@
                 </div>
             </div>
 
-            <!-- Main layout -->
             <div class="mt-4 flex-1 flex flex-col lg:flex-row gap-3 lg:min-h-0">
                 <div class="flex-1 bg-card border border-border rounded-2xl flex flex-col lg:flex-row lg:min-h-0 lg:overflow-hidden">
-                    <!-- Mobile top bar – Full Width -->
                     <div class="flex lg:hidden bg-muted/20 border-b border-border p-3 flex-shrink-0">
                         <div class="flex w-full items-center justify-between gap-2">
-                            <!-- Market Badge -->
-                            <button
-                                @click="toggleLeftDrawer"
-                                class="flex-1 sm:flex-none flex items-center justify-center gap-2 px-3 sm:px-4 py-2 bg-background border border-border text-card-foreground rounded-xl text-xs sm:text-sm font-semibold hover:bg-muted cursor-pointer"
-                                title="Market">
-                                <div class="flex items-center justify-center w-7 h-7 rounded-full"
-                                     :class="isLeftDrawerOpen ? 'bg-primary/20' : 'bg-primary/10 group-hover:bg-primary/20'">
+                            <button @click="toggleLeftDrawer" class="flex-1 sm:flex-none flex items-center justify-center gap-2 px-3 sm:px-4 py-2 bg-background border border-border text-card-foreground rounded-xl text-xs sm:text-sm font-semibold hover:bg-muted cursor-pointer" title="Market">
+                                <div class="flex items-center justify-center w-7 h-7 rounded-full" :class="isLeftDrawerOpen ? 'bg-primary/20' : 'bg-primary/10 group-hover:bg-primary/20'">
                                     <ArrowUpDown class="w-4 h-4" :class="isLeftDrawerOpen ? 'text-primary' : 'text-primary'" />
                                 </div>
                                 <span class="text-xs font-semibold tracking-tight">Market Pairs</span>
                             </button>
 
-                            <!-- Trades Badge -->
-                            <button
-                                @click="toggleRightDrawer"
-                                class="flex-1 sm:flex-none flex items-center justify-center gap-2 px-3 sm:px-4 py-2 bg-background border border-border text-card-foreground rounded-xl text-xs sm:text-sm font-semibold hover:bg-muted cursor-pointer"
-                                title="Trades">
-                                <div class="flex items-center justify-center w-7 h-7 rounded-full"
-                                     :class="isRightDrawerOpen ? 'bg-emerald-500/20' : 'bg-emerald-500/10 group-hover:bg-emerald-500/20'">
+                            <button @click="toggleRightDrawer" class="flex-1 sm:flex-none flex items-center justify-center gap-2 px-3 sm:px-4 py-2 bg-background border border-border text-card-foreground rounded-xl text-xs sm:text-sm font-semibold hover:bg-muted cursor-pointer" title="Trades">
+                                <div class="flex items-center justify-center w-7 h-7 rounded-full" :class="isRightDrawerOpen ? 'bg-emerald-500/20' : 'bg-emerald-500/10 group-hover:bg-emerald-500/20'">
                                     <TrendingUp class="w-4 h-4" :class="isRightDrawerOpen ? 'text-emerald-500' : 'text-emerald-500'" />
                                 </div>
                                 <span class="text-xs font-semibold tracking-tight">Trade History</span>
@@ -218,7 +306,6 @@
                         </div>
                     </div>
 
-                    <!-- Desktop sidebar -->
                     <div class="hidden lg:flex flex-col gap-2 bg-muted/20 border-r border-border p-3 flex-shrink-0">
                         <button class="w-14 h-14 mb-24 flex flex-col items-center justify-center bg-card border border-border rounded-xl hover:bg-muted transition cursor-pointer" title="Profile">
                             <div class="w-8 h-8 rounded-full bg-primary/20 border-2 border-primary flex items-center justify-center overflow-hidden">
@@ -253,20 +340,19 @@
                         </TextLink>
                     </div>
 
-                    <!-- Chart -->
                     <div class="flex-1 h-[calc(100vh-280px)] lg:h-auto lg:min-h-0">
                         <TradingChart
                             v-if="selectedPair"
-                            :pair="selectedPair.symbol"
+                            v-model:pair="selectedPairSymbol"
                             :price="selectedPair.price"
                             :change="selectedPair.change"
                             :low="selectedPair.low"
                             :high="selectedPair.high"
                             :volume="selectedPair.volume"
+                            :open-trades="openTrades"
                         />
                     </div>
 
-                    <!-- Desktop trading panel -->
                     <DesktopTradingPanel
                         :selected-pair="selectedPair"
                         :trade-form-data="tradeFormData"
@@ -282,7 +368,6 @@
                     />
                 </div>
 
-                <!-- Mobile trading panel -->
                 <MobileTradingPanel
                     :selected-pair="selectedPair"
                     :trade-form-data="tradeFormData"
@@ -302,7 +387,11 @@
                 v-model="isLeftDrawerOpen"
                 :pairs="props.forexPairs"
                 :selected-symbol="selectedPair?.symbol"
-                @select-pair="pair => { selectedPair = pair; isLeftDrawerOpen = false; }"
+                @select-pair="pair => {
+                    selectedPair = pair;
+                    selectedPairSymbol = pair.symbol;
+                    isLeftDrawerOpen = false;
+                }"
             />
 
             <TradesDrawer

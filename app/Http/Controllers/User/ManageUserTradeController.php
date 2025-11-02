@@ -3,8 +3,10 @@
 namespace App\Http\Controllers\User;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\executeForexRequest;
 use App\Http\Requests\FundAccountRequest;
 use App\Http\Requests\WithdrawAccountRequest;
+use App\Services\ForexTradeService;
 use App\Services\GatewayHandlerService;
 use App\Services\TradeCryptoPageService;
 use App\Services\WalletService;
@@ -30,10 +32,8 @@ class ManageUserTradeController extends Controller
      */
     public function index(): Response
     {
-        // Delegate all data gathering to the service class
         $pageData = $this->tradeCrypto->getData(Auth::user());
-
-        return Inertia::render('User/Trade', $pageData);
+        return Inertia::render('User/Trade/Index', $pageData);
     }
 
     /**
@@ -43,15 +43,11 @@ class ManageUserTradeController extends Controller
     {
         $user = Auth::user();
 
-        // Get base page data from service
         $pageData = $this->tradeCrypto->getData($user);
-
-        // Add Forex-specific data
         $pageData['forexPairs'] = $this->getForexPairs();
         $pageData['trades'] = $this->getUserTrades($user);
-        $pageData['tradingStats'] = $this->getTradingStats($user);
 
-        return Inertia::render('User/Forex', $pageData);
+        return Inertia::render('User/Trade/Forex', $pageData);
     }
 
     /**
@@ -68,77 +64,24 @@ class ManageUserTradeController extends Controller
      */
     private function getUserTrades($user): array
     {
-        // Replace with actual database query
-        // Example: return $user->trades()->latest()->take(10)->get();
-        return [
-            [
-                'id' => 1,
-                'pair' => 'EUR/USD',
-                'pairName' => '2 hours ago',
-                'type' => 'Buy',
-                'status' => 'Open',
-                'pnl' => 145.50,
-                'timestamp' => '2 hours ago'
-            ],
-            [
-                'id' => 2,
-                'pair' => 'GBP/USD',
-                'pairName' => '4 hours ago',
-                'type' => 'Sell',
-                'status' => 'Closed',
-                'pnl' => -52.25,
-                'timestamp' => '4 hours ago'
-            ],
-            [
-                'id' => 3,
-                'pair' => 'USD/JPY',
-                'pairName' => '1 day ago',
-                'type' => 'Buy',
-                'status' => 'Closed',
-                'pnl' => 327.80,
-                'timestamp' => '1 day ago'
-            ],
-            [
-                'id' => 4,
-                'pair' => 'AUD/USD',
-                'pairName' => '1 day ago',
-                'type' => 'Sell',
-                'status' => 'Closed',
-                'pnl' => 89.15,
-                'timestamp' => '1 day ago'
-            ]
-        ];
+        return $user->trades()->latest()->get()->toArray();
     }
 
     /**
-     * Get trading statistics for the user
+     * @throws Throwable
      */
-    private function getTradingStats($user): array
+    public function executeForex(executeForexRequest $request, ForexTradeService $forexTradeService)
     {
-        // Calculate actual stats from user's trades
-        // This is example data - replace with real calculations
-        return [
-            [
-                'label' => 'Open Trades',
-                'value' => '2',
-                'color' => 'text-primary'
-            ],
-            [
-                'label' => 'Win Rate',
-                'value' => '65%',
-                'color' => 'text-emerald-500'
-            ],
-            [
-                'label' => 'Leverage',
-                'value' => '1:100',
-                'color' => 'text-warning'
-            ],
-            [
-                'label' => 'Risk/Reward',
-                'value' => '1:2.5',
-                'color' => 'text-primary'
-            ]
-        ];
+        try {
+            $forexTradeService->executeForex(
+                $request->user(),
+                $request->validated()
+            );
+
+            return $this->notify('success', 'Trade executed successfully')->toBack();
+        } catch (Exception $e) {
+            return $this->notify('error', __($e->getMessage()))->toBack();
+        }
     }
 
     /**
@@ -149,7 +92,7 @@ class ManageUserTradeController extends Controller
     {
         try {
             $this->tradeCrypto->executeAccountFund(
-                Auth::user(),
+                $request->user(),
                 $request->validated()
             );
 
@@ -169,7 +112,7 @@ class ManageUserTradeController extends Controller
 
         try {
             $this->tradeCrypto->executeAccountFundWithdrawal(
-                Auth::user(),
+                $request->user(),
                 $validated
             );
 

@@ -14,19 +14,27 @@ return new class extends Migration
         Schema::create('trades', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
-            $table->string('pair');
-            $table->string('pair_name');
-            $table->enum('type', ['Buy', 'Sell']);
-            $table->enum('status', ['Open', 'Closed', 'Pending'])->default('Pending');
-            $table->decimal('entry_price', 10, 4);
-            $table->decimal('amount', 12);
-            $table->integer('leverage')->default(1);
-            $table->decimal('stop_loss', 10, 4)->nullable();
-            $table->decimal('take_profit', 10, 4)->nullable();
-            $table->decimal('pnl', 12)->default(0);
-            $table->timestamp('opened_at');
+            $table->string('pair', 20);
+            $table->string('pair_name', 100);
+            $table->enum('type', ['Up', 'Down']);
+            $table->decimal('amount', 15);
+            $table->string('duration', 10);
+            $table->decimal('entry_price', 15, 8);
+            $table->decimal('exit_price', 15, 8)->nullable();
+            $table->enum('status', ['Open', 'Closed'])->default('Open');
+            $table->decimal('pnl', 15)->default(0);
+            $table->enum('trading_mode', ['live', 'demo'])->default('demo');
+            $table->timestamp('opened_at')->useCurrent();
             $table->timestamp('closed_at')->nullable();
+            $table->timestamp('expiry_time');
             $table->timestamps();
+
+            // Indexes
+            $table->index('user_id');
+            $table->index('status');
+            $table->index('trading_mode');
+            $table->index(['user_id', 'status']);
+            $table->index('expiry_time');
         });
     }
 

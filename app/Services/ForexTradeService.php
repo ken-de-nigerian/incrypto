@@ -24,7 +24,6 @@ class ForexTradeService
         $execution = DB::transaction(function () use ($user, $data, $expiryTime) {
 
             $profile = $user->profile()->lockForUpdate()->first();
-
             if ($data['trading_mode'] !== $profile->trading_status) {
                 throw new Exception('Trading mode mismatch. Please refresh the page.');
             }
@@ -70,7 +69,7 @@ class ForexTradeService
         });
 
         // Dispatch the event with the new transaction data
-        event(new ForexTradeExecuted($user, $execution, $expiryTime));
+        event(new ForexTradeExecuted($user, $data, $expiryTime));
 
         return $execution;
     }

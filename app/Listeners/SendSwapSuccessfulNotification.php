@@ -6,9 +6,10 @@ use App\Events\CryptoSwapped;
 use App\Models\User;
 use App\Notifications\AdminSwapSuccessfulNotification;
 use App\Notifications\UserSwapSuccessfulNotification;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Support\Facades\Notification;
 
-class SendSwapSuccessfulNotification
+class SendSwapSuccessfulNotification implements ShouldQueue
 {
     /**
      * Handle the event.

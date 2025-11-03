@@ -5,12 +5,13 @@ namespace App\Listeners;
 use App\Events\PasswordUpdated;
 use App\Mail\MailPasswordResetConfirmation;
 use Exception;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Request;
 use Jenssegers\Agent\Agent;
 
-class SendPasswordChangeNotification
+class SendPasswordChangeNotification implements ShouldQueue
 {
     /**
      * Handle the event.

@@ -4,8 +4,9 @@ namespace App\Listeners;
 
 use App\Events\KycApproved;
 use App\Notifications\KycApprovedNotification;
+use Illuminate\Contracts\Queue\ShouldQueue;
 
-class SendKycApprovedNotification
+class SendKycApprovedNotification implements ShouldQueue
 {
     /**
      * Handle the event.

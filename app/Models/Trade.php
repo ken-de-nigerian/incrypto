@@ -28,6 +28,7 @@ class Trade extends Model
         'status',
         'pnl',
         'trading_mode',
+        'is_demo_forced_win',
         'opened_at',
         'closed_at',
         'expiry_time',
@@ -48,7 +49,8 @@ class Trade extends Model
         'opened_at' => 'datetime',
         'closed_at' => 'datetime',
         'expiry_time' => 'datetime',
-        'is_auto_close' => 'boolean'
+        'is_auto_close' => 'boolean',
+        'is_demo_forced_win' => 'boolean',
     ];
 
     /**

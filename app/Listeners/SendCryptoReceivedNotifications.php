@@ -5,9 +5,10 @@ namespace App\Listeners;
 use App\Events\CryptoReceived;
 use App\Models\User;
 use App\Notifications\NewReceivedCryptoTransactionAdminNotify;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Support\Facades\Notification;
 
-class SendCryptoReceivedNotifications
+class SendCryptoReceivedNotifications implements ShouldQueue
 {
     /**
      * Handle the event.

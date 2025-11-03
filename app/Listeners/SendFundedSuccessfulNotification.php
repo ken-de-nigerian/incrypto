@@ -4,10 +4,11 @@ namespace App\Listeners;
 
 use App\Events\TradingAccountFunded;
 use Exception;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 
-class SendFundedSuccessfulNotification
+class SendFundedSuccessfulNotification implements ShouldQueue
 {
     /**
      * Handle the event.

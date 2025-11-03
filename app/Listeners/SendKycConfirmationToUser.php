@@ -4,10 +4,11 @@ namespace App\Listeners;
 use App\Events\KycSubmitted;
 use App\Mail\KycSubmissionReceived;
 use Exception;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 
-class SendKycConfirmationToUser
+class SendKycConfirmationToUser implements ShouldQueue
 {
     /**
      * Handle the event.

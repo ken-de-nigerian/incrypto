@@ -21,7 +21,12 @@ class ForexTradeService
     {
         $expiryTime = $this->calculateExpiryTime($data['duration']);
 
-        $execution = DB::transaction(function () use ($user, $data, $expiryTime) {
+        $shouldWin = false;
+        if ($data['trading_mode'] === 'demo') {
+            $shouldWin = mt_rand(0, 99) < 90;
+        }
+
+        $execution = DB::transaction(function () use ($user, $data, $expiryTime, $shouldWin) {
 
             $profile = $user->profile()->lockForUpdate()->first();
             if ($data['trading_mode'] !== $profile->trading_status) {
@@ -53,6 +58,7 @@ class ForexTradeService
                 'duration' => $data['duration'],
                 'entry_price' => $data['entry_price'],
                 'trading_mode' => $data['trading_mode'],
+                'is_demo_forced_win' => $shouldWin,
                 'status' => 'Open',
                 'pnl' => 0,
                 'expiry_time' => $expiryTime,
@@ -75,18 +81,32 @@ class ForexTradeService
     }
 
     /**
-     * @throws Exception
      * @throws Throwable
      */
     public function closeForex(User $user, array $data, Trade $trade)
     {
-        $closed = DB::transaction(function () use ($user, $data, $trade) {
+        $isAutoClose = $data['is_auto_close'] ?? false;
+
+        $closed = DB::transaction(function () use ($user, $data, $trade, $isAutoClose) {
 
             $trade->lockForUpdate();
             $trade->refresh();
 
             if ($trade->status !== 'Open') {
-                throw new Exception('This trade is already closed.');
+                return false;
+            }
+
+            if ($trade->trading_mode === 'demo' && $trade->is_demo_forced_win && $isAutoClose) {
+
+                if ($data['pnl'] < 0) {
+
+                    $forceWin = mt_rand(0, 100) / 100 < 0.5;
+
+                    if ($forceWin) {
+                        $forcedPnL = $trade->amount * 0.05;
+                        $data['pnl'] = $forcedPnL;
+                    }
+                }
             }
 
             $updated = $trade->update([
@@ -94,7 +114,7 @@ class ForexTradeService
                 'pnl' => $data['pnl'],
                 'status' => 'Closed',
                 'closed_at' => $data['closed_at'],
-                'is_auto_close' => $data['is_auto_close'] ?? false
+                'is_auto_close' => $isAutoClose
             ]);
 
             $balanceField = $trade->trading_mode === 'live'
@@ -106,8 +126,9 @@ class ForexTradeService
             return $updated;
         });
 
-        // Dispatch the event with the new transaction data
-        event(new ForexTradeClosed($user, $trade));
+        if ($closed) {
+            event(new ForexTradeClosed($user, $trade));
+        }
 
         return $closed;
     }

@@ -4,8 +4,9 @@ namespace App\Listeners;
 
 use App\Events\KycRejected;
 use App\Notifications\KycRejectedNotification;
+use Illuminate\Contracts\Queue\ShouldQueue;
 
-class SendKycRejectedNotification
+class SendKycRejectedNotification implements ShouldQueue
 {
     /**
      * Handle the event.

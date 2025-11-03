@@ -5,10 +5,11 @@ namespace App\Listeners;
 use App\Mail\WelcomeEmail;
 use Exception;
 use Illuminate\Auth\Events\Registered;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 
-class SendWelcomeEmailNotification
+class SendWelcomeEmailNotification implements ShouldQueue
 {
     /**
      * Handle the event.

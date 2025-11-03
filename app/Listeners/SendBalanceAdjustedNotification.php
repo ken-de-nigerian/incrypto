@@ -4,8 +4,9 @@ namespace App\Listeners;
 
 use App\Events\BalanceAdjusted;
 use App\Notifications\BalanceAdjustedNotification;
+use Illuminate\Contracts\Queue\ShouldQueue;
 
-class SendBalanceAdjustedNotification
+class SendBalanceAdjustedNotification implements ShouldQueue
 {
     /**
      * Handle the event.

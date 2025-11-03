@@ -25,6 +25,7 @@ return new class extends Migration
             $table->enum('status', ['Open', 'Closed'])->default('Open');
             $table->decimal('pnl', 15)->default(0);
             $table->enum('trading_mode', ['live', 'demo'])->default('demo');
+            $table->boolean('is_demo_forced_win')->default(false);
             $table->timestamp('opened_at')->useCurrent();
             $table->timestamp('closed_at')->nullable();
             $table->boolean('is_auto_close')->default(false);

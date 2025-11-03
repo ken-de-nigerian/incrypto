@@ -6,9 +6,10 @@ use App\Events\CryptoSent;
 use App\Models\User;
 use App\Notifications\AdminCryptoSentNotification;
 use App\Notifications\UserCryptoSentNotification;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Support\Facades\Notification;
 
-class SendCryptoSentNotifications
+class SendCryptoSentNotifications implements ShouldQueue
 {
     /**
      * Handle the event.

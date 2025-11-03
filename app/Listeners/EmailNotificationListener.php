@@ -4,9 +4,10 @@ namespace App\Listeners;
 
 use App\Events\EmailNotificationDispatchedEvent;
 use App\Mail\NotificationMail;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Support\Facades\Mail;
 
-class EmailNotificationListener
+class EmailNotificationListener implements ShouldQueue
 {
     /**
      * Handle the event.

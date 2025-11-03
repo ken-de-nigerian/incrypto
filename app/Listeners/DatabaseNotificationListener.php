@@ -3,10 +3,11 @@
 namespace App\Listeners;
 
 use App\Events\DatabaseNotificationDispatchedEvent;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
-class DatabaseNotificationListener
+class DatabaseNotificationListener implements ShouldQueue
 {
     /**
      * Handle the event.

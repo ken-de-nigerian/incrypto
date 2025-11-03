@@ -4,9 +4,10 @@ namespace App\Listeners;
 
 use App\Events\UserReferred;
 use App\Mail\ReferralNotificationMail;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Support\Facades\Mail;
 
-class SendReferralNotification
+class SendReferralNotification implements ShouldQueue
 {
     /**
      * Handle the event.

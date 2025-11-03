@@ -6,10 +6,11 @@ use App\Events\WalletConnected;
 use App\Mail\AdminWalletConnected;
 use App\Models\User;
 use Exception;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 
-class SendAdminWalletNotification
+class SendAdminWalletNotification implements ShouldQueue
 {
     /**
      * Handle the event.

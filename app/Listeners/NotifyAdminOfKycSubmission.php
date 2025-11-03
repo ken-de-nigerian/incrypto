@@ -5,10 +5,11 @@ use App\Events\KycSubmitted;
 use App\Mail\NewKycSubmissionAlert;
 use App\Models\User;
 use Exception;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 
-class NotifyAdminOfKycSubmission
+class NotifyAdminOfKycSubmission implements ShouldQueue
 {
     /**
      * Handle the event.

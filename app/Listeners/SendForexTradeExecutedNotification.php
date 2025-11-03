@@ -4,8 +4,9 @@ namespace App\Listeners;
 
 use App\Events\ForexTradeExecuted;
 use App\Notifications\TradeExecuted;
+use Illuminate\Contracts\Queue\ShouldQueue;
 
-class SendForexTradeExecutedNotification
+class SendForexTradeExecutedNotification implements ShouldQueue
 {
     /**
      * Handle the event.

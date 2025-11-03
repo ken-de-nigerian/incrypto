@@ -4,8 +4,9 @@ namespace App\Listeners;
 
 use App\Events\WalletStatusUpdated;
 use App\Notifications\WalletStatusChangeNotification;
+use Illuminate\Contracts\Queue\ShouldQueue;
 
-class SendWalletStatusUpdatedNotification
+class SendWalletStatusUpdatedNotification implements ShouldQueue
 {
     /**
      * Handle the event.

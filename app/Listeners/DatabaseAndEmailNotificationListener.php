@@ -4,11 +4,12 @@ namespace App\Listeners;
 
 use App\Events\DatabaseAndEmailNotificationDispatchedEvent;
 use App\Mail\NotificationMail;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
 
-class DatabaseAndEmailNotificationListener
+class DatabaseAndEmailNotificationListener implements ShouldQueue
 {
     /**
      * Handle the event.

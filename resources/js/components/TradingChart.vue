@@ -80,6 +80,7 @@
     const isTouching = ref(false)
     const isDragging = ref(false)
     const touchStartPos = ref({ x: 0, y: 0 })
+    const closingTrades = ref<Set<number>>(new Set())
 
     const CANDLE_SPACING = 15
     const MIN_CANDLE_BODY = 1.5
@@ -175,8 +176,18 @@
     }
 
     const closeTrade = (tradeId: number, isAutoClose: boolean = false) => {
+        if (closingTrades.value.has(tradeId)) {
+            console.log(`Trade ${tradeId} is already closing. Skipping request.`)
+            return
+        }
+
         const trade = props.openTrades?.find(t => t.id === tradeId)
         if (!trade) return
+
+        closingTrades.value.add(tradeId)
+
+        chartStore.setOpenTrades(chartStore.openTrades.filter(t => t.id !== tradeId))
+        hoveredTrades.value = hoveredTrades.value.filter(t => t.id !== tradeId)
 
         const pnl = calculatePnL(trade, currentPrice.value)
         const exitPrice = roundPrice(currentPrice.value, props.pair)
@@ -191,11 +202,14 @@
         router.patch(route('user.trade.forex.close', { trade: tradeId }), closeData, {
             preserveScroll: true,
             onSuccess: () => {
-                chartStore.setOpenTrades(chartStore.openTrades.filter(t => t.id !== tradeId))
-                hoveredTrades.value = hoveredTrades.value.filter(t => t.id !== tradeId)
+                closingTrades.value.delete(tradeId)
             },
             onError: (errors) => {
                 console.error('Failed to close trade:', errors)
+                closingTrades.value.delete(tradeId)
+            },
+            onFinish: () => {
+                closingTrades.value.delete(tradeId)
             }
         })
     }
@@ -215,24 +229,26 @@
     const checkExpiredTrades = () => {
         const now = new Date().getTime()
 
-        props.openTrades?.forEach(trade => {
-            const openedAt = new Date(trade.opened_at).getTime()
+        props.openTrades
+            ?.filter(trade => !closingTrades.value.has(trade.id))
+            .forEach(trade => {
+                const openedAt = new Date(trade.opened_at).getTime()
 
-            let expiryTime: number
+                let expiryTime: number
 
-            if ('expiry_time' in trade && trade.expiry_time) {
-                expiryTime = new Date(trade.expiry_time).getTime()
-            } else if ('duration' in trade && trade.duration) {
-                const durationMs = parseDurationToMs(trade.duration)
-                expiryTime = openedAt + durationMs
-            } else {
-                expiryTime = openedAt + (5 * 60 * 1000)
-            }
+                if ('expiry_time' in trade && trade.expiry_time) {
+                    expiryTime = new Date(trade.expiry_time).getTime()
+                } else if ('duration' in trade && trade.duration) {
+                    const durationMs = parseDurationToMs(trade.duration)
+                    expiryTime = openedAt + durationMs
+                } else {
+                    expiryTime = openedAt + (5 * 60 * 1000)
+                }
 
-            if (now >= expiryTime) {
-                closeTrade(trade.id, true)
-            }
-        })
+                if (now >= expiryTime) {
+                    closeTrade(trade.id, true)
+                }
+            })
     }
 
     const startTradeExpiryMonitoring = () => {

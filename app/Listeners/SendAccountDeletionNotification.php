@@ -5,10 +5,11 @@ namespace App\Listeners;
 use App\Events\AccountDeleted;
 use App\Mail\AccountDeletedConfirmation;
 use Exception;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 
-class SendAccountDeletionNotification
+class SendAccountDeletionNotification implements ShouldQueue
 {
     /**
      * Handle the event.

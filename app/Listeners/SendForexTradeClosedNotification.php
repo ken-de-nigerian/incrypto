@@ -4,8 +4,9 @@ namespace App\Listeners;
 
 use App\Events\ForexTradeClosed;
 use App\Notifications\TradeClosed;
+use Illuminate\Contracts\Queue\ShouldQueue;
 
-class SendForexTradeClosedNotification
+class SendForexTradeClosedNotification implements ShouldQueue
 {
     /**
      * Handle the event.

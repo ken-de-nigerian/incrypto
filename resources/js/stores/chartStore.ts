@@ -27,6 +27,8 @@ export interface OpenTrade {
     opened_at: string
     duration?: string
     expiry_time?: string
+    trading_mode: 'demo' | 'live'
+    is_demo_forced_win: boolean
     pnl: number
     pnlPct: string
 }
@@ -63,10 +65,13 @@ export const useChartStore = defineStore('chart', () => {
         const diff = trade.type === 'Up'
             ? price - trade.entry_price
             : trade.entry_price - price
-        const pnl = diff * trade.amount
+
+        const pnl = diff * trade.amount * trade.leverage
+
         const pnlPct = trade.entry_price !== 0
-            ? ((diff / trade.entry_price) * 100).toFixed(2)
+            ? ((diff / trade.entry_price) * trade.leverage * 100).toFixed(2)
             : '0.00'
+
         return { pnl, pnlPct }
     }
 
@@ -179,9 +184,42 @@ export const useChartStore = defineStore('chart', () => {
     }
 
     function updateCurrentPrice(pair: string, price: number) {
-        if (pairDataMap.value[pair] && isFinite(price) && price > 0) {
-            pairDataMap.value[pair].currentPrice = price
+        if (!pairDataMap.value[pair] || !isFinite(price) || price <= 0) return
+
+        let finalPrice = price;
+
+        const forcedWinTrade = openTrades.value.find(t =>
+            t.pair === pair &&
+            t.trading_mode === 'demo' &&
+            t.is_demo_forced_win
+        );
+
+        if (forcedWinTrade) {
+            const entryPrice = forcedWinTrade.entry_price;
+            const leverage = forcedWinTrade.leverage;
+
+            const priceDiffForWin = (0.05 / leverage);
+
+            if (forcedWinTrade.type === 'Up') {
+                const winningPrice = entryPrice + priceDiffForWin;
+
+                if (price < winningPrice) {
+                    finalPrice = winningPrice;
+                } else {
+                    finalPrice = price;
+                }
+
+            } else {
+                const winningPrice = entryPrice - priceDiffForWin;
+                if (price > winningPrice) {
+                    finalPrice = winningPrice;
+                } else {
+                    finalPrice = price;
+                }
+            }
         }
+
+        pairDataMap.value[pair].currentPrice = finalPrice;
     }
 
     function updateLastCandleTime(pair: string, time: number) {

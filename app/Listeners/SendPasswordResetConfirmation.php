@@ -5,12 +5,13 @@ namespace App\Listeners;
 use App\Mail\MailPasswordResetConfirmation;
 use Exception;
 use Illuminate\Auth\Events\PasswordReset;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Request;
 use Jenssegers\Agent\Agent;
 
-class SendPasswordResetConfirmation
+class SendPasswordResetConfirmation implements ShouldQueue
 {
     /**
      * Handle the event.

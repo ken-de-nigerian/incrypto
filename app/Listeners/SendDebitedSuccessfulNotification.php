@@ -4,10 +4,11 @@ namespace App\Listeners;
 
 use App\Events\TradingAccountDebited;
 use Exception;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 
-class SendDebitedSuccessfulNotification
+class SendDebitedSuccessfulNotification implements ShouldQueue
 {
     /**
      * Handle the event.

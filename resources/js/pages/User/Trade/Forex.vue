@@ -44,6 +44,7 @@
         pair_name: string;
         type: 'Up' | 'Down';
         amount: string;
+        leverage: number
         duration: string;
         entry_price: string;
         exit_price: string | null;
@@ -91,7 +92,13 @@
 
     const selectedPair = ref<ForexPair | null>(null);
     const selectedPairSymbol = ref<string>('');
-    const tradeFormData = ref({ type: null as 'Up' | 'Down' | null, amount: 0, duration: '5m' });
+    const availableLeverages = ref([50, 100, 200, 500, 1000]);
+    const tradeFormData = ref({
+        type: null as 'Up' | 'Down' | null,
+        amount: 0,
+        duration: '5m',
+        leverage: 500
+    });
     const tradeError = ref('');
     const isExecutingTrade = ref(false);
 
@@ -140,6 +147,7 @@
             pair: t.pair,
             type: t.type,
             amount: parseFloat(t.amount),
+            leverage: t.leverage,
             entry_price: parseFloat(t.entry_price),
             opened_at: t.opened_at,
             duration: t.duration,
@@ -171,6 +179,7 @@
                 type: tradeFormData.value.type,
                 amount: tradeFormData.value.amount,
                 duration: tradeFormData.value.duration,
+                leverage: tradeFormData.value.leverage,
                 entry_price: parseFloat(selectedPair.value.price),
                 trading_mode: isLiveMode.value ? 'live' : 'demo'
             };
@@ -179,12 +188,13 @@
                     preserveScroll: true,
                     preserveState: true,
                     onSuccess: (page) => {
-                        tradeFormData.value = { type: null, amount: 0, duration: '5m' };
+                        tradeFormData.value = { type: null, amount: 0, duration: '5m', leverage: tradeFormData.value.leverage };
                         tradeError.value = '';
                         resolve(page);
                     },
                     onError: (errors) => {
                         if (errors.amount) tradeError.value = errors.amount;
+                        else if (errors.leverage) tradeError.value = errors.leverage;
                         else if (errors.pair) tradeError.value = errors.pair;
                         else if (errors.type) tradeError.value = errors.type;
                         else tradeError.value = 'Failed to execute trade. Please try again.';
@@ -289,7 +299,7 @@
             </div>
 
             <div class="mt-4 flex-1 flex flex-col lg:flex-row gap-3 lg:min-h-0">
-                <div class="flex-1 bg-card border border-border rounded-2xl flex flex-col lg:flex-row lg:min-h-0 lg:overflow-hidden">
+                <div class="flex-1 bg-card border border-border rounded-2xl flex flex-col lg:flex-row lg:min-h-0 lg:overflow-hidden" :class="{ 'padding-bottom': !selectedPair }">
                     <div class="flex lg:hidden bg-muted/20 border-b border-border p-3 flex-shrink-0">
                         <div class="flex w-full items-center justify-between gap-2">
                             <button @click="toggleLeftDrawer" class="flex-1 sm:flex-none flex items-center justify-center gap-2 px-3 sm:px-4 py-2 bg-background border border-border text-card-foreground rounded-xl text-xs sm:text-sm font-semibold hover:bg-muted cursor-pointer" title="Market">
@@ -309,12 +319,10 @@
                     </div>
 
                     <div class="hidden lg:flex flex-col gap-2 bg-muted/20 border-r border-border p-3 flex-shrink-0">
-                        <button class="w-14 h-14 mb-24 flex flex-col items-center justify-center bg-card border border-border rounded-xl hover:bg-muted transition cursor-pointer" title="Profile">
-                            <div class="w-8 h-8 rounded-full bg-primary/20 border-2 border-primary flex items-center justify-center overflow-hidden">
-                                <img v-if="user.profile?.profile_photo_path" :src="user.profile.profile_photo_path" alt="Profile" class="w-full h-full object-cover" />
-                                <span v-else class="text-xs font-bold text-primary">{{ initials }}</span>
-                            </div>
-                        </button>
+                        <div class="w-14 h-14 mb-18 flex flex-col items-center justify-center bg-card border border-border rounded-xl hover:bg-muted transition cursor-pointer">
+                            <img v-if="user.profile?.profile_photo_path" :src="user.profile.profile_photo_path" alt="Profile" class="w-full h-full rounded-xl object-cover" />
+                            <span v-else class="text-xl font-bold text-primary">{{ initials }}</span>
+                        </div>
 
                         <button @click="toggleLeftDrawer" class="w-14 h-14 flex flex-col items-center justify-center bg-card border border-border rounded-xl hover:bg-muted transition cursor-pointer" title="Market">
                             <ArrowUpDown class="w-5 h-5 text-primary" />
@@ -353,6 +361,14 @@
                             :volume="selectedPair.volume"
                             :open-trades="openTrades"
                         />
+
+                        <div v-if="!selectedPair" class="text-center text-muted-foreground text-sm py-4 h-full flex flex-col justify-center items-center">
+                            <div class="flex justify-center mb-3">
+                                <TrendingUp class="h-10 w-10 text-muted-foreground" />
+                            </div>
+                            <p class="text-base font-medium mb-1 text-card-foreground">No Chart Found</p>
+                            <p class="text-xs">Select a pair to view the trading chart</p>
+                        </div>
                     </div>
 
                     <DesktopTradingPanel
@@ -365,8 +381,10 @@
                         @update:duration="(d) => tradeFormData.duration = d"
                         @update:amount="(a) => tradeFormData.amount = a"
                         @update:type="(t) => tradeFormData.type = t"
+                        @update:leverage="(l) => tradeFormData.leverage = l"
                         @execute-trade="executeTrade"
                         @set-max-amount="setMaxAmount"
+                        :available-leverages="availableLeverages"
                     />
                 </div>
 
@@ -380,8 +398,10 @@
                     @update:duration="(d) => tradeFormData.duration = d"
                     @update:amount="(a) => tradeFormData.amount = a"
                     @update:type="(t) => tradeFormData.type = t"
+                    @update:leverage="(l) => tradeFormData.leverage = l"
                     @execute-trade="executeTrade"
                     @set-max-amount="setMaxAmount"
+                    :available-leverages="availableLeverages"
                 />
             </div>
 
@@ -424,3 +444,11 @@
         </div>
     </AppLayout>
 </template>
+
+<style scoped>
+    @media (max-width: 640px) {
+        .padding-bottom {
+            margin-bottom: 50px;
+        }
+    }
+</style>

@@ -18,6 +18,7 @@ return new class extends Migration
             $table->string('pair_name', 100);
             $table->enum('type', ['Up', 'Down']);
             $table->decimal('amount', 15);
+            $table->unsignedSmallInteger('leverage')->default(1);
             $table->string('duration', 10);
             $table->decimal('entry_price', 15, 8);
             $table->decimal('exit_price', 15, 8)->nullable();

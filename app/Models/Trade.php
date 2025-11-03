@@ -21,6 +21,7 @@ class Trade extends Model
         'pair_name',
         'type',
         'amount',
+        'leverage',
         'duration',
         'entry_price',
         'exit_price',
@@ -39,6 +40,7 @@ class Trade extends Model
      * @var array<string, string>
      */
     protected $casts = [
+        'leverage' => 'integer',
         'amount' => 'decimal:2',
         'entry_price' => 'decimal:8',
         'exit_price' => 'decimal:8',

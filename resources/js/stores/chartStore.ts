@@ -22,10 +22,13 @@ export interface OpenTrade {
     pair: string
     type: 'Up' | 'Down'
     amount: number
+    leverage: number
     entry_price: number
     opened_at: string
     duration?: string
     expiry_time?: string
+    pnl: number
+    pnlPct: string
 }
 
 export interface TradeWithPnL extends OpenTrade {
@@ -33,7 +36,6 @@ export interface TradeWithPnL extends OpenTrade {
     pnlPct: string
 }
 
-// Constants for cleanup thresholds
 const MAX_CANDLES = 200
 const MAX_CANDLE_AGE_MS = 24 * 60 * 60 * 1000
 const MIN_ZOOM = 0.1
@@ -57,29 +59,28 @@ export const useChartStore = defineStore('chart', () => {
 
     const currentPrice = computed(() => currentPairData.value?.currentPrice || 0)
 
-    const openTradesForPair = computed(() => {
+    const calculateTradePnL = (trade: OpenTrade, price: number) => {
+        const diff = trade.type === 'Up'
+            ? price - trade.entry_price
+            : trade.entry_price - price
+        const pnl = diff * trade.amount
+        const pnlPct = trade.entry_price !== 0
+            ? ((diff / trade.entry_price) * 100).toFixed(2)
+            : '0.00'
+        return { pnl, pnlPct }
+    }
+
+    const openTradesForPair = computed<TradeWithPnL[]>(() => {
         return openTrades.value
             .filter(t => t.pair === selectedPair.value)
-            .map(t => {
-                const diff = t.type === 'Up'
-                    ? currentPrice.value - t.entry_price
-                    : t.entry_price - currentPrice.value
-                const pnl = diff * t.amount
-                const pnlPct = t.entry_price
-                    ? ((diff / t.entry_price) * 100).toFixed(2)
-                    : '0.00'
-                return { ...t, pnl, pnlPct }
-            })
     })
 
     function setPair(pair: string) {
         selectedPair.value = pair
-        // Reset view when switching pairs to prevent carried-over issues
         resetView()
     }
 
     function initializePairData(pair: string, initialPrice: number) {
-        // Validate price to prevent NaN/Infinity
         const validPrice = isFinite(initialPrice) && initialPrice > 0
             ? initialPrice
             : 1.0
@@ -96,7 +97,6 @@ export const useChartStore = defineStore('chart', () => {
 
     function updatePairData(pair: string, data: Partial<PairData>) {
         if (pairDataMap.value[pair]) {
-            // Validate numeric values before updating
             const updates: Partial<PairData> = {}
 
             if (data.currentPrice !== undefined) {
@@ -129,25 +129,26 @@ export const useChartStore = defineStore('chart', () => {
     function addCandle(pair: string, candle: Candle) {
         if (!pairDataMap.value[pair]) return
 
-        // Validate candle data
         const validCandle = {
-            time: candle.time,
-            open: isFinite(candle.open) ? candle.open : 0,
-            high: isFinite(candle.high) ? candle.high : 0,
-            low: isFinite(candle.low) ? candle.low : 0,
-            close: isFinite(candle.close) ? candle.close : 0,
-            volume: isFinite(candle.volume) ? candle.volume : 0
+            time: isFinite(candle.time) ? candle.time : Date.now(),
+            open: isFinite(candle.open) ? candle.open : pairDataMap.value[pair].currentPrice,
+            high: isFinite(candle.high) ? candle.high : pairDataMap.value[pair].currentPrice,
+            low: isFinite(candle.low) ? candle.low : pairDataMap.value[pair].currentPrice,
+            close: isFinite(candle.close) ? candle.close : pairDataMap.value[pair].currentPrice,
+            volume: isFinite(candle.volume) && candle.volume >= 0 ? candle.volume : 0
+        }
+
+        if (validCandle.high < validCandle.low) {
+            [validCandle.high, validCandle.low] = [validCandle.low, validCandle.high]
         }
 
         const candles = pairDataMap.value[pair].candles
         candles.push(validCandle)
 
-        // Keep only last MAX_CANDLES candles
         if (candles.length > MAX_CANDLES) {
             candles.shift()
         }
 
-        // Remove candles older than 24 hours
         const cutoffTime = Date.now() - MAX_CANDLE_AGE_MS
         while (candles.length > 0 && candles[0].time < cutoffTime) {
             candles.shift()
@@ -160,19 +161,21 @@ export const useChartStore = defineStore('chart', () => {
 
         const lastCandle = candles[candles.length - 1]
 
-        // Validate updates before applying
         if (updates.high !== undefined && isFinite(updates.high)) {
-            lastCandle.high = updates.high
+            lastCandle.high = Math.max(lastCandle.high, updates.high)
         }
         if (updates.low !== undefined && isFinite(updates.low)) {
-            lastCandle.low = updates.low
+            lastCandle.low = Math.min(lastCandle.low, updates.low)
         }
         if (updates.close !== undefined && isFinite(updates.close)) {
             lastCandle.close = updates.close
         }
-        if (updates.volume !== undefined && isFinite(updates.volume)) {
+        if (updates.volume !== undefined && isFinite(updates.volume) && updates.volume >= 0) {
             lastCandle.volume = updates.volume
         }
+
+        lastCandle.high = Math.max(lastCandle.high, lastCandle.open, lastCandle.close)
+        lastCandle.low = Math.min(lastCandle.low, lastCandle.open, lastCandle.close)
     }
 
     function updateCurrentPrice(pair: string, price: number) {
@@ -188,13 +191,11 @@ export const useChartStore = defineStore('chart', () => {
     }
 
     function setZoom(value: number) {
-        // Clamp zoom between MIN_ZOOM and MAX_ZOOM with validation
         const validValue = isFinite(value) ? value : 1.0
         zoom.value = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, validValue))
     }
 
     function setPanX(value: number) {
-        // Validate and reset if extreme
         if (!isFinite(value)) {
             panX.value = 0
             return
@@ -208,7 +209,27 @@ export const useChartStore = defineStore('chart', () => {
     }
 
     function setOpenTrades(trades: OpenTrade[]) {
-        openTrades.value = trades
+        openTrades.value = trades.map(t => {
+            const existingTrade = openTrades.value.find(et => et.id === t.id)
+            if (existingTrade) {
+                return existingTrade
+            }
+
+            if (t.pnl === undefined || t.pnlPct === undefined) {
+                const { pnl, pnlPct } = calculateTradePnL(t, currentPrice.value)
+                return { ...t, pnl, pnlPct }
+            }
+            return t
+        })
+    }
+
+    function updateTradePnL(tradeId: number, price: number) {
+        const tradeIndex = openTrades.value.findIndex(t => t.id === tradeId)
+        if (tradeIndex === -1) return
+
+        const trade = openTrades.value[tradeIndex]
+        const { pnl, pnlPct } = calculateTradePnL(trade, price)
+        openTrades.value[tradeIndex] = { ...trade, pnl, pnlPct }
     }
 
     function resetView() {
@@ -225,7 +246,6 @@ export const useChartStore = defineStore('chart', () => {
         resetView()
     }
 
-    // Utility function to clean up stale pair data
     function cleanupStalePairs(activePairs: string[]) {
         const currentPairs = Object.keys(pairDataMap.value)
         currentPairs.forEach(pair => {
@@ -235,18 +255,15 @@ export const useChartStore = defineStore('chart', () => {
         })
     }
 
-    // Health check function to validate data integrity
     function validateDataIntegrity() {
         let issuesFound = false
 
         Object.entries(pairDataMap.value).forEach(([pair, data]) => {
-            // Check for invalid prices
             if (!isFinite(data.currentPrice) || data.currentPrice <= 0) {
                 console.warn(`Invalid currentPrice for ${pair}:`, data.currentPrice)
                 issuesFound = true
             }
 
-            // Check for invalid candles
             data.candles.forEach((candle, idx) => {
                 if (!isFinite(candle.open) || !isFinite(candle.high) ||
                     !isFinite(candle.low) || !isFinite(candle.close)) {
@@ -256,7 +273,6 @@ export const useChartStore = defineStore('chart', () => {
             })
         })
 
-        // Check zoom and pan
         if (!isFinite(zoom.value)) {
             console.warn('Invalid zoom value:', zoom.value)
             resetView()
@@ -292,16 +308,18 @@ export const useChartStore = defineStore('chart', () => {
         setZoom,
         setPanX,
         setOpenTrades,
+        updateTradePnL,
         resetView,
         clearPairData,
         clearAllData,
         cleanupStalePairs,
-        validateDataIntegrity
+        validateDataIntegrity,
+        calculateTradePnL
     }
 }, {
     persist: {
         key: 'forex-chart-store',
         storage: localStorage,
-        paths: ['selectedPair']
+        paths: ['selectedPair', 'pairDataMap', 'openTrades', 'zoom', 'panX']
     }
 })

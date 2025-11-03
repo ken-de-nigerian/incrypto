@@ -77,17 +77,26 @@
     let touchStartZoom = 0
     let touchStartX = 0
 
+    const isTouching = ref(false)
+    const isDragging = ref(false)
+    const touchStartPos = ref({ x: 0, y: 0 })
+
     const CANDLE_SPACING = 15
     const MIN_CANDLE_BODY = 1.5
-    const TICK_MS = 200
+    const BASE_TICK_MS = 200
+    const TICK_MS = 1500
     const AXIS_SPACE_Y = 100
     const TOP_SPACE = 25
     const BOTTOM_SPACE = 50
-    const CANDLE_INTERVAL_MS = 5_000
+    const TICKS_PER_CANDLE_TARGET = 12
+    const CANDLE_INTERVAL_MS = TICK_MS * TICKS_PER_CANDLE_TARGET
     const FRICTION = 0.95
     const VELOCITY_THRESHOLD = 0.5
-    const HEALTH_CHECK_INTERVAL = 30000 // 30 seconds
-    const TRADE_EXPIRY_CHECK_INTERVAL = 1000 // Check every second
+    const HEALTH_CHECK_INTERVAL = 30000
+    const TRADE_EXPIRY_CHECK_INTERVAL = 1000
+    const VOLATILITY_BASE = 0.00008
+    const CLOSE_DISABLE_THRESHOLD = 10000
+    const HIT_AREA = 20
 
     const bgColor = computed(() => (isDark.value ? '#1a1a1a4d' : '#ffffff'))
     const gridColor = computed(() => isDark.value ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)')
@@ -103,63 +112,80 @@
     const lastCandleTime = computed(() => chartStore.currentPairData?.lastCandleTime || Date.now())
 
     const hoveredTrades = ref<TradeWithPnL[]>([])
-    const tooltipPos = ref<{ x: number; y: number }>({ x: 0, y: 0 })
+    const tooltipPos = ref<{ x: number; y: number }>({ x: -1, y: -1 })
     const tooltipCloseRects = ref<{ tradeId: number, x: number, y: number, w: number, h: number }[]>([])
+    const tooltipRects = ref<{ tradeId: number, x: number, y: number, w: number, h: number }[]>([])
 
-    // Validation function
+    const formatRemainingTime = (ms: number): string => {
+        if (ms <= 0) return 'EXPIRED'
+        const totalSeconds = Math.floor(ms / 1000)
+        const hours = Math.floor(totalSeconds / 3600)
+        const minutes = Math.floor((totalSeconds % 3600) / 60)
+        const seconds = totalSeconds % 60
+
+        if (hours > 0) {
+            return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`
+        }
+        return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`
+    }
+
+    function getPricePrecision(pair: string): number {
+        const symbol = pair.toUpperCase();
+        if (symbol.includes('JPY')) {
+            return 3;
+        }
+        return 5;
+    }
+
+    function roundPrice(price: number, pair: string): number {
+        const precision = getPricePrecision(pair);
+        const factor = Math.pow(10, precision);
+        return Math.round(price * factor) / factor;
+    }
+
     const validateChartState = (): boolean => {
-        // Validate zoom
         if (!isFinite(zoom.value) || zoom.value <= 0) {
-            console.warn('Invalid zoom detected, resetting')
             chartStore.resetView()
             return false
         }
 
-        // Validate pan
         if (!isFinite(panX.value)) {
-            console.warn('Invalid panX detected, resetting')
             chartStore.setPanX(0)
             return false
         }
 
-        // Validate current price
         if (!isFinite(currentPrice.value) || currentPrice.value <= 0) {
-            console.warn('Invalid price detected for', props.pair)
             return false
         }
 
-        // Validate candles
-        if (candles.value.some(c =>
+        return !candles.value.some(c =>
             !isFinite(c.open) || !isFinite(c.high) ||
             !isFinite(c.low) || !isFinite(c.close)
-        )) {
-            console.warn('Invalid candle data detected')
-            return false
-        }
+        );
+    }
 
-        return true
+    const calculatePnL = (trade: OpenTrade, price: number): number => {
+        const leverageFactor = trade.leverage || 1
+        const tradeVolume = trade.amount * leverageFactor
+
+        const diff = trade.type === 'Up'
+            ? price - trade.entry_price
+            : trade.entry_price - price
+        return diff * tradeVolume
     }
 
     const closeTrade = (tradeId: number, isAutoClose: boolean = false) => {
         const trade = props.openTrades?.find(t => t.id === tradeId)
         if (!trade) return
 
-        // Calculate P&L for the trade
-        const diff = trade.type === 'Up'
-            ? currentPrice.value - trade.entry_price
-            : trade.entry_price - currentPrice.value
-        const pnl = diff * trade.amount
+        const pnl = calculatePnL(trade, currentPrice.value)
+        const exitPrice = roundPrice(currentPrice.value, props.pair)
 
-        // Prepare closure data
         const closeData = {
-            exit_price: currentPrice.value,
-            pnl: pnl,
+            exit_price: exitPrice,
+            pnl: parseFloat(pnl.toFixed(2)),
             closed_at: new Date().toISOString(),
             is_auto_close: isAutoClose
-        }
-
-        if (isAutoClose) {
-            console.log(`Auto-closing trade #${tradeId} at price ${currentPrice.value.toFixed(5)} with P&L: ${pnl.toFixed(2)}`)
         }
 
         router.patch(route('user.trade.forex.close', { trade: tradeId }), closeData, {
@@ -174,28 +200,24 @@
         })
     }
 
-    // Function to parse duration string to milliseconds
     const parseDurationToMs = (duration: string): number => {
         const value = parseInt(duration)
         const unit = duration.slice(-1)
 
         switch(unit) {
-            case 'm': return value * 60 * 1000 // minutes
-            case 'h': return value * 60 * 60 * 1000 // hours
-            case 'd': return value * 24 * 60 * 60 * 1000 // days
-            default: return value * 60 * 1000 // default to minutes
+            case 'm': return value * 60 * 1000
+            case 'h': return value * 60 * 60 * 1000
+            case 'd': return value * 24 * 60 * 60 * 1000
+            default: return value * 60 * 1000
         }
     }
 
-    // Function to check and auto-close expired trades
     const checkExpiredTrades = () => {
         const now = new Date().getTime()
 
         props.openTrades?.forEach(trade => {
-            // Calculate expiry time from opened_at and duration
             const openedAt = new Date(trade.opened_at).getTime()
 
-            // Get duration from trade or calculate from expiry_time
             let expiryTime: number
 
             if ('expiry_time' in trade && trade.expiry_time) {
@@ -204,19 +226,15 @@
                 const durationMs = parseDurationToMs(trade.duration)
                 expiryTime = openedAt + durationMs
             } else {
-                // Default to 5 minutes if no duration specified
                 expiryTime = openedAt + (5 * 60 * 1000)
             }
 
-            // Check if trade has expired
             if (now >= expiryTime) {
-                console.log(`Auto-closing expired trade #${trade.id}`)
-                closeTrade(trade.id, true) // Pass true for isAutoClose
+                closeTrade(trade.id, true)
             }
         })
     }
 
-    // Start monitoring trade expiry
     const startTradeExpiryMonitoring = () => {
         tradeExpiryCheckInterval = setInterval(() => {
             checkExpiredTrades()
@@ -225,11 +243,9 @@
 
     const initPrice = () => {
         const base = parseFloat(String(props.price)) || 1.085
-        const parsedPrice = parseFloat(base.toFixed(5))
+        const parsedPrice = roundPrice(base, props.pair)
 
-        // Validate parsed price
         if (!isFinite(parsedPrice) || parsedPrice <= 0) {
-            console.error('Invalid price received:', props.price)
             return
         }
 
@@ -245,6 +261,12 @@
             chartStore.updateCurrentPrice(props.pair, parsedPrice)
             lastPrice.value = chartStore.currentPairData?.currentPrice || parsedPrice
         }
+
+        chartStore.openTrades.forEach(t => {
+            if (t.pair === props.pair) {
+                chartStore.updateTradePnL(t.id, chartStore.currentPrice)
+            }
+        })
     }
 
     const generateCandles = (count = 100) => {
@@ -256,9 +278,7 @@
         const data: Candle[] = []
         let price = currentPrice.value
 
-        // Validate starting price
         if (!isFinite(price) || price <= 0) {
-            console.error('Cannot generate candles with invalid price')
             return
         }
 
@@ -274,13 +294,13 @@
 
             data.push({
                 time,
-                open: parseFloat(open.toFixed(5)),
-                high: parseFloat(high.toFixed(5)),
-                low: parseFloat(low.toFixed(5)),
-                close: parseFloat(close.toFixed(5)),
+                open: roundPrice(open, props.pair),
+                high: roundPrice(high, props.pair),
+                low: roundPrice(low, props.pair),
+                close: roundPrice(close, props.pair),
                 volume: Math.floor(Math.random() * 1500) + 500,
             })
-            price = close
+            price = roundPrice(close, props.pair)
         }
 
         chartStore.updatePairData(props.pair, {
@@ -341,44 +361,51 @@
 
     const startTicking = () => {
         tickInterval = setInterval(() => {
-            // Validate state before updating
             if (!validateChartState()) {
-                console.warn('Invalid state detected during tick, skipping update')
                 return
             }
 
             lastPrice.value = currentPrice.value
-            const change = (Math.random() - 0.5) * 0.00008 * currentPrice.value
-            const newPrice = parseFloat((currentPrice.value + change).toFixed(5))
+            const volatilityScaleFactor = TICK_MS / BASE_TICK_MS
+            const change = (Math.random() - 0.5) * VOLATILITY_BASE * currentPrice.value * volatilityScaleFactor
 
-            // Validate new price
+            let newPrice = roundPrice(currentPrice.value + change, props.pair)
+
             if (!isFinite(newPrice) || newPrice <= 0) {
-                console.warn('Generated invalid price, skipping update')
+                newPrice = currentPrice.value
                 return
             }
 
             chartStore.updateCurrentPrice(props.pair, newPrice)
             const now = Date.now()
 
+            chartStore.openTrades.forEach(t => {
+                if (t.pair === props.pair) {
+                    chartStore.updateTradePnL(t.id, newPrice)
+                }
+            })
+
             if (now - lastCandleTime.value >= CANDLE_INTERVAL_MS) {
                 const lastClose = newPrice
+                const volume = Math.floor(Math.random() * 500) + 100
                 chartStore.addCandle(props.pair, {
                     time: now,
-                    open: parseFloat(lastClose.toFixed(5)),
-                    high: parseFloat(lastClose.toFixed(5)),
-                    low: parseFloat(lastClose.toFixed(5)),
-                    close: parseFloat(lastClose.toFixed(5)),
-                    volume: Math.floor(Math.random() * 500) + 100,
+                    open: roundPrice(lastClose, props.pair),
+                    high: roundPrice(lastClose, props.pair),
+                    low: roundPrice(lastClose, props.pair),
+                    close: roundPrice(lastClose, props.pair),
+                    volume: isFinite(volume) && volume >= 0 ? volume : 100,
                 })
                 chartStore.updateLastCandleTime(props.pair, now)
                 if (!dragging && container.value) autoPan(container.value.clientWidth)
             } else if (candles.value.length) {
                 const lastCandle = candles.value[candles.value.length - 1]
+                const newVolume = lastCandle.volume + Math.floor(Math.random() * 20)
                 chartStore.updateLastCandle(props.pair, {
                     close: newPrice,
                     high: Math.max(lastCandle.high, newPrice),
                     low: Math.min(lastCandle.low, newPrice),
-                    volume: lastCandle.volume + Math.floor(Math.random() * 20)
+                    volume: isFinite(newVolume) && newVolume >= 0 ? newVolume : lastCandle.volume
                 })
             }
         }, TICK_MS)
@@ -387,9 +414,7 @@
     const draw = () => {
         if (!canvas.value || !container.value) return
 
-        // Validate chart state before drawing
         if (!validateChartState()) {
-            console.error('Chart state invalid, skipping draw')
             return
         }
 
@@ -413,6 +438,8 @@
         const { candleWidth, chartWidth } = getChartMetrics(width)
         const mainHeight = canvasHeight - BOTTOM_SPACE - TOP_SPACE
 
+        const displayPrecision = getPricePrecision(props.pair)
+
         const startCandleIdx = Math.max(0, Math.floor(panX.value / candleWidth))
         const maxCandles = Math.ceil(chartWidth / candleWidth) + 2
         const endCandleIdx = Math.min(candles.value.length, startCandleIdx + maxCandles)
@@ -424,9 +451,7 @@
         const maxP = Math.max(...allPrices, currentPrice.value)
         const minP = Math.min(...allPrices, currentPrice.value)
 
-        // Validate price range
         if (!isFinite(maxP) || !isFinite(minP)) {
-            console.error('Invalid price range detected')
             return
         }
 
@@ -440,7 +465,6 @@
             return isFinite(y) ? y : TOP_SPACE + mainHeight / 2
         }
 
-        // Draw grid
         ctx.strokeStyle = gridColor.value
         ctx.fillStyle = textColor.value
         ctx.font = isMobile.value ? '9px Inter, sans-serif' : '11px Inter, sans-serif'
@@ -460,10 +484,9 @@
             ctx.stroke()
 
             const labelX = isMobile.value ? width - 4 : 8
-            ctx.fillText(price.toFixed(isMobile.value ? 3 : 5), labelX, y + 3)
+            ctx.fillText(price.toFixed(displayPrecision), labelX, y + 3)
         }
 
-        // Draw candles
         const bodyWidth = Math.max(MIN_CANDLE_BODY, candleWidth * 0.7)
         visible.forEach((c, i) => {
             const chartX = (i + startCandleIdx) * candleWidth - panX.value
@@ -476,7 +499,6 @@
             const highY = priceToY(c.high)
             const lowY = priceToY(c.low)
 
-            // Validate Y coordinates
             if (!isFinite(openY) || !isFinite(closeY) || !isFinite(highY) || !isFinite(lowY)) {
                 return
             }
@@ -498,7 +520,6 @@
             ctx.strokeRect(x - bodyWidth / 2, bodyTop, bodyWidth, bodyHeight)
         })
 
-        // Draw current price line
         const curY = priceToY(currentPrice.value)
         if (!isFinite(curY)) return
 
@@ -516,9 +537,8 @@
         ctx.fillStyle = 'white'
         ctx.font = isMobile.value ? 'bold 10px Inter' : 'bold 12px Inter'
         ctx.textAlign = 'center'
-        ctx.fillText(`${currentPrice.value.toFixed(isMobile.value ? 3 : 5)}`, width - AXIS_SPACE_Y / 2, curY + 4)
+        ctx.fillText(`${currentPrice.value.toFixed(displayPrecision)}`, width - AXIS_SPACE_Y / 2, curY + 4)
 
-        // Draw time labels
         ctx.textAlign = 'center'
         ctx.fillStyle = textColor.value
         ctx.font = isMobile.value ? '8px Inter, sans-serif' : '11px Inter, sans-serif'
@@ -539,7 +559,6 @@
             }
         })
 
-        // Draw trades
         const trades = chartStore.openTradesForPair
         const entryLineColor = (t: TradeWithPnL) => t.type === 'Up' ? upColor : downColor
         const pnlColor = (t: TradeWithPnL) => t.pnl >= 0 ? upColor : downColor
@@ -581,7 +600,7 @@
                 ctx.setLineDash([])
                 ctx.globalAlpha = 1
 
-                const entryText = trade.entry_price.toFixed(isMobile.value ? 3 : 5)
+                const entryText = trade.entry_price.toFixed(displayPrecision)
                 ctx.font = isMobile.value ? 'bold 9px Inter' : 'bold 10px Inter'
                 const entryWidth = ctx.measureText(entryText).width
                 const badgeHeight = isMobile.value ? 16 : 18
@@ -619,7 +638,8 @@
                     ctx.fillText(group.length.toString(), countX + countBadgeSize / 2, adjustedY + 4)
                 }
 
-                const pnlText = `${trade.pnl >= 0 ? '+' : ''}$${Math.abs(trade.pnl).toFixed(2)}`
+                const totalValue = trade.amount + trade.pnl
+                const pnlText = `${totalValue.toFixed(2)}`
                 const pnlColorValue = pnlColor(trade)
                 ctx.font = isMobile.value ? 'bold 9px Inter' : 'bold 10px Inter'
                 const pnlWidth = ctx.measureText(pnlText).width
@@ -642,9 +662,9 @@
             })
         })
 
-        // Draw tooltips
-        if (hoveredTrades.value.length > 0 && tooltipPos.value) {
+        if (hoveredTrades.value.length > 0 && tooltipPos.value.x >= 0 && tooltipPos.value.y >= 0) {
             tooltipCloseRects.value = []
+            tooltipRects.value = []
 
             const padding = isMobile.value ? 10 : 12
             const headerHeight = isMobile.value ? 28 : 32
@@ -674,6 +694,24 @@
                 const tradeColor = t.type === 'Up' ? upColor : downColor
                 const pnlColorValue = pnlColor(t)
 
+                let remainingTimeMs = 0;
+                let expiryTime: number = 0;
+                const now = Date.now();
+                const openedAt = new Date(t.opened_at).getTime();
+
+                if ('expiry_time' in t && t.expiry_time) {
+                    expiryTime = new Date(t.expiry_time).getTime();
+                } else if ('duration' in t && t.duration) {
+                    const durationMs = parseDurationToMs(t.duration);
+                    expiryTime = openedAt + durationMs;
+                } else {
+                    expiryTime = openedAt + (5 * 60 * 1000);
+                }
+
+                remainingTimeMs = Math.max(0, expiryTime - now);
+                const timeText = formatRemainingTime(remainingTimeMs);
+                const isExpired = remainingTimeMs === 0;
+
                 let tooltipX = tooltipPos.value.x + 12
                 if (tooltipX + tooltipWidth > width - 20) {
                     tooltipX = tooltipPos.value.x - tooltipWidth - 12
@@ -681,6 +719,8 @@
                 if (tooltipX < 20) tooltipX = 20
 
                 const tooltipY = startY + index * (tooltipHeight + tooltipSpacing)
+
+                tooltipRects.value.push({ tradeId: t.id, x: tooltipX, y: tooltipY, w: tooltipWidth, h: tooltipHeight });
 
                 ctx.shadowColor = 'rgba(0,0,0,0.4)'
                 ctx.shadowBlur = 12
@@ -719,15 +759,15 @@
                 ctx.textAlign = 'left'
                 ctx.fillText(t.type.toUpperCase(), tooltipX + padding, tooltipY + headerHeight / 2 + 4)
 
-                ctx.fillStyle = isDark.value ? '#9ca3af' : '#6b7280'
-                ctx.font = isMobile.value ? '9px Inter' : '10px Inter'
+                ctx.fillStyle = isExpired ? downColor : (remainingTimeMs < 60000 ? downColor : tradeColor)
+                ctx.font = isMobile.value ? 'bold 11px Inter' : 'bold 12px Inter'
                 ctx.textAlign = 'right'
-                ctx.fillText(`#${t.id}`, tooltipX + tooltipWidth - padding, tooltipY + headerHeight / 2 + 4)
+                ctx.fillText(timeText, tooltipX + tooltipWidth - padding, tooltipY + headerHeight / 2 + 4)
 
                 const rowStartY = tooltipY + headerHeight
                 const rows = [
                     { label: 'Amount', value: `${t.amount.toFixed(2)}` },
-                    { label: 'Entry', value: t.entry_price.toFixed(isMobile.value ? 3 : 5) },
+                    { label: 'Entry', value: t.entry_price.toFixed(displayPrecision) },
                     { label: 'Time', value: new Date(t.opened_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) }
                 ]
 
@@ -771,7 +811,9 @@
                 ctx.textAlign = 'left'
                 ctx.fillText('PROFIT/LOSS', tooltipX + padding, footerY + 12)
 
-                const pnlText = `${t.pnl >= 0 ? '+' : ''}${Math.abs(t.pnl).toFixed(2)}`
+                const tradePnL = t.pnl;
+                const pnlText = `${(t.amount + tradePnL).toFixed(2)}`;
+
                 ctx.fillStyle = pnlColorValue
                 ctx.font = isMobile.value ? 'bold 13px Inter' : 'bold 14px Inter'
                 ctx.textAlign = 'left'
@@ -780,37 +822,54 @@
                 const pnlPctText = `(${t.pnlPct}%)`
                 ctx.font = isMobile.value ? 'bold 10px Inter' : 'bold 11px Inter'
                 const pnlTextWidth = ctx.measureText(pnlText).width
-                ctx.fillText(pnlPctText, tooltipX + padding + pnlTextWidth + 6, footerY + 28)
+                ctx.fillText(pnlPctText, tooltipX + padding + pnlTextWidth + 15, footerY + 28)
 
-                const btnWidth = isMobile.value ? 56 : 64
-                const btnHeight = isMobile.value ? 22 : 24
-                const btnX = tooltipX + tooltipWidth - btnWidth - padding
-                const btnY = footerY + (footerHeight - btnHeight) / 2 - 2
+                const closeBtnWidth = isMobile.value ? 60 : 70
+                const closeBtnHeight = isMobile.value ? 24 : 28
+                const closeBtnX = tooltipX + tooltipWidth - closeBtnWidth - padding
+                const closeBtnY = footerY + (footerHeight - closeBtnHeight) / 2
 
-                const btnGradient = ctx.createLinearGradient(btnX, btnY, btnX, btnY + btnHeight)
-                btnGradient.addColorStop(0, '#ef4444')
-                btnGradient.addColorStop(1, '#dc2626')
-                ctx.fillStyle = btnGradient
-                ctx.beginPath()
-                ctx.roundRect(btnX, btnY, btnWidth, btnHeight, btnHeight / 2)
-                ctx.fill()
-
-                ctx.strokeStyle = 'rgba(255,255,255,0.2)'
-                ctx.lineWidth = 1
-                ctx.stroke()
-
-                ctx.fillStyle = '#ffffff'
-                ctx.font = isMobile.value ? 'bold 9px Inter' : 'bold 10px Inter'
-                ctx.textAlign = 'center'
-                ctx.fillText('CLOSE', btnX + btnWidth / 2, btnY + btnHeight / 2 + 3)
-
-                tooltipCloseRects.value.push({ tradeId: t.id, x: btnX, y: btnY, w: btnWidth, h: btnHeight })
+                if (remainingTimeMs > CLOSE_DISABLE_THRESHOLD) {
+                    ctx.fillStyle = downColor
+                    ctx.beginPath()
+                    ctx.roundRect(closeBtnX, closeBtnY, closeBtnWidth, closeBtnHeight, 3)
+                    ctx.fill()
+                    ctx.fillStyle = 'white'
+                    ctx.font = isMobile.value ? 'bold 10px Inter' : 'bold 11px Inter'
+                    ctx.textAlign = 'center'
+                    ctx.fillText('Close', closeBtnX + closeBtnWidth / 2, closeBtnY + closeBtnHeight / 2 + 4)
+                    tooltipCloseRects.value.push({
+                        tradeId: t.id,
+                        x: closeBtnX,
+                        y: closeBtnY,
+                        w: closeBtnWidth,
+                        h: closeBtnHeight
+                    })
+                } else if (remainingTimeMs > 0) {
+                    ctx.fillStyle = gridColor.value
+                    ctx.beginPath()
+                    ctx.roundRect(closeBtnX, closeBtnY, closeBtnWidth, closeBtnHeight, 3)
+                    ctx.fill()
+                    ctx.fillStyle = textColor.value
+                    ctx.font = isMobile.value ? 'bold 10px Inter' : 'bold 11px Inter'
+                    ctx.textAlign = 'center'
+                    ctx.fillText('Closing', closeBtnX + closeBtnWidth / 2, closeBtnY + closeBtnHeight / 2 + 4)
+                } else {
+                    ctx.fillStyle = gridColor.value
+                    ctx.beginPath()
+                    ctx.roundRect(closeBtnX, closeBtnY, closeBtnWidth, closeBtnHeight, 3)
+                    ctx.fill()
+                    ctx.fillStyle = textColor.value
+                    ctx.font = isMobile.value ? 'bold 10px Inter' : 'bold 11px Inter'
+                    ctx.textAlign = 'center'
+                    ctx.fillText('Expired', closeBtnX + closeBtnWidth / 2, closeBtnY + closeBtnHeight / 2 + 4)
+                }
             })
         } else {
             tooltipCloseRects.value = []
+            tooltipRects.value = []
         }
 
-        // Draw crosshair
         if (crosshair.value.visible && crosshair.value.x >= axisSpaceX && crosshair.value.x <= width - AXIS_SPACE_Y && crosshair.value.y >= TOP_SPACE && crosshair.value.y <= TOP_SPACE + mainHeight) {
             const chartX = crosshair.value.x - axisSpaceX + panX.value
             const candleIdx = Math.floor(chartX / candleWidth)
@@ -836,7 +895,7 @@
                 const priceAtCrosshair = paddedMax - ((crosshair.value.y - TOP_SPACE) / mainHeight) * priceScale
 
                 if (isFinite(priceAtCrosshair)) {
-                    const priceLabel = priceAtCrosshair.toFixed(isMobile.value ? 3 : 5)
+                    const priceLabel = priceAtCrosshair.toFixed(displayPrecision)
                     ctx.fillStyle = crosshairColor
                     ctx.fillRect(width - AXIS_SPACE_Y, crosshair.value.y - 10, AXIS_SPACE_Y, 20)
                     ctx.fillStyle = 'white'
@@ -853,9 +912,12 @@
                 ctx.font = isMobile.value ? '8px Inter' : '11px Inter'
                 ctx.fillText(timeLabel, snappedX, canvasHeight - 15)
 
+                const shortPrecision = getPricePrecision(props.pair) === 5 ? 3 : 2
+                const longPrecision = getPricePrecision(props.pair)
+
                 const tip = isMobile.value
-                    ? `O:${c.open.toFixed(3)} H:${c.high.toFixed(3)} L:${c.low.toFixed(3)} C:${c.close.toFixed(3)}`
-                    : `O:${c.open} H:${c.high} L:${c.low} C:${c.close} V:${c.volume}`
+                    ? `O:${c.open.toFixed(shortPrecision)} H:${c.high.toFixed(shortPrecision)} L:${c.low.toFixed(shortPrecision)} C:${c.close.toFixed(shortPrecision)}`
+                    : `O:${c.open.toFixed(longPrecision)} H:${c.high.toFixed(longPrecision)} L:${c.low.toFixed(longPrecision)} C:${c.close.toFixed(longPrecision)} V:${c.volume}`
                 ctx.fillStyle = 'rgba(0,0,0,0.8)'
                 const tooltipWidth = isMobile.value ? 140 : 190
                 ctx.fillRect(snappedX + 10, crosshair.value.y - 30, tooltipWidth, 20)
@@ -899,17 +961,72 @@
         const constrainedY = Math.max(TOP_SPACE, Math.min(mouseY, TOP_SPACE + canvas.value.clientHeight - BOTTOM_SPACE - TOP_SPACE))
         crosshair.value = { x: mouseX, y: constrainedY, visible: true }
 
-        const overButton = findTradeAt(e.clientX, e.clientY, false)
-        if (overButton) {
-            canvas.value.style.cursor = 'pointer'
-        } else {
-            canvas.value.style.cursor = 'crosshair'
+        const overCloseButton = findTradeAt(e.clientX, e.clientY, false)
+
+        if (!isMobile.value) {
+            for (const r of tooltipRects.value) {
+                if (mouseX >= r.x && mouseX <= r.x + r.w && mouseY >= r.y && mouseY <= r.y + r.h) {
+                    break
+                }
+            }
+
+            const trades = chartStore.openTradesForPair
+            const width = rect.width
+            const canvasHeight = rect.height
+            const mainHeight = canvasHeight - BOTTOM_SPACE - TOP_SPACE
+
+            const { candleWidth } = getChartMetrics(width)
+
+            const startCandleIdx = Math.max(0, Math.floor(panX.value / candleWidth))
+            const maxCandles = Math.ceil((width - AXIS_SPACE_X.value - AXIS_SPACE_Y) / candleWidth) + 2
+            const endCandleIdx = Math.min(candles.value.length, startCandleIdx + maxCandles)
+            const visibleCandles = candles.value.slice(startCandleIdx, endCandleIdx)
+
+            let closeTrades: TradeWithPnL[] = []
+
+            let maxP = 0
+            let minP = 0
+            let range = 0.0000001
+            let paddedMax = 0
+            let paddedMin = 0
+            let priceScale = 0.0000001
+            let priceToY: (price: number) => number = (price) => mouseY
+
+            if (visibleCandles.length) {
+                const allPrices = visibleCandles.flatMap(c => [c.high, c.low])
+                maxP = Math.max(...allPrices, currentPrice.value)
+                minP = Math.min(...allPrices, currentPrice.value)
+                range = Math.max(0.0000001, maxP - minP)
+                paddedMax = maxP + range * 0.05
+                paddedMin = minP - range * 0.05
+                priceScale = paddedMax - paddedMin
+
+                priceToY = (price: number) => TOP_SPACE + mainHeight - ((price - paddedMin) / priceScale) * mainHeight
+
+                closeTrades = trades.filter(trade => Math.abs(mouseY - priceToY(trade.entry_price)) <= HIT_AREA)
+            }
+
+            if (hoveredTrades.value.length > 0) {
+            } else {
+                if (closeTrades.length > 0) {
+                    hoveredTrades.value = closeTrades
+                    const lineY = priceToY(closeTrades[0].entry_price)
+                    tooltipPos.value = { x: mouseX, y: lineY }
+                }
+            }
+        }
+
+        if (canvas.value) {
+            canvas.value.style.cursor = overCloseButton ? 'pointer' : 'crosshair'
         }
     }
 
     const handleMouseLeave = () => {
         crosshair.value.visible = false
-        hoveredTrades.value = []
+        if (!isMobile.value) {
+            hoveredTrades.value = []
+            tooltipPos.value = { x: -1, y: -1 }
+        }
     }
 
     const handleWheel = (e: WheelEvent) => {
@@ -986,15 +1103,13 @@
             const touchX = e.touches[0].clientX - rect.left
             if (touchX < AXIS_SPACE_X.value || touchX > rect.width - AXIS_SPACE_Y) return
 
-            dragging = true
-            dragStartX = e.touches[0].clientX
-            lastDragX = e.touches[0].clientX
-            lastDragTime = Date.now()
-            panStart = panX.value
-            velocity = 0
+            isTouching.value = true
+            isDragging.value = false
+            touchStartPos.value = { x: e.touches[0].clientX, y: e.touches[0].clientY }
             crosshair.value.visible = false
         } else if (e.touches.length === 2) {
-            dragging = false
+            isTouching.value = false
+            isDragging.value = false
             velocity = 0
             touchStartDistance = getTouchDistance(e.touches)
             touchStartZoom = zoom.value
@@ -1003,18 +1118,33 @@
     }
 
     const handleTouchMove = (e: TouchEvent) => {
-        if (e.touches.length === 1 && dragging) {
-            const now = Date.now()
-            const delta = e.touches[0].clientX - dragStartX
-            const newPanX = panStart - delta
+        if (e.touches.length === 1 && isTouching.value) {
+            const dx = e.touches[0].clientX - touchStartPos.value.x
+            const dy = e.touches[0].clientY - touchStartPos.value.y
+            if (Math.sqrt(dx * dx + dy * dy) > 5) {
+                isDragging.value = true
+                dragStartX = touchStartPos.value.x
+                lastDragX = touchStartPos.value.x
+                lastDragTime = Date.now()
+                panStart = panX.value
+                velocity = 0
+            }
 
-            const { maxPan } = getChartMetrics(canvas.value?.getBoundingClientRect().width || 0)
-            panX.value = Math.max(0, Math.min(maxPan, newPanX))
+            if (isDragging.value) {
+                const now = Date.now()
+                const delta = e.touches[0].clientX - dragStartX
+                const newPanX = panStart - delta
 
-            const timeDelta = now - lastDragTime
-            if (timeDelta > 0) velocity = (lastDragX - e.touches[0].clientX) / timeDelta
-            lastDragX = e.touches[0].clientX
-            lastDragTime = now
+                const { maxPan } = getChartMetrics(canvas.value?.getBoundingClientRect().width || 0)
+                panX.value = Math.max(0, Math.min(maxPan, newPanX))
+
+                const timeDelta = now - lastDragTime
+                if (timeDelta > 0) velocity = (lastDragX - e.touches[0].clientX) / timeDelta
+                lastDragX = e.touches[0].clientX
+                lastDragTime = now
+            } else {
+                e.preventDefault()
+            }
         } else if (e.touches.length === 2) {
             e.preventDefault()
             const currentDistance = getTouchDistance(e.touches)
@@ -1040,7 +1170,20 @@
         }
     }
 
-    const handleTouchEnd = () => {
+    const handleTouchEnd = (e: TouchEvent) => {
+        if (isTouching.value && !isDragging.value) {
+            if (canvas.value) {
+                const simulatedEvent = new MouseEvent('click', {
+                    clientX: touchStartPos.value.x,
+                    clientY: touchStartPos.value.y,
+                    bubbles: true,
+                    cancelable: true
+                })
+                canvas.value.dispatchEvent(simulatedEvent)
+            }
+        }
+        isTouching.value = false
+        isDragging.value = false
         dragging = false
     }
 
@@ -1050,7 +1193,9 @@
 
     const findTradeAt = (clientX: number, clientY: number, isClick: boolean): boolean => {
         let overCloseButton = false
-        const rect = canvas.value!.getBoundingClientRect()
+        if (!canvas.value) return false
+
+        const rect = canvas.value.getBoundingClientRect()
         const x = clientX - rect.left
         const y = clientY - rect.top
 
@@ -1063,16 +1208,25 @@
             }
         }
 
+        if (isClick && overCloseButton) return true
+
         const width = rect.width
         const canvasHeight = rect.height
         const mainHeight = canvasHeight - BOTTOM_SPACE - TOP_SPACE
+
         const { candleWidth } = getChartMetrics(width)
         const startCandleIdx = Math.max(0, Math.floor(panX.value / candleWidth))
         const maxCandles = Math.ceil((width - AXIS_SPACE_X.value - AXIS_SPACE_Y) / candleWidth) + 2
         const endCandleIdx = Math.min(candles.value.length, startCandleIdx + maxCandles)
         const visible = candles.value.slice(startCandleIdx, endCandleIdx)
 
-        if (!visible.length) return overCloseButton
+        if (!visible.length) {
+            if (isClick) {
+                hoveredTrades.value = []
+                tooltipPos.value = { x: -1, y: -1 }
+            }
+            return overCloseButton
+        }
 
         const allPrices = visible.flatMap(c => [c.high, c.low])
         const maxP = Math.max(...allPrices, currentPrice.value)
@@ -1085,20 +1239,89 @@
         const priceToY = (price: number) => TOP_SPACE + mainHeight - ((price - paddedMin) / priceScale) * mainHeight
 
         const trades = chartStore.openTradesForPair
-        const closeTrades = trades.filter(trade => Math.abs(y - priceToY(trade.entry_price)) <= (isMobile.value ? 15 : 10))
+        const closeTrades = trades.filter(trade => Math.abs(y - priceToY(trade.entry_price)) <= HIT_AREA)
 
         if (closeTrades.length > 0) {
-            hoveredTrades.value = closeTrades
-            tooltipPos.value = { x: clientX - rect.left, y: clientY - rect.top }
-        } else if (isClick) {
-            hoveredTrades.value = []
+            if (isClick) {
+                hoveredTrades.value = closeTrades
+                const lineY = priceToY(closeTrades[0].entry_price)
+                tooltipPos.value = { x: x, y: lineY }
+            }
+        } else {
+            let overExistingTooltip = false;
+            for (const r of tooltipRects.value) {
+                if (x >= r.x && x <= r.x + r.w && y >= r.y && y <= r.y + r.h) {
+                    overExistingTooltip = true;
+                    break;
+                }
+            }
+
+            if (isClick && !overCloseButton && !overExistingTooltip) {
+                hoveredTrades.value = []
+                tooltipPos.value = { x: -1, y: -1 }
+            }
         }
 
         return overCloseButton
     }
 
     const handleClick = (e: MouseEvent) => {
-        findTradeAt(e.clientX, e.clientY, true)
+        const rect = canvas.value?.getBoundingClientRect()
+        if (!rect) return
+
+        const x = e.clientX - rect.left
+        const y = e.clientY - rect.top
+
+        if (findTradeAt(e.clientX, e.clientY, true)) {
+            return
+        }
+
+        let clickedOnTooltip = false
+        for (const r of tooltipRects.value) {
+            if (x >= r.x && x <= r.x + r.w && y >= r.y && y <= r.y + r.h) {
+                clickedOnTooltip = true;
+                break;
+            }
+        }
+
+        const trades = chartStore.openTradesForPair
+        const width = rect.width
+        const canvasHeight = rect.height
+        const mainHeight = canvasHeight - BOTTOM_SPACE - TOP_SPACE
+        const { candleWidth } = getChartMetrics(width)
+
+        let clickedTrades: TradeWithPnL[] = []
+        if (trades.length) {
+            const startCandleIdx = Math.max(0, Math.floor(panX.value / candleWidth))
+            const maxCandles = Math.ceil((width - AXIS_SPACE_X.value - AXIS_SPACE_Y) / candleWidth) + 2
+            const endCandleIdx = Math.min(candles.value.length, startCandleIdx + maxCandles)
+            const visibleCandles = candles.value.slice(startCandleIdx, endCandleIdx)
+
+            if (visibleCandles.length) {
+                const allPrices = visibleCandles.flatMap(c => [c.high, c.low])
+                const maxP = Math.max(...allPrices, currentPrice.value)
+                const minP = Math.min(...allPrices, currentPrice.value)
+                const range = Math.max(0.0000001, maxP - minP)
+                const paddedMax = maxP + range * 0.05
+                const paddedMin = minP - range * 0.05
+                const priceScale = paddedMax - paddedMin
+                const priceToY = (price: number) => TOP_SPACE + mainHeight - ((price - paddedMin) / priceScale) * mainHeight
+
+                clickedTrades = trades.filter(trade => Math.abs(y - priceToY(trade.entry_price)) <= HIT_AREA)
+
+                if (clickedTrades.length > 0) {
+                    hoveredTrades.value = clickedTrades
+                    const lineY = priceToY(clickedTrades[0].entry_price)
+                    tooltipPos.value = { x: x, y: lineY }
+                    return
+                }
+            }
+        }
+
+        if (!clickedOnTooltip) {
+            hoveredTrades.value = []
+            tooltipPos.value = { x: -1, y: -1 }
+        }
     }
 
     const displayChange = computed(() => {
@@ -1141,13 +1364,10 @@
         startTicking()
         animate()
 
-        // Start trade expiry monitoring
         startTradeExpiryMonitoring()
 
-        // Add periodic health check
         healthCheckInterval = setInterval(() => {
             if (!chartStore.validateDataIntegrity()) {
-                console.warn('Data integrity issues detected, resetting view')
                 chartStore.resetView()
             }
         }, HEALTH_CHECK_INTERVAL)
@@ -1223,7 +1443,7 @@
                     isBullish ? (isDark ? 'bg-teal-900/40 text-teal-300' : 'bg-teal-100 text-teal-700')
                     : (isDark ? 'bg-red-900/40 text-red-300' : 'bg-red-100 text-red-700')
                 ]">
-                    {{ isBullish ? '+' : '' }}{{ displayChange.toFixed(3) }} ({{ changePercentage }}%)
+                    {{ isBullish ? '+' : '' }}{{ displayChange.toFixed(getPricePrecision(props.pair) - 2) }} ({{ changePercentage }}%)
                 </span>
             </div>
 

@@ -19,30 +19,30 @@ class ForexTradeService
      */
     public function executeForex(User $user, array $data)
     {
-        $profile = $user->profile;
-
-        if ($data['trading_mode'] !== $profile->trading_status) {
-            throw new Exception('Trading mode mismatch. Please refresh the page.');
-        }
-
-        $balance = $data['trading_mode'] === 'live'
-            ? $profile->live_trading_balance
-            : $profile->demo_trading_balance;
-
-        if ($data['amount'] > $balance) {
-            throw new Exception('Insufficient balance for this trade.');
-        }
-
-        $usedMargin = $balance * 0.15;
-        $availableMargin = $balance - $usedMargin;
-
-        if ($data['amount'] > $availableMargin) {
-            throw new Exception('Insufficient margin available. Maximum: $' . number_format($availableMargin, 2));
-        }
-
         $expiryTime = $this->calculateExpiryTime($data['duration']);
 
-        $execution = DB::transaction(function () use ($user, $data, $profile, $expiryTime) {
+        $execution = DB::transaction(function () use ($user, $data, $expiryTime) {
+
+            $profile = $user->profile()->lockForUpdate()->first();
+
+            if ($data['trading_mode'] !== $profile->trading_status) {
+                throw new Exception('Trading mode mismatch. Please refresh the page.');
+            }
+
+            $balance = $data['trading_mode'] === 'live'
+                ? $profile->live_trading_balance
+                : $profile->demo_trading_balance;
+
+            if ($data['amount'] > $balance) {
+                throw new Exception('Insufficient balance for this trade.');
+            }
+
+            $usedMargin = $balance * 0.15;
+            $availableMargin = $balance - $usedMargin;
+
+            if ($data['amount'] > $availableMargin) {
+                throw new Exception('Insufficient margin available. Maximum: $' . number_format($availableMargin, 2));
+            }
 
             $trade = Trade::create([
                 'user_id' => $user->id,
@@ -50,6 +50,7 @@ class ForexTradeService
                 'pair_name' => $data['pair_name'],
                 'type' => $data['type'],
                 'amount' => $data['amount'],
+                'leverage' => $data['leverage'],
                 'duration' => $data['duration'],
                 'entry_price' => $data['entry_price'],
                 'trading_mode' => $data['trading_mode'],
@@ -69,7 +70,7 @@ class ForexTradeService
         });
 
         // Dispatch the event with the new transaction data
-        event(new ForexTradeExecuted($user, $data, $expiryTime));
+        event(new ForexTradeExecuted($user, $execution, $expiryTime));
 
         return $execution;
     }
@@ -80,11 +81,14 @@ class ForexTradeService
      */
     public function closeForex(User $user, array $data, Trade $trade)
     {
-        if ($trade->status !== 'Open') {
-            throw new Exception('This trade is already closed.');
-        }
-
         $closed = DB::transaction(function () use ($user, $data, $trade) {
+
+            $trade->lockForUpdate();
+            $trade->refresh();
+
+            if ($trade->status !== 'Open') {
+                throw new Exception('This trade is already closed.');
+            }
 
             $updated = $trade->update([
                 'exit_price' => $data['exit_price'],
@@ -114,7 +118,6 @@ class ForexTradeService
      */
     private function calculateExpiryTime(string $duration): DateTime
     {
-        // FIX: Ensure each duration starts from a fresh 'now()' instance to prevent mutation bugs.
         return match($duration) {
             '1m' => now()->addMinute(),
             '5m' => now()->addMinutes(5),

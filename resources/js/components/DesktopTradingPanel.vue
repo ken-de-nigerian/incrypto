@@ -1,6 +1,6 @@
 <script setup lang="ts">
     import { computed } from 'vue';
-    import { ArrowDown, ArrowUp, Loader2Icon } from 'lucide-vue-next';
+    import { ArrowDown, ArrowUp, ArrowUpDownIcon, Loader2Icon } from 'lucide-vue-next';
 
     interface TradingPair {
         pair: string
@@ -15,6 +15,7 @@
         duration: string
         amount: number
         type: 'Up' | 'Down' | ''
+        leverage: number
     }
 
     interface Props {
@@ -24,6 +25,7 @@
         availableMargin: number
         isExecutingTrade: boolean
         tradeError: string
+        availableLeverages: number[]
     }
 
     const props = defineProps<Props>()
@@ -32,6 +34,7 @@
         'update:duration': [duration: string]
         'update:amount': [amount: number]
         'update:type': [type: 'Up' | 'Down']
+        'update:leverage': [leverage: number]
         'execute-trade': []
         'set-max-amount': []
     }>()
@@ -64,17 +67,24 @@
         const value = parseFloat((event.target as HTMLInputElement).value) || 0
         emit('update:amount', value)
     }
+
+    const updateLeverage = (leverage: number) => {
+        emit('update:leverage', leverage)
+    }
 </script>
 
 <template>
     <div class="hidden lg:block w-80 bg-muted/20 border-l border-border p-4 flex-shrink-0">
 
-        <div v-if="!selectedPair" class="text-center text-muted-foreground text-sm py-4">
-            Select a pair to start trading
+        <div v-if="!selectedPair" class="text-center text-muted-foreground text-sm py-4 h-full flex flex-col justify-center items-center">
+            <div class="flex justify-center mb-3">
+                <ArrowUpDownIcon class="h-10 w-10 text-muted-foreground" />
+            </div>
+            <p class="text-base font-medium mb-1 text-card-foreground">No Market Pairs Found</p>
+            <p class="text-xs">Select a pair to start trading</p>
         </div>
 
         <div v-else class="space-y-4">
-            <!-- Error Alert -->
             <Transition name="fade">
                 <div
                     v-if="tradeError"
@@ -83,7 +93,6 @@
                 </div>
             </Transition>
 
-            <!-- Pair Info -->
             <div class="grid grid-cols-3 gap-2 text-xs bg-background p-3 rounded-lg border border-border">
                 <div>
                     <p class="text-muted-foreground mb-1">High</p>
@@ -99,7 +108,6 @@
                 </div>
             </div>
 
-            <!-- Duration Selection -->
             <div class="space-y-2">
                 <label class="text-xs font-semibold text-card-foreground">Duration</label>
                 <div class="grid grid-cols-7 gap-1">
@@ -118,7 +126,6 @@
                 </div>
             </div>
 
-            <!-- Amount -->
             <div class="space-y-2">
                 <label class="text-xs font-semibold text-card-foreground">Amount (USD)</label>
                 <input
@@ -141,7 +148,24 @@
                 </div>
             </div>
 
-            <!-- Up/Down Buttons -->
+            <div class="space-y-2">
+                <label class="text-xs font-semibold text-card-foreground">Leverage</label>
+                <div class="grid grid-cols-7 gap-1">
+                    <button
+                        v-for="leverage in availableLeverages"
+                        :key="leverage"
+                        @click="updateLeverage(leverage)"
+                        :class="[
+                            'py-1.5 rounded-lg font-bold text-[10px] transition cursor-pointer border flex items-center justify-center overflow-hidden text-ellipsis whitespace-nowrap',
+                            tradeFormData.leverage === leverage
+                                ? 'bg-accent text-accent-foreground border-accent'
+                                : 'bg-muted/30 border-border text-card-foreground'
+                        ]">
+                        {{ leverage }}x
+                    </button>
+                </div>
+            </div>
+
             <div class="grid grid-cols-2 gap-3">
                 <button
                     @click="setTradeType('Up')"
@@ -167,7 +191,6 @@
                 </button>
             </div>
 
-            <!-- Execute Button -->
             <button
                 :disabled="isExecutingTrade || !isFormValid"
                 @click="executeTrade"

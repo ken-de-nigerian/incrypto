@@ -11,6 +11,7 @@
             pair_name: string;
             type: 'Up' | 'Down';
             amount: string;
+            leverage: number
             duration: string;
             entry_price: string;
             exit_price: string | null;
@@ -65,6 +66,27 @@
     };
 
     const close = () => emit('update:modelValue', false);
+
+    const formatTradeTimestamp = (isoString: string | null): string => {
+        if (!isoString) return 'N/A';
+        const date = new Date(isoString);
+
+        // Time format: "1:25 AM"
+        const time = date.toLocaleTimeString('en-US', {
+            hour: 'numeric',
+            minute: '2-digit',
+            hour12: true
+        });
+
+        // Date format: "Mon, Nov 3"
+        const datePart = date.toLocaleDateString('en-US', {
+            weekday: 'short',
+            month: 'short',
+            day: 'numeric'
+        });
+
+        return `${datePart} at ${time}`;
+    };
 </script>
 
 <template>
@@ -117,6 +139,10 @@
 
                             <div class="text-muted-foreground">Amount:</div>
                             <div class="text-right font-medium text-card-foreground">${{ trade.amount }}</div>
+
+                            <div class="text-muted-foreground">Leverage:</div>
+                            <div class="text-right font-medium text-card-foreground">{{ trade.leverage }}x</div>
+
                             <div class="text-muted-foreground">Duration:</div>
                             <div class="text-right font-medium text-card-foreground">{{ trade.duration }}</div>
 
@@ -129,14 +155,16 @@
                             </div>
 
                             <div class="text-muted-foreground">Opened At:</div>
-                            <div class="text-right font-medium text-card-foreground">{{ new Date(trade.opened_at).toLocaleTimeString() }} ({{ new Date(trade.opened_at).toLocaleDateString() }})</div>
+                            <div class="text-right font-medium text-card-foreground">{{ formatTradeTimestamp(trade.opened_at) }}</div>
+
                             <div class="text-muted-foreground">Closed At:</div>
                             <div class="text-right font-medium"
                                  :class="{ 'text-card-foreground': trade.closed_at, 'text-muted-foreground italic': !trade.closed_at }">
-                                {{ trade.closed_at ? `${new Date(trade.closed_at).toLocaleTimeString()} (${new Date(trade.closed_at).toLocaleDateString()})` : 'N/A' }}
+                                {{ formatTradeTimestamp(trade.closed_at) }}
                             </div>
+
                             <div class="text-muted-foreground">Expiry Time:</div>
-                            <div class="text-right font-medium text-card-foreground">{{ new Date(trade.expiry_time).toLocaleTimeString() }} ({{ new Date(trade.expiry_time).toLocaleDateString() }})</div>
+                            <div class="text-right font-medium text-card-foreground">{{ formatTradeTimestamp(trade.expiry_time) }}</div>
 
                             <div class="text-muted-foreground">Mode:</div>
                             <div class="text-right font-semibold text-primary">{{ trade.trading_mode.toUpperCase() }}</div>
@@ -188,6 +216,10 @@
 
                         <div class="text-muted-foreground">Amount:</div>
                         <div class="text-right font-medium text-card-foreground">${{ trade.amount }}</div>
+
+                        <div class="text-muted-foreground">Leverage:</div>
+                        <div class="text-right font-medium text-card-foreground">{{ trade.leverage }}x</div>
+
                         <div class="text-muted-foreground">Duration:</div>
                         <div class="text-right font-medium text-card-foreground">{{ trade.duration }}</div>
 
@@ -200,14 +232,16 @@
                         </div>
 
                         <div class="text-muted-foreground">Opened At:</div>
-                        <div class="text-right font-medium text-card-foreground">{{ new Date(trade.opened_at).toLocaleTimeString() }} ({{ new Date(trade.opened_at).toLocaleDateString() }})</div>
+                        <div class="text-right font-medium text-card-foreground">{{ formatTradeTimestamp(trade.opened_at) }}</div>
+
                         <div class="text-muted-foreground">Closed At:</div>
                         <div class="text-right font-medium"
                              :class="{ 'text-card-foreground': trade.closed_at, 'text-muted-foreground italic': !trade.closed_at }">
-                            {{ trade.closed_at ? `${new Date(trade.closed_at).toLocaleTimeString()} (${new Date(trade.closed_at).toLocaleDateString()})` : 'N/A' }}
+                            {{ formatTradeTimestamp(trade.closed_at) }}
                         </div>
+
                         <div class="text-muted-foreground">Expiry Time:</div>
-                        <div class="text-right font-medium text-card-foreground">{{ new Date(trade.expiry_time).toLocaleTimeString() }} ({{ new Date(trade.expiry_time).toLocaleDateString() }})</div>
+                        <div class="text-right font-medium text-card-foreground">{{ formatTradeTimestamp(trade.expiry_time) }}</div>
 
                         <div class="text-muted-foreground">Mode:</div>
                         <div class="text-right font-semibold text-primary">{{ trade.trading_mode.toUpperCase() }}</div>

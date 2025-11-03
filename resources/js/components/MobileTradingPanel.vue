@@ -15,6 +15,7 @@
         duration: string
         amount: number
         type: 'Up' | 'Down' | ''
+        leverage: number
     }
 
     interface Props {
@@ -24,6 +25,7 @@
         availableMargin: number
         isExecutingTrade: boolean
         tradeError: string
+        availableLeverages: number[]
     }
 
     const props = defineProps<Props>()
@@ -32,6 +34,7 @@
         'update:duration': [duration: string]
         'update:amount': [amount: number]
         'update:type': [type: 'Up' | 'Down']
+        'update:leverage': [leverage: number]
         'execute-trade': []
         'set-max-amount': []
     }>()
@@ -39,7 +42,8 @@
     const isFormValid = computed(() => {
         return props.tradeFormData.amount > 0 &&
             props.tradeFormData.type !== '' &&
-            props.tradeFormData.duration !== ''
+            props.tradeFormData.duration !== '' &&
+            props.tradeFormData.leverage > 0
     })
 
     const setTradeType = (type: 'Up' | 'Down') => {
@@ -64,12 +68,15 @@
         const value = parseFloat((event.target as HTMLInputElement).value) || 0
         emit('update:amount', value)
     }
+
+    const updateLeverage = (leverage: number) => {
+        emit('update:leverage', leverage)
+    }
 </script>
 
 <template>
     <div v-if="selectedPair" class="lg:hidden bg-card border border-border rounded-2xl margin-bottom">
         <div class="p-3 space-y-3 max-h-[70vh] overflow-y-auto">
-            <!-- Error Alert -->
             <Transition name="fade">
                 <div
                     v-if="tradeError"
@@ -78,7 +85,6 @@
                 </div>
             </Transition>
 
-            <!-- Pair Info - Compact -->
             <div class="grid grid-cols-3 gap-2 text-xs bg-muted/90 p-2.5 rounded-lg">
                 <div class="text-center">
                     <p class="text-muted-foreground text-[10px] mb-0.5">High</p>
@@ -94,7 +100,6 @@
                 </div>
             </div>
 
-            <!-- Duration Selection - Compact -->
             <div class="space-y-1.5">
                 <label class="text-xs font-bold text-card-foreground">Duration</label>
                 <div class="grid grid-cols-4 gap-1.5">
@@ -113,7 +118,6 @@
                 </div>
             </div>
 
-            <!-- Amount - Compact -->
             <div class="space-y-1.5">
                 <label class="text-xs font-bold text-card-foreground">Amount (USD)</label>
                 <div class="relative">
@@ -136,7 +140,23 @@
                 <p class="text-[10px] text-muted-foreground">Available Margin: ${{ availableMargin.toFixed(2) }}</p>
             </div>
 
-            <!-- Up/Down Buttons - Prominent -->
+            <div class="space-y-1.5">
+                <label class="text-xs font-bold text-card-foreground">Leverage</label>
+                <div class="grid grid-cols-4 gap-1.5">
+                    <button
+                        v-for="leverage in availableLeverages"
+                        :key="leverage"
+                        @click="updateLeverage(leverage)"
+                        :class="[
+                            'py-2 rounded-lg font-bold text-xs transition cursor-pointer border',
+                            tradeFormData.leverage === leverage
+                                ? 'bg-accent text-accent-foreground border-accent'
+                                : 'bg-muted/30 border-border text-card-foreground'
+                        ]">
+                        {{ leverage }}x
+                    </button>
+                </div>
+            </div>
             <div class="grid grid-cols-2 gap-2.5">
                 <button
                     @click="setTradeType('Up')"
@@ -149,6 +169,7 @@
                     <ArrowUp class="w-4 h-4" />
                     Up
                 </button>
+
                 <button
                     @click="setTradeType('Down')"
                     :class="[
@@ -162,7 +183,6 @@
                 </button>
             </div>
 
-            <!-- Execute Button - Extra Prominent -->
             <button
                 :disabled="isExecutingTrade || !isFormValid"
                 @click="executeTrade"

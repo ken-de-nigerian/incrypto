@@ -1,6 +1,7 @@
 <script setup lang="ts">
-    import { computed, ref, watch, onMounted } from 'vue';
+    import { computed, ref, watch, onMounted, onUnmounted } from 'vue';
     import { Head, router, usePage } from '@inertiajs/vue3';
+    import axios from 'axios';
     import {
         DollarSignIcon,
         WalletIcon,
@@ -59,11 +60,16 @@
     interface ForexPair {
         symbol: string;
         name: string;
-        price: string;
-        change: string;
-        high: string;
-        low: string;
-        volume: string;
+        polygon?: string;
+        priority?: number;
+        price?: string;
+        change?: string;
+        high?: string;
+        low?: string;
+        volume?: string;
+        stale?: boolean;
+        source?: string;
+        updated_at?: string;
     }
 
     const props = defineProps<{
@@ -92,6 +98,9 @@
 
     const selectedPair = ref<ForexPair | null>(null);
     const selectedPairSymbol = ref<string>('');
+    const isLoadingPairData = ref(false);
+    const pairDataCache = ref<Map<string, ForexPair>>(new Map());
+
     const availableLeverages = ref([50, 100, 200, 500, 1000]);
     const tradeFormData = ref({
         type: null as 'Up' | 'Down' | null,
@@ -153,12 +162,65 @@
             duration: t.duration,
             expiry_time: t.expiry_time
         }))
-    )
+    );
 
     watch(openTrades, (val) => chartStore.setOpenTrades(val), { immediate: true });
 
     const handleFundingClick = () => { if (!isLiveMode.value) return; isFundingModalOpen.value = true; };
     const handleWithdrawalClick = () => { if (!isLiveMode.value) return; isWithdrawalModalOpen.value = true; };
+
+    const fetchPairData = async (symbol: string): Promise<ForexPair | null> => {
+        if (pairDataCache.value.has(symbol)) {
+            const cachedData = pairDataCache.value.get(symbol);
+            if (cachedData && cachedData.price) {
+                return cachedData;
+            }
+        }
+
+        isLoadingPairData.value = true;
+
+        try {
+            const encodedSymbol = encodeURIComponent(symbol);
+            const response = await axios.get(route('user.trade.forex.pair.data', { symbol: encodedSymbol }));
+
+            if (response.data.success) {
+                const pairData = response.data.data;
+                pairDataCache.value.set(symbol, pairData);
+                return pairData;
+            } else {
+                console.error('Failed to fetch pair data:', response.data.error);
+                return null;
+            }
+        } catch (error) {
+            console.error('Error fetching pair data:', error);
+            return null;
+        } finally {
+            isLoadingPairData.value = false;
+        }
+    };
+
+    const selectPair = async (pair: ForexPair) => {
+        chartStore.setPair(pair.symbol);
+
+        selectedPairSymbol.value = pair.symbol;
+        selectedPair.value = { ...pair };
+
+        const pairData = await fetchPairData(pair.symbol);
+
+        if (pairData) {
+            selectedPair.value = {
+                ...pair,
+                ...pairData
+            };
+        }
+    };
+
+    const refreshPairData = async () => {
+        if (selectedPair.value) {
+            pairDataCache.value.delete(selectedPair.value.symbol);
+            await selectPair(selectedPair.value);
+        }
+    };
 
     const validateTrade = () => {
         tradeError.value = '';
@@ -180,7 +242,7 @@
                 amount: tradeFormData.value.amount,
                 duration: tradeFormData.value.duration,
                 leverage: tradeFormData.value.leverage,
-                entry_price: parseFloat(selectedPair.value.price),
+                entry_price: parseFloat(selectedPair.value.price || '0'),
                 trading_mode: isLiveMode.value ? 'live' : 'demo'
             };
             await new Promise((resolve, reject) => {
@@ -223,28 +285,39 @@
     };
 
     watch([isFundingModalOpen, isWithdrawalModalOpen, isLeftDrawerOpen, isRightDrawerOpen],
-        ([f, w, l, r]) => {
-            document.body.style.overflow = f || w || l || r ? 'hidden' : '';
-        });
-
-    watch(selectedPairSymbol, (newSymbol) => {
-        const pair = props.forexPairs.find(p => p.symbol === newSymbol);
-        if (pair) selectedPair.value = pair;
+    ([f, w, l, r]) => {
+        document.body.style.overflow = f || w || l || r ? 'hidden' : '';
     });
 
-    onMounted(() => {
+    onMounted(async () => {
         const persistedSymbol = chartStore.selectedPair;
+
         if (persistedSymbol) {
             const persistedPair = props.forexPairs.find(p => p.symbol === persistedSymbol);
             if (persistedPair) {
-                selectedPair.value = persistedPair;
-                selectedPairSymbol.value = persistedSymbol;
+                await selectPair(persistedPair);
                 return;
             }
         }
+
         if (props.forexPairs.length) {
-            selectedPair.value = props.forexPairs[0];
-            selectedPairSymbol.value = props.forexPairs[0].symbol;
+            await selectPair(props.forexPairs[0]);
+        }
+    });
+
+    let refreshInterval: ReturnType<typeof setInterval> | null = null;
+
+    onMounted(() => {
+        refreshInterval = setInterval(() => {
+            if (selectedPair.value && !isLoadingPairData.value) {
+                refreshPairData();
+            }
+        }, 30000);
+    });
+
+    onUnmounted(() => {
+        if (refreshInterval) {
+            clearInterval(refreshInterval);
         }
     });
 </script>
@@ -350,9 +423,9 @@
                         </TextLink>
                     </div>
 
-                    <div class="flex-1 h-[calc(100vh-280px)] lg:h-auto lg:min-h-0">
+                    <div class="flex-1 h-[calc(100vh-280px)] lg:h-auto lg:min-h-0 relative lg:overflow-hidden">
                         <TradingChart
-                            v-if="selectedPair"
+                            v-if="selectedPair && selectedPair.price"
                             v-model:pair="selectedPairSymbol"
                             :price="selectedPair.price"
                             :change="selectedPair.change"
@@ -362,12 +435,23 @@
                             :open-trades="openTrades"
                         />
 
-                        <div v-if="!selectedPair" class="text-center text-muted-foreground text-sm py-4 h-full flex flex-col justify-center items-center">
+                        <div v-if="(!selectedPair || !selectedPair.price) && !isLoadingPairData" class="text-center text-muted-foreground text-sm py-4 h-full flex flex-col justify-center items-center">
                             <div class="flex justify-center mb-3">
                                 <TrendingUp class="h-10 w-10 text-muted-foreground" />
                             </div>
-                            <p class="text-base font-medium mb-1 text-card-foreground">No Chart Found</p>
-                            <p class="text-xs">Select a pair to view the trading chart</p>
+                            <p class="text-base font-medium mb-1 text-card-foreground">
+                                No Chart Found
+                            </p>
+                            <p class="text-xs">
+                                Select a pair to view the trading chart
+                            </p>
+                        </div>
+
+                        <div v-if="isLoadingPairData" class="text-center text-muted-foreground text-sm py-4 h-full flex flex-col justify-center items-center">
+                            <div class="flex flex-col items-center gap-3">
+                                <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                                <p class="text-sm text-muted-foreground">Loading pair data...</p>
+                            </div>
                         </div>
                     </div>
 
@@ -409,9 +493,8 @@
                 v-model="isLeftDrawerOpen"
                 :pairs="props.forexPairs"
                 :selected-symbol="selectedPair?.symbol"
-                @select-pair="pair => {
-                    selectedPair = pair;
-                    selectedPairSymbol = pair.symbol;
+                @select-pair="async (pair) => {
+                    await selectPair(pair);
                     isLeftDrawerOpen = false;
                 }"
             />

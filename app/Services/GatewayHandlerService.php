@@ -21,6 +21,7 @@ class GatewayHandlerService
         'CHART_DATA' => 300,       // 5 minutes
         'CRYPTOS_LIST' => 3600,    // 1 hour
         'FOREX_PAIRS' => 300,      // 5 minutes
+        'FOREX_QUOTE' => 30,       // 30 seconds for real-time quotes
     ];
 
     /**
@@ -72,7 +73,152 @@ class GatewayHandlerService
     ];
 
     /**
+     * Get a list of all available forex pairs (metadata only - no price data)
+     */
+    public function getAvailableForexPairs(): array
+    {
+        return $this->getAllPairs();
+    }
+
+    /**
+     * Fetch single forex pair data on-demand
+     */
+    public function fetchSingleForexPair(string $symbol): ?array
+    {
+        $cacheKey = "forex_pair_data_$symbol";
+        $ttl = self::CACHE_TTL['FOREX_PAIRS'];
+
+        return Cache::remember($cacheKey, $ttl, function () use ($symbol) {
+            $allPairs = $this->getAllPairs();
+            $pairData = collect($allPairs)->firstWhere('symbol', $symbol);
+
+            if (!$pairData) {
+                Log::warning("Forex pair not found: $symbol");
+                return null;
+            }
+
+            $apiKey = config('services.polygon.key');
+            if (!$apiKey) {
+                Log::warning('Polygon API key not configured');
+                return $this->generateRealisticFallbackData($pairData);
+            }
+
+            $result = $this->fetchSinglePairWithBackoff($pairData, $apiKey);
+
+            if ($result['success']) {
+                return $result['data'];
+            }
+
+            // Return fallback if API fails
+            return $this->generateRealisticFallbackData($pairData);
+        });
+    }
+
+    /**
+     * Get a real-time quote for a forex pair (shorter cache)
+     */
+    public function getForexQuote(string $symbol): ?array
+    {
+        $cacheKey = "forex_quote_$symbol";
+        $ttl = self::CACHE_TTL['FOREX_QUOTE'];
+
+        return Cache::remember($cacheKey, $ttl, function () use ($symbol) {
+            return $this->fetchSingleForexPair($symbol);
+        });
+    }
+
+    /**
+     * Fetch historical chart data for a forex pair
+     */
+    public function fetchForexChartData(string $symbol, string $timeframe = '1D', int $limit = 100): array
+    {
+        $cacheKey = "forex_chart_{$symbol}_{$timeframe}_$limit";
+        $ttl = self::CACHE_TTL['CHART_DATA'];
+
+        return Cache::remember($cacheKey, $ttl, function () use ($symbol, $timeframe, $limit) {
+            $allPairs = $this->getAllPairs();
+            $pairData = collect($allPairs)->firstWhere('symbol', $symbol);
+
+            if (!$pairData) {
+                return ['success' => false, 'error' => 'Pair not found'];
+            }
+
+            $apiKey = config('services.polygon.key');
+            if (!$apiKey) {
+                return ['success' => false, 'error' => 'API key not configured'];
+            }
+
+            try {
+                $to = now()->format('Y-m-d');
+                $from = now()->subDays(30)->format('Y-m-d');
+
+                $url = "https://api.polygon.io/v2/aggs/ticker/{$pairData['polygon']}/range/1/$timeframe/$from/$to";
+
+                $response = Http::timeout(15)->get($url, [
+                    'adjusted' => 'true',
+                    'sort' => 'asc',
+                    'limit' => $limit,
+                    'apiKey' => $apiKey
+                ]);
+
+                if ($response->status() === 429) {
+                    return [
+                        'success' => false,
+                        'error' => 'Rate limit exceeded',
+                        'status' => 429
+                    ];
+                }
+
+                if (!$response->successful()) {
+                    return [
+                        'success' => false,
+                        'error' => 'Failed to fetch chart data',
+                        'status' => $response->status()
+                    ];
+                }
+
+                $data = $response->json();
+
+                if (($data['status'] ?? '') !== 'OK' || empty($data['results'])) {
+                    return ['success' => false, 'error' => 'No data available'];
+                }
+
+                // Transform to format expected by chart
+                $chartData = collect($data['results'])->map(function ($candle) {
+                    return [
+                        'time' => $candle['t'] / 1000, // Convert to seconds
+                        'open' => $candle['o'],
+                        'high' => $candle['h'],
+                        'low' => $candle['l'],
+                        'close' => $candle['c'],
+                        'volume' => $candle['v'] ?? 0
+                    ];
+                })->toArray();
+
+                return [
+                    'success' => true,
+                    'data' => $chartData,
+                    'symbol' => $symbol,
+                    'timeframe' => $timeframe
+                ];
+
+            } catch (Throwable $e) {
+                Log::error("Failed to fetch forex chart data", [
+                    'symbol' => $symbol,
+                    'error' => $e->getMessage()
+                ]);
+
+                return [
+                    'success' => false,
+                    'error' => $e->getMessage()
+                ];
+            }
+        });
+    }
+
+    /**
      * Fetch Forex pairs with intelligent rate limit handling
+     * DEPRECATED: Use fetchSingleForexPair() for on-demand loading
      */
     public function fetchForexPairs(): array
     {
@@ -285,7 +431,7 @@ class GatewayHandlerService
     private function updateRateLimitState(): void
     {
         $state = $this->getRateLimitState();
-        $state['requests_made'] = 1 + 1;
+        $state['requests_made'] = $state['requests_made'] + 1;
         Cache::put('polygon_rate_limit_state', $state, 3600);
     }
 

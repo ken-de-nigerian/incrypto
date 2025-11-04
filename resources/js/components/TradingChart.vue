@@ -1006,7 +1006,7 @@
             let paddedMax = 0
             let paddedMin = 0
             let priceScale = 0.0000001
-            let priceToY: (price: number) => number = (price) => mouseY
+            let priceToY: (price: number) => number = (_price) => mouseY
 
             if (visibleCandles.length) {
                 const allPrices = visibleCandles.flatMap(c => [c.high, c.low])
@@ -1186,7 +1186,7 @@
         }
     }
 
-    const handleTouchEnd = (e: TouchEvent) => {
+    const handleTouchEnd = (_e: TouchEvent) => {
         if (isTouching.value && !isDragging.value) {
             if (canvas.value) {
                 const simulatedEvent = new MouseEvent('click', {

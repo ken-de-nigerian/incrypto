@@ -13,7 +13,9 @@ use App\Services\GatewayHandlerService;
 use App\Services\TradeCryptoPageService;
 use App\Services\WalletService;
 use Exception;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
 use Inertia\Response;
 use Throwable;
@@ -46,19 +48,20 @@ class ManageUserTradeController extends Controller
         $user = Auth::user();
 
         $pageData = $this->tradeCrypto->getData($user);
-        $pageData['forexPairs'] = $this->getForexPairs();
+
+        // Only send the list of available pairs (metadata only - no price data)
+        $pageData['forexPairs'] = $this->getAvailableForexPairs();
         $pageData['trades'] = $this->getUserTrades($user);
 
         return Inertia::render('User/Trade/Forex', $pageData);
     }
 
     /**
-     * Get forex pairs data from database or API
-     * Adjust based on your actual data source
+     * Get available forex pairs (metadata only, no price data)
      */
-    private function getForexPairs(): array
+    private function getAvailableForexPairs(): array
     {
-        return (new GatewayHandlerService())->fetchForexPairs();
+        return (new GatewayHandlerService())->getAvailableForexPairs();
     }
 
     /**
@@ -67,6 +70,109 @@ class ManageUserTradeController extends Controller
     private function getUserTrades($user): array
     {
         return $user->trades()->latest()->get()->toArray();
+    }
+
+    /**
+     * Fetch single forex pair data on-demand
+     */
+    public function getForexPairData(string $symbol)
+    {
+        try {
+            $decodedSymbol = urldecode($symbol);
+
+            $gatewayService = new GatewayHandlerService();
+            $pairData = $gatewayService->fetchSingleForexPair($decodedSymbol);
+
+            if (!$pairData) {
+                return response()->json([
+                    'success' => false,
+                    'error' => 'Pair not found'
+                ], 404);
+            }
+
+            return response()->json([
+                'success' => true,
+                'data' => $pairData
+            ]);
+
+        } catch (Exception $e) {
+            Log::error('Failed to fetch forex pair data', [
+                'symbol' => $symbol,
+                'error' => $e->getMessage()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'error' => 'Failed to fetch pair data'
+            ], 500);
+        }
+    }
+
+    /**
+     * Fetch forex chart data for a specific pair
+     */
+    public function getForexChartData(Request $request, string $symbol)
+    {
+        try {
+            // Decode the symbol
+            $decodedSymbol = urldecode($symbol);
+
+            $timeframe = $request->input('timeframe', '1D');
+            $limit = $request->input('limit', 100);
+
+            $gatewayService = new GatewayHandlerService();
+            $chartData = $gatewayService->fetchForexChartData($decodedSymbol, $timeframe, $limit);
+
+            return response()->json($chartData);
+
+        } catch (Exception $e) {
+            Log::error('Failed to fetch forex chart data', [
+                'symbol' => $symbol,
+                'error' => $e->getMessage()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'error' => 'Failed to fetch chart data'
+            ], 500);
+        }
+    }
+
+    /**
+     * Get real-time quote for a forex pair
+     */
+    public function getForexQuote(string $symbol)
+    {
+        try {
+            // Decode the symbol
+            $decodedSymbol = urldecode($symbol);
+
+            $gatewayService = new GatewayHandlerService();
+            $quote = $gatewayService->getForexQuote($decodedSymbol);
+
+            if (!$quote) {
+                return response()->json([
+                    'success' => false,
+                    'error' => 'Quote not found'
+                ], 404);
+            }
+
+            return response()->json([
+                'success' => true,
+                'data' => $quote
+            ]);
+
+        } catch (Exception $e) {
+            Log::error('Failed to fetch forex quote', [
+                'symbol' => $symbol,
+                'error' => $e->getMessage()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'error' => 'Failed to fetch quote'
+            ], 500);
+        }
     }
 
     /**
@@ -99,7 +205,7 @@ class ManageUserTradeController extends Controller
             );
 
             return $this->notify('success', 'Trade closed successfully')->toBack();
-        }catch (Exception $e) {
+        } catch (Exception $e) {
             return $this->notify('error', __($e->getMessage()))->toBack();
         }
     }

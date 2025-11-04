@@ -17,9 +17,6 @@
         pair: string
         price: number | string
         change?: number | string
-        low?: number | string
-        high?: number | string
-        volume?: number | string
         openTrades?: OpenTrade[]
     }
 
@@ -27,9 +24,6 @@
         pair: 'EUR/USD',
         price: 1.085,
         change: 0,
-        low: 0,
-        high: 0,
-        volume: 0,
         openTrades: () => []
     })
 
@@ -56,9 +50,6 @@
     })
 
     const externalChange = ref(0)
-    const externalLow = ref(0)
-    const externalHigh = ref(0)
-    const externalVolume = ref(0)
     const lastPrice = ref(0)
 
     let animationId: number | null = null
@@ -101,6 +92,7 @@
 
     const bgColor = computed(() => (isDark.value ? '#1a1a1a4d' : '#ffffff'))
     const gridColor = computed(() => isDark.value ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)')
+
     const textColor = computed(() => (isDark.value ? '#e5e5e5' : '#1f2937'))
     const upColor = '#26a69a'
     const downColor = '#ef5350'
@@ -266,9 +258,6 @@
         }
 
         externalChange.value = parseFloat(String(props.change)) || 0
-        externalLow.value = parseFloat(String(props.low)) || 0
-        externalHigh.value = parseFloat(String(props.high)) || 0
-        externalVolume.value = parseFloat(String(props.volume)) || 0
 
         if (!chartStore.hasPairData) {
             chartStore.initializePairData(props.pair, parsedPrice)
@@ -1000,35 +989,30 @@
 
             let closeTrades: TradeWithPnL[] = []
 
-            let maxP = 0
-            let minP = 0
-            let range = 0.0000001
-            let paddedMax = 0
-            let paddedMin = 0
-            let priceScale = 0.0000001
-            let priceToY: (price: number) => number = (_price) => mouseY
-
             if (visibleCandles.length) {
                 const allPrices = visibleCandles.flatMap(c => [c.high, c.low])
-                maxP = Math.max(...allPrices, currentPrice.value)
-                minP = Math.min(...allPrices, currentPrice.value)
-                range = Math.max(0.0000001, maxP - minP)
-                paddedMax = maxP + range * 0.05
-                paddedMin = minP - range * 0.05
-                priceScale = paddedMax - paddedMin
+                const maxP = Math.max(...allPrices, currentPrice.value)
+                const minP = Math.min(...allPrices, currentPrice.value)
+                const range = Math.max(0.0000001, maxP - minP)
+                const paddedMax = maxP + range * 0.05
+                const paddedMin = minP - range * 0.05
+                const priceScale = paddedMax - paddedMin
 
-                priceToY = (price: number) => TOP_SPACE + mainHeight - ((price - paddedMin) / priceScale) * mainHeight
+                const priceToY = (price: number) => TOP_SPACE + mainHeight - ((price - paddedMin) / priceScale) * mainHeight
 
                 closeTrades = trades.filter(trade => Math.abs(mouseY - priceToY(trade.entry_price)) <= HIT_AREA)
-            }
 
-            if (hoveredTrades.value.length > 0) {
-            } else {
-                if (closeTrades.length > 0) {
-                    hoveredTrades.value = closeTrades
-                    const lineY = priceToY(closeTrades[0].entry_price)
-                    tooltipPos.value = { x: mouseX, y: lineY }
+                // Moved this block inside to ensure priceToY is in scope
+                if (hoveredTrades.value.length > 0) {
+                } else {
+                    if (closeTrades.length > 0) {
+                        hoveredTrades.value = closeTrades
+                        const lineY = priceToY(closeTrades[0].entry_price)
+                        tooltipPos.value = { x: mouseX, y: lineY }
+                    }
                 }
+            } else {
+                closeTrades = []
             }
         }
 
@@ -1186,7 +1170,7 @@
         }
     }
 
-    const handleTouchEnd = (_e: TouchEvent) => {
+    const handleTouchEnd = () => {
         if (isTouching.value && !isDragging.value) {
             if (canvas.value) {
                 const simulatedEvent = new MouseEvent('click', {

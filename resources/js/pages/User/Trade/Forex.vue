@@ -447,7 +447,7 @@
                             </p>
                         </div>
 
-                        <div v-if="isLoadingPairData" class="text-center text-muted-foreground text-sm py-4 h-full flex flex-col justify-center items-center">
+                        <div v-if="isLoadingPairData" class="text-center text-muted-foreground text-sm py-4 h-full height-300 flex flex-col justify-center items-center">
                             <div class="flex flex-col items-center gap-3">
                                 <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
                                 <p class="text-sm text-muted-foreground">Loading pair data...</p>
@@ -532,6 +532,10 @@
     @media (max-width: 640px) {
         .padding-bottom {
             margin-bottom: 50px;
+        }
+
+        .height-300 {
+            height: 300px !important;
         }
     }
 </style>

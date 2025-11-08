@@ -83,17 +83,9 @@ Route::prefix('user')
 
                 Route::get('/forex', 'forex')->name('forex');
 
-                Route::get('/forex/pair/{symbol}', 'getForexPairData')
-                    ->where('symbol', '.*')
-                    ->name('forex.pair.data');
-
                 Route::get('/forex/chart/{symbol}', 'getForexChartData')
                     ->where('symbol', '.*')
                     ->name('forex.chart.data');
-
-                Route::get('/forex/quote/{symbol}', 'getForexQuote')
-                    ->where('symbol', '.*')
-                    ->name('forex.quote');
 
                 Route::post('/forex/execute', 'executeForex')->name('forex.execute');
                 Route::patch('/forex/{trade}/close', 'closeForex')->name('forex.close');

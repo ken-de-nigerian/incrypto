@@ -15,6 +15,16 @@ interface PairData {
     currentPrice: number
     lastCandleTime: number
     basePrice: number
+    candleInterval: number
+    initialized: boolean
+}
+
+interface ForexOHLCData {
+    prices: number[][]
+    volumes: number[][]
+    ohlc: boolean
+    provider: string
+    success: boolean
 }
 
 export interface OpenTrade {
@@ -38,11 +48,11 @@ export interface TradeWithPnL extends OpenTrade {
     pnlPct: string
 }
 
-const MAX_CANDLES = 200
-const MAX_CANDLE_AGE_MS = 24 * 60 * 60 * 1000
+const MAX_CANDLES = 100
 const MIN_ZOOM = 0.1
 const MAX_ZOOM = 10
 const MAX_PAN_THRESHOLD = 100000
+const DEFAULT_CANDLE_INTERVAL_MS = 60000
 
 export const useChartStore = defineStore('chart', () => {
     const selectedPair = ref<string>('EUR/USD')
@@ -50,224 +60,322 @@ export const useChartStore = defineStore('chart', () => {
     const zoom = ref(1.0)
     const panX = ref(0)
     const openTrades = ref<OpenTrade[]>([])
+    const connectionStatus = ref<'disconnected' | 'connecting' | 'connected' | 'error' | 'fallback'>('disconnected')
+    const chartError = ref<string | null>(null)
 
-    const currentPairData = computed(() => {
-        return pairDataMap.value[selectedPair.value]
-    })
+    // OPTIMIZED: Memoized computed properties
+    const isWebSocketConnected = computed(() =>
+        connectionStatus.value === 'connected' || connectionStatus.value === 'fallback'
+    )
 
-    const hasPairData = computed(() => {
-        return !!pairDataMap.value[selectedPair.value]
-    })
+    const currentPairData = computed(() => pairDataMap.value[selectedPair.value])
+
+    const hasPairData = computed(() =>
+        !!currentPairData.value &&
+        currentPairData.value.initialized &&
+        currentPairData.value.candles.length > 0
+    )
 
     const currentPrice = computed(() => currentPairData.value?.currentPrice || 0)
 
-    const calculateTradePnL = (trade: OpenTrade, price: number) => {
-        const diff = trade.type === 'Up'
-            ? price - trade.entry_price
-            : trade.entry_price - price
+    const openTradesForPair = computed(() =>
+        openTrades.value.filter(t => t.pair === selectedPair.value)
+    )
 
-        const pnl = diff * trade.amount * trade.leverage
-
-        const pnlPct = trade.entry_price !== 0
-            ? ((diff / trade.entry_price) * trade.leverage * 100).toFixed(2)
-            : '0.00'
-
-        return { pnl, pnlPct }
-    }
-
-    const openTradesForPair = computed<TradeWithPnL[]>(() => {
-        return openTrades.value
-            .filter(t => t.pair === selectedPair.value)
-    })
+    const hasChartError = computed(() => !!chartError.value)
 
     function setPair(pair: string) {
         selectedPair.value = pair
-        resetView()
+        chartError.value = null
+        if (!pairDataMap.value[pair]) {
+            initializePairData(pair)
+        }
     }
 
-    function initializePairData(pair: string, initialPrice: number) {
-        const validPrice = isFinite(initialPrice) && initialPrice > 0
-            ? initialPrice
-            : 1.0
-
+    function initializePairData(pair: string, initialPrice: number = 0) {
         if (!pairDataMap.value[pair]) {
             pairDataMap.value[pair] = {
                 candles: [],
-                currentPrice: validPrice,
+                currentPrice: initialPrice,
                 lastCandleTime: Date.now(),
-                basePrice: validPrice
+                basePrice: initialPrice,
+                candleInterval: DEFAULT_CANDLE_INTERVAL_MS,
+                initialized: false,
             }
         }
     }
 
-    function updatePairData(pair: string, data: Partial<PairData>) {
+    function setChartError(error: string) {
+        chartError.value = error
+        console.error('Chart Error:', error)
+    }
+
+    function clearChartError() {
+        chartError.value = null
+    }
+
+    function detectCandleInterval(candles: Candle[]): number {
+        if (candles.length < 2) return DEFAULT_CANDLE_INTERVAL_MS
+
+        const intervals: number[] = []
+        for (let i = 1; i < Math.min(10, candles.length); i++) {
+            intervals.push(candles[i].time - candles[i - 1].time)
+        }
+
+        if (intervals.length === 0) return DEFAULT_CANDLE_INTERVAL_MS
+
+        const avgInterval = intervals.reduce((a, b) => a + b, 0) / intervals.length
+
+        const standardIntervals = [
+            60000,      // 1 min
+            300000,     // 5 min
+            900000,     // 15 min
+            1800000,    // 30 min
+            3600000,    // 1 hour
+            7200000,    // 2 hours
+            14400000,   // 4 hours
+            86400000,   // 1 day
+        ]
+
+        let closestInterval = standardIntervals[0]
+        let minDiff = Math.abs(avgInterval - closestInterval)
+
+        for (const interval of standardIntervals) {
+            const diff = Math.abs(avgInterval - interval)
+            if (diff < minDiff) {
+                minDiff = diff
+                closestInterval = interval
+            }
+        }
+
+        return closestInterval
+    }
+
+    function initializeCandlesFromForexData(pair: string, forexData: ForexOHLCData, currentPrice: number = 0) {
+        console.log('Initializing candles from Forex data', { pair, currentPrice })
+
+        if (!pairDataMap.value[pair]) {
+            initializePairData(pair, currentPrice)
+        }
+
+        const pairData = pairDataMap.value[pair]
+        pairData.candles = []
+
+        if (!forexData.prices || !Array.isArray(forexData.prices)) {
+            console.error('Invalid forex data structure', forexData)
+            setChartError('Invalid chart data received. Please refresh the page.')
+            pairData.initialized = false
+            return
+        }
+
+        const ohlcData = forexData.prices
+        const volumeData = forexData.volumes || []
+
+        if (ohlcData.length === 0) {
+            console.error('Empty OHLC data received')
+            setChartError('No historical data available. Please try again.')
+            pairData.initialized = false
+            return
+        }
+
+        console.log(`Processing ${ohlcData.length} candles for ${pair}`)
+
+        ohlcData.forEach((candleData, index) => {
+            if (!Array.isArray(candleData) || candleData.length < 5) {
+                console.warn(`Invalid candle data at index ${index}`, candleData)
+                return
+            }
+
+            const [timestamp, open, high, low, close] = candleData
+            const volume = volumeData[index]?.[1] || 0
+
+            const candleTime = timestamp > 9999999999 ? timestamp : timestamp * 1000
+
+            if (!isFinite(open) || !isFinite(high) || !isFinite(low) || !isFinite(close)) {
+                console.warn(`Invalid price values at index ${index}`, { open, high, low, close })
+                return
+            }
+
+            if (open <= 0 || high <= 0 || low <= 0 || close <= 0) {
+                console.warn(`Non-positive price values at index ${index}`, { open, high, low, close })
+                return
+            }
+
+            pairData.candles.push({
+                time: candleTime,
+                open: open,
+                high: high,
+                low: low,
+                close: close,
+                volume: volume
+            })
+        })
+
+        if (pairData.candles.length === 0) {
+            console.error('No valid candles created from OHLC data')
+            setChartError('Failed to process chart data. Please refresh the page.')
+            pairData.initialized = false
+            return
+        }
+
+        console.log(`Successfully created ${pairData.candles.length} candles for ${pair}`)
+
+        pairData.candleInterval = detectCandleInterval(pairData.candles)
+        console.log(`Detected candle interval: ${pairData.candleInterval}ms (${pairData.candleInterval / 60000} minutes)`)
+
+        const lastCandle = pairData.candles[pairData.candles.length - 1]
+        pairData.currentPrice = currentPrice > 0 ? currentPrice : (lastCandle?.close || 0)
+        pairData.basePrice = pairData.candles[0]?.open || pairData.currentPrice
+
+        if (lastCandle) {
+            pairData.lastCandleTime = lastCandle.time
+        }
+
+        pairData.initialized = true
+        clearChartError()
+
+        console.log('Chart initialized successfully:', {
+            pair,
+            candleCount: pairData.candles.length,
+            firstCandle: new Date(pairData.candles[0].time).toISOString(),
+            lastCandle: new Date(lastCandle.time).toISOString(),
+            currentPrice: pairData.currentPrice,
+            basePrice: pairData.basePrice,
+            interval: `${pairData.candleInterval / 60000} minutes`
+        })
+    }
+
+    function initializeCandlesFromOHLC(pair: string, ohlcData: any) {
+        console.log('initializeCandlesFromOHLC called', { pair, ohlcData })
+
+        if (!pairDataMap.value[pair]) {
+            initializePairData(pair)
+        }
+
+        const pairData = pairDataMap.value[pair]
+        const currentPrice = parseFloat(ohlcData.price) || 0
+
+        if (!currentPrice || currentPrice <= 0) {
+            console.error('Invalid current price', { currentPrice })
+            setChartError('Unable to fetch current price. Please check your connection.')
+            pairData.initialized = false
+            return
+        }
+
+        initializeCandlesFromForexData(pair, ohlcData, currentPrice)
+    }
+
+    function updatePairData(pair: string, updates: Partial<PairData>) {
         if (pairDataMap.value[pair]) {
-            const updates: Partial<PairData> = {}
-
-            if (data.currentPrice !== undefined) {
-                updates.currentPrice = isFinite(data.currentPrice) && data.currentPrice > 0
-                    ? data.currentPrice
-                    : pairDataMap.value[pair].currentPrice
-            }
-
-            if (data.basePrice !== undefined) {
-                updates.basePrice = isFinite(data.basePrice) && data.basePrice > 0
-                    ? data.basePrice
-                    : pairDataMap.value[pair].basePrice
-            }
-
-            if (data.candles !== undefined) {
-                updates.candles = data.candles
-            }
-
-            if (data.lastCandleTime !== undefined) {
-                updates.lastCandleTime = data.lastCandleTime
-            }
-
-            pairDataMap.value[pair] = {
-                ...pairDataMap.value[pair],
-                ...updates
-            }
+            Object.assign(pairDataMap.value[pair], updates)
         }
     }
 
     function addCandle(pair: string, candle: Candle) {
-        if (!pairDataMap.value[pair]) return
-
-        const validCandle = {
-            time: isFinite(candle.time) ? candle.time : Date.now(),
-            open: isFinite(candle.open) ? candle.open : pairDataMap.value[pair].currentPrice,
-            high: isFinite(candle.high) ? candle.high : pairDataMap.value[pair].currentPrice,
-            low: isFinite(candle.low) ? candle.low : pairDataMap.value[pair].currentPrice,
-            close: isFinite(candle.close) ? candle.close : pairDataMap.value[pair].currentPrice,
-            volume: isFinite(candle.volume) && candle.volume >= 0 ? candle.volume : 0
-        }
-
-        if (validCandle.high < validCandle.low) {
-            [validCandle.high, validCandle.low] = [validCandle.low, validCandle.high]
-        }
-
-        const candles = pairDataMap.value[pair].candles
-        candles.push(validCandle)
-
-        if (candles.length > MAX_CANDLES) {
-            candles.shift()
-        }
-
-        const cutoffTime = Date.now() - MAX_CANDLE_AGE_MS
-        while (candles.length > 0 && candles[0].time < cutoffTime) {
-            candles.shift()
+        const pairData = pairDataMap.value[pair]
+        if (pairData && pairData.initialized) {
+            pairData.candles.push(candle)
+            if (pairData.candles.length > MAX_CANDLES) {
+                pairData.candles.shift()
+            }
+            pairData.lastCandleTime = candle.time
+            console.log('New candle added:', candle)
         }
     }
 
     function updateLastCandle(pair: string, updates: Partial<Candle>) {
-        const candles = pairDataMap.value[pair]?.candles
-        if (!candles || candles.length === 0) return
-
-        const lastCandle = candles[candles.length - 1]
-
-        if (updates.high !== undefined && isFinite(updates.high)) {
-            lastCandle.high = Math.max(lastCandle.high, updates.high)
+        const pairData = pairDataMap.value[pair]
+        if (pairData && pairData.initialized && pairData.candles.length > 0) {
+            const lastCandle = pairData.candles[pairData.candles.length - 1]
+            if (lastCandle) {
+                Object.assign(lastCandle, updates)
+            }
         }
-        if (updates.low !== undefined && isFinite(updates.low)) {
-            lastCandle.low = Math.min(lastCandle.low, updates.low)
-        }
-        if (updates.close !== undefined && isFinite(updates.close)) {
-            lastCandle.close = updates.close
-        }
-        if (updates.volume !== undefined && isFinite(updates.volume) && updates.volume >= 0) {
-            lastCandle.volume = updates.volume
-        }
-
-        lastCandle.high = Math.max(lastCandle.high, lastCandle.open, lastCandle.close)
-        lastCandle.low = Math.min(lastCandle.low, lastCandle.open, lastCandle.close)
     }
 
     function updateCurrentPrice(pair: string, price: number) {
-        if (!pairDataMap.value[pair] || !isFinite(price) || price <= 0) return
-
-        let finalPrice = price;
-
-        const forcedWinTrade = openTrades.value.find(t =>
-            t.pair === pair &&
-            t.trading_mode === 'demo' &&
-            t.is_demo_forced_win
-        );
-
-        if (forcedWinTrade) {
-            const entryPrice = forcedWinTrade.entry_price;
-            const leverage = forcedWinTrade.leverage;
-
-            const priceDiffForWin = (0.05 / leverage);
-
-            if (forcedWinTrade.type === 'Up') {
-                const winningPrice = entryPrice + priceDiffForWin;
-
-                if (price < winningPrice) {
-                    finalPrice = winningPrice;
-                } else {
-                    finalPrice = price;
-                }
-
-            } else {
-                const winningPrice = entryPrice - priceDiffForWin;
-                if (price > winningPrice) {
-                    finalPrice = winningPrice;
-                } else {
-                    finalPrice = price;
-                }
-            }
+        if (pairDataMap.value[pair]) {
+            pairDataMap.value[pair].currentPrice = price
         }
-
-        pairDataMap.value[pair].currentPrice = finalPrice;
     }
 
     function updateLastCandleTime(pair: string, time: number) {
-        if (pairDataMap.value[pair] && isFinite(time)) {
+        if (pairDataMap.value[pair]) {
             pairDataMap.value[pair].lastCandleTime = time
         }
     }
 
-    function setZoom(value: number) {
-        const validValue = isFinite(value) ? value : 1.0
-        zoom.value = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, validValue))
+    function setZoom(val: number) {
+        zoom.value = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, val))
     }
 
-    function setPanX(value: number) {
-        if (!isFinite(value)) {
-            panX.value = 0
-            return
-        }
-
-        if (Math.abs(value) > MAX_PAN_THRESHOLD) {
-            panX.value = 0
-        } else {
-            panX.value = value
-        }
+    function setPanX(val: number) {
+        panX.value = Math.max(-MAX_PAN_THRESHOLD, Math.min(MAX_PAN_THRESHOLD, val))
     }
 
     function setOpenTrades(trades: OpenTrade[]) {
-        openTrades.value = trades.map(t => {
-            const existingTrade = openTrades.value.find(et => et.id === t.id)
-            if (existingTrade) {
-                return existingTrade
-            }
-
-            if (t.pnl === undefined || t.pnlPct === undefined) {
-                const { pnl, pnlPct } = calculateTradePnL(t, currentPrice.value)
-                return { ...t, pnl, pnlPct }
-            }
-            return t
-        })
+        openTrades.value = trades
     }
 
-    function updateTradePnL(tradeId: number, price: number) {
-        const tradeIndex = openTrades.value.findIndex(t => t.id === tradeId)
-        if (tradeIndex === -1) return
+    /**
+     * OPTIMIZED: Client-side PnL calculation with proper rounding
+     */
+    function getPricePrecision(pair: string): number {
+        const symbol = pair.toUpperCase();
+        if (symbol.includes('JPY') || symbol.includes('RUB')) {
+            return 3;
+        }
+        if (symbol.includes('XAU') || symbol.includes('XAG')) {
+            return 2;
+        }
+        return 5;
+    }
 
-        const trade = openTrades.value[tradeIndex]
-        const { pnl, pnlPct } = calculateTradePnL(trade, price)
-        openTrades.value[tradeIndex] = { ...trade, pnl, pnlPct }
+    function roundPrice(price: number, pair: string): number {
+        const precision = getPricePrecision(pair);
+        const factor = Math.pow(10, precision);
+        return Math.round(price * factor) / factor;
+    }
+
+    function calculateTradePnL(trade: OpenTrade, currentPrice: number): { pnl: number, pnlPct: string } {
+        const leverageFactor = trade.leverage || 1
+        const tradeVolume = trade.amount * leverageFactor
+
+        const roundedPrice = roundPrice(currentPrice, trade.pair)
+        const roundedEntry = roundPrice(trade.entry_price, trade.pair)
+
+        const diff = trade.type === 'Up'
+            ? roundedPrice - roundedEntry
+            : roundedEntry - roundedPrice
+
+        const pnl = diff * tradeVolume
+
+        const initialInvestment = trade.amount
+        const pnlPct = ((pnl / initialInvestment) * 100).toFixed(2)
+
+        return { pnl, pnlPct: pnlPct + '%' }
+    }
+
+    function updateTradePnL(tradeId: number, currentPrice: number) {
+        const trade = openTrades.value.find(t => t.id === tradeId)
+        if (trade) {
+            const { pnl, pnlPct } = calculateTradePnL(trade, currentPrice)
+            trade.pnl = pnl
+            trade.pnlPct = pnlPct
+        }
+    }
+
+    function setWebSocketStatus(status: 'disconnected' | 'connecting' | 'connected' | 'error' | 'fallback') {
+        connectionStatus.value = status
+
+        if (status === 'error') {
+            setChartError('WebSocket connection failed. Trying fallback mode...')
+        } else if (status === 'fallback') {
+            clearChartError()
+            console.warn('Using fallback polling mode')
+        } else if (status === 'connected') {
+            clearChartError()
+        }
     }
 
     function resetView() {
@@ -275,55 +383,158 @@ export const useChartStore = defineStore('chart', () => {
         panX.value = 0
     }
 
-    function clearPairData(pair: string) {
-        delete pairDataMap.value[pair]
-    }
-
-    function clearAllData() {
-        pairDataMap.value = {}
-        resetView()
-    }
-
-    function cleanupStalePairs(activePairs: string[]) {
-        const currentPairs = Object.keys(pairDataMap.value)
-        currentPairs.forEach(pair => {
-            if (!activePairs.includes(pair)) {
-                delete pairDataMap.value[pair]
-            }
-        })
-    }
-
-    function validateDataIntegrity() {
+    function validateDataIntegrity(): boolean {
         let issuesFound = false
-
         Object.entries(pairDataMap.value).forEach(([pair, data]) => {
-            if (!isFinite(data.currentPrice) || data.currentPrice <= 0) {
-                console.warn(`Invalid currentPrice for ${pair}:`, data.currentPrice)
+            if (!data.candles) {
                 issuesFound = true
             }
 
-            data.candles.forEach((candle, idx) => {
-                if (!isFinite(candle.open) || !isFinite(candle.high) ||
+            if (!isFinite(data.currentPrice) || data.currentPrice <= 0) {
+                issuesFound = true
+            }
+
+            data.candles?.forEach((candle, idx) => {
+                if (!isFinite(candle.time) || !isFinite(candle.open) || !isFinite(candle.high) ||
                     !isFinite(candle.low) || !isFinite(candle.close)) {
-                    console.warn(`Invalid candle at index ${idx} for ${pair}`)
                     issuesFound = true
                 }
             })
         })
 
         if (!isFinite(zoom.value)) {
-            console.warn('Invalid zoom value:', zoom.value)
             resetView()
             issuesFound = true
         }
 
         if (!isFinite(panX.value)) {
-            console.warn('Invalid panX value:', panX.value)
             panX.value = 0
             issuesFound = true
         }
 
         return !issuesFound
+    }
+
+    function convertPairToFinnhub(pair: string): string {
+        return `OANDA:${pair.replace('/', '_')}`
+    }
+
+    function convertFinnhubToPair(finnhubSymbol: string): string {
+        return finnhubSymbol.replace('OANDA:', '').replace('_', '/')
+    }
+
+    function processFinnhubTrade(trade: any) {
+        try {
+            const symbol = convertFinnhubToPair(trade.s)
+            const price = parseFloat(trade.p)
+            const volume = parseFloat(trade.v) || 0
+            const timestamp = trade.t * 1000
+
+            const now = Date.now()
+            let validTimestamp = timestamp
+
+            // Fix timestamp if it's invalid (too far in past or future)
+            if (Math.abs(timestamp - now) > 24 * 60 * 60 * 1000) {
+                console.warn('Invalid timestamp detected, using current time', {
+                    original: new Date(timestamp).toISOString(),
+                    corrected: new Date(now).toISOString()
+                })
+                validTimestamp = now
+            }
+
+            if (!pairDataMap.value[symbol] || !isFinite(price) || price <= 0) {
+                console.warn('Invalid trade data:', { symbol, price, isFinite: isFinite(price) })
+                return
+            }
+
+            const pairData = pairDataMap.value[symbol]
+
+            if (!pairData.initialized || pairData.candles.length === 0) {
+                console.warn('Ignoring WebSocket trade - chart not initialized yet')
+                return
+            }
+
+            updateCurrentPrice(symbol, price)
+
+            // OPTIMIZED: Update PnL for all trades of this pair
+            openTrades.value.forEach(t => {
+                if (t.pair === symbol) {
+                    updateTradePnL(t.id, price)
+                }
+            })
+
+            const lastCandle = pairData.candles[pairData.candles.length - 1]
+            const candleInterval = pairData.candleInterval || DEFAULT_CANDLE_INTERVAL_MS
+            const candleTime = Math.floor(validTimestamp / candleInterval) * candleInterval
+            const lastCandleTime = Math.floor(lastCandle.time / candleInterval) * candleInterval
+
+            console.log('WebSocket tick:', {
+                symbol,
+                price,
+                currentCandleTime: new Date(candleTime).toISOString(),
+                lastCandleTime: new Date(lastCandleTime).toISOString(),
+                interval: `${candleInterval / 60000} minutes`,
+                willCreateNewCandle: candleTime !== lastCandleTime,
+                timeDiff: `${(candleTime - lastCandleTime) / 60000} minutes`
+            })
+
+            // ENHANCED: If there's a big gap, fill it with interpolated candles
+            const timeDiffMinutes = (candleTime - lastCandleTime) / candleInterval
+
+            if (timeDiffMinutes > 1 && timeDiffMinutes <= 1440) {
+                // Gap detected (more than 1 minute but less than 24 hours)
+                console.log(`🔧 Bridging ${timeDiffMinutes} minute gap with interpolated candles`)
+
+                // Fill the gap with candles using the last close price
+                for (let i = 1; i < timeDiffMinutes; i++) {
+                    const gapCandleTime = lastCandleTime + (i * candleInterval)
+                    const gapCandle: Candle = {
+                        time: gapCandleTime,
+                        open: lastCandle.close,
+                        high: lastCandle.close,
+                        low: lastCandle.close,
+                        close: lastCandle.close,
+                        volume: 0,
+                    }
+                    addCandle(symbol, gapCandle)
+                }
+            }
+
+            if (candleTime === lastCandleTime) {
+                // Update existing candle
+                const newHigh = Math.max(lastCandle.high, price)
+                const newLow = Math.min(lastCandle.low, price)
+                const newVolume = lastCandle.volume + volume
+
+                updateLastCandle(symbol, {
+                    close: price,
+                    high: newHigh,
+                    low: newLow,
+                    volume: newVolume,
+                })
+
+                console.log('Updated existing candle:', { close: price, high: newHigh, low: newLow })
+            } else {
+                // Create a new candle
+                const prevCandle = pairData.candles[pairData.candles.length - 1]
+                const newCandle: Candle = {
+                    time: candleTime,
+                    open: prevCandle.close,
+                    high: price,
+                    low: price,
+                    close: price,
+                    volume: volume,
+                }
+
+                addCandle(symbol, newCandle)
+                updateLastCandleTime(symbol, candleTime)
+
+                console.log('✨ Created new candle:', newCandle)
+            }
+        } catch (error) {
+            console.error('Error processing Finnhub trade:', error)
+            return
+        }
     }
 
     return {
@@ -332,12 +543,18 @@ export const useChartStore = defineStore('chart', () => {
         zoom,
         panX,
         openTrades,
+        isWebSocketConnected,
+        connectionStatus,
         currentPairData,
         hasPairData,
         currentPrice,
         openTradesForPair,
+        chartError,
+        hasChartError,
         setPair,
         initializePairData,
+        initializeCandlesFromOHLC,
+        initializeCandlesFromForexData,
         updatePairData,
         addCandle,
         updateLastCandle,
@@ -347,17 +564,19 @@ export const useChartStore = defineStore('chart', () => {
         setPanX,
         setOpenTrades,
         updateTradePnL,
+        setWebSocketStatus,
         resetView,
-        clearPairData,
-        clearAllData,
-        cleanupStalePairs,
         validateDataIntegrity,
-        calculateTradePnL
+        calculateTradePnL,
+        convertPairToFinnhub,
+        processFinnhubTrade,
+        setChartError,
+        clearChartError,
     }
 }, {
     persist: {
         key: 'forex-chart-store',
         storage: localStorage,
-        paths: ['selectedPair', 'pairDataMap', 'openTrades', 'zoom', 'panX']
+        paths: ['selectedPair', 'zoom', 'panX']
     }
 })

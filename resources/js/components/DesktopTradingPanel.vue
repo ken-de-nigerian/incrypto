@@ -20,6 +20,9 @@
 
     interface Props {
         selectedPair: TradingPair | null
+        high: string
+        low: string
+        volume: string
         tradeFormData: TradeFormData
         durations: string[]
         availableMargin: number
@@ -96,15 +99,15 @@
             <div class="grid grid-cols-3 gap-2 text-xs bg-background p-3 rounded-lg border border-border">
                 <div>
                     <p class="text-muted-foreground mb-1">High</p>
-                    <p class="font-semibold text-card-foreground">{{ selectedPair.high }}</p>
+                    <p class="font-semibold text-card-foreground">{{ high }}</p>
                 </div>
                 <div>
                     <p class="text-muted-foreground mb-1">Low</p>
-                    <p class="font-semibold text-card-foreground">{{ selectedPair.low }}</p>
+                    <p class="font-semibold text-card-foreground">{{ low }}</p>
                 </div>
                 <div>
                     <p class="text-muted-foreground mb-1">Vol</p>
-                    <p class="font-semibold text-card-foreground">{{ selectedPair.volume }}</p>
+                    <p class="font-semibold text-card-foreground">{{ volume }}</p>
                 </div>
             </div>
 

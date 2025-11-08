@@ -24,6 +24,7 @@
     import PairDrawer from '@/components/PairDrawer.vue';
     import TradesDrawer from '@/components/TradesDrawer.vue';
     import { useChartStore } from '@/stores/chartStore';
+    import { initializeFinnhubService, FinnhubWebSocketService } from '@/services/finnhubWebSocket';
 
     interface Token {
         symbol: string;
@@ -72,6 +73,23 @@
         updated_at?: string;
     }
 
+    interface ChartData {
+        success: boolean;
+        data: Array<{
+            time: number;
+            open: number;
+            high: number;
+            low: number;
+            close: number;
+            volume: number;
+        }>;
+        high: string
+        low: string
+        volume: string
+        symbol: string;
+        timeframe: string;
+    }
+
     const props = defineProps<{
         tokens: Array<Token>;
         userBalances: Record<string, number>;
@@ -86,9 +104,11 @@
             };
             notification_count: number;
         };
+        finnhubApiKey?: string;
     }>();
 
     const chartStore = useChartStore();
+    const wsService = ref<FinnhubWebSocketService | null>(null);
 
     const isNotificationsModalOpen = ref(false);
     const isFundingModalOpen = ref(false);
@@ -100,6 +120,11 @@
     const selectedPairSymbol = ref<string>('');
     const isLoadingPairData = ref(false);
     const pairDataCache = ref<Map<string, ForexPair>>(new Map());
+    const chartData = ref<ChartData | null>(null);
+    const hasChartData = ref(false);
+
+    const isInitializing = ref(false);
+    const initializationError = ref<string | null>(null);
 
     const availableLeverages = ref([50, 100, 200, 500, 1000]);
     const tradeFormData = ref({
@@ -178,13 +203,40 @@
         }
 
         isLoadingPairData.value = true;
+        hasChartData.value = false;
 
         try {
             const encodedSymbol = encodeURIComponent(symbol);
-            const response = await axios.get(route('user.trade.forex.pair.data', { symbol: encodedSymbol }));
+            const response = await axios.get(route('user.trade.forex.chart.data', { symbol: encodedSymbol }));
 
             if (response.data.success) {
                 const pairData = response.data.data;
+
+                chartData.value = response.data;
+
+                if (chartData.value && chartData.value.data && Array.isArray(chartData.value.data)) {
+                    const formattedData = {
+                        prices: chartData.value.data.map(candle => [
+                            candle.time,
+                            candle.open,
+                            candle.high,
+                            candle.low,
+                            candle.close
+                        ]),
+                        volumes: chartData.value.data.map(candle => [
+                            candle.time,
+                            candle.volume
+                        ]),
+                        ohlc: true,
+                        provider: 'backend',
+                        success: true,
+                        price: pairData.price || String(chartData.value.data[chartData.value.data.length - 1]?.close || 0)
+                    };
+
+                    chartStore.initializeCandlesFromOHLC(symbol, formattedData);
+                    hasChartData.value = true;
+                }
+
                 pairDataCache.value.set(symbol, pairData);
                 return pairData;
             } else {
@@ -212,7 +264,47 @@
                 ...pair,
                 ...pairData
             };
+
+            if (pairData.price) {
+                const priceValue = parseFloat(pairData.price);
+                if (isFinite(priceValue) && priceValue > 0) {
+                    chartStore.updateCurrentPrice(pair.symbol, priceValue);
+                }
+            }
         }
+
+        if (wsService.value && chartStore.hasPairData) {
+            wsService.value.subscribeToPair(pair.symbol);
+        }
+    };
+
+    const initializeWebSocket = (apiKey: string) => {
+        if (!apiKey) {
+            return;
+        }
+
+        const service = initializeFinnhubService(apiKey);
+        wsService.value = service;
+
+        service.onTrade((trade: any) => {
+            if (chartStore.hasPairData) {
+                chartStore.processFinnhubTrade(trade);
+            } else {
+                console.warn('Ignoring WebSocket trade - chart not initialized');
+            }
+        });
+
+        service.onStatusChange((status: 'disconnected' | 'connecting' | 'connected' | 'error') => {
+            chartStore.setWebSocketStatus(status);
+
+            if (status === 'connected') {
+                if (selectedPair.value && chartStore.hasPairData) {
+                    service.subscribeToPair(selectedPair.value.symbol);
+                }
+            }
+        });
+
+        service.connect();
     };
 
     const refreshPairData = async () => {
@@ -235,6 +327,19 @@
         isExecutingTrade.value = true;
         tradeError.value = '';
         try {
+
+            const currentPairData = chartStore.pairDataMap[selectedPair.value.symbol];
+            const currentPrice = currentPairData?.currentPrice ||
+                parseFloat(selectedPair.value.price || '0');
+
+            console.log('Trade execution - Pair:', selectedPair.value.symbol, 'Current Price:', currentPrice);
+
+            if (!currentPrice || currentPrice <= 0 || !isFinite(currentPrice)) {
+                tradeError.value = 'Invalid current price. Please refresh and try again.';
+                isExecutingTrade.value = false;
+                return;
+            }
+
             const tradeData = {
                 pair: selectedPair.value.symbol,
                 pair_name: selectedPair.value.name,
@@ -242,9 +347,12 @@
                 amount: tradeFormData.value.amount,
                 duration: tradeFormData.value.duration,
                 leverage: tradeFormData.value.leverage,
-                entry_price: parseFloat(selectedPair.value.price || '0'),
+                entry_price: currentPrice,
                 trading_mode: isLiveMode.value ? 'live' : 'demo'
             };
+
+            console.log('Sending trade data:', tradeData);
+
             await new Promise((resolve, reject) => {
                 router.post(route('user.trade.forex.execute'), tradeData, {
                     preserveScroll: true,
@@ -259,6 +367,7 @@
                         else if (errors.leverage) tradeError.value = errors.leverage;
                         else if (errors.pair) tradeError.value = errors.pair;
                         else if (errors.type) tradeError.value = errors.type;
+                        else if (errors.entry_price) tradeError.value = errors.entry_price;
                         else tradeError.value = 'Failed to execute trade. Please try again.';
                         reject(errors);
                     },
@@ -285,37 +394,62 @@
     };
 
     watch([isFundingModalOpen, isWithdrawalModalOpen, isLeftDrawerOpen, isRightDrawerOpen],
-    ([f, w, l, r]) => {
-        document.body.style.overflow = f || w || l || r ? 'hidden' : '';
-    });
-
-    onMounted(async () => {
-        const persistedSymbol = chartStore.selectedPair;
-
-        if (persistedSymbol) {
-            const persistedPair = props.forexPairs.find(p => p.symbol === persistedSymbol);
-            if (persistedPair) {
-                await selectPair(persistedPair);
-                return;
-            }
-        }
-
-        if (props.forexPairs.length) {
-            await selectPair(props.forexPairs[0]);
-        }
-    });
+        ([f, w, l, r]) => {
+            document.body.style.overflow = f || w || l || r ? 'hidden' : '';
+        });
 
     let refreshInterval: ReturnType<typeof setInterval> | null = null;
 
-    onMounted(() => {
-        refreshInterval = setInterval(() => {
-            if (selectedPair.value && !isLoadingPairData.value) {
-                refreshPairData();
+    onMounted(async () => {
+        isInitializing.value = true;
+        initializationError.value = null;
+
+        try {
+            if (props.finnhubApiKey) {
+                initializeWebSocket(props.finnhubApiKey);
+            } else {
+                console.warn('Finnhub API key not configured');
             }
-        }, 30000);
+
+            const persistedSymbol = chartStore.selectedPair;
+            let initialPair: ForexPair | undefined;
+
+            if (persistedSymbol) {
+                initialPair = props.forexPairs.find(p => p.symbol === persistedSymbol);
+            }
+
+            if (!initialPair) {
+                initialPair = props.forexPairs.find(p => p.price) || props.forexPairs[0];
+            }
+
+            if (!initialPair) {
+                throw new Error('No forex pairs available');
+            }
+
+            await selectPair(initialPair);
+
+            if (!chartStore.hasPairData) {
+                console.error('Chart initialization failed');
+            }
+
+            refreshInterval = setInterval(() => {
+                if (selectedPair.value && !isLoadingPairData.value) {
+                    refreshPairData();
+                }
+            }, 300000);
+
+            isInitializing.value = false;
+
+        } catch (error: any) {
+            initializationError.value = error.message || 'Failed to initialize chart. Please refresh the page.';
+            isInitializing.value = false;
+            console.error('Initialization error:', error);
+        }
     });
 
     onUnmounted(() => {
+        wsService.value?.disconnect();
+
         if (refreshInterval) {
             clearInterval(refreshInterval);
         }
@@ -424,18 +558,29 @@
                     </div>
 
                     <div class="flex-1 h-[calc(100vh-280px)] lg:h-auto lg:min-h-0 relative lg:overflow-hidden">
+                        <!-- Show chart when we have data, regardless of selectedPair.price -->
                         <TradingChart
-                            v-if="selectedPair && selectedPair.price"
+                            v-if="hasChartData && selectedPair"
                             v-model:pair="selectedPairSymbol"
-                            :price="selectedPair.price"
-                            :change="selectedPair.change"
+                            :price="selectedPair.price || '0'"
+                            :change="selectedPair.change || '0'"
                             :low="selectedPair.low"
                             :high="selectedPair.high"
                             :volume="selectedPair.volume"
                             :open-trades="openTrades"
+                            :use-backend-data="true"
                         />
 
-                        <div v-if="(!selectedPair || !selectedPair.price) && !isLoadingPairData" class="text-center text-muted-foreground text-sm py-4 h-full flex flex-col justify-center items-center">
+                        <!-- Show loading state -->
+                        <div v-else-if="isLoadingPairData" class="text-center text-muted-foreground text-sm py-4 h-full height-300 flex flex-col justify-center items-center">
+                            <div class="flex flex-col items-center gap-3">
+                                <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                                <p class="text-sm text-muted-foreground">Loading chart data...</p>
+                            </div>
+                        </div>
+
+                        <!-- Show no data state only when not loading and no chart data -->
+                        <div v-else class="text-center text-muted-foreground text-sm py-4 h-full flex flex-col justify-center items-center">
                             <div class="flex justify-center mb-3">
                                 <TrendingUp class="h-10 w-10 text-muted-foreground" />
                             </div>
@@ -446,17 +591,13 @@
                                 Select a pair to view the trading chart
                             </p>
                         </div>
-
-                        <div v-if="isLoadingPairData" class="text-center text-muted-foreground text-sm py-4 h-full height-300 flex flex-col justify-center items-center">
-                            <div class="flex flex-col items-center gap-3">
-                                <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-                                <p class="text-sm text-muted-foreground">Loading pair data...</p>
-                            </div>
-                        </div>
                     </div>
 
                     <DesktopTradingPanel
                         :selected-pair="selectedPair"
+                        :high="chartData?.high ?? '0.00'"
+                        :low="chartData?.low ?? '0.00'"
+                        :volume="chartData?.volume ?? '0'"
                         :trade-form-data="tradeFormData"
                         :durations="durations"
                         :available-margin="availableMargin"
@@ -474,6 +615,9 @@
 
                 <MobileTradingPanel
                     :selected-pair="selectedPair"
+                    :high="chartData?.high ?? '0.00'"
+                    :low="chartData?.low ?? '0.00'"
+                    :volume="chartData?.volume ?? '0'"
                     :trade-form-data="tradeFormData"
                     :durations="durations"
                     :available-margin="availableMargin"

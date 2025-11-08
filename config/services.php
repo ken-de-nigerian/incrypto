@@ -82,4 +82,7 @@ return [
     'polygon' => [
         'key' => env('POLYGON_API_KEY'),
     ],
+    'finnhub' => [
+        'key' => env('FINNHUB_API_KEY'),
+    ],
 ];

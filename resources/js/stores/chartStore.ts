@@ -60,13 +60,7 @@ export const useChartStore = defineStore('chart', () => {
     const zoom = ref(1.0)
     const panX = ref(0)
     const openTrades = ref<OpenTrade[]>([])
-    const connectionStatus = ref<'disconnected' | 'connecting' | 'connected' | 'error' | 'fallback'>('disconnected')
     const chartError = ref<string | null>(null)
-
-    // OPTIMIZED: Memoized computed properties
-    const isWebSocketConnected = computed(() =>
-        connectionStatus.value === 'connected' || connectionStatus.value === 'fallback'
-    )
 
     const currentPairData = computed(() => pairDataMap.value[selectedPair.value])
 
@@ -107,7 +101,6 @@ export const useChartStore = defineStore('chart', () => {
 
     function setChartError(error: string) {
         chartError.value = error
-        console.error('Chart Error:', error)
     }
 
     function clearChartError() {
@@ -152,7 +145,6 @@ export const useChartStore = defineStore('chart', () => {
     }
 
     function initializeCandlesFromForexData(pair: string, forexData: ForexOHLCData, currentPrice: number = 0) {
-        console.log('Initializing candles from Forex data', { pair, currentPrice })
 
         if (!pairDataMap.value[pair]) {
             initializePairData(pair, currentPrice)
@@ -162,7 +154,6 @@ export const useChartStore = defineStore('chart', () => {
         pairData.candles = []
 
         if (!forexData.prices || !Array.isArray(forexData.prices)) {
-            console.error('Invalid forex data structure', forexData)
             setChartError('Invalid chart data received. Please refresh the page.')
             pairData.initialized = false
             return
@@ -172,17 +163,13 @@ export const useChartStore = defineStore('chart', () => {
         const volumeData = forexData.volumes || []
 
         if (ohlcData.length === 0) {
-            console.error('Empty OHLC data received')
             setChartError('No historical data available. Please try again.')
             pairData.initialized = false
             return
         }
 
-        console.log(`Processing ${ohlcData.length} candles for ${pair}`)
-
         ohlcData.forEach((candleData, index) => {
             if (!Array.isArray(candleData) || candleData.length < 5) {
-                console.warn(`Invalid candle data at index ${index}`, candleData)
                 return
             }
 
@@ -192,12 +179,10 @@ export const useChartStore = defineStore('chart', () => {
             const candleTime = timestamp > 9999999999 ? timestamp : timestamp * 1000
 
             if (!isFinite(open) || !isFinite(high) || !isFinite(low) || !isFinite(close)) {
-                console.warn(`Invalid price values at index ${index}`, { open, high, low, close })
                 return
             }
 
             if (open <= 0 || high <= 0 || low <= 0 || close <= 0) {
-                console.warn(`Non-positive price values at index ${index}`, { open, high, low, close })
                 return
             }
 
@@ -212,16 +197,12 @@ export const useChartStore = defineStore('chart', () => {
         })
 
         if (pairData.candles.length === 0) {
-            console.error('No valid candles created from OHLC data')
             setChartError('Failed to process chart data. Please refresh the page.')
             pairData.initialized = false
             return
         }
 
-        console.log(`Successfully created ${pairData.candles.length} candles for ${pair}`)
-
         pairData.candleInterval = detectCandleInterval(pairData.candles)
-        console.log(`Detected candle interval: ${pairData.candleInterval}ms (${pairData.candleInterval / 60000} minutes)`)
 
         const lastCandle = pairData.candles[pairData.candles.length - 1]
         pairData.currentPrice = currentPrice > 0 ? currentPrice : (lastCandle?.close || 0)
@@ -233,20 +214,9 @@ export const useChartStore = defineStore('chart', () => {
 
         pairData.initialized = true
         clearChartError()
-
-        console.log('Chart initialized successfully:', {
-            pair,
-            candleCount: pairData.candles.length,
-            firstCandle: new Date(pairData.candles[0].time).toISOString(),
-            lastCandle: new Date(lastCandle.time).toISOString(),
-            currentPrice: pairData.currentPrice,
-            basePrice: pairData.basePrice,
-            interval: `${pairData.candleInterval / 60000} minutes`
-        })
     }
 
     function initializeCandlesFromOHLC(pair: string, ohlcData: any) {
-        console.log('initializeCandlesFromOHLC called', { pair, ohlcData })
 
         if (!pairDataMap.value[pair]) {
             initializePairData(pair)
@@ -256,7 +226,6 @@ export const useChartStore = defineStore('chart', () => {
         const currentPrice = parseFloat(ohlcData.price) || 0
 
         if (!currentPrice || currentPrice <= 0) {
-            console.error('Invalid current price', { currentPrice })
             setChartError('Unable to fetch current price. Please check your connection.')
             pairData.initialized = false
             return
@@ -279,7 +248,6 @@ export const useChartStore = defineStore('chart', () => {
                 pairData.candles.shift()
             }
             pairData.lastCandleTime = candle.time
-            console.log('New candle added:', candle)
         }
     }
 
@@ -365,19 +333,6 @@ export const useChartStore = defineStore('chart', () => {
         }
     }
 
-    function setWebSocketStatus(status: 'disconnected' | 'connecting' | 'connected' | 'error' | 'fallback') {
-        connectionStatus.value = status
-
-        if (status === 'error') {
-            setChartError('WebSocket connection failed. Trying fallback mode...')
-        } else if (status === 'fallback') {
-            clearChartError()
-            console.warn('Using fallback polling mode')
-        } else if (status === 'connected') {
-            clearChartError()
-        }
-    }
-
     function resetView() {
         zoom.value = 1.0
         panX.value = 0
@@ -415,136 +370,12 @@ export const useChartStore = defineStore('chart', () => {
         return !issuesFound
     }
 
-    function convertPairToFinnhub(pair: string): string {
-        return `OANDA:${pair.replace('/', '_')}`
-    }
-
-    function convertFinnhubToPair(finnhubSymbol: string): string {
-        return finnhubSymbol.replace('OANDA:', '').replace('_', '/')
-    }
-
-    function processFinnhubTrade(trade: any) {
-        try {
-            const symbol = convertFinnhubToPair(trade.s)
-            const price = parseFloat(trade.p)
-            const volume = parseFloat(trade.v) || 0
-            const timestamp = trade.t * 1000
-
-            const now = Date.now()
-            let validTimestamp = timestamp
-
-            // Fix timestamp if it's invalid (too far in past or future)
-            if (Math.abs(timestamp - now) > 24 * 60 * 60 * 1000) {
-                console.warn('Invalid timestamp detected, using current time', {
-                    original: new Date(timestamp).toISOString(),
-                    corrected: new Date(now).toISOString()
-                })
-                validTimestamp = now
-            }
-
-            if (!pairDataMap.value[symbol] || !isFinite(price) || price <= 0) {
-                console.warn('Invalid trade data:', { symbol, price, isFinite: isFinite(price) })
-                return
-            }
-
-            const pairData = pairDataMap.value[symbol]
-
-            if (!pairData.initialized || pairData.candles.length === 0) {
-                console.warn('Ignoring WebSocket trade - chart not initialized yet')
-                return
-            }
-
-            updateCurrentPrice(symbol, price)
-
-            // OPTIMIZED: Update PnL for all trades of this pair
-            openTrades.value.forEach(t => {
-                if (t.pair === symbol) {
-                    updateTradePnL(t.id, price)
-                }
-            })
-
-            const lastCandle = pairData.candles[pairData.candles.length - 1]
-            const candleInterval = pairData.candleInterval || DEFAULT_CANDLE_INTERVAL_MS
-            const candleTime = Math.floor(validTimestamp / candleInterval) * candleInterval
-            const lastCandleTime = Math.floor(lastCandle.time / candleInterval) * candleInterval
-
-            console.log('WebSocket tick:', {
-                symbol,
-                price,
-                currentCandleTime: new Date(candleTime).toISOString(),
-                lastCandleTime: new Date(lastCandleTime).toISOString(),
-                interval: `${candleInterval / 60000} minutes`,
-                willCreateNewCandle: candleTime !== lastCandleTime,
-                timeDiff: `${(candleTime - lastCandleTime) / 60000} minutes`
-            })
-
-            // ENHANCED: If there's a big gap, fill it with interpolated candles
-            const timeDiffMinutes = (candleTime - lastCandleTime) / candleInterval
-
-            if (timeDiffMinutes > 1 && timeDiffMinutes <= 1440) {
-                // Gap detected (more than 1 minute but less than 24 hours)
-                console.log(`🔧 Bridging ${timeDiffMinutes} minute gap with interpolated candles`)
-
-                // Fill the gap with candles using the last close price
-                for (let i = 1; i < timeDiffMinutes; i++) {
-                    const gapCandleTime = lastCandleTime + (i * candleInterval)
-                    const gapCandle: Candle = {
-                        time: gapCandleTime,
-                        open: lastCandle.close,
-                        high: lastCandle.close,
-                        low: lastCandle.close,
-                        close: lastCandle.close,
-                        volume: 0,
-                    }
-                    addCandle(symbol, gapCandle)
-                }
-            }
-
-            if (candleTime === lastCandleTime) {
-                // Update existing candle
-                const newHigh = Math.max(lastCandle.high, price)
-                const newLow = Math.min(lastCandle.low, price)
-                const newVolume = lastCandle.volume + volume
-
-                updateLastCandle(symbol, {
-                    close: price,
-                    high: newHigh,
-                    low: newLow,
-                    volume: newVolume,
-                })
-
-                console.log('Updated existing candle:', { close: price, high: newHigh, low: newLow })
-            } else {
-                // Create a new candle
-                const prevCandle = pairData.candles[pairData.candles.length - 1]
-                const newCandle: Candle = {
-                    time: candleTime,
-                    open: prevCandle.close,
-                    high: price,
-                    low: price,
-                    close: price,
-                    volume: volume,
-                }
-
-                addCandle(symbol, newCandle)
-                updateLastCandleTime(symbol, candleTime)
-
-                console.log('✨ Created new candle:', newCandle)
-            }
-        } catch (error) {
-            console.error('Error processing Finnhub trade:', error)
-            return
-        }
-    }
-
     return {
         selectedPair,
         pairDataMap,
         zoom,
         panX,
         openTrades,
-        isWebSocketConnected,
-        connectionStatus,
         currentPairData,
         hasPairData,
         currentPrice,
@@ -564,12 +395,9 @@ export const useChartStore = defineStore('chart', () => {
         setPanX,
         setOpenTrades,
         updateTradePnL,
-        setWebSocketStatus,
         resetView,
         validateDataIntegrity,
         calculateTradePnL,
-        convertPairToFinnhub,
-        processFinnhubTrade,
         setChartError,
         clearChartError,
     }

@@ -49,7 +49,6 @@ class ManageUserTradeController extends Controller
         $pageData = $this->tradeCrypto->getData($user);
         $pageData['forexPairs'] = (new GatewayHandlerService())->getAllPairs();
         $pageData['trades'] = $user->trades()->latest()->get()->toArray();
-        $pageData['finnhubApiKey'] = config('services.finnhub.key');
 
         return Inertia::render('User/Trade/Forex', $pageData);
     }

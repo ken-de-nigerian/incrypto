@@ -24,7 +24,6 @@
     import PairDrawer from '@/components/PairDrawer.vue';
     import TradesDrawer from '@/components/TradesDrawer.vue';
     import { useChartStore } from '@/stores/chartStore';
-    import { initializeFinnhubService, FinnhubWebSocketService } from '@/services/finnhubWebSocket';
 
     interface Token {
         symbol: string;
@@ -104,11 +103,9 @@
             };
             notification_count: number;
         };
-        finnhubApiKey?: string;
     }>();
 
     const chartStore = useChartStore();
-    const wsService = ref<FinnhubWebSocketService | null>(null);
 
     const isNotificationsModalOpen = ref(false);
     const isFundingModalOpen = ref(false);
@@ -240,11 +237,9 @@
                 pairDataCache.value.set(symbol, pairData);
                 return pairData;
             } else {
-                console.error('Failed to fetch pair data:', response.data.error);
                 return null;
             }
         } catch (error) {
-            console.error('Error fetching pair data:', error);
             return null;
         } finally {
             isLoadingPairData.value = false;
@@ -272,39 +267,6 @@
                 }
             }
         }
-
-        if (wsService.value && chartStore.hasPairData) {
-            wsService.value.subscribeToPair(pair.symbol);
-        }
-    };
-
-    const initializeWebSocket = (apiKey: string) => {
-        if (!apiKey) {
-            return;
-        }
-
-        const service = initializeFinnhubService(apiKey);
-        wsService.value = service;
-
-        service.onTrade((trade: any) => {
-            if (chartStore.hasPairData) {
-                chartStore.processFinnhubTrade(trade);
-            } else {
-                console.warn('Ignoring WebSocket trade - chart not initialized');
-            }
-        });
-
-        service.onStatusChange((status: 'disconnected' | 'connecting' | 'connected' | 'error') => {
-            chartStore.setWebSocketStatus(status);
-
-            if (status === 'connected') {
-                if (selectedPair.value && chartStore.hasPairData) {
-                    service.subscribeToPair(selectedPair.value.symbol);
-                }
-            }
-        });
-
-        service.connect();
     };
 
     const refreshPairData = async () => {
@@ -332,8 +294,6 @@
             const currentPrice = currentPairData?.currentPrice ||
                 parseFloat(selectedPair.value.price || '0');
 
-            console.log('Trade execution - Pair:', selectedPair.value.symbol, 'Current Price:', currentPrice);
-
             if (!currentPrice || currentPrice <= 0 || !isFinite(currentPrice)) {
                 tradeError.value = 'Invalid current price. Please refresh and try again.';
                 isExecutingTrade.value = false;
@@ -350,8 +310,6 @@
                 entry_price: currentPrice,
                 trading_mode: isLiveMode.value ? 'live' : 'demo'
             };
-
-            console.log('Sending trade data:', tradeData);
 
             await new Promise((resolve, reject) => {
                 router.post(route('user.trade.forex.execute'), tradeData, {
@@ -405,12 +363,6 @@
         initializationError.value = null;
 
         try {
-            if (props.finnhubApiKey) {
-                initializeWebSocket(props.finnhubApiKey);
-            } else {
-                console.warn('Finnhub API key not configured');
-            }
-
             const persistedSymbol = chartStore.selectedPair;
             let initialPair: ForexPair | undefined;
 
@@ -443,13 +395,10 @@
         } catch (error: any) {
             initializationError.value = error.message || 'Failed to initialize chart. Please refresh the page.';
             isInitializing.value = false;
-            console.error('Initialization error:', error);
         }
     });
 
     onUnmounted(() => {
-        wsService.value?.disconnect();
-
         if (refreshInterval) {
             clearInterval(refreshInterval);
         }

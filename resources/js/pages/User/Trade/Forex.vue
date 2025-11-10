@@ -60,16 +60,8 @@
     interface ForexPair {
         symbol: string;
         name: string;
-        polygon?: string;
-        priority?: number;
-        price?: string;
-        change?: string;
-        high?: string;
-        low?: string;
-        volume?: string;
-        stale?: boolean;
-        source?: string;
-        updated_at?: string;
+        baseFlagUrl: string;
+        quoteFlagUrl: string;
     }
 
     interface ChartData {
@@ -87,6 +79,13 @@
         volume: string
         symbol: string;
         timeframe: string;
+    }
+
+    interface TradeFormData {
+        type: 'Up' | 'Down' | null;
+        amount: number;
+        duration: string;
+        leverage: number;
     }
 
     const props = defineProps<{
@@ -124,8 +123,8 @@
     const initializationError = ref<string | null>(null);
 
     const availableLeverages = ref([50, 100, 200, 500, 1000]);
-    const tradeFormData = ref({
-        type: null as 'Up' | 'Down' | null,
+    const tradeFormData = ref<TradeFormData>({
+        type: null,
         amount: 0,
         duration: '5m',
         leverage: 500
@@ -240,7 +239,7 @@
                 return null;
             }
         } catch (error) {
-            return null;
+            console.error('Failed to fetch chart data: ' + error)
         } finally {
             isLoadingPairData.value = false;
         }
@@ -327,7 +326,7 @@
                         else if (errors.type) tradeError.value = errors.type;
                         else if (errors.entry_price) tradeError.value = errors.entry_price;
                         else tradeError.value = 'Failed to execute trade. Please try again.';
-                        reject(errors);
+                        resolve(null);
                     },
                     onFinish: () => {
                         isExecutingTrade.value = false;
@@ -372,10 +371,6 @@
 
             if (!initialPair) {
                 initialPair = props.forexPairs.find(p => p.price) || props.forexPairs[0];
-            }
-
-            if (!initialPair) {
-                throw new Error('No forex pairs available');
             }
 
             await selectPair(initialPair);
@@ -507,7 +502,6 @@
                     </div>
 
                     <div class="flex-1 h-[calc(100vh-280px)] lg:h-auto lg:min-h-0 relative lg:overflow-hidden">
-                        <!-- Show chart when we have data, regardless of selectedPair.price -->
                         <TradingChart
                             v-if="hasChartData && selectedPair"
                             v-model:pair="selectedPairSymbol"
@@ -518,6 +512,8 @@
                             :volume="selectedPair.volume"
                             :open-trades="openTrades"
                             :use-backend-data="true"
+                            :base-flag-url="selectedPair.baseFlagUrl"
+                            :quote-flag-url="selectedPair.quoteFlagUrl"
                         />
 
                         <!-- Show loading state -->

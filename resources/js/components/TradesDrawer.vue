@@ -186,7 +186,7 @@
             @close="close"
             class="sm:hidden">
 
-            <div ref="scrollEl" @scroll="onScroll" class="flex-1">
+            <div ref="scrollEl" @scroll="onScroll" class="flex-1 max-h-[90vh] overflow-y-auto custom-scrollbar">
                 <div v-if="props.trades.length === 0" class="text-center py-8 text-muted-foreground">
                     <div class="flex justify-center mb-3">
                         <TrendingUp class="h-10 w-10 text-muted-foreground" />

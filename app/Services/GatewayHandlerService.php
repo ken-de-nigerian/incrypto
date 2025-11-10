@@ -83,6 +83,13 @@ class GatewayHandlerService
             return ['success' => false, 'error' => 'API key not configured'];
         }
 
+        $cacheKey = "forex_chart_$symbol";
+
+        $cached = Cache::get($cacheKey);
+        if ($cached && ($cached['success'] ?? false)) {
+            return $cached;
+        }
+
         try {
 
             $to = now()->format('Y-m-d');
@@ -138,7 +145,7 @@ class GatewayHandlerService
             $latestLow = (string) ($latestResult['l'] ?? '0');
             $latestVolume = (string) ($latestResult['v'] ?? '0');
 
-            return [
+            $result = [
                 'success' => true,
                 'data' => $chartData,
                 'symbol' => $symbol,
@@ -147,6 +154,10 @@ class GatewayHandlerService
                 'low' => $latestLow,
                 'volume' => $latestVolume,
             ];
+
+            Cache::put($cacheKey, $result, self::CACHE_TTL['CHART_DATA']);
+
+            return $result;
         } catch (Throwable $e) {
             return [
                 'success' => false,
@@ -156,60 +167,38 @@ class GatewayHandlerService
     }
 
     /**
-     * Get all available forex pairs
+     * Get all available forex pairs with flag image URLs included.
      */
     public function getAllPairs(): array
     {
-        return [
-            ['symbol' => 'EUR/USD', 'polygon' => 'C:EURUSD', 'name' => 'Euro vs US Dollar'],
-            ['symbol' => 'GBP/USD', 'polygon' => 'C:GBPUSD', 'name' => 'British Pound vs US Dollar'],
-            ['symbol' => 'USD/JPY', 'polygon' => 'C:USDJPY', 'name' => 'US Dollar vs Japanese Yen'],
-            ['symbol' => 'USD/CHF', 'polygon' => 'C:USDCHF', 'name' => 'US Dollar vs Swiss Franc'],
-            ['symbol' => 'AUD/USD', 'polygon' => 'C:AUDUSD', 'name' => 'Australian Dollar vs US Dollar'],
-            ['symbol' => 'USD/CAD', 'polygon' => 'C:USDCAD', 'name' => 'US Dollar vs Canadian Dollar'],
-            ['symbol' => 'NZD/USD', 'polygon' => 'C:NZDUSD', 'name' => 'New Zealand Dollar vs US Dollar'],
-            ['symbol' => 'EUR/GBP', 'polygon' => 'C:EURGBP', 'name' => 'Euro vs British Pound'],
-            ['symbol' => 'EUR/JPY', 'polygon' => 'C:EURJPY', 'name' => 'Euro vs Japanese Yen'],
-            ['symbol' => 'GBP/JPY', 'polygon' => 'C:GBPJPY', 'name' => 'British Pound vs Japanese Yen'],
-            ['symbol' => 'EUR/CHF', 'polygon' => 'C:EURCHF', 'name' => 'Euro vs Swiss Franc'],
-            ['symbol' => 'GBP/CHF', 'polygon' => 'C:GBPCHF', 'name' => 'British Pound vs Swiss Franc'],
-            ['symbol' => 'AUD/JPY', 'polygon' => 'C:AUDJPY', 'name' => 'Australian Dollar vs Japanese Yen'],
-            ['symbol' => 'CAD/JPY', 'polygon' => 'C:CADJPY', 'name' => 'Canadian Dollar vs Japanese Yen'],
-            ['symbol' => 'CHF/JPY', 'polygon' => 'C:CHFJPY', 'name' => 'Swiss Franc vs Japanese Yen'],
-            ['symbol' => 'NZD/JPY', 'polygon' => 'C:NZDJPY', 'name' => 'New Zealand Dollar vs Japanese Yen'],
-            ['symbol' => 'EUR/AUD', 'polygon' => 'C:EURAUD', 'name' => 'Euro vs Australian Dollar'],
-            ['symbol' => 'EUR/CAD', 'polygon' => 'C:EURCAD', 'name' => 'Euro vs Canadian Dollar'],
-            ['symbol' => 'EUR/NZD', 'polygon' => 'C:EURNZD', 'name' => 'Euro vs New Zealand Dollar'],
-            ['symbol' => 'GBP/AUD', 'polygon' => 'C:GBPAUD', 'name' => 'British Pound vs Australian Dollar'],
-            ['symbol' => 'GBP/CAD', 'polygon' => 'C:GBPCAD', 'name' => 'British Pound vs Canadian Dollar'],
-            ['symbol' => 'AUD/CAD', 'polygon' => 'C:AUDCAD', 'name' => 'Australian Dollar vs Canadian Dollar'],
-            ['symbol' => 'AUD/NZD', 'polygon' => 'C:AUDNZD', 'name' => 'Australian Dollar vs New Zealand Dollar'],
-            ['symbol' => 'CAD/CHF', 'polygon' => 'C:CADCHF', 'name' => 'Canadian Dollar vs Swiss Franc'],
-            ['symbol' => 'NZD/CAD', 'polygon' => 'C:NZDCAD', 'name' => 'New Zealand Dollar vs Canadian Dollar'],
-            ['symbol' => 'USD/SGD', 'polygon' => 'C:USDSGD', 'name' => 'US Dollar vs Singapore Dollar'],
-            ['symbol' => 'USD/HKD', 'polygon' => 'C:USDHKD', 'name' => 'US Dollar vs Hong Kong Dollar'],
-            ['symbol' => 'USD/DKK', 'polygon' => 'C:USDDKK', 'name' => 'US Dollar vs Danish Krone'],
-            ['symbol' => 'USD/NOK', 'polygon' => 'C:USDNOK', 'name' => 'US Dollar vs Norwegian Krone'],
-            ['symbol' => 'USD/SEK', 'polygon' => 'C:USDSEK', 'name' => 'US Dollar vs Swedish Krona'],
-            ['symbol' => 'USD/ZAR', 'polygon' => 'C:USDZAR', 'name' => 'US Dollar vs South African Rand'],
-            ['symbol' => 'USD/TRY', 'polygon' => 'C:USDTRY', 'name' => 'US Dollar vs Turkish Lira'],
-            ['symbol' => 'USD/MXN', 'polygon' => 'C:USDMXN', 'name' => 'US Dollar vs Mexican Peso'],
-            ['symbol' => 'USD/PLN', 'polygon' => 'C:USDPLN', 'name' => 'US Dollar vs Polish Zloty'],
-            ['symbol' => 'USD/HUF', 'polygon' => 'C:USDHUF', 'name' => 'US Dollar vs Hungarian Forint'],
-            ['symbol' => 'USD/CZK', 'polygon' => 'C:USDCZK', 'name' => 'US Dollar vs Czech Koruna'],
-            ['symbol' => 'USD/RUB', 'polygon' => 'C:USDRUB', 'name' => 'US Dollar vs Russian Ruble'],
-            ['symbol' => 'USD/CNH', 'polygon' => 'C:USDCNH', 'name' => 'US Dollar vs Chinese Yuan'],
-            ['symbol' => 'USD/INR', 'polygon' => 'C:USDINR', 'name' => 'US Dollar vs Indian Rupee'],
-            ['symbol' => 'USD/BRL', 'polygon' => 'C:USDBRL', 'name' => 'US Dollar vs Brazilian Real'],
-            ['symbol' => 'USD/KRW', 'polygon' => 'C:USDKRW', 'name' => 'US Dollar vs South Korean Won'],
-            ['symbol' => 'USD/THB', 'polygon' => 'C:USDTHB', 'name' => 'US Dollar vs Thai Baht'],
-            ['symbol' => 'USD/MYR', 'polygon' => 'C:USDMYR', 'name' => 'US Dollar vs Malaysian Ringgit'],
-            ['symbol' => 'USD/IDR', 'polygon' => 'C:USDIDR', 'name' => 'US Dollar vs Indonesian Rupiah'],
-            ['symbol' => 'USD/ARS', 'polygon' => 'C:USDARS', 'name' => 'US Dollar vs Argentine Peso'],
-            ['symbol' => 'USD/CLP', 'polygon' => 'C:USDCLP', 'name' => 'US Dollar vs Chilean Peso'],
-            ['symbol' => 'USD/COP', 'polygon' => 'C:USDCOP', 'name' => 'US Dollar vs Colombian Peso'],
-            ['symbol' => 'USD/PEN', 'polygon' => 'C:USDPEN', 'name' => 'US Dollar vs Peruvian Sol'],
-        ];
+        // 1. Get the currency-to-country-code map
+        $currencyMap = CurrencyToCountryCodeMapService::getCurrencyToCountryCodeMap();
+
+        // 2. Your original list of pairs
+        $pairsData = pairsDataService::getPairsData();
+
+        // 3. Process the array
+        return array_map(function($pair) use ($currencyMap) {
+            $parts = explode('/', $pair['symbol']);
+            $baseCurrency = $parts[0] ?? null;
+            $quoteCurrency = $parts[1] ?? null;
+
+            // Get country codes, defaulting to 'xx' (unknown flag)
+            $baseFlagCode = strtolower($currencyMap[$baseCurrency] ?? 'xx');
+            $quoteFlagCode = strtolower($currencyMap[$quoteCurrency] ?? 'xx');
+
+            // Build the CDN URLs
+            $baseFlagUrl = "https://flagcdn.com/$baseFlagCode.svg";
+            $quoteFlagUrl = "https://flagcdn.com/$quoteFlagCode.svg";
+
+            // Add the new data to the existing pair array
+            return array_merge($pair, [
+                'baseCurrency' => $baseCurrency,
+                'quoteCurrency' => $quoteCurrency,
+                'baseFlagUrl' => $baseFlagUrl,
+                'quoteFlagUrl' => $quoteFlagUrl,
+            ]);
+        }, $pairsData);
     }
 
     /**

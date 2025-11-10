@@ -5,8 +5,6 @@
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
 @source '../../storage/framework/views/*.php';
 
-/* InCrypto Design System - Light & Dark Theme Cryptocurrency Exchange */
-
 @layer base {
     /*
      * ===================================================================

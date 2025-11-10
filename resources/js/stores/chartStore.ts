@@ -63,19 +63,15 @@ export const useChartStore = defineStore('chart', () => {
     const chartError = ref<string | null>(null)
 
     const currentPairData = computed(() => pairDataMap.value[selectedPair.value])
-
     const hasPairData = computed(() =>
         !!currentPairData.value &&
         currentPairData.value.initialized &&
         currentPairData.value.candles.length > 0
     )
-
     const currentPrice = computed(() => currentPairData.value?.currentPrice || 0)
-
     const openTradesForPair = computed(() =>
         openTrades.value.filter(t => t.pair === selectedPair.value)
     )
-
     const hasChartError = computed(() => !!chartError.value)
 
     function setPair(pair: string) {
@@ -109,30 +105,24 @@ export const useChartStore = defineStore('chart', () => {
 
     function detectCandleInterval(candles: Candle[]): number {
         if (candles.length < 2) return DEFAULT_CANDLE_INTERVAL_MS
-
         const intervals: number[] = []
         for (let i = 1; i < Math.min(10, candles.length); i++) {
             intervals.push(candles[i].time - candles[i - 1].time)
         }
-
         if (intervals.length === 0) return DEFAULT_CANDLE_INTERVAL_MS
-
         const avgInterval = intervals.reduce((a, b) => a + b, 0) / intervals.length
-
         const standardIntervals = [
-            60000,      // 1 min
-            300000,     // 5 min
-            900000,     // 15 min
-            1800000,    // 30 min
-            3600000,    // 1 hour
-            7200000,    // 2 hours
-            14400000,   // 4 hours
-            86400000,   // 1 day
+            60000, // 1 min
+            300000, // 5 min
+            900000, // 15 min
+            1800000, // 30 min
+            3600000, // 1 hour
+            7200000, // 2 hours
+            14400000, // 4 hours
+            86400000, // 1 day
         ]
-
         let closestInterval = standardIntervals[0]
         let minDiff = Math.abs(avgInterval - closestInterval)
-
         for (const interval of standardIntervals) {
             const diff = Math.abs(avgInterval - interval)
             if (diff < minDiff) {
@@ -140,52 +130,88 @@ export const useChartStore = defineStore('chart', () => {
                 closestInterval = interval
             }
         }
-
         return closestInterval
     }
 
     function initializeCandlesFromForexData(pair: string, forexData: ForexOHLCData, currentPrice: number = 0) {
-
         if (!pairDataMap.value[pair]) {
             initializePairData(pair, currentPrice)
         }
-
         const pairData = pairDataMap.value[pair]
-        pairData.candles = []
+        const hasOpenTradesForPair = openTrades.value.some(t => t.pair === pair)
+        if (hasOpenTradesForPair && pairData.initialized) {
+            const storedLastTime = pairData.lastCandleTime
+            let appendIndex = -1
+            for (let i = 0; i < forexData.prices.length; i++) {
+                const timestamp = forexData.prices[i][0]
+                const backendTime = timestamp > 9999999999 ? timestamp : timestamp * 1000
+                if (backendTime > storedLastTime) {
+                    appendIndex = i
+                    break
+                }
+            }
+            if (appendIndex >= 0) {
+                for (let i = appendIndex; i < forexData.prices.length; i++) {
+                    const candleData = forexData.prices[i]
+                    if (!Array.isArray(candleData) || candleData.length < 5) {
+                        continue
+                    }
+                    const [timestamp, open, high, low, close] = candleData
+                    const volume = forexData.volumes?.[i]?.[1] || 0
+                    const candleTime = timestamp > 9999999999 ? timestamp : timestamp * 1000
+                    if (!isFinite(open) || !isFinite(high) || !isFinite(low) || !isFinite(close) ||
+                        open <= 0 || high <= 0 || low <= 0 || close <= 0) {
+                        continue
+                    }
+                    const newCandle: Candle = {
+                        time: candleTime,
+                        open,
+                        high,
+                        low,
+                        close,
+                        volume
+                    }
+                    pairData.candles.push(newCandle)
+                    if (pairData.candles.length > MAX_CANDLES) {
+                        pairData.candles.shift()
+                    }
+                    pairData.lastCandleTime = candleTime
+                }
 
+                if (pairData.candles.length > 0) {
+                    pairData.currentPrice = pairData.candles[pairData.candles.length - 1].close
+                }
+            }
+            return
+        }
+
+        pairData.candles = []
         if (!forexData.prices || !Array.isArray(forexData.prices)) {
             setChartError('Invalid chart data received. Please refresh the page.')
             pairData.initialized = false
             return
         }
-
         const ohlcData = forexData.prices
         const volumeData = forexData.volumes || []
-
         if (ohlcData.length === 0) {
             setChartError('No historical data available. Please try again.')
             pairData.initialized = false
             return
         }
-
         ohlcData.forEach((candleData, index) => {
             if (!Array.isArray(candleData) || candleData.length < 5) {
                 return
             }
-
             const [timestamp, open, high, low, close] = candleData
             const volume = volumeData[index]?.[1] || 0
-
             const candleTime = timestamp > 9999999999 ? timestamp : timestamp * 1000
-
-            if (!isFinite(open) || !isFinite(high) || !isFinite(low) || !isFinite(close)) {
+            if (!isFinite(open) || !isFinite(high) ||
+                !isFinite(low) || !isFinite(close)) {
                 return
             }
-
             if (open <= 0 || high <= 0 || low <= 0 || close <= 0) {
                 return
             }
-
             pairData.candles.push({
                 time: candleTime,
                 open: open,
@@ -195,42 +221,33 @@ export const useChartStore = defineStore('chart', () => {
                 volume: volume
             })
         })
-
         if (pairData.candles.length === 0) {
             setChartError('Failed to process chart data. Please refresh the page.')
             pairData.initialized = false
             return
         }
-
         pairData.candleInterval = detectCandleInterval(pairData.candles)
-
         const lastCandle = pairData.candles[pairData.candles.length - 1]
         pairData.currentPrice = currentPrice > 0 ? currentPrice : (lastCandle?.close || 0)
         pairData.basePrice = pairData.candles[0]?.open || pairData.currentPrice
-
         if (lastCandle) {
             pairData.lastCandleTime = lastCandle.time
         }
-
         pairData.initialized = true
         clearChartError()
     }
 
     function initializeCandlesFromOHLC(pair: string, ohlcData: any) {
-
         if (!pairDataMap.value[pair]) {
             initializePairData(pair)
         }
-
         const pairData = pairDataMap.value[pair]
         const currentPrice = parseFloat(ohlcData.price) || 0
-
         if (!currentPrice || currentPrice <= 0) {
             setChartError('Unable to fetch current price. Please check your connection.')
             pairData.initialized = false
             return
         }
-
         initializeCandlesFromForexData(pair, ohlcData, currentPrice)
     }
 
@@ -308,19 +325,14 @@ export const useChartStore = defineStore('chart', () => {
     function calculateTradePnL(trade: OpenTrade, currentPrice: number): { pnl: number, pnlPct: string } {
         const leverageFactor = trade.leverage || 1
         const tradeVolume = trade.amount * leverageFactor
-
         const roundedPrice = roundPrice(currentPrice, trade.pair)
         const roundedEntry = roundPrice(trade.entry_price, trade.pair)
-
         const diff = trade.type === 'Up'
             ? roundedPrice - roundedEntry
             : roundedEntry - roundedPrice
-
         const pnl = diff * tradeVolume
-
         const initialInvestment = trade.amount
         const pnlPct = ((pnl / initialInvestment) * 100).toFixed(2)
-
         return { pnl, pnlPct: pnlPct + '%' }
     }
 
@@ -340,33 +352,28 @@ export const useChartStore = defineStore('chart', () => {
 
     function validateDataIntegrity(): boolean {
         let issuesFound = false
-        Object.entries(pairDataMap.value).forEach(([pair, data]) => {
+        Object.entries(pairDataMap.value).forEach(([data]) => {
             if (!data.candles) {
                 issuesFound = true
             }
-
             if (!isFinite(data.currentPrice) || data.currentPrice <= 0) {
                 issuesFound = true
             }
-
-            data.candles?.forEach((candle, idx) => {
+            data.candles?.forEach((candle) => {
                 if (!isFinite(candle.time) || !isFinite(candle.open) || !isFinite(candle.high) ||
                     !isFinite(candle.low) || !isFinite(candle.close)) {
                     issuesFound = true
                 }
             })
         })
-
         if (!isFinite(zoom.value)) {
             resetView()
             issuesFound = true
         }
-
         if (!isFinite(panX.value)) {
             panX.value = 0
             issuesFound = true
         }
-
         return !issuesFound
     }
 
@@ -405,6 +412,6 @@ export const useChartStore = defineStore('chart', () => {
     persist: {
         key: 'forex-chart-store',
         storage: localStorage,
-        paths: ['selectedPair', 'zoom', 'panX']
+        paths: ['selectedPair', 'zoom', 'panX', 'pairDataMap']
     }
 })

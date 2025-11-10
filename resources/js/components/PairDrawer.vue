@@ -15,11 +15,8 @@
         pairs: Array<{
             symbol: string;
             name: string;
-            price: string;
-            change: string;
-            high: string;
-            low: string;
-            volume: string;
+            baseFlagUrl: string;
+            quoteFlagUrl: string;
         }>;
         selectedSymbol?: string;
     }>();
@@ -165,19 +162,21 @@
                           selectedSymbol === pair.symbol ? 'bg-primary/10 border-l-4 border-l-primary' : ''
                         ]">
                         <div class="flex items-start justify-between mb-1">
-                            <div class="flex-1 min-w-0">
-                                <p class="text-xs font-semibold text-card-foreground">{{ pair.symbol }}</p>
-                                <p class="text-xs text-muted-foreground truncate">{{ pair.name }}</p>
-                            </div>
-                            <div
-                                :class="[
-                                  'text-xs font-semibold px-2 py-1 rounded ml-2 flex-shrink-0',
-                                  parseFloat(pair.change) >= 0 ? 'bg-emerald-500/20 text-emerald-400' : 'bg-rose-500/20 text-rose-400'
-                                ]">
-                                {{ parseFloat(pair.change) >= 0 ? '+' : '' }}{{ pair.change }}%
+                            <div class="flex-1 min-w-0 flex items-center gap-2">
+                                <div class="flex-shrink-0 flex items-center">
+                                    <img :src="pair.baseFlagUrl"
+                                         :alt="pair.symbol.split('/')[0]"
+                                         class="w-8 h-8 object-cover border-border border-2 rounded-full z-10 flex-shrink-0">
+                                    <img :src="pair.quoteFlagUrl"
+                                         :alt="pair.symbol.split('/')[1]"
+                                         class="w-8 h-8 object-cover border-border border-2 rounded-full -ml-1.5 flex-shrink-0">
+                                </div>
+                                <div class="flex-1 min-w-0">
+                                    <p class="text-xs font-semibold text-card-foreground">{{ pair.symbol }}</p>
+                                    <p class="text-xs text-muted-foreground truncate">{{ pair.name }}</p>
+                                </div>
                             </div>
                         </div>
-                        <p class="text-sm font-bold text-muted-foreground">{{ pair.price }}</p>
                     </div>
 
                     <div v-if="isLoadingMore" class="flex justify-center py-4">
@@ -226,7 +225,7 @@
                 </div>
             </div>
 
-            <div ref="scrollEl" @scroll="onScroll" class="flex-1">
+            <div ref="scrollEl" @scroll="onScroll" class="flex-1 max-h-[90vh] overflow-y-auto custom-scrollbar">
                 <div v-if="displayedPairs.length === 0" class="text-center py-6 text-muted-foreground text-xs">
                     <div class="flex justify-center mb-3">
                         <ArrowUpDownIcon class="h-10 w-10 text-muted-foreground" />
@@ -244,18 +243,21 @@
                         selectedSymbol === pair.symbol ? 'bg-primary/10 border-l-4 border-l-primary' : ''
                     ]">
                     <div class="flex items-start justify-between mb-1">
-                        <div class="flex-1 min-w-0">
-                            <p class="text-xs font-semibold text-card-foreground">{{ pair.symbol }}</p>
-                            <p class="text-xs text-muted-foreground truncate">{{ pair.name }}</p>
-                        </div>
-                        <div :class="[
-                            'text-xs font-semibold px-2 py-1 rounded ml-2 flex-shrink-0',
-                            parseFloat(pair.change) >= 0 ? 'bg-emerald-500/20 text-emerald-400' : 'bg-rose-500/20 text-rose-400'
-                        ]">
-                            {{ parseFloat(pair.change) >= 0 ? '+' : '' }}{{ pair.change }}%
+                        <div class="flex-1 min-w-0 flex items-center gap-2">
+                            <div class="flex-shrink-0 flex items-center">
+                                <img :src="pair.baseFlagUrl"
+                                     :alt="pair.symbol.split('/')[0]"
+                                     class="w-8 h-8 object-cover border-border border-2 rounded-full z-10 flex-shrink-0">
+                                <img :src="pair.quoteFlagUrl"
+                                     :alt="pair.symbol.split('/')[1]"
+                                     class="w-8 h-8 object-cover border-border border-2 rounded-full -ml-1.5 flex-shrink-0">
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <p class="text-xs font-semibold text-card-foreground">{{ pair.symbol }}</p>
+                                <p class="text-xs text-muted-foreground truncate">{{ pair.name }}</p>
+                            </div>
                         </div>
                     </div>
-                    <p class="text-sm font-bold text-muted-foreground">{{ pair.price }}</p>
                 </div>
 
                 <div v-if="isLoadingMore" class="flex justify-center py-4">

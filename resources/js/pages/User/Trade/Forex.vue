@@ -310,7 +310,7 @@
                 trading_mode: isLiveMode.value ? 'live' : 'demo'
             };
 
-            await new Promise((resolve, reject) => {
+            await new Promise((resolve) => {
                 router.post(route('user.trade.forex.execute'), tradeData, {
                     preserveScroll: true,
                     preserveState: true,

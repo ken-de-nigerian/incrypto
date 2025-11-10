@@ -74,7 +74,6 @@
 
     const candles = computed(() => chartStore.currentPairData?.candles || [])
     const currentPrice = computed(() => chartStore.currentPairData?.currentPrice || parseFloat(String(props.price)) || 1.085)
-    const lastCandleTime = computed(() => chartStore.currentPairData?.lastCandleTime || Date.now())
 
     const candleTooltip = ref<{ visible: boolean; x: number; y: number; data: any; snappedX: number }>({
         visible: false, x: 0, y: 0, data: null, snappedX: 0
@@ -94,10 +93,6 @@
 
     const totalPnL = computed(() => {
         return activePairTrades.value.reduce((sum, trade) => sum + (trade.pnl || 0), 0)
-    })
-
-    const totalInvested = computed(() => {
-        return activePairTrades.value.reduce((sum, trade) => sum + trade.amount, 0)
     })
 
     const isCloseButtonDisabled = (tradeId: number): boolean => {
@@ -154,7 +149,6 @@
 
     const initializeSeededRNG = (pair: string) => {
         const seed = generateSessionSeed(pair)
-        console.log('🎲 Initializing deterministic RNG with seed:', seed)
         seededRNG = seedrandom(seed)
     }
 

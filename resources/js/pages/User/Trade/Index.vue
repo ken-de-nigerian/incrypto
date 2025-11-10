@@ -45,7 +45,6 @@
         };
     }>();
 
-    // --- State Management ---
     const isNotificationsModalOpen = ref(false);
     const isFundingModalOpen = ref(false);
     const isWithdrawalModalOpen = ref(false);
@@ -54,8 +53,14 @@
     const user = computed(() => page.props.auth?.user);
     const userProfile = computed(() => user.value?.profile as UserProfile);
     const isLiveMode = ref(userProfile.value?.trading_status === 'live');
-    const liveBalance = computed(() => userProfile.value?.live_trading_balance || 0.00);
-    const demoBalance = computed(() => userProfile.value?.demo_trading_balance || 0.00);
+    const liveBalance = computed(() => {
+        const bal = userProfile.value?.live_trading_balance || 0.00;
+        return typeof bal === 'string' ? parseFloat(bal) : bal;
+    });
+    const demoBalance = computed(() => {
+        const bal = userProfile.value?.demo_trading_balance || 0.00;
+        return typeof bal === 'string' ? parseFloat(bal) : bal;
+    });
 
     const notificationCount = computed(() => page.props.auth?.notification_count || 0);
     const initials = computed(() => {
@@ -140,7 +145,7 @@
                     <div>
                         <h2 class="text-xl font-semibold text-muted-foreground mb-1">Trading Balance</h2>
                         <div class="flex items-end gap-3">
-                            <span class="text-3xl sm:text-4xl font-extrabold text-card-foreground">
+                            <span class="text-2xl sm:text-4xl font-extrabold text-card-foreground">
                                 ${{ (isLiveMode ? liveBalance : demoBalance).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}
                             </span>
                         </div>

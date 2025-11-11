@@ -14,6 +14,14 @@ Route::middleware(['redirect.authenticated', 'guest'])->group(function () {
     })->name('home');
 });
 
+Route::get('/server-time', function () {
+    return response()->json([
+        'timestamp' => now()->getTimestamp() * 1000,
+        'timezone' => config('app.timezone'),
+        'server_time' => now()->toISOString()
+    ]);
+})->name('server-time');
+
 // storage link
 Route::get('/link-storage', function () {
     Artisan::call('storage:link');

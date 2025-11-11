@@ -55,12 +55,17 @@
     let resizeObserver: ResizeObserver | null = null
     let closingTrades = ref<Set<number>>(new Set())
     let streamingDataProvider: Generator<CandlestickData<number>, void, unknown> | null = null
+    let mo: MutationObserver | null = null
+    let timeSyncInterval: ReturnType<typeof setInterval> | null = null
 
     const TICK_MS = 1500
     const UPDATES_PER_CANDLE = 20
     const CANDLE_INTERVAL_MS = TICK_MS * UPDATES_PER_CANDLE
     const TRADE_EXPIRY_CHECK_INTERVAL = 1000
     const CLOSE_BUTTON_DISABLE_THRESHOLD = 30000
+
+    const serverTimeOffset = ref(0)
+    const isServerTimeSynced = ref(false)
 
     const simulationPhase = ref(0)
     const trendBias = ref(0)
@@ -138,10 +143,37 @@
     const entryLineColor = (t: TradeWithPnL) => t.type === 'Up' ? upColor.value : downColor.value
     const pnlColor = (t: TradeWithPnL) => t.pnl >= 0 ? upColor.value : downColor.value
 
-    const generateSessionSeed = (pair: string): string => {
-        const now = new Date()
-        const sessionTime = Math.floor(now.getTime() / 60000) * 60000
-        return `${pair}-${sessionTime}`
+    async function syncServerTime() {
+        try {
+            const start = Date.now();
+            const response = await fetch(route('server-time'));
+            const data = await response.json();
+            const end = Date.now();
+
+            const roundTripTime = end - start;
+            serverTimeOffset.value = data.timestamp - (start + roundTripTime / 2);
+            isServerTimeSynced.value = true;
+
+            console.log('Server time synced. Offset:', serverTimeOffset.value, 'ms');
+        } catch (error) {
+            console.warn('Failed to sync server time, using local time:', error);
+            serverTimeOffset.value = 0;
+            isServerTimeSynced.value = true;
+        }
+    }
+
+    function getSynchronizedTime(): number {
+        return Date.now() + serverTimeOffset.value;
+    }
+
+    function generateSessionSeed(pair: string): string {
+        if (!isServerTimeSynced.value) {
+            const localTime = Math.floor(Date.now() / 60000) * 60000;
+            return `${pair}-${localTime}`;
+        }
+
+        const synchronizedTime = Math.floor(getSynchronizedTime() / 60000) * 60000;
+        return `${pair}-${synchronizedTime}`;
     }
 
     let seededRNG: () => number
@@ -149,6 +181,7 @@
     const initializeSeededRNG = (pair: string) => {
         const seed = generateSessionSeed(pair)
         seededRNG = seedrandom(seed)
+        console.log('RNG initialized with seed:', seed, 'Current server offset:', serverTimeOffset.value);
     }
 
     const closeTrade = (tradeId: number, isAutoClose: boolean = false, reason: string = '') => {
@@ -768,16 +801,15 @@
         })
     }
 
-    onMounted(() => {
+    onMounted(async () => {
         handleResize()
         window.addEventListener('resize', handleResize)
 
         isDark.value = document.documentElement.classList.contains('dark')
-        const mo = new MutationObserver(() => {
+        mo = new MutationObserver(() => {
             isDark.value = document.documentElement.classList.contains('dark')
         })
         mo.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] })
-        onBeforeUnmount(() => mo.disconnect())
 
         if (chartStore.selectedPair && chartStore.selectedPair !== props.pair) {
             emit('update:pair', chartStore.selectedPair)
@@ -786,6 +818,8 @@
         }
 
         chartStore.setOpenTrades(props.openTrades ?? [])
+
+        await syncServerTime();
 
         initializeSeededRNG(props.pair)
 
@@ -822,16 +856,14 @@
             resizeObserver.observe(chartContainer.value)
         }
 
-        watch(() => props.openTrades, () => {
-            drawTradeLines()
-        }, { immediate: true, deep: true })
+        timeSyncInterval = setInterval(syncServerTime, 5 * 60 * 1000);
     })
 
     watch([isDark], () => {
         applyChartTheme();
     })
 
-    watch(() => props.pair, (newPair) => {
+    watch(() => props.pair, async (newPair) => {
         if (tickInterval) {
             clearInterval(tickInterval)
             tickInterval = null
@@ -839,6 +871,7 @@
         streamingDataProvider = null
         chartStore.setPair(newPair)
 
+        await syncServerTime();
         initializeSeededRNG(newPair)
 
         initPrice()
@@ -855,7 +888,8 @@
 
     watch(() => props.openTrades, (newVal) => {
         chartStore.setOpenTrades(newVal ?? [])
-    }, { deep: true })
+        drawTradeLines()
+    }, { immediate: true, deep: true })
 
     watch(candles, (newCandles) => {
         if (newCandles.length && !dataSet.value && candlestickSeries) {
@@ -900,6 +934,14 @@
         currentPriceLineId = null
         tradePriceLineIds.value.clear()
         streamingDataProvider = null
+        if (mo) {
+            mo.disconnect()
+            mo = null
+        }
+        if (timeSyncInterval) {
+            clearInterval(timeSyncInterval)
+            timeSyncInterval = null
+        }
     })
 </script>
 
@@ -1088,21 +1130,21 @@
 </template>
 
 <style scoped>
-    .no-scrollbar::-webkit-scrollbar {
-        display: none;
-    }
-    .no-scrollbar {
-        -ms-overflow-style: none;
-        scrollbar-width: none;
+.no-scrollbar::-webkit-scrollbar {
+    display: none;
+}
+.no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+
+@media (max-width: 768px) {
+    * {
+        -webkit-tap-highlight-color: transparent;
     }
 
-    @media (max-width: 768px) {
-        * {
-            -webkit-tap-highlight-color: transparent;
-        }
-
-        button {
-            touch-action: manipulation;
-        }
+    button {
+        touch-action: manipulation;
     }
+}
 </style>

@@ -83,7 +83,7 @@
 </script>
 
 <template>
-    <div v-if="selectedPair" class="lg:hidden bg-card border border-border rounded-2xl margin-bottom">
+    <div v-if="selectedPair" class="lg:hidden bg-card border border-border rounded-b-2xl margin-bottom">
         <div class="p-3 space-y-3 max-h-[70vh] overflow-y-auto">
             <Transition name="fade">
                 <div

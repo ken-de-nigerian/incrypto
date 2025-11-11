@@ -488,8 +488,8 @@
                 </div>
             </div>
 
-            <div class="mt-4 flex-1 flex flex-col lg:flex-row gap-3 lg:min-h-0">
-                <div class="flex-1 bg-card border border-border rounded-2xl flex flex-col lg:flex-row lg:min-h-0 lg:overflow-hidden" :class="{ 'padding-bottom': !selectedPair }">
+            <div class="mt-4 flex-1 flex flex-col lg:flex-row lg:min-h-0">
+                <div class="flex-1 bg-card border border-border rounded-t-2xl lg:rounded-2xl flex flex-col lg:flex-row lg:min-h-0 lg:overflow-hidden" :class="{ 'padding-bottom': !selectedPair }">
                     <div class="flex lg:hidden bg-muted/20 border-b border-border p-3 flex-shrink-0">
                         <div class="flex w-full items-center justify-between gap-2">
                             <button @click="toggleLeftDrawer" class="flex-1 sm:flex-none flex items-center justify-center gap-2 px-3 sm:px-4 py-2 bg-background border border-border text-card-foreground rounded-xl text-xs sm:text-sm font-semibold hover:bg-muted cursor-pointer" title="Market">

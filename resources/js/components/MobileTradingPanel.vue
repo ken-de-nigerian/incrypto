@@ -1,6 +1,6 @@
 <script setup lang="ts">
     import { computed } from 'vue';
-    import { ArrowUp, ArrowDown, Loader2Icon } from 'lucide-vue-next';
+    import { ArrowUp, ArrowDown, Loader2Icon, X } from 'lucide-vue-next';
 
     interface TradingPair {
         pair: string
@@ -40,6 +40,7 @@
         'update:leverage': [leverage: number]
         'execute-trade': []
         'set-max-amount': []
+        'clear-error': []
     }>()
 
     const isFormValid = computed(() => {
@@ -75,6 +76,10 @@
     const updateLeverage = (leverage: number) => {
         emit('update:leverage', leverage)
     }
+
+    const clearError = () => {
+        emit('clear-error')
+    }
 </script>
 
 <template>
@@ -83,29 +88,32 @@
             <Transition name="fade">
                 <div
                     v-if="tradeError"
-                    class="p-2.5 rounded-lg flex items-start gap-2 bg-destructive/10 border border-destructive/20">
-                    <p class="text-xs font-semibold text-destructive">{{ tradeError }}</p>
+                    class="p-2.5 rounded-lg flex items-start justify-between bg-destructive/10 border border-destructive/20">
+                    <p class="text-xs font-semibold text-destructive flex-1">{{ tradeError }}</p>
+                    <button @click="clearError" class="text-destructive hover:text-destructive-foreground ml-2 p-0.5 cursor-pointer">
+                        <X class="w-3 h-3" />
+                    </button>
                 </div>
             </Transition>
 
             <div class="grid grid-cols-3 gap-2 text-xs bg-muted/90 p-2.5 rounded-lg">
                 <div class="text-center">
                     <p class="text-muted-foreground text-[10px] mb-0.5">High</p>
-                    <p class="font-bold text-card-foreground">{{ high }}</p>
+                    <p class="font-bold text-card-foreground">{{ parseFloat(high).toFixed(3) }}</p>
                 </div>
                 <div class="text-center">
                     <p class="text-muted-foreground text-[10px] mb-0.5">Low</p>
-                    <p class="font-bold text-card-foreground">{{ low }}</p>
+                    <p class="font-bold text-card-foreground">{{ parseFloat(low).toFixed(3) }}</p>
                 </div>
                 <div class="text-center">
                     <p class="text-muted-foreground text-[10px] mb-0.5">Vol</p>
-                    <p class="font-bold text-card-foreground">{{ volume }}</p>
+                    <p class="font-bold text-card-foreground">{{ parseFloat(volume).toFixed(3) }}</p>
                 </div>
             </div>
 
             <div class="space-y-1.5">
                 <label class="text-xs font-bold text-card-foreground">Duration</label>
-                <div class="grid grid-cols-4 gap-1.5">
+                <div class="grid grid-cols-7 gap-1">
                     <button
                         v-for="duration in durations"
                         :key="duration"
@@ -145,7 +153,7 @@
 
             <div class="space-y-1.5">
                 <label class="text-xs font-bold text-card-foreground">Leverage</label>
-                <div class="grid grid-cols-4 gap-1.5">
+                <div class="grid grid-cols-7 gap-1">
                     <button
                         v-for="leverage in availableLeverages"
                         :key="leverage"

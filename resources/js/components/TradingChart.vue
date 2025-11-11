@@ -23,6 +23,7 @@
         openTrades?: OpenTrade[]
         baseFlagUrl?: string
         quoteFlagUrl?: string
+        pairName?: string
     }
 
     const props = withDefaults(defineProps<Props>(), {
@@ -31,7 +32,8 @@
         change: 0,
         openTrades: () => [],
         baseFlagUrl: '',
-        quoteFlagUrl: ''
+        quoteFlagUrl: '',
+        pairName: ''
     })
 
     const emit = defineEmits<{
@@ -80,9 +82,6 @@
     })
     const crossPriceLabel = ref<{ visible: boolean; y: number; price: string }>({
         visible: false, y: 0, price: ''
-    })
-    const timeLabel = ref<{ visible: boolean; x: number; text: string; width: number }>({
-        visible: false, x: 0, text: '', width: 0
     })
 
     const displayPrecision = computed(() => getPricePrecision(props.pair))
@@ -540,7 +539,6 @@
         ) {
             candleTooltip.value.visible = false
             crossPriceLabel.value.visible = false
-            timeLabel.value.visible = false
             return
         }
 
@@ -556,7 +554,6 @@
         ) {
             candleTooltip.value.visible = false
             crossPriceLabel.value.visible = false
-            timeLabel.value.visible = false
             return
         }
 
@@ -588,28 +585,6 @@
                 visible: true,
                 y: param.point.y,
                 price: logicalPrice.toFixed(displayPrecision.value)
-            }
-
-            const timeText = isMobile.value
-                ? new Date(param.time * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-                : new Date(param.time * 1000).toLocaleString([], {
-                    month: 'short',
-                    day: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit'
-                })
-
-            timeLabel.value = {
-                visible: true,
-                x: timeScale.timeToCoordinate(param.time),
-                text: timeText,
-                width: 0
-            }
-
-            const tempCtx = document.createElement('canvas').getContext('2d')
-            if (tempCtx) {
-                tempCtx.font = isMobile.value ? '8px Inter' : '11px Inter'
-                timeLabel.value.width = tempCtx.measureText(timeText).width
             }
         }
     }
@@ -722,9 +697,7 @@
                     visible: false,
                 },
                 timeScale: {
-                    borderVisible: false,
-                    timeVisible: true,
-                    secondsVisible: false,
+                    visible: false,
                 },
                 handleScroll: {
                     mouseWheel: true,
@@ -939,18 +912,25 @@
                         <img :src="baseFlagUrl"
                              :alt="pair.split('/')[0]"
                              class="w-8 h-8 object-cover border-border border-2 rounded-full z-10 flex-shrink-0"
+                             loading="lazy"
                         >
                         <img :src="quoteFlagUrl"
                              :alt="pair.split('/')[1]"
                              class="w-8 h-8 object-cover border-border border-2 rounded-full -ml-1.5 flex-shrink-0"
+                             loading="lazy"
                         >
                     </div>
 
                     <div class="flex items-center gap-2">
-                        <h2 class="mb-0 text-sm sm:text-xl font-semibold text-foreground">{{ pair }}</h2>
-                        <div class="flex items-center gap-1 px-1.5 sm:px-2 py-0.5 sm:py-1 bg-secondary rounded-lg border border-border sm:hidden">
-                            <span class="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-success flex-shrink-0"></span>
-                            <span class="text-[8px] sm:text-[10px] font-medium text-muted-foreground">Live</span>
+                        <div class="flex flex-col">
+                            <div class="flex items-center gap-2">
+                                <h2 class="mb-0 text-sm sm:text-xl font-semibold text-foreground">{{ pair }}</h2>
+                                <div class="flex items-center gap-1 px-1.5 sm:px-2 py-0.5 sm:py-1 bg-secondary rounded-lg border border-border sm:hidden">
+                                    <span class="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-success flex-shrink-0"></span>
+                                    <span class="text-[8px] sm:text-[10px] font-medium text-muted-foreground">Live</span>
+                                </div>
+                            </div>
+                            <p class="text-[10px] sm:text-xs text-muted-foreground mb-0">{{ pairName }}</p>
                         </div>
                     </div>
                 </div>
@@ -1014,7 +994,7 @@
 
         <div class="relative w-full flex-1 min-h-[250px] sm:min-h-[300px]">
             <div v-if="activePairTrades.length > 0"
-                 class="absolute top-2 left-2 bg-gradient-to-br from-background to-background/95 backdrop-blur-md border border-border/50 rounded-lg shadow-md z-[990] w-[200px] sm:w-[280px] overflow-hidden text-xs">
+                 class="absolute top-2 left-2 bg-gradient-to-br from-background to-background/95 backdrop-blur-md border border-border/50 rounded-lg shadow-md z-10 w-[200px] sm:w-[280px] overflow-hidden text-xs">
                 <div class="p-2 border-b border-border/50 bg-background/50">
                     <h3 class="font-semibold mb-1 text-foreground text-xs sm:text-sm">Active Trades</h3>
                     <div class="flex items-center justify-between text-[10px] sm:text-xs text-muted-foreground">
@@ -1102,12 +1082,6 @@
                  class="absolute right-2 -translate-y-1/2 bg-background border border-border rounded px-1 py-0.5 text-[9px] sm:text-xs font-medium text-foreground z-[999]"
                  :style="{ top: crossPriceLabel.y + 'px' }">
                 {{ crossPriceLabel.price }}
-            </div>
-
-            <div v-if="timeLabel.visible"
-                 class="absolute bottom-2 bg-background border border-border rounded px-1 py-0.5 text-[9px] sm:text-xs font-medium text-foreground z-[999]"
-                 :style="{ left: timeLabel.x - timeLabel.width / 2 + 'px' }">
-                {{ timeLabel.text }}
             </div>
         </div>
     </div>

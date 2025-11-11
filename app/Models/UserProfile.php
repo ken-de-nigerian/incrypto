@@ -25,8 +25,7 @@ class UserProfile extends Model
 
     protected $casts = [
         'live_trading_balance' => 'decimal:2',
-        'demo_trading_balance' => 'decimal:2',
-        'margin_level' => 'decimal:2'
+        'demo_trading_balance' => 'decimal:2'
     ];
 
     /**

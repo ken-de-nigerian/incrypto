@@ -85,10 +85,14 @@ class ManageUserTradeController extends Controller
     public function executeForex(executeForexRequest $request, ForexTradeService $forexTradeService)
     {
         try {
-            $forexTradeService->executeForex(
+            $result = $forexTradeService->executeForex(
                 $request->user(),
                 $request->validated()
             );
+
+            if (!$result) {
+                return $this->notify('error', 'Failed to execute trade - invalid state')->toBack();
+            }
 
             return $this->notify('success', 'Trade executed successfully')->toBack();
         } catch (Exception $e) {
@@ -102,11 +106,15 @@ class ManageUserTradeController extends Controller
     public function closeForex(closeForexRequest $request, Trade $trade, ForexTradeService $forexTradeService)
     {
         try {
-            $forexTradeService->closeForex(
+            $result = $forexTradeService->closeForex(
                 $request->user(),
                 $request->validated(),
                 $trade
             );
+
+            if (!$result) {
+                return $this->notify('error', 'Failed to close trade - invalid state')->toBack();
+            }
 
             return $this->notify('success', 'Trade closed successfully')->toBack();
         } catch (Exception $e) {
@@ -121,10 +129,14 @@ class ManageUserTradeController extends Controller
     public function fundAccount(FundAccountRequest $request)
     {
         try {
-            $this->tradeCrypto->executeAccountFund(
+            $result = $this->tradeCrypto->executeAccountFund(
                 $request->user(),
                 $request->validated()
             );
+
+            if (!$result) {
+                return $this->notify('error', 'Failed to fund account - invalid state')->toBack();
+            }
 
             return $this->notify('success', 'Your account has been successfully funded.')->toBack();
         } catch (Exception $e) {
@@ -141,10 +153,14 @@ class ManageUserTradeController extends Controller
         $validated = $request->validated();
 
         try {
-            $this->tradeCrypto->executeAccountFundWithdrawal(
+            $result = $this->tradeCrypto->executeAccountFundWithdrawal(
                 $request->user(),
                 $validated
             );
+
+            if (!$result) {
+                return $this->notify('error', 'Failed to withdraw funds - invalid state')->toBack();
+            }
 
             return $this->notify('success', "Converted \$" . $validated['usd_amount'] . " USD to " . $validated['estimated_crypto'] . " " . $validated['target_symbol'])->toBack();
         } catch (Exception $e) {

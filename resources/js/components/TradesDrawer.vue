@@ -186,7 +186,7 @@
             @close="close"
             class="sm:hidden">
 
-            <div ref="scrollEl" @scroll="onScroll" class="flex-1 max-h-[90vh] overflow-y-auto custom-scrollbar">
+            <div ref="scrollEl" @scroll="onScroll" class="flex-1 max-h-[90vh] overflow-y-auto no-scrollbar">
                 <div v-if="props.trades.length === 0" class="text-center py-8 text-muted-foreground">
                     <div class="flex justify-center mb-3">
                         <TrendingUp class="h-10 w-10 text-muted-foreground" />
@@ -281,5 +281,15 @@
 
     .padding-bottom {
         padding-bottom: 150px;
+    }
+
+    /* Styling to hide the scrollbar while allowing scrolling */
+    .no-scrollbar::-webkit-scrollbar {
+        display: none; /* Hide scrollbar for Chrome, Safari and Opera */
+    }
+
+    .no-scrollbar {
+        -ms-overflow-style: none;  /* IE and Edge */
+        scrollbar-width: none;  /* Firefox */
     }
 </style>

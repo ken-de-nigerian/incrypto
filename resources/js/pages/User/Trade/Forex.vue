@@ -1,16 +1,8 @@
 <script setup lang="ts">
-    import { computed, ref, watch, onMounted, onUnmounted } from 'vue';
+    import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
     import { Head, router, usePage } from '@inertiajs/vue3';
     import axios from 'axios';
-    import {
-        DollarSignIcon,
-        WalletIcon,
-        TrendingUp,
-        Gift,
-        HelpCircle,
-        Settings,
-        ArrowUpDown
-    } from 'lucide-vue-next';
+    import { ArrowUpDown, DollarSignIcon, Gift, HelpCircle, Settings, TrendingUp, WalletIcon } from 'lucide-vue-next';
     import Breadcrumb from '@/components/Breadcrumb.vue';
     import AppLayout from '@/components/layout/user/dashboard/AppLayout.vue';
     import NotificationsModal from '@/components/utilities/NotificationsModal.vue';
@@ -122,13 +114,13 @@
     const isInitializing = ref(false);
     const initializationError = ref<string | null>(null);
 
-    const availableLeverages = ref([50, 100, 200, 500, 1000]);
     const tradeFormData = ref<TradeFormData>({
         type: null,
         amount: 0,
         duration: '5m',
-        leverage: 500
+        leverage: 30
     });
+
     const tradeError = ref('');
     const isExecutingTrade = ref(false);
 
@@ -190,6 +182,38 @@
     const handleFundingClick = () => { if (!isLiveMode.value) return; isFundingModalOpen.value = true; };
     const handleWithdrawalClick = () => { if (!isLiveMode.value) return; isWithdrawalModalOpen.value = true; };
 
+    const majorLeverages = [10, 20, 30, 40, 50];
+    const minorLeverages = [10, 15, 20, 25, 30];
+    const exoticLeverages = [200, 400, 600, 800, 1000];
+    const defaultLeverages = [50, 100, 200, 500, 1000];
+
+    const majors = [
+        'EURUSD', 'GBPUSD', 'USDJPY', 'USDCHF', 'AUDUSD', 'USDCAD', 'NZDUSD'
+    ];
+
+    const minors = [
+        'EURGBP', 'EURJPY', 'GBPJPY', 'EURAUD', 'GBPAUD', 'EURCAD', 'GBPCAD',
+        'AUDJPY', 'AUDCAD', 'NZDJPY', 'NZDCHF', 'EURCHF', 'CHFJPY', 'CADJPY',
+        'AUDCHF', 'NZDCAD', 'EURCHF', 'GBPNZD', 'AUDNZD', 'CADCHF'
+    ];
+
+    const category = computed(() => {
+        if (!selectedPair.value) return 'default';
+        const upper = selectedPair.value.symbol.toUpperCase().replace('/', '');
+        if (majors.includes(upper)) return 'major';
+        if (minors.includes(upper)) return 'minor';
+        return 'exotic';
+    });
+
+    const availableLeveragesForPair = computed(() => {
+        switch (category.value) {
+            case 'major': return majorLeverages;
+            case 'minor': return minorLeverages;
+            case 'exotic': return exoticLeverages;
+            default: return defaultLeverages;
+        }
+    });
+
     const fetchPairData = async (symbol: string): Promise<ForexPair | null> => {
         if (pairDataCache.value.has(symbol)) {
             const cachedData = pairDataCache.value.get(symbol);
@@ -247,8 +271,19 @@
 
     const selectPair = async (pair: ForexPair) => {
         chartStore.setPair(pair.symbol);
-
         selectedPairSymbol.value = pair.symbol;
+
+        const upper = pair.symbol.toUpperCase().replace('/', '');
+        let levArray;
+        if (majors.includes(upper)) {
+            levArray = majorLeverages;
+        } else if (minors.includes(upper)) {
+            levArray = minorLeverages;
+        } else {
+            levArray = exoticLeverages;
+        }
+        tradeFormData.value.leverage = levArray[Math.floor(levArray.length / 2)];
+
         selectedPair.value = { ...pair };
 
         const pairData = await fetchPairData(pair.symbol);
@@ -340,6 +375,10 @@
     };
 
     const setMaxAmount = () => { tradeFormData.value.amount = availableMargin.value; };
+
+    const clearTradeError = () => {
+        tradeError.value = '';
+    };
 
     const toggleLeftDrawer = () => {
         isLeftDrawerOpen.value = !isLeftDrawerOpen.value;
@@ -514,6 +553,7 @@
                             :use-backend-data="true"
                             :base-flag-url="selectedPair.baseFlagUrl"
                             :quote-flag-url="selectedPair.quoteFlagUrl"
+                            :pair-name="selectedPair.name"
                         />
 
                         <!-- Show loading state -->
@@ -554,7 +594,8 @@
                         @update:leverage="(l) => tradeFormData.leverage = l"
                         @execute-trade="executeTrade"
                         @set-max-amount="setMaxAmount"
-                        :available-leverages="availableLeverages"
+                        @clear-error="clearTradeError"
+                        :available-leverages="availableLeveragesForPair"
                     />
                 </div>
 
@@ -574,7 +615,8 @@
                     @update:leverage="(l) => tradeFormData.leverage = l"
                     @execute-trade="executeTrade"
                     @set-max-amount="setMaxAmount"
-                    :available-leverages="availableLeverages"
+                    @clear-error="clearTradeError"
+                    :available-leverages="availableLeveragesForPair"
                 />
             </div>
 

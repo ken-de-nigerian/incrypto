@@ -1,6 +1,6 @@
 <script setup lang="ts">
     import { computed } from 'vue';
-    import { ArrowDown, ArrowUp, ArrowUpDownIcon, Loader2Icon } from 'lucide-vue-next';
+    import { ArrowDown, ArrowUp, ArrowUpDownIcon, Loader2Icon, X } from 'lucide-vue-next';
 
     interface TradingPair {
         pair: string
@@ -40,6 +40,7 @@
         'update:leverage': [leverage: number]
         'execute-trade': []
         'set-max-amount': []
+        'clear-error': []
     }>()
 
     const isFormValid = computed(() => {
@@ -74,11 +75,14 @@
     const updateLeverage = (leverage: number) => {
         emit('update:leverage', leverage)
     }
+
+    const clearError = () => {
+        emit('clear-error')
+    }
 </script>
 
 <template>
     <div class="hidden lg:block w-80 bg-muted/20 border-l border-border p-4 flex-shrink-0">
-
         <div v-if="!selectedPair" class="text-center text-muted-foreground text-sm py-4 h-full flex flex-col justify-center items-center">
             <div class="flex justify-center mb-3">
                 <ArrowUpDownIcon class="h-10 w-10 text-muted-foreground" />
@@ -91,23 +95,26 @@
             <Transition name="fade">
                 <div
                     v-if="tradeError"
-                    class="p-3 rounded-lg flex items-start gap-2 bg-destructive/10 border border-destructive/20">
-                    <p class="text-xs font-semibold text-destructive">{{ tradeError }}</p>
+                    class="p-3 rounded-lg flex items-start justify-between bg-destructive/10 border border-destructive/20">
+                    <p class="text-xs font-semibold text-destructive flex-1">{{ tradeError }}</p>
+                    <button @click="clearError" class="text-destructive hover:text-destructive-foreground ml-2 p-0.5 cursor-pointer">
+                        <X class="w-3 h-3" />
+                    </button>
                 </div>
             </Transition>
 
             <div class="grid grid-cols-3 gap-2 text-xs bg-background p-3 rounded-lg border border-border">
                 <div>
                     <p class="text-muted-foreground mb-1">High</p>
-                    <p class="font-semibold text-card-foreground">{{ high }}</p>
+                    <p class="font-semibold text-card-foreground">{{ parseFloat(high).toFixed(3) }}</p>
                 </div>
                 <div>
                     <p class="text-muted-foreground mb-1">Low</p>
-                    <p class="font-semibold text-card-foreground">{{ low }}</p>
+                    <p class="font-semibold text-card-foreground">{{ parseFloat(low).toFixed(3) }}</p>
                 </div>
                 <div>
                     <p class="text-muted-foreground mb-1">Vol</p>
-                    <p class="font-semibold text-card-foreground">{{ volume }}</p>
+                    <p class="font-semibold text-card-foreground">{{ parseFloat(volume).toFixed(3) }}</p>
                 </div>
             </div>
 
@@ -130,25 +137,25 @@
             </div>
 
             <div class="space-y-2">
-                <label class="text-xs font-semibold text-card-foreground">Amount (USD)</label>
-                <input
-                    :value="tradeFormData.amount"
-                    @input="updateAmount"
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    :max="availableMargin"
-                    placeholder="Enter amount"
-                    class="w-full px-3 py-2 bg-background border border-border rounded-lg text-sm input-crypto"
-                />
-                <div class="flex justify-between items-center text-xs text-muted-foreground">
-                    <span>Available Margin: ${{ availableMargin.toFixed(2) }}</span>
+                <label class="text-xs font-bold text-card-foreground">Amount (USD)</label>
+                <div class="relative">
+                    <input
+                        :value="tradeFormData.amount"
+                        @input="updateAmount"
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        :max="availableMargin"
+                        placeholder="Enter amount"
+                        class="w-full px-3 py-2 bg-background border border-border rounded-lg text-sm input-crypto"
+                    />
                     <button
                         @click="setMaxAmount"
-                        class="text-primary font-medium hover:underline cursor-pointer">
-                        Max
+                        class="absolute right-2 top-1/2 -translate-y-1/2 text-primary text-xs font-bold px-2 py-1 bg-primary/10 rounded cursor-pointer">
+                        MAX
                     </button>
                 </div>
+                <p class="text-[10px] text-muted-foreground">Available Margin: ${{ availableMargin.toFixed(2) }}</p>
             </div>
 
             <div class="space-y-2">
@@ -208,6 +215,12 @@
                 <Loader2Icon v-if="isExecutingTrade" class="w-4 h-4 animate-spin" />
                 <span>{{ isExecutingTrade ? 'Executing...' : `Execute ${tradeFormData.type || 'Trade'}` }}</span>
             </button>
+
+            <div class="mt-3 pt-3 border-t border-border/50">
+                <p class="text-[10px] text-muted-foreground leading-relaxed">
+                    <span class="font-semibold">Note:</span> Trades execute at current market price and expire after the selected duration. Leverage amplifies both gains and losses trade responsibly.
+                </p>
+            </div>
         </div>
     </div>
 </template>

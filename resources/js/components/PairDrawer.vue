@@ -166,10 +166,14 @@
                                 <div class="flex-shrink-0 flex items-center">
                                     <img :src="pair.baseFlagUrl"
                                          :alt="pair.symbol.split('/')[0]"
-                                         class="w-8 h-8 object-cover border-border border-2 rounded-full z-10 flex-shrink-0">
+                                         class="w-8 h-8 object-cover border-border border-2 rounded-full z-10 flex-shrink-0"
+                                         loading="lazy"
+                                    >
                                     <img :src="pair.quoteFlagUrl"
                                          :alt="pair.symbol.split('/')[1]"
-                                         class="w-8 h-8 object-cover border-border border-2 rounded-full -ml-1.5 flex-shrink-0">
+                                         class="w-8 h-8 object-cover border-border border-2 rounded-full -ml-1.5 flex-shrink-0"
+                                         loading="lazy"
+                                    >
                                 </div>
                                 <div class="flex-1 min-w-0">
                                     <p class="text-xs font-semibold text-card-foreground">{{ pair.symbol }}</p>
@@ -225,7 +229,7 @@
                 </div>
             </div>
 
-            <div ref="scrollEl" @scroll="onScroll" class="flex-1 max-h-[90vh] overflow-y-auto custom-scrollbar">
+            <div ref="scrollEl" @scroll="onScroll" class="flex-1 max-h-[90vh] overflow-y-auto no-scrollbar">
                 <div v-if="displayedPairs.length === 0" class="text-center py-6 text-muted-foreground text-xs">
                     <div class="flex justify-center mb-3">
                         <ArrowUpDownIcon class="h-10 w-10 text-muted-foreground" />
@@ -247,10 +251,14 @@
                             <div class="flex-shrink-0 flex items-center">
                                 <img :src="pair.baseFlagUrl"
                                      :alt="pair.symbol.split('/')[0]"
-                                     class="w-8 h-8 object-cover border-border border-2 rounded-full z-10 flex-shrink-0">
+                                     class="w-8 h-8 object-cover border-border border-2 rounded-full z-10 flex-shrink-0"
+                                     loading="lazy"
+                                >
                                 <img :src="pair.quoteFlagUrl"
                                      :alt="pair.symbol.split('/')[1]"
-                                     class="w-8 h-8 object-cover border-border border-2 rounded-full -ml-1.5 flex-shrink-0">
+                                     class="w-8 h-8 object-cover border-border border-2 rounded-full -ml-1.5 flex-shrink-0"
+                                     loading="lazy"
+                                >
                             </div>
                             <div class="flex-1 min-w-0">
                                 <p class="text-xs font-semibold text-card-foreground">{{ pair.symbol }}</p>
@@ -293,5 +301,15 @@
 
     .padding-bottom {
         padding-bottom: 150px;
+    }
+
+    /* Styling to hide the scrollbar while allowing scrolling */
+    .no-scrollbar::-webkit-scrollbar {
+        display: none; /* Hide scrollbar for Chrome, Safari and Opera */
+    }
+
+    .no-scrollbar {
+        -ms-overflow-style: none;  /* IE and Edge */
+        scrollbar-width: none;  /* Firefox */
     }
 </style>

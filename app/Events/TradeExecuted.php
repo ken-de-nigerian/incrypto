@@ -2,25 +2,26 @@
 
 namespace App\Events;
 
-use App\Models\Trade;
 use App\Models\User;
 use Illuminate\Broadcasting\InteractsWithSockets;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 
-class ForexTradeClosed
+class TradeExecuted
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
     public User $user;
-    public Trade $trade;
+    public array $data;
+    public string $expiryTime;
 
     /**
      * Create a new event instance.
      */
-    public function __construct(User $user, Trade $trade)
+    public function __construct(User $user, array $data, string $expiryTime)
     {
         $this->user = $user;
-        $this->trade = $trade;
+        $this->data = $data;
+        $this->expiryTime = $expiryTime;
     }
 }

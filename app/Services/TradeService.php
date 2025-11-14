@@ -2,8 +2,8 @@
 
 namespace App\Services;
 
-use App\Events\ForexTradeClosed;
-use App\Events\ForexTradeExecuted;
+use App\Events\TradeClosed;
+use App\Events\TradeExecuted;
 use App\Models\Trade;
 use App\Models\User;
 use DateTime;
@@ -11,13 +11,13 @@ use Exception;
 use Illuminate\Support\Facades\DB;
 use Throwable;
 
-class ForexTradeService
+class TradeService
 {
     /**
      * @throws Exception
      * @throws Throwable
      */
-    public function executeForex(User $user, array $data)
+    public function executeTrade(User $user, array $data)
     {
         $expiryTime = $this->calculateExpiryTime($data['duration']);
 
@@ -50,6 +50,7 @@ class ForexTradeService
 
             $trade = Trade::create([
                 'user_id' => $user->id,
+                'category' => $data['category'],
                 'pair' => $data['pair'],
                 'pair_name' => $data['pair_name'],
                 'type' => $data['type'],
@@ -75,7 +76,7 @@ class ForexTradeService
         });
 
         // Dispatch the event with the new transaction data
-        event(new ForexTradeExecuted($user, $data, $expiryTime));
+        event(new TradeExecuted($user, $data, $expiryTime));
 
         return $execution;
     }
@@ -83,7 +84,7 @@ class ForexTradeService
     /**
      * @throws Throwable
      */
-    public function closeForex(User $user, array $data, Trade $trade)
+    public function closeTrade(User $user, array $data, Trade $trade)
     {
         $isAutoClose = $data['is_auto_close'] ?? false;
 
@@ -127,7 +128,7 @@ class ForexTradeService
         });
 
         if ($closed) {
-            event(new ForexTradeClosed($user, $trade));
+            event(new TradeClosed($user, $trade));
         }
 
         return $closed;

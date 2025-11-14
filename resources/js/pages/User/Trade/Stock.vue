@@ -49,11 +49,9 @@
         expiry_time: string;
     }
 
-    interface ForexPair {
+    interface StockPair {
         symbol: string;
         name: string;
-        baseFlagUrl: string;
-        quoteFlagUrl: string;
     }
 
     interface ChartData {
@@ -84,8 +82,8 @@
         tokens: Array<Token>;
         userBalances: Record<string, number>;
         prices: Record<string, number>;
-        forexPairs: Array<ForexPair>;
-        trades: Array<Trade>;
+        stockPairs: Array<StockPair>;
+        stocks: Array<Trade>;
         auth: {
             user: {
                 profile: UserProfile;
@@ -104,10 +102,10 @@
     const isLeftDrawerOpen = ref(false);
     const isRightDrawerOpen = ref(false);
 
-    const selectedPair = ref<ForexPair | null>(null);
+    const selectedPair = ref<StockPair | null>(null);
     const selectedPairSymbol = ref<string>('');
     const isLoadingPairData = ref(false);
-    const pairDataCache = ref<Map<string, ForexPair>>(new Map());
+    const pairDataCache = ref<Map<string, StockPair>>(new Map());
     const chartData = ref<ChartData | null>(null);
     const hasChartData = ref(false);
 
@@ -160,10 +158,10 @@
     const breadcrumbItems = [
         { label: 'Dashboard', href: route('user.dashboard') },
         { label: 'Trading', href: route('user.trade.index') },
-        { label: 'Forex' }
+        { label: 'Stocks' }
     ];
 
-    const openTrades = computed(() => props.trades
+    const openTrades = computed(() => props.stocks
         .filter(t => t.status === 'Open' && t.trading_mode === (isLiveMode.value ? 'live' : 'demo'))
         .map(t => ({
             id: t.id,
@@ -183,24 +181,23 @@
     const handleFundingClick = () => { if (!isLiveMode.value) return; isFundingModalOpen.value = true; };
     const handleWithdrawalClick = () => { if (!isLiveMode.value) return; isWithdrawalModalOpen.value = true; };
 
-    const majorLeverages = [10, 20, 30, 40, 50];
-    const minorLeverages = [10, 15, 20, 25, 30];
-    const exoticLeverages = [200, 400, 600, 800, 1000];
-    const defaultLeverages = [50, 100, 200, 500, 1000];
+    const majorLeverages = [5, 10, 15, 20, 25];
+    const minorLeverages = [5, 10, 15, 20, 25];
+    const exoticLeverages = [2, 5, 10, 15, 20];
+    const defaultLeverages = [5, 10, 15, 20, 25];
 
     const majors = [
-        'EURUSD', 'GBPUSD', 'USDJPY', 'USDCHF', 'AUDUSD', 'USDCAD', 'NZDUSD'
+        'NVDA', 'AAPL', 'MSFT', 'GOOG', 'GOOGL', 'AMZN', 'AVGO'
     ];
 
     const minors = [
-        'EURGBP', 'EURJPY', 'GBPJPY', 'EURAUD', 'GBPAUD', 'EURCAD', 'GBPCAD',
-        'AUDJPY', 'AUDCAD', 'NZDJPY', 'NZDCHF', 'EURCHF', 'CHFJPY', 'CADJPY',
-        'AUDCHF', 'NZDCAD', 'EURCHF', 'GBPNZD', 'AUDNZD', 'CADCHF'
+        'META', 'TSLA', 'BRK.B', 'LLY', 'JPM', 'WMT', 'ORCL', 'V', 'XOM', 'MA',
+        'NFLX', 'JNJ', 'PLTR', 'ABBV', 'COST', 'AMD', 'BAC', 'HD', 'PG', 'GE'
     ];
 
     const category = computed(() => {
         if (!selectedPair.value) return 'default';
-        const upper = selectedPair.value.symbol.toUpperCase().replace('/', '');
+        const upper = selectedPair.value.symbol.toUpperCase();
         if (majors.includes(upper)) return 'major';
         if (minors.includes(upper)) return 'minor';
         return 'exotic';
@@ -215,7 +212,7 @@
         }
     });
 
-    const fetchPairData = async (symbol: string): Promise<ForexPair | null> => {
+    const fetchPairData = async (symbol: string): Promise<StockPair | null> => {
         if (pairDataCache.value.has(symbol)) {
             const cachedData = pairDataCache.value.get(symbol);
             if (cachedData && cachedData.price) {
@@ -229,7 +226,7 @@
         try {
             const encodedSymbol = encodeURIComponent(symbol);
             const url = route('user.trade.chart.data', { symbol: encodedSymbol });
-            const params = new URLSearchParams({ category: 'forex' });
+            const params = new URLSearchParams({ category: 'stock' });
             const fullUrl = `${url}?${params.toString()}`;
             const response = await axios.get(fullUrl);
 
@@ -273,11 +270,11 @@
         }
     };
 
-    const selectPair = async (pair: ForexPair) => {
+    const selectPair = async (pair: StockPair) => {
         chartStore.setPair(pair.symbol);
         selectedPairSymbol.value = pair.symbol;
 
-        const upper = pair.symbol.toUpperCase().replace('/', '');
+        const upper = pair.symbol.toUpperCase();
         let levArray;
         if (majors.includes(upper)) {
             levArray = majorLeverages;
@@ -347,7 +344,7 @@
                 leverage: tradeFormData.value.leverage,
                 entry_price: currentPrice,
                 trading_mode: isLiveMode.value ? 'live' : 'demo',
-                category: 'forex'
+                category: 'stock'
             };
 
             await new Promise((resolve) => {
@@ -407,14 +404,14 @@
 
         try {
             const persistedSymbol = chartStore.selectedPair;
-            let initialPair: ForexPair | undefined;
+            let initialPair: StockPair | undefined;
 
             if (persistedSymbol) {
-                initialPair = props.forexPairs.find(p => p.symbol === persistedSymbol);
+                initialPair = props.stockPairs.find(p => p.symbol === persistedSymbol);
             }
 
             if (!initialPair) {
-                initialPair = props.forexPairs.find(p => p.price) || props.forexPairs[0];
+                initialPair = props.stockPairs.find(p => p.price) || props.stockPairs[0];
             }
 
             await selectPair(initialPair);
@@ -445,7 +442,7 @@
 </script>
 
 <template>
-    <Head title="Forex Trading" />
+    <Head title="Stock Trading" />
 
     <AppLayout>
         <div class="lg:ml-64 pt-5 lg:pt-10 p-4 sm:p-6 lg:p-8 pb-20 sm:pb-8 h-screen flex flex-col">
@@ -549,15 +546,14 @@
                         <TradingChart
                             v-if="hasChartData && selectedPair"
                             v-model:pair="selectedPairSymbol"
-                            :price="selectedPair.price || '0'"
-                            :change="selectedPair.change || '0'"
-                            :low="selectedPair.low"
-                            :high="selectedPair.high"
-                            :volume="selectedPair.volume"
+                            :price="String(selectedPair.price || 0)"
+                            :change="String(selectedPair.change || '0')"
+                            :low="String(selectedPair.low ?? '0.00')"
+                            :high="String(selectedPair.high ?? '0.00')"
+                            :volume="String(selectedPair.volume ?? '0')"
                             :open-trades="openTrades"
                             :use-backend-data="true"
                             :base-flag-url="selectedPair.baseFlagUrl"
-                            :quote-flag-url="selectedPair.quoteFlagUrl"
                             :pair-name="selectedPair.name"
                         />
 
@@ -627,7 +623,7 @@
 
             <PairDrawer
                 v-model="isLeftDrawerOpen"
-                :pairs="props.forexPairs"
+                :pairs="props.stockPairs"
                 :selected-symbol="selectedPair?.symbol"
                 @select-pair="async (pair) => {
                     await selectPair(pair);
@@ -637,7 +633,7 @@
 
             <TradesDrawer
                 v-model="isRightDrawerOpen"
-                :trades="props.trades"
+                :trades="props.stocks"
             />
 
             <FundingModal

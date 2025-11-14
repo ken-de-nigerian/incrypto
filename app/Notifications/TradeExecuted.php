@@ -44,7 +44,7 @@ class TradeExecuted extends Notification
 
         return (new MailMessage)
             ->subject($subject)
-            ->view('emails.forex_trade_executed', [
+            ->view('emails.trade_executed', [
                 'user' => $notifiable,
                 'expiryTime' => $this->expiryTime,
                 'data' => $this->data
@@ -64,7 +64,7 @@ class TradeExecuted extends Notification
 
         return [
             'type' => 'trade_executed',
-            'title' => 'Trade Executed Successfully',
+            'title' => 'Executed Successfully',
             'content' => "A $type trade for $pairName with an amount of \$$amount has been opened.",
             'trade_details' => [
                 'pair' => $this->data['pair'],

@@ -14,6 +14,7 @@ return new class extends Migration
         Schema::create('trades', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
+            $table->string('category')->default('forex');
             $table->string('pair', 20);
             $table->string('pair_name', 100);
             $table->enum('type', ['Up', 'Down']);

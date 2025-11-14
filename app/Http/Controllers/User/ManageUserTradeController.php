@@ -3,12 +3,12 @@
 namespace App\Http\Controllers\User;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\closeForexRequest;
-use App\Http\Requests\executeForexRequest;
+use App\Http\Requests\CloseTradeRequest;
+use App\Http\Requests\ExecuteTradeRequest;
 use App\Http\Requests\FundAccountRequest;
 use App\Http\Requests\WithdrawAccountRequest;
 use App\Models\Trade;
-use App\Services\ForexTradeService;
+use App\Services\TradeService;
 use App\Services\GatewayHandlerService;
 use App\Services\TradeCryptoPageService;
 use App\Services\WalletService;
@@ -47,27 +47,49 @@ class ManageUserTradeController extends Controller
     {
         $user = Auth::user();
         $pageData = $this->tradeCrypto->getData($user);
-        $pageData['forexPairs'] = (new GatewayHandlerService())->getAllPairs();
-        $pageData['trades'] = $user->trades()->latest()->get()->toArray();
+        $pageData['forexPairs'] = (new GatewayHandlerService())->getAllForexPairs();
+        $pageData['trades'] = $user->trades()
+            ->where('category', 'forex')
+            ->latest()
+            ->get()
+            ->toArray();
 
         return Inertia::render('User/Trade/Forex', $pageData);
     }
 
     /**
-     * Fetch forex chart data for a specific pair
+     * Display the Stock trading page with all required data
      */
-    public function getForexChartData(Request $request, string $symbol)
+    public function stock(): Response
+    {
+        $user = Auth::user();
+        $pageData = $this->tradeCrypto->getData($user);
+        $pageData['stockPairs'] = (new GatewayHandlerService())->getAllStocksPairs();
+        $pageData['stocks'] = $user->trades()
+            ->where('category', 'stock')
+            ->latest()
+            ->get()
+            ->toArray();
+
+        return Inertia::render('User/Trade/Stock', $pageData);
+    }
+
+    /**
+     * Fetch chart data for a specific pair
+     */
+    public function getChartData(Request $request, string $symbol)
     {
         try {
 
             // Decode the symbol
             $decodedSymbol = urldecode($symbol);
+            $category = $request->category;
             $gatewayService = new GatewayHandlerService();
-            $chartData = $gatewayService->fetchForexChartData($decodedSymbol);
+            $chartData = $gatewayService->fetchTradeChartData($decodedSymbol, $category);
 
             return response()->json($chartData);
         } catch (Exception $e) {
-            Log::error('Failed to fetch forex chart data', [
+            Log::error('Failed to fetch chart data', [
                 'symbol' => $symbol,
                 'error' => $e->getMessage()
             ]);
@@ -82,10 +104,10 @@ class ManageUserTradeController extends Controller
     /**
      * @throws Throwable
      */
-    public function executeForex(executeForexRequest $request, ForexTradeService $forexTradeService)
+    public function executeTrade(ExecuteTradeRequest $request, TradeService $tradeService)
     {
         try {
-            $result = $forexTradeService->executeForex(
+            $result = $tradeService->executeTrade(
                 $request->user(),
                 $request->validated()
             );
@@ -103,10 +125,10 @@ class ManageUserTradeController extends Controller
     /**
      * @throws Throwable
      */
-    public function closeForex(closeForexRequest $request, Trade $trade, ForexTradeService $forexTradeService)
+    public function closeTrade(CloseTradeRequest $request, Trade $trade, TradeService $tradeService)
     {
         try {
-            $result = $forexTradeService->closeForex(
+            $result = $tradeService->closeTrade(
                 $request->user(),
                 $request->validated(),
                 $trade

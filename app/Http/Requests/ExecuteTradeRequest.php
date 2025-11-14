@@ -6,7 +6,7 @@ use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\Auth;
 
-class executeForexRequest extends FormRequest
+class ExecuteTradeRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -31,7 +31,8 @@ class executeForexRequest extends FormRequest
             'leverage' => 'required|integer|min:1|max:1000',
             'duration' => 'required|string|in:1m,5m,15m,30m,1h,4h,1d',
             'entry_price' => 'required|numeric|min:0',
-            'trading_mode' => 'required|in:live,demo'
+            'trading_mode' => 'required|in:live,demo',
+            'category' => 'required|in:forex,stock'
         ];
     }
 }

@@ -79,8 +79,8 @@ return [
     'twelvedata' => [
         'key' => env('TWELVEDATA_API_KEY'),
     ],
-    'polygon' => [
-        'key' => env('POLYGON_API_KEY'),
+    'massive' => [
+        'key' => env('MASSIVE_API_KEY'),
     ],
     'finnhub' => [
         'key' => env('FINNHUB_API_KEY'),

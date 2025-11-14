@@ -82,19 +82,15 @@ Route::prefix('user')
                 Route::get('/', 'index')->name('index');
 
                 Route::get('/forex', 'forex')->name('forex');
-
-                Route::get('/forex/chart/{symbol}', 'getForexChartData')
-                    ->where('symbol', '.*')
-                    ->name('forex.chart.data');
-
-                Route::post('/forex/execute', 'executeForex')->name('forex.execute');
-                Route::patch('/forex/{trade}/close', 'closeForex')->name('forex.close');
-
                 Route::get('/stock', 'stock')->name('stock');
-                Route::post('/stock/execute', 'executeStock')->name('stock.execute');
-
                 Route::get('/crypto', 'crypto')->name('crypto');
-                Route::post('/crypto/execute', 'executeCrypto')->name('crypto.execute');
+
+                Route::get('/chart/{symbol}', 'getChartData')
+                    ->where('symbol', '.*')
+                    ->name('chart.data');
+
+                Route::post('/execute', 'executeTrade')->name('execute');
+                Route::patch('/{trade}/close', 'closeTrade')->name('close');
 
                 Route::get('/investment', 'investment')->name('investment');
                 Route::post('/investment/execute', 'executeInvestment')->name('investment.execute');

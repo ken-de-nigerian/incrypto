@@ -43,7 +43,7 @@ class TradeClosed extends Notification
 
         return (new MailMessage)
             ->subject($subject)
-            ->view('emails.forex_trade_closed', [
+            ->view('emails.trade_closed', [
                 'user' => $notifiable,
                 'trade' => $this->trade
             ]);
@@ -68,7 +68,7 @@ class TradeClosed extends Notification
 
         return [
             'type' => 'trade_closed',
-            'title' => 'Forex Trade Closed Successfully',
+            'title' => 'Trade Closed Successfully',
             'content' => $content,
             'trade_details' => [
                 'pair' => $this->trade->pair,

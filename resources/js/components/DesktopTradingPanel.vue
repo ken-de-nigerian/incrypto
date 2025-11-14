@@ -106,15 +106,15 @@
             <div class="grid grid-cols-3 gap-2 text-xs bg-background p-3 rounded-lg border border-border">
                 <div>
                     <p class="text-muted-foreground mb-1">High</p>
-                    <p class="font-semibold text-card-foreground">{{ parseFloat(high).toFixed(3) }}</p>
+                    <p class="font-semibold text-card-foreground">{{ parseFloat(high).toFixed(2) }}</p>
                 </div>
                 <div>
                     <p class="text-muted-foreground mb-1">Low</p>
-                    <p class="font-semibold text-card-foreground">{{ parseFloat(low).toFixed(3) }}</p>
+                    <p class="font-semibold text-card-foreground">{{ parseFloat(low).toFixed(2) }}</p>
                 </div>
                 <div>
                     <p class="text-muted-foreground mb-1">Vol</p>
-                    <p class="font-semibold text-card-foreground">{{ parseFloat(volume).toFixed(3) }}</p>
+                    <p class="font-semibold text-card-foreground">{{ parseFloat(volume).toFixed(2) }}</p>
                 </div>
             </div>
 

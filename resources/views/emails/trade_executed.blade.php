@@ -86,7 +86,6 @@
                 max-width: 90%;
                 margin: 0 auto 32px;
             }
-            /* --- Trade Details Styling (Adjusted for Forex) --- */
             .trade-details-box {
                 background: #f8fafc;
                 border: 1px solid #e2e8f0;

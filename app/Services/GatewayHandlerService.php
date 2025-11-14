@@ -67,23 +67,31 @@ class GatewayHandlerService
     ];
 
     /**
-     * Fetch historical chart data for a forex pair
+     * Fetch historical chart data for a trading pair (forex/stock)
      */
-    public function fetchForexChartData(string $symbol): array
+    public function fetchTradeChartData(string $symbol, string $category = 'forex', bool $fullHistory = true): array
     {
-        $allPairs = $this->getAllPairs();
+        // Validate category early
+        $supportedCategories = ['forex', 'stock'];
+        if (!in_array($category, $supportedCategories)) {
+            return ['success' => false, 'error' => "Unsupported category: $category. Supported: " . implode(', ', $supportedCategories)];
+        }
+
+        // Fetch pairs based on category
+        $allPairs = $category === 'forex' ? $this->getAllForexPairs() : $this->getAllStocksPairs();
         $pairData = collect($allPairs)->firstWhere('symbol', $symbol);
 
-        if (!$pairData) {
+        if (!$pairData || !isset($pairData['polygon'])) {
             return ['success' => false, 'error' => 'Pair not found'];
         }
 
-        $apiKey = config('services.polygon.key');
+        $apiKey = config('services.massive.key');
         if (!$apiKey) {
             return ['success' => false, 'error' => 'API key not configured'];
         }
 
-        $cacheKey = "forex_chart_$symbol";
+        // Dynamic cache key
+        $cacheKey = "chart_{$category}_{$symbol}_" . ($fullHistory ? 'full' : 'recent');
 
         $cached = Cache::get($cacheKey);
         if ($cached && ($cached['success'] ?? false)) {
@@ -91,39 +99,46 @@ class GatewayHandlerService
         }
 
         try {
-
             $to = now()->format('Y-m-d');
-            $two_years_ago = now()->subYears(2);
-            $from = $two_years_ago->subDays()->format('Y-m-d');
+            $from = $fullHistory
+                ? now()->subYears(2)->format('Y-m-d')
+                : now()->subDays(300)->format('Y-m-d');
             $encodedApiKey = urlencode($apiKey);
 
-            // Construct the base URL
-            $url = "https://api.massive.com/v2/aggs/ticker/{$pairData['polygon']}/range/1/day/$from/$to?adjusted=true&sort=asc&limit=240&apiKey=$encodedApiKey";
-            $response = Http::timeout(30)->get($url);
+            // High limit to reduce pagination needs; max 50,000
+            $limit = $fullHistory ? 50000 : 500;
+            $baseUrl = "https://api.massive.com/v2/aggs/ticker/{$pairData['polygon']}/range/1/day/$from/$to?adjusted=true&sort=asc&limit=$limit&apiKey=$encodedApiKey";
 
-            if ($response->status() === 429) {
-                return [
-                    'success' => false,
-                    'error' => 'Rate limit exceeded',
-                    'status' => 429
-                ];
-            }
-
-            if (!$response->successful()) {
-                return [
-                    'success' => false,
-                    'error' => 'Failed to fetch chart data',
-                    'status' => $response->status()
-                ];
-            }
+            // Initial fetch
+            $response = Http::timeout(30)->get($baseUrl);
+            $this->handleApiError($response);
 
             $data = $response->json();
+            $allResults = $data['results'] ?? [];
 
-            if (empty($data['results'])) {
+            // Pagination loop
+            $currentUrl = $data['next_url'] ?? null;
+            while ($currentUrl) {
+                $nextResponse = Http::timeout(30)->get($currentUrl);
+                $this->handleApiError($nextResponse);
+
+                $nextData = $nextResponse->json();
+                if (empty($nextData['results'])) {
+                    break;
+                }
+
+                $allResults = array_merge($allResults, $nextData['results']);
+                $currentUrl = $nextData['next_url'] ?? null;
+
+                // Optional: Log progress
+                Log::info("Fetched additional " . count($nextData['results']) . " bars for $symbol");
+            }
+
+            if (empty($allResults)) {
                 return ['success' => false, 'error' => 'No data available'];
             }
 
-            $resultsCollection = collect($data['results']);
+            $resultsCollection = collect($allResults);
 
             // Transform to format expected by chart
             $chartData = $resultsCollection->map(function ($candle) {
@@ -137,22 +152,18 @@ class GatewayHandlerService
                 ];
             })->toArray();
 
-            // Get the last (latest) candle's raw data
+            // Latest is now truly the most recent (last in asc-sorted results)
             $latestResult = $resultsCollection->last();
-
-            // Extract and format the specific fields for the frontend panels
-            $latestHigh = (string) ($latestResult['h'] ?? '0');
-            $latestLow = (string) ($latestResult['l'] ?? '0');
-            $latestVolume = (string) ($latestResult['v'] ?? '0');
 
             $result = [
                 'success' => true,
                 'data' => $chartData,
                 'symbol' => $symbol,
                 'timeframe' => '1D',
-                'high' => $latestHigh,
-                'low' => $latestLow,
-                'volume' => $latestVolume,
+                'total_bars' => count($chartData),
+                'high' => $latestResult['h'] ?? 0,
+                'low' => $latestResult['l'] ?? 0,
+                'volume' => $latestResult['v'] ?? 0,
             ];
 
             Cache::put($cacheKey, $result, self::CACHE_TTL['CHART_DATA']);
@@ -169,7 +180,7 @@ class GatewayHandlerService
     /**
      * Get all available forex pairs with flag image URLs included.
      */
-    public function getAllPairs(): array
+    public function getAllForexPairs(): array
     {
         // 1. Get the currency-to-country-code map
         $currencyMap = CurrencyToCountryCodeMapService::getCurrencyToCountryCodeMap();
@@ -183,7 +194,7 @@ class GatewayHandlerService
             $baseCurrency = $parts[0] ?? null;
             $quoteCurrency = $parts[1] ?? null;
 
-            // Get country codes, defaulting to 'xx' (unknown flag)
+            // Get country codes
             $baseFlagCode = strtolower($currencyMap[$baseCurrency] ?? 'xx');
             $quoteFlagCode = strtolower($currencyMap[$quoteCurrency] ?? 'xx');
 
@@ -199,6 +210,14 @@ class GatewayHandlerService
                 'quoteFlagUrl' => $quoteFlagUrl,
             ]);
         }, $pairsData);
+    }
+
+    /**
+     * Get all available stocks with image URLs included.
+     */
+    public function getAllStocksPairs(): array
+    {
+        return StocksImageService::getStocksWithImages();
     }
 
     /**
@@ -1035,6 +1054,20 @@ class GatewayHandlerService
         } catch (Exception $e) {
             Log::error("Generic API request exception", ['url' => $apiUrl, 'error' => $e->getMessage()]);
             return ['status' => 500, 'data' => []];
+        }
+    }
+
+    /**
+     * Helper to handle common API errors (refactored for loop reuse)
+     * @throws Exception
+     */
+    private function handleApiError($response): void
+    {
+        if ($response->status() === 429) {
+            throw new Exception('Rate limit exceeded', 429);
+        }
+        if (!$response->successful()) {
+            throw new Exception("Failed to fetch chart data: " . $response->status());
         }
     }
 }

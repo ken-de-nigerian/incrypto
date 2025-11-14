@@ -169,7 +169,8 @@
                                          class="w-8 h-8 object-cover border-border border-2 rounded-full z-10 flex-shrink-0"
                                          loading="lazy"
                                     >
-                                    <img :src="pair.quoteFlagUrl"
+                                    <img v-if="pair.quoteFlagUrl"
+                                         :src="pair.quoteFlagUrl"
                                          :alt="pair.symbol.split('/')[1]"
                                          class="w-8 h-8 object-cover border-border border-2 rounded-full -ml-1.5 flex-shrink-0"
                                          loading="lazy"
@@ -254,7 +255,8 @@
                                      class="w-8 h-8 object-cover border-border border-2 rounded-full z-10 flex-shrink-0"
                                      loading="lazy"
                                 >
-                                <img :src="pair.quoteFlagUrl"
+                                <img v-if="pair.quoteFlagUrl"
+                                    :src="pair.quoteFlagUrl"
                                      :alt="pair.symbol.split('/')[1]"
                                      class="w-8 h-8 object-cover border-border border-2 rounded-full -ml-1.5 flex-shrink-0"
                                      loading="lazy"

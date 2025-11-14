@@ -221,7 +221,7 @@
             close_reason: reason
         }
 
-        router.patch(route('user.trade.forex.close', { trade: tradeId }), closeData, {
+        router.patch(route('user.trade.close', { trade: tradeId }), closeData, {
             preserveScroll: true,
             preserveState: true,
             onSuccess: () => {
@@ -950,13 +950,14 @@
         <div class="flex flex-row justify-between items-center px-2 sm:px-4 py-2 bg-background border-b border-border shrink-0 gap-2">
             <div class="flex flex-col">
                 <div class="flex items-center gap-3">
-                    <div v-if="baseFlagUrl && quoteFlagUrl" class="flex-shrink-0 flex items-center">
+                    <div v-if="baseFlagUrl" class="flex-shrink-0 flex items-center">
                         <img :src="baseFlagUrl"
                              :alt="pair.split('/')[0]"
                              class="w-8 h-8 object-cover border-border border-2 rounded-full z-10 flex-shrink-0"
                              loading="lazy"
                         >
-                        <img :src="quoteFlagUrl"
+                        <img v-if="quoteFlagUrl"
+                             :src="quoteFlagUrl"
                              :alt="pair.split('/')[1]"
                              class="w-8 h-8 object-cover border-border border-2 rounded-full -ml-1.5 flex-shrink-0"
                              loading="lazy"

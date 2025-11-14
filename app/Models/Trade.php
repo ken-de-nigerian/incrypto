@@ -17,6 +17,7 @@ class Trade extends Model
      */
     protected $fillable = [
         'user_id',
+        'category',
         'pair',
         'pair_name',
         'type',

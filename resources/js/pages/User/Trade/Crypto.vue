@@ -82,8 +82,8 @@
         tokens: Array<Token>;
         userBalances: Record<string, number>;
         prices: Record<string, number>;
-        stockPairs: Array<CryptoPair>;
-        stocks: Array<Trade>;
+        cryptoPairs: Array<CryptoPair>;
+        cryptos: Array<Trade>;
         auth: {
             user: {
                 profile: UserProfile;
@@ -161,11 +161,11 @@
     const breadcrumbItems = [
         { label: 'Dashboard', href: route('user.dashboard') },
         { label: 'Trading', href: route('user.trade.index') },
-        { label: 'Stocks' }
+        { label: 'Cryptos' }
     ];
 
     const openTrades = computed(() => {
-        return props.stocks
+        return props.cryptos
             .filter(t => t.status === 'Open' && t.trading_mode === (isLiveMode.value ? 'live' : 'demo'))
             .map(t => {
 
@@ -203,18 +203,19 @@
     const handleFundingClick = () => { if (!isLiveMode.value) return; isFundingModalOpen.value = true; };
     const handleWithdrawalClick = () => { if (!isLiveMode.value) return; isWithdrawalModalOpen.value = true; };
 
-    const majorLeverages = [5, 10, 15, 20, 25];
-    const minorLeverages = [5, 10, 15, 20, 25];
-    const exoticLeverages = [2, 5, 10, 15, 20];
-    const defaultLeverages = [5, 10, 15, 20, 25];
+    const majorLeverages = [10, 25, 50, 75, 100];
+    const minorLeverages = [5, 10, 25, 50, 75];
+    const exoticLeverages = [2, 5, 10, 20, 30];
+    const defaultLeverages = [5, 10, 25, 50, 100];
 
     const majors = [
-        'NVDA', 'AAPL', 'MSFT', 'GOOG', 'GOOGL', 'AMZN', 'AVGO'
+        'BTC', 'ETH', 'USDT', 'BNB', 'SOL', 'XRP', 'USDC'
     ];
 
     const minors = [
-        'META', 'TSLA', 'BRK.B', 'LLY', 'JPM', 'WMT', 'ORCL', 'V', 'XOM', 'MA',
-        'NFLX', 'JNJ', 'PLTR', 'ABBV', 'COST', 'AMD', 'BAC', 'HD', 'PG', 'GE'
+        'ADA', 'AVAX', 'DOGE', 'DOT', 'MATIC', 'SHIB', 'LTC',
+        'TRX', 'LINK', 'UNI', 'ATOM', 'XLM', 'NEAR', 'ALGO',
+        'VET', 'ICP', 'FIL', 'APT', 'ARB', 'OP'
     ];
 
     const category = computed(() => {
@@ -235,6 +236,7 @@
     });
 
     const fetchPairData = async (symbol: string): Promise<CryptoPair | null> => {
+
         if (isFetching.value || !isComponentMounted.value) {
             console.warn('Fetch already in progress or component not mounted');
             return null;
@@ -254,7 +256,7 @@
         try {
             const encodedSymbol = encodeURIComponent(symbol);
             const url = route('user.trade.chart.data', { symbol: encodedSymbol });
-            const params = new URLSearchParams({ category: 'stock' });
+            const params = new URLSearchParams({ category: 'crypto' });
             const fullUrl = `${url}?${params.toString()}`;
             const response = await axios.get(fullUrl);
 
@@ -385,7 +387,7 @@
                 leverage: tradeFormData.value.leverage,
                 entry_price: currentPrice,
                 trading_mode: isLiveMode.value ? 'live' : 'demo',
-                category: 'stock'
+                category: 'crypto'
             };
 
             await new Promise((resolve) => {
@@ -445,11 +447,11 @@
             let initialPair: CryptoPair | undefined;
 
             if (persistedSymbol) {
-                initialPair = props.stockPairs.find(p => p.symbol === persistedSymbol);
+                initialPair = props.cryptoPairs.find(p => p.symbol === persistedSymbol);
             }
 
             if (!initialPair) {
-                initialPair = props.stockPairs.find(p => p.price) || props.stockPairs[0];
+                initialPair = props.cryptoPairs.find(p => p.price) || props.cryptoPairs[0];
             }
 
             await new Promise(resolve => setTimeout(resolve, 100));
@@ -485,7 +487,6 @@
     });
 
     onUnmounted(() => {
-
         isComponentMounted.value = false;
 
         if (refreshInterval) {
@@ -505,7 +506,7 @@
 </script>
 
 <template>
-    <Head title="Stock Trading" />
+    <Head title="Crypto Trading" />
 
     <AppLayout>
         <div class="lg:ml-64 pt-5 lg:pt-10 p-4 sm:p-6 lg:p-8 pb-20 sm:pb-8 h-screen flex flex-col">
@@ -686,7 +687,7 @@
 
             <PairDrawer
                 v-model="isLeftDrawerOpen"
-                :pairs="props.stockPairs"
+                :pairs="props.cryptoPairs"
                 :selected-symbol="selectedPair?.symbol"
                 @select-pair="async (pair) => {
                     await selectPair(pair);
@@ -696,7 +697,7 @@
 
             <TradesDrawer
                 v-model="isRightDrawerOpen"
-                :trades="props.stocks"
+                :trades="props.cryptos"
             />
 
             <FundingModal
@@ -724,13 +725,13 @@
 </template>
 
 <style scoped>
-    @media (max-width: 640px) {
-        .padding-bottom {
-            margin-bottom: 50px;
-        }
-
-        .height-300 {
-            height: 300px !important;
-        }
+@media (max-width: 640px) {
+    .padding-bottom {
+        margin-bottom: 50px;
     }
+
+    .height-300 {
+        height: 300px !important;
+    }
+}
 </style>

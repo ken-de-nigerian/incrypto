@@ -75,6 +75,23 @@ class ManageUserTradeController extends Controller
     }
 
     /**
+     * Display the Crypto trading page with all required data
+     */
+    public function crypto(): Response
+    {
+        $user = Auth::user();
+        $pageData = $this->tradeCrypto->getData($user);
+        $pageData['cryptoPairs'] = (new GatewayHandlerService())->getAllCryptoPairs();
+        $pageData['cryptos'] = $user->trades()
+            ->where('category', 'crypto')
+            ->latest()
+            ->get()
+            ->toArray();
+
+        return Inertia::render('User/Trade/Crypto', $pageData);
+    }
+
+    /**
      * Fetch chart data for a specific pair
      */
     public function getChartData(Request $request, string $symbol)

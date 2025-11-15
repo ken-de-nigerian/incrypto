@@ -114,6 +114,9 @@
     const isInitializing = ref(false);
     const initializationError = ref<string | null>(null);
 
+    const isComponentMounted = ref(false);
+    const isFetching = ref(false);
+
     const tradeFormData = ref<TradeFormData>({
         type: null,
         amount: 0,
@@ -163,20 +166,39 @@
         { label: 'Forex' }
     ];
 
-    const openTrades = computed(() => props.trades
-        .filter(t => t.status === 'Open' && t.trading_mode === (isLiveMode.value ? 'live' : 'demo'))
-        .map(t => ({
-            id: t.id,
-            pair: t.pair,
-            type: t.type,
-            amount: parseFloat(t.amount),
-            leverage: t.leverage,
-            entry_price: parseFloat(t.entry_price),
-            opened_at: t.opened_at,
-            duration: t.duration,
-            expiry_time: t.expiry_time
-        }))
-    );
+    const openTrades = computed(() => {
+        return props.trades
+            .filter(t => t.status === 'Open' && t.trading_mode === (isLiveMode.value ? 'live' : 'demo'))
+            .map(t => {
+
+                const pairData = chartStore.pairDataMap[t.pair]
+                const currentPrice = pairData?.currentPrice || parseFloat(t.entry_price)
+
+                const leverage = t.leverage || 1
+                const priceChangePercent = t.type === 'Up'
+                    ? (currentPrice - parseFloat(t.entry_price)) / parseFloat(t.entry_price)
+                    : (parseFloat(t.entry_price) - currentPrice) / parseFloat(t.entry_price)
+
+                const pnl = parseFloat(t.amount) * leverage * priceChangePercent
+                const pnlPct = ((pnl / parseFloat(t.amount)) * 100).toFixed(2) + '%'
+
+                return {
+                    id: t.id,
+                    pair: t.pair,
+                    type: t.type,
+                    amount: parseFloat(t.amount),
+                    leverage: t.leverage,
+                    entry_price: parseFloat(t.entry_price),
+                    opened_at: t.opened_at,
+                    duration: t.duration,
+                    trading_mode: t.trading_mode,
+                    is_demo_forced_win: false,
+                    pnl,
+                    pnlPct,
+                    expiry_time: t.expiry_time
+                }
+            })
+    })
 
     watch(openTrades, (val) => chartStore.setOpenTrades(val), { immediate: true });
 
@@ -216,6 +238,12 @@
     });
 
     const fetchPairData = async (symbol: string): Promise<ForexPair | null> => {
+
+        if (isFetching.value || !isComponentMounted.value) {
+            console.warn('Fetch already in progress or component not mounted');
+            return null;
+        }
+
         if (pairDataCache.value.has(symbol)) {
             const cachedData = pairDataCache.value.get(symbol);
             if (cachedData && cachedData.price) {
@@ -223,6 +251,7 @@
             }
         }
 
+        isFetching.value = true;
         isLoadingPairData.value = true;
         hasChartData.value = false;
 
@@ -232,6 +261,11 @@
             const params = new URLSearchParams({ category: 'forex' });
             const fullUrl = `${url}?${params.toString()}`;
             const response = await axios.get(fullUrl);
+
+            if (!isComponentMounted.value) {
+                console.warn('Component unmounted during fetch, ignoring result');
+                return null;
+            }
 
             if (response.data.success) {
                 const pairData = response.data.data;
@@ -257,7 +291,7 @@
                         price: pairData.price || String(chartData.value.data[chartData.value.data.length - 1]?.close || 0)
                     };
 
-                    chartStore.initializeCandlesFromOHLC(symbol, formattedData);
+                    chartStore.initializeCandlesFromForexData(symbol, formattedData, parseFloat(formattedData.price));
                     hasChartData.value = true;
                 }
 
@@ -267,13 +301,21 @@
                 return null;
             }
         } catch (error) {
-            console.error('Failed to fetch chart data: ' + error)
+            console.error('Failed to fetch chart data:', error);
+            return null;
         } finally {
             isLoadingPairData.value = false;
+            isFetching.value = false;
         }
     };
 
     const selectPair = async (pair: ForexPair) => {
+
+        if (!isComponentMounted.value) {
+            console.warn('Cannot select pair: component not mounted');
+            return;
+        }
+
         chartStore.setPair(pair.symbol);
         selectedPairSymbol.value = pair.symbol;
 
@@ -292,7 +334,7 @@
 
         const pairData = await fetchPairData(pair.symbol);
 
-        if (pairData) {
+        if (pairData && isComponentMounted.value) {
             selectedPair.value = {
                 ...pair,
                 ...pairData
@@ -308,7 +350,7 @@
     };
 
     const refreshPairData = async () => {
-        if (selectedPair.value) {
+        if (selectedPair.value && isComponentMounted.value && !isFetching.value && !isLoadingPairData.value) {
             pairDataCache.value.delete(selectedPair.value.symbol);
             await selectPair(selectedPair.value);
         }
@@ -352,34 +394,29 @@
 
             await new Promise((resolve) => {
                 router.post(route('user.trade.execute'), tradeData, {
-                    preserveScroll: true,
-                    preserveState: true,
-                    onSuccess: (page) => {
-                        tradeFormData.value = { type: null, amount: 0, duration: '5m', leverage: tradeFormData.value.leverage };
-                        tradeError.value = '';
-                        resolve(page);
+                    onSuccess: () => {
+                        tradeFormData.value.type = null;
+                        tradeFormData.value.amount = 0;
+                        resolve(true);
                     },
                     onError: (errors) => {
-                        if (errors.amount) tradeError.value = errors.amount;
-                        else if (errors.leverage) tradeError.value = errors.leverage;
-                        else if (errors.pair) tradeError.value = errors.pair;
-                        else if (errors.type) tradeError.value = errors.type;
-                        else if (errors.entry_price) tradeError.value = errors.entry_price;
-                        else tradeError.value = 'Failed to execute trade. Please try again.';
-                        resolve(null);
+                        const errorValues = Object.values(errors);
+                        tradeError.value = errorValues.length > 0 ? String(errorValues[0]) : 'Failed to execute trade';
+                        resolve(false);
                     },
-                    onFinish: () => {
-                        isExecutingTrade.value = false;
-                    }
                 });
             });
-        } catch (e: any) {
-            tradeError.value = e.message || 'Trade execution failed. Please try again.';
+
+        } catch (error: any) {
+            tradeError.value = error.message || 'Failed to execute trade';
+        } finally {
             isExecutingTrade.value = false;
         }
     };
 
-    const setMaxAmount = () => { tradeFormData.value.amount = availableMargin.value; };
+    const setMaxAmount = () => {
+        tradeFormData.value.amount = parseFloat(availableMargin.value.toFixed(2));
+    };
 
     const clearTradeError = () => {
         tradeError.value = '';
@@ -402,6 +439,8 @@
     let refreshInterval: ReturnType<typeof setInterval> | null = null;
 
     onMounted(async () => {
+
+        isComponentMounted.value = true;
         isInitializing.value = true;
         initializationError.value = null;
 
@@ -417,17 +456,29 @@
                 initialPair = props.forexPairs.find(p => p.price) || props.forexPairs[0];
             }
 
+            await new Promise(resolve => setTimeout(resolve, 100));
+
+            if (!isComponentMounted.value) {
+                console.warn('Component unmounted during initialization');
+                return;
+            }
+
             await selectPair(initialPair);
 
             if (!chartStore.hasPairData) {
                 console.error('Chart initialization failed');
             }
 
-            refreshInterval = setInterval(() => {
-                if (selectedPair.value && !isLoadingPairData.value) {
-                    refreshPairData();
-                }
-            }, 300000);
+            if (isComponentMounted.value) {
+                refreshInterval = setInterval(() => {
+                    if (selectedPair.value &&
+                        !isLoadingPairData.value &&
+                        isComponentMounted.value &&
+                        !isFetching.value) {
+                        refreshPairData();
+                    }
+                }, 300000);
+            }
 
             isInitializing.value = false;
 
@@ -438,9 +489,22 @@
     });
 
     onUnmounted(() => {
+
+        isComponentMounted.value = false;
+
         if (refreshInterval) {
             clearInterval(refreshInterval);
+            refreshInterval = null;
         }
+
+        isFetching.value = false;
+        isLoadingPairData.value = false;
+        isInitializing.value = false;
+        pairDataCache.value.clear();
+        selectedPair.value = null;
+        chartData.value = null;
+        hasChartData.value = false;
+        initializationError.value = null;
     });
 </script>
 
@@ -665,13 +729,13 @@
 </template>
 
 <style scoped>
-    @media (max-width: 640px) {
-        .padding-bottom {
-            margin-bottom: 50px;
-        }
-
-        .height-300 {
-            height: 300px !important;
-        }
+@media (max-width: 640px) {
+    .padding-bottom {
+        margin-bottom: 50px;
     }
+
+    .height-300 {
+        height: 300px !important;
+    }
+}
 </style>

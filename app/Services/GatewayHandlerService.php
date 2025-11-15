@@ -67,18 +67,24 @@ class GatewayHandlerService
     ];
 
     /**
-     * Fetch historical chart data for a trading pair (forex/stock)
+     * Fetch historical chart data for a trading pair
      */
     public function fetchTradeChartData(string $symbol, string $category = 'forex', bool $fullHistory = true): array
     {
         // Validate category early
-        $supportedCategories = ['forex', 'stock'];
+        $supportedCategories = ['forex', 'stock', 'crypto'];
         if (!in_array($category, $supportedCategories)) {
             return ['success' => false, 'error' => "Unsupported category: $category. Supported: " . implode(', ', $supportedCategories)];
         }
 
         // Fetch pairs based on category
-        $allPairs = $category === 'forex' ? $this->getAllForexPairs() : $this->getAllStocksPairs();
+        $allPairs = match($category) {
+            'forex' => $this->getAllForexPairs(),
+            'stock' => $this->getAllStocksPairs(),
+            'crypto' => $this->getAllCryptoPairs(),
+            default => $this->getAllForexPairs()
+        };
+
         $pairData = collect($allPairs)->firstWhere('symbol', $symbol);
 
         if (!$pairData || !isset($pairData['polygon'])) {
@@ -218,6 +224,14 @@ class GatewayHandlerService
     public function getAllStocksPairs(): array
     {
         return StocksImageService::getStocksWithImages();
+    }
+
+    /**
+     * Get all available cryptos with image URLs included.
+     */
+    public function getAllCryptoPairs(): array
+    {
+        return CryptoImageService::getCryptosWithImages();
     }
 
     /**

@@ -45,11 +45,17 @@
     const isMobile = ref(false)
     const isDark = ref(true)
 
+    const isComponentMounted = ref(false);
+
     let chart: IChartApi | null = null
     let candlestickSeries: ISeriesApi<'Candlestick'> | null = null
     let currentPriceLineId: string | null = null
     let tradePriceLineIds = ref<Map<number, string>>(new Map())
     let dataSet = ref(false)
+
+    let isProcessingCandles = false;
+    let isChartInitialized = false;
+
     let tickInterval: ReturnType<typeof setInterval> | null = null
     let tradeExpiryCheckInterval: ReturnType<typeof setInterval> | null = null
     let resizeObserver: ResizeObserver | null = null
@@ -58,7 +64,7 @@
     let mo: MutationObserver | null = null
     let timeSyncInterval: ReturnType<typeof setInterval> | null = null
 
-    const TICK_MS = 1500
+    const TICK_MS = 2000
     const UPDATES_PER_CANDLE = 20
     const CANDLE_INTERVAL_MS = TICK_MS * UPDATES_PER_CANDLE
     const TRADE_EXPIRY_CHECK_INTERVAL = 1000
@@ -133,20 +139,30 @@
 
     const calculatePnL = (trade: OpenTrade, price: number): number => {
         const leverageFactor = trade.leverage || 1
-        const tradeVolume = trade.amount * leverageFactor
-        const diff = trade.type === 'Up'
-            ? price - trade.entry_price
-            : trade.entry_price - price
-        return diff * tradeVolume
+        const priceChangePercent = trade.type === 'Up'
+            ? (price - trade.entry_price) / trade.entry_price
+            : (trade.entry_price - price) / trade.entry_price
+        return trade.amount * leverageFactor * priceChangePercent
     }
 
     const entryLineColor = (t: TradeWithPnL) => t.type === 'Up' ? upColor.value : downColor.value
     const pnlColor = (t: TradeWithPnL) => t.pnl >= 0 ? upColor.value : downColor.value
 
     async function syncServerTime() {
+        if (!isComponentMounted.value) {
+            console.warn('Component not mounted, skipping server time sync');
+            return;
+        }
+
         try {
             const start = Date.now();
             const response = await fetch(route('server-time'));
+
+            if (!isComponentMounted.value) {
+                console.warn('Component unmounted during sync, ignoring result');
+                return;
+            }
+
             const data = await response.json();
             const end = Date.now();
 
@@ -186,55 +202,57 @@
 
     const closeTrade = (tradeId: number, isAutoClose: boolean = false, reason: string = '') => {
         if (closingTrades.value.has(tradeId)) {
-            return
+            return;
         }
-        const trade = props.openTrades?.find(t => t.id === tradeId)
-        if (!trade) return
+        const trade = props.openTrades?.find(t => t.id === tradeId);
+        if (!trade) return;
 
-        closingTrades.value.add(tradeId)
-        const lineId = tradePriceLineIds.value.get(tradeId)
+        closingTrades.value.add(tradeId);
+        const lineId = tradePriceLineIds.value.get(tradeId);
 
         if (candlestickSeries) {
             [lineId].forEach(id => {
                 if (id) {
                     try {
-                        candlestickSeries!.removePriceLine(id)
+                        candlestickSeries!.removePriceLine(id);
                     } catch (e) {
-                        console.warn('Failed to remove price line:', e)
+                        console.warn('Failed to remove price line:', e);
                     }
                 }
-            })
+            });
         }
 
-        tradePriceLineIds.value.delete(tradeId)
-        tradeRemainingTimes.value.delete(tradeId)
+        tradePriceLineIds.value.delete(tradeId);
+        tradeRemainingTimes.value.delete(tradeId);
 
-        chartStore.setOpenTrades(chartStore.openTrades.filter(t => t.id !== tradeId))
+        chartStore.setOpenTrades(chartStore.openTrades.filter(t => t.id !== tradeId));
 
-        const pnl = calculatePnL(trade, currentPrice.value)
-        const exitPrice = roundPrice(currentPrice.value, props.pair)
+        drawTradeLines();
+
+        const pnl = calculatePnL(trade, currentPrice.value);
+        const exitPrice = roundPrice(currentPrice.value, props.pair);
         const closeData = {
             exit_price: exitPrice,
             pnl: parseFloat(pnl.toFixed(2)),
             closed_at: new Date().toISOString(),
             is_auto_close: isAutoClose,
             close_reason: reason
-        }
+        };
 
         router.patch(route('user.trade.close', { trade: tradeId }), closeData, {
             preserveScroll: true,
             preserveState: true,
             onSuccess: () => {
-                closingTrades.value.delete(tradeId)
+                closingTrades.value.delete(tradeId);
             },
             onError: () => {
-                closingTrades.value.delete(tradeId)
+                closingTrades.value.delete(tradeId);
             },
             onFinish: () => {
-                closingTrades.value.delete(tradeId)
+                closingTrades.value.delete(tradeId);
             }
-        })
-    }
+        });
+    };
 
     const parseDurationToMs = (duration: string): number => {
         const value = parseInt(duration)
@@ -451,65 +469,83 @@
     }
 
     const startTicking = () => {
-        if (tickInterval) clearInterval(tickInterval)
-        tickInterval = setInterval(() => {
-            if (!validateChartState() || !candlestickSeries || !streamingDataProvider) {
-                return
-            }
-            const update = streamingDataProvider.next();
-            const candleData = update.value;
-            if (!candleData) return;
 
-            candlestickSeries.update(candleData);
+        if (tickInterval) {
+            clearInterval(tickInterval);
+            tickInterval = null;
+        }
 
-            const internalCandle: Candle = {
-                time: candleData.time * 1000,
-                open: candleData.open,
-                high: candleData.high,
-                low: candleData.low,
-                close: candleData.close,
-                volume: Math.floor(Math.random() * 500) + 100,
-            };
+        if (!chartStore.currentPairData || !chartStore.currentPairData.initialized) {
+            console.warn('Cannot start ticking: pair data not initialized');
+            return;
+        }
 
-            if (candles.value.length > 0) {
-                const lastCandle = candles.value[candles.value.length - 1];
-                if (Math.floor(lastCandle.time / 1000) === candleData.time) {
-                    chartStore.updateLastCandle(props.pair, {
-                        close: candleData.close,
-                        high: candleData.high,
-                        low: candleData.low,
-                        volume: internalCandle.volume
-                    });
+        try {
+            tickInterval = setInterval(() => {
+                if (!validateChartState() || !candlestickSeries || !streamingDataProvider) {
+                    return
+                }
+                const update = streamingDataProvider.next();
+                const candleData = update.value;
+                if (!candleData) return;
+
+                candlestickSeries.update(candleData);
+
+                const internalCandle: Candle = {
+                    time: candleData.time * 1000,
+                    open: candleData.open,
+                    high: candleData.high,
+                    low: candleData.low,
+                    close: candleData.close,
+                    volume: Math.floor(Math.random() * 500) + 100,
+                };
+
+                if (candles.value.length > 0) {
+                    const lastCandle = candles.value[candles.value.length - 1];
+                    if (Math.floor(lastCandle.time / 1000) === candleData.time) {
+                        chartStore.updateLastCandle(props.pair, {
+                            close: candleData.close,
+                            high: candleData.high,
+                            low: candleData.low,
+                            volume: internalCandle.volume
+                        });
+                    } else {
+                        chartStore.addCandle(props.pair, internalCandle);
+                        chartStore.updateLastCandleTime(props.pair, internalCandle.time);
+                    }
                 } else {
                     chartStore.addCandle(props.pair, internalCandle);
                     chartStore.updateLastCandleTime(props.pair, internalCandle.time);
                 }
-            } else {
-                chartStore.addCandle(props.pair, internalCandle);
-                chartStore.updateLastCandleTime(props.pair, internalCandle.time);
-            }
 
-            chartStore.updateCurrentPrice(props.pair, candleData.close);
+                chartStore.updateCurrentPrice(props.pair, candleData.close);
 
-            chartStore.openTrades.forEach(t => {
-                if (t.pair === props.pair) {
-                    chartStore.updateTradePnL(t.id, candleData.close)
-                }
-            })
+                chartStore.openTrades.forEach(t => {
+                    if (t.pair === props.pair) {
+                        chartStore.updateTradePnL(t.id, candleData.close)
+                    }
+                })
 
-            updateCurrentPriceLine()
-        }, TICK_MS)
+                updateCurrentPriceLine()
+            }, TICK_MS)
+        } catch (error) {
+            console.error('Error starting ticker:', error);
+        }
     }
 
     const updateCurrentPriceLine = () => {
-        if (!candlestickSeries || !isFinite(currentPrice.value)) return
-        const color = priceMovementColorLW.value
+        if (!candlestickSeries || !isFinite(currentPrice.value)) return;
+        const color = priceMovementColorLW.value;
+
+        if (currentPriceLineId && lastPrice) {
+            return;
+        }
 
         if (currentPriceLineId) {
             try {
-                candlestickSeries.removePriceLine(currentPriceLineId)
+                candlestickSeries.removePriceLine(currentPriceLineId);
             } catch (e) {
-                console.warn('Failed to remove current price line:', e)
+                console.warn('Failed to remove current price line:', e);
             }
         }
 
@@ -522,11 +558,11 @@
                 axisLabelVisible: true,
                 axisLabelColor: color,
                 axisLabelTextColor: isDark.value ? '#000000' : '#ffffff',
-            })
+            });
         } catch (e) {
-            console.warn('Failed to create current price line:', e)
+            console.warn('Failed to create current price line:', e);
         }
-    }
+    };
 
     const applyChartTheme = () => {
         if (!chart) return;
@@ -688,12 +724,22 @@
     }
 
     const initializeChart = () => {
+        if (isChartInitialized) {
+            console.warn('Chart already initialized, skipping');
+            return;
+        }
+
         if (!chartContainer.value) {
-            return
+            console.error('Chart container not found');
+            return;
         }
 
         try {
+
+            isChartInitialized = true;
+
             handleResize()
+
             const width = chartContainer.value.clientWidth
             const height = chartContainer.value.clientHeight
             const lwBgColor = isDark.value ? '#000000' : '#ffffff'
@@ -763,45 +809,59 @@
             applyChartTheme();
         } catch (error) {
             console.error('Failed to initialize chart:', error)
+            isChartInitialized = false;
         }
     }
 
     const drawTradeLines = () => {
         if (!candlestickSeries) {
-            return
+            console.warn('Cannot draw trade lines: series not initialized');
+            return;
         }
 
-        tradePriceLineIds.value.forEach((id) => {
-            if (candlestickSeries && id) {
-                try {
-                    candlestickSeries.removePriceLine(id)
-                } catch (e) {
-                    console.warn('Failed to remove price line:', e)
-                }
-            }
-        })
-        tradePriceLineIds.value.clear()
+        if (!chart) {
+            console.warn('Cannot draw trade lines: chart not initialized');
+            return;
+        }
 
-        props.openTrades?.forEach(trade => {
-            if (candlestickSeries) {
-                try {
-                    const id = candlestickSeries.createPriceLine({
-                        price: trade.entry_price,
-                        color: entryLineColor(trade as TradeWithPnL),
-                        lineWidth: isMobile.value ? 1 : 2,
-                        lineStyle: 0,
-                        axisLabelVisible: !isMobile.value,
-                        lineVisible: true,
-                    })
-                    tradePriceLineIds.value.set(trade.id, id)
-                } catch (e) {
-                    console.warn('Failed to create price line for trade:', trade.id, e)
+        try {
+
+            tradePriceLineIds.value.forEach((lineId, tradeId) => {
+                if (lineId && candlestickSeries) {
+                    try {
+                        candlestickSeries.removePriceLine(lineId);
+                    } catch (e) {
+                        console.warn('Error removing price line:', e);
+                    }
                 }
-            }
-        })
-    }
+            });
+            tradePriceLineIds.value.clear();
+
+            activePairTrades.value.forEach(trade => {
+                if (candlestickSeries) {
+                    try {
+                        const id = candlestickSeries.createPriceLine({
+                            price: trade.entry_price,
+                            color: entryLineColor(trade as TradeWithPnL),
+                            lineWidth: isMobile.value ? 1 : 2,
+                            lineStyle: 0,
+                            axisLabelVisible: false,
+                            lineVisible: true,
+                        });
+                        tradePriceLineIds.value.set(trade.id, id);
+                    } catch (e) {
+                        console.warn('Failed to create price line for trade:', trade.id, e);
+                    }
+                }
+            });
+        } catch (error) {
+            console.error('Error drawing trade lines:', error);
+        }
+    };
 
     onMounted(async () => {
+        isComponentMounted.value = true;
+
         handleResize()
         window.addEventListener('resize', handleResize)
 
@@ -887,62 +947,115 @@
     })
 
     watch(() => props.openTrades, (newVal) => {
-        chartStore.setOpenTrades(newVal ?? [])
-        drawTradeLines()
-    }, { immediate: true, deep: true })
+        try {
+            chartStore.setOpenTrades(newVal ?? []);
+            drawTradeLines();
+        } catch (error) {
+            console.error('Error updating open trades:', error);
+        }
+    }, { deep: true });
 
     watch(candles, (newCandles) => {
-        if (newCandles.length && !dataSet.value && candlestickSeries) {
-            const lwData = newCandles.map(mapToLWData)
-            candlestickSeries.setData(lwData)
-            dataSet.value = true
-            fitToScreen()
-            if (tickInterval) {
-                clearInterval(tickInterval)
-            }
-            prepareSimulationFromBackend()
-            startTicking()
+        if (isProcessingCandles) {
+            console.warn('Candles watcher re-entry prevented');
+            return;
         }
-    }, { deep: true })
+
+        try {
+            isProcessingCandles = true;
+
+            if (newCandles.length && !dataSet.value && candlestickSeries) {
+                const lwData = newCandles.map(mapToLWData);
+                candlestickSeries.setData(lwData);
+                dataSet.value = true;
+                fitToScreen();
+
+                if (tickInterval) {
+                    clearInterval(tickInterval);
+                    tickInterval = null;
+                }
+
+                prepareSimulationFromBackend();
+                startTicking();
+            }
+        } catch (error) {
+            console.error('Error processing candles:', error);
+        } finally {
+            isProcessingCandles = false;
+        }
+    }, { deep: true });
 
     watch(currentPrice, (newPrice, oldPrice) => {
-        lastPrice.value = oldPrice
-        updateCurrentPriceLine()
-    })
+        try {
+            if (isFinite(newPrice) && newPrice > 0) {
+                lastPrice.value = oldPrice;
+                updateCurrentPriceLine();
+                activePairTrades.value.forEach(trade => {
+                    chartStore.updateTradePnL(trade.id, newPrice);
+                });
+            } else {
+                console.warn('Invalid price update:', newPrice);
+            }
+        } catch (error) {
+            console.error('Error updating price-related data:', error);
+        }
+    });
 
     onBeforeUnmount(() => {
+        isComponentMounted.value = false;
+
         if (tickInterval) {
-            clearInterval(tickInterval)
-            tickInterval = null
+            clearInterval(tickInterval);
+            tickInterval = null;
         }
         if (tradeExpiryCheckInterval) {
-            clearInterval(tradeExpiryCheckInterval)
-            tradeExpiryCheckInterval = null
-        }
-        if (resizeObserver && chartContainer.value) {
-            resizeObserver.unobserve(chartContainer.value)
-            resizeObserver.disconnect()
-            resizeObserver = null
-        }
-        window.removeEventListener('resize', handleResize)
-        if (chart) {
-            chart.unsubscribeCrosshairMove(handleCrosshairMove)
-            chart.remove()
-            chart = null
-        }
-        candlestickSeries = null
-        currentPriceLineId = null
-        tradePriceLineIds.value.clear()
-        streamingDataProvider = null
-        if (mo) {
-            mo.disconnect()
-            mo = null
+            clearInterval(tradeExpiryCheckInterval);
+            tradeExpiryCheckInterval = null;
         }
         if (timeSyncInterval) {
-            clearInterval(timeSyncInterval)
-            timeSyncInterval = null
+            clearInterval(timeSyncInterval);
+            timeSyncInterval = null;
         }
-    })
+
+        if (resizeObserver) {
+            if (chartContainer.value) {
+                try {
+                    resizeObserver.unobserve(chartContainer.value);
+                } catch (e) {
+                    console.warn('Error unobserving chartContainer:', e);
+                }
+            }
+            resizeObserver.disconnect();
+            resizeObserver = null;
+        }
+
+        if (mo) {
+            mo.disconnect();
+            mo = null;
+        }
+
+        window.removeEventListener('resize', handleResize);
+
+        if (chart) {
+            try {
+                chart.unsubscribeCrosshairMove(handleCrosshairMove);
+                chart.remove();
+            } catch (e) {
+                console.warn('Error removing chart:', e);
+            }
+            chart = null;
+        }
+
+        candlestickSeries = null;
+        currentPriceLineId = null;
+        tradePriceLineIds.value.clear();
+        streamingDataProvider = null;
+        dataSet.value = false;
+        closingTrades.value.clear();
+
+        isProcessingCandles = false;
+        isChartInitialized = false;
+    });
 </script>
 
 <template>

@@ -110,7 +110,7 @@
 <template>
     <TransitionGroup
         tag="div"
-        class="fixed top-4 left-4 right-4 z-50 flex flex-col gap-3 sm:left-auto sm:w-full sm:max-w-md sm:right-4"
+        class="fixed top-0 sm:top-4 left-0 right-0 z-50 flex flex-col gap-3 sm:left-auto sm:w-full sm:max-w-md sm:right-4"
         enter-active-class="transition-all duration-300"
         enter-from-class="opacity-0 translate-x-full"
         enter-to-class="opacity-100 translate-x-0"
@@ -122,7 +122,7 @@
             :key="notification.id"
             class="group pointer-events-auto">
             <div
-                class="relative overflow-hidden rounded-lg border shadow-lg backdrop-blur-md transition-all duration-300"
+                class="relative overflow-hidden rounded-none sm:rounded-lg border shadow-lg backdrop-blur-md transition-all duration-300"
                 :class="[
                     getTypeClasses(notification.type).bg,
                     getTypeClasses(notification.type).border,
@@ -176,8 +176,6 @@
                         </button>
                     </div>
                 </div>
-
-
             </div>
         </div>
     </TransitionGroup>

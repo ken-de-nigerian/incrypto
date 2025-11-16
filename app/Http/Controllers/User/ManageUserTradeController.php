@@ -119,6 +119,32 @@ class ManageUserTradeController extends Controller
     }
 
     /**
+     * Get paginated chart data for infinite scroll
+     */
+    public function getPaginatedChartData(Request $request)
+    {
+        $validated = $request->validate([
+            'symbol' => 'required|string',
+            'category' => 'required|string|in:forex,stock,crypto',
+            'cursor' => 'required|string',
+            'from' => 'nullable|string',
+            'to' => 'nullable|string'
+        ]);
+
+        $decodedSymbol = urldecode($validated['symbol']);
+        $gatewayService = new GatewayHandlerService();
+        $data = $gatewayService->fetchPaginatedChartData(
+            $decodedSymbol,
+            $validated['category'],
+            $validated['cursor'],
+            $validated['from'] ?? null,
+            $validated['to'] ?? null
+        );
+
+        return response()->json($data);
+    }
+
+    /**
      * @throws Throwable
      */
     public function executeTrade(ExecuteTradeRequest $request, TradeService $tradeService)

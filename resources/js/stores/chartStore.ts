@@ -17,6 +17,9 @@ interface PairData {
     basePrice: number
     candleInterval: number
     initialized: boolean
+    nextUrl: string | null
+    isLoadingHistorical: boolean
+    hasMoreHistoricalData: boolean
 }
 
 interface ForexOHLCData {
@@ -48,7 +51,7 @@ export interface TradeWithPnL extends OpenTrade {
     pnlPct: string
 }
 
-const MAX_CANDLES = 100
+const MAX_CANDLES = 5000
 const MIN_ZOOM = 0.1
 const MAX_ZOOM = 10
 const MAX_PAN_THRESHOLD = 100000
@@ -145,7 +148,9 @@ export const useChartStore = defineStore('chart', () => {
                                 lastCandleTime: payload.data.lastCandleTime,
                                 basePrice: payload.data.basePrice,
                                 candleInterval: payload.data.candleInterval,
-                                initialized: payload.data.initialized
+                                initialized: payload.data.initialized,
+                                nextUrl: payload.data.nextUrl,
+                                hasMoreHistoricalData: payload.data.hasMoreHistoricalData
                             })
                         }
                         break
@@ -164,6 +169,16 @@ export const useChartStore = defineStore('chart', () => {
                                     payload.candle.time
                                 )
                             }
+                        }
+                        break
+                    case 'HISTORICAL_CANDLES_PREPENDED':
+                        if (pairDataMap.value[payload.pair]?.initialized) {
+                            const pairData = pairDataMap.value[payload.pair]
+                            pairData.candles = [...payload.candles, ...pairData.candles]
+                            pairData.candles = deduplicateCandles(sortCandles(pairData.candles))
+                            pairData.nextUrl = payload.nextUrl
+                            pairData.hasMoreHistoricalData = payload.hasMoreHistoricalData
+                            pairData.isLoadingHistorical = false
                         }
                         break
                     case 'LAST_CANDLE_UPDATE':
@@ -229,6 +244,9 @@ export const useChartStore = defineStore('chart', () => {
                 basePrice: isFinite(initialPrice) && initialPrice > 0 ? initialPrice : 0,
                 candleInterval: DEFAULT_CANDLE_INTERVAL_MS,
                 initialized: false,
+                nextUrl: null,
+                isLoadingHistorical: false,
+                hasMoreHistoricalData: true
             }
         }
     }
@@ -241,196 +259,295 @@ export const useChartStore = defineStore('chart', () => {
         chartError.value = null
     }
 
-    function detectCandleInterval(candles: Candle[]): number {
-        if (candles.length < 2) return DEFAULT_CANDLE_INTERVAL_MS
-        const intervals: number[] = []
-        for (let i = 1; i < Math.min(10, candles.length); i++) {
-            intervals.push(candles[i].time - candles[i - 1].time)
+    function initializeCandlesFromOHLC(
+        pair: string,
+        ohlcData: ForexOHLCData | null,
+        initialPrice: number,
+        nextUrl: string | null = null
+    ) {
+        if (!pair || !ohlcData) {
+            console.warn('Invalid pair or OHLC data')
+            return
         }
-        if (intervals.length === 0) return DEFAULT_CANDLE_INTERVAL_MS
-        const avgInterval = intervals.reduce((a, b) => a + b, 0) / intervals.length
-        return Math.max(avgInterval, 1000)
-    }
 
-    function initializeCandlesFromOHLC(pair: string, ohlcData: ForexOHLCData) {
-        try {
-            if (!pair) {
-                console.error('Invalid pair provided to initializeCandlesFromOHLC')
-                return
-            }
+        initializePairData(pair, initialPrice)
 
-            if (!ohlcData || !ohlcData.prices || !Array.isArray(ohlcData.prices)) {
-                console.error('Invalid OHLC data provided')
-                return
-            }
+        const pairData = pairDataMap.value[pair]
 
-            if (!pairDataMap.value[pair]) {
-                initializePairData(pair)
-            }
-
-            const pairData = pairDataMap.value[pair]
-            const candles: Candle[] = []
-
-            for (let i = 0; i < ohlcData.prices.length; i++) {
-                const priceData = ohlcData.prices[i]
-                if (!priceData || priceData.length < 5) continue
-
-                const candle: Candle = {
-                    time: priceData[0],
-                    open: priceData[1],
-                    high: priceData[2],
-                    low: priceData[3],
-                    close: priceData[4],
-                    volume: ohlcData.volumes?.[i]?.[1] || 0
-                }
-
-                if (isValidCandle(candle)) {
-                    candles.push(candle)
-                } else {
-                    console.warn('Skipping invalid candle:', candle)
-                }
-            }
-
-            if (candles.length === 0) {
-                console.error('No valid candles found in OHLC data')
-                setChartError('No valid chart data available')
-                return
-            }
-
-            pairData.candles = sortCandles(deduplicateCandles(candles))
-
-            const lastCandle = pairData.candles[pairData.candles.length - 1]
-            pairData.currentPrice = lastCandle.close
-            pairData.basePrice = pairData.candles[0].open
-            pairData.lastCandleTime = lastCandle.time
-            pairData.candleInterval = detectCandleInterval(pairData.candles)
+        if (!ohlcData.prices || !Array.isArray(ohlcData.prices) || ohlcData.prices.length === 0) {
+            console.warn(`No valid OHLC prices for pair ${pair}`)
             pairData.initialized = true
-
-            clearChartError()
-
-            try {
-                broadcastStateChange('CANDLES_INITIALIZED', {
-                    pair,
-                    data: {
-                        currentPrice: pairData.currentPrice,
-                        lastCandleTime: pairData.lastCandleTime,
-                        basePrice: pairData.basePrice,
-                        candleInterval: pairData.candleInterval,
-                        initialized: true
-                    }
-                })
-            } catch (error) {
-                console.warn('Failed to broadcast candles initialization:', error)
-            }
-
-        } catch (error) {
-            console.error('Error initializing candles from OHLC:', error)
-            setChartError('Failed to initialize chart data. Please refresh the page.')
+            pairData.currentPrice = initialPrice
+            pairData.basePrice = initialPrice
+            pairData.nextUrl = nextUrl
+            pairData.hasMoreHistoricalData = !!nextUrl
+            broadcastStateChange('CANDLES_INITIALIZED', {
+                pair,
+                data: {
+                    currentPrice: initialPrice,
+                    lastCandleTime: pairData.lastCandleTime,
+                    basePrice: initialPrice,
+                    candleInterval: pairData.candleInterval,
+                    initialized: true,
+                    nextUrl: nextUrl,
+                    hasMoreHistoricalData: !!nextUrl
+                }
+            })
+            return
         }
+
+        const prices = ohlcData.prices
+        const volumes = ohlcData.volumes || []
+
+        const rawCandles: Candle[] = prices.map((p, idx) => {
+            const timestamp = p[0]
+            const open = p[1]
+            const high = p[2]
+            const low = p[3]
+            const close = p[4]
+            const volume = volumes[idx] ? volumes[idx][1] : 0
+
+            return {
+                time: timestamp / 1000,
+                open,
+                high,
+                low,
+                close,
+                volume,
+            }
+        })
+
+        pairData.candles = deduplicateCandles(sortCandles(rawCandles.filter(isValidCandle)))
+
+        if (pairData.candles.length > MAX_CANDLES) {
+            pairData.candles = pairData.candles.slice(-MAX_CANDLES)
+        }
+
+        pairData.initialized = true
+        pairData.currentPrice = initialPrice
+        pairData.basePrice = initialPrice
+        pairData.nextUrl = nextUrl
+        pairData.hasMoreHistoricalData = !!nextUrl
+
+        if (pairData.candles.length > 0) {
+            pairData.lastCandleTime = pairData.candles[pairData.candles.length - 1].time * 1000
+        }
+
+        broadcastStateChange('CANDLES_INITIALIZED', {
+            pair,
+            data: {
+                currentPrice: initialPrice,
+                lastCandleTime: pairData.lastCandleTime,
+                basePrice: initialPrice,
+                candleInterval: pairData.candleInterval,
+                initialized: true,
+                nextUrl: nextUrl,
+                hasMoreHistoricalData: !!nextUrl
+            }
+        })
     }
 
-    function initializeCandlesFromForexData(pair: string, ohlcData: ForexOHLCData, currentPrice: number = 0) {
-        try {
-            if (!pair) {
-                console.error('Invalid pair provided to initializeCandlesFromForexData')
-                return
-            }
-
-            if (!isFinite(currentPrice) || currentPrice <= 0) {
-                console.warn('Invalid currentPrice provided, attempting to use last close price')
-            }
-
-            initializeCandlesFromOHLC(pair, ohlcData)
-
-            if (isFinite(currentPrice) && currentPrice > 0 && pairDataMap.value[pair]) {
-                pairDataMap.value[pair].currentPrice = currentPrice
-            }
-        } catch (error) {
-            console.error('Error initializing candles from Forex data:', error)
-            setChartError('Failed to initialize chart data. Please refresh the page.')
+    function initializeCandlesFromForexData(
+        pair: string,
+        chartData: Candle[],
+        initialPrice: number,
+        nextUrl: string | null = null
+    ) {
+        if (!pair || !Array.isArray(chartData)) {
+            console.warn('Invalid pair or chart data')
+            return
         }
+
+        initializePairData(pair, initialPrice)
+
+        const pairData = pairDataMap.value[pair]
+
+        if (chartData.length === 0) {
+            console.warn(`No chart data for pair ${pair}`)
+            pairData.initialized = true
+            pairData.currentPrice = initialPrice
+            pairData.basePrice = initialPrice
+            pairData.nextUrl = nextUrl
+            pairData.hasMoreHistoricalData = !!nextUrl
+            broadcastStateChange('CANDLES_INITIALIZED', {
+                pair,
+                data: {
+                    currentPrice: initialPrice,
+                    lastCandleTime: pairData.lastCandleTime,
+                    basePrice: initialPrice,
+                    candleInterval: pairData.candleInterval,
+                    initialized: true,
+                    nextUrl: nextUrl,
+                    hasMoreHistoricalData: !!nextUrl
+                }
+            })
+            return
+        }
+
+        pairData.candles = deduplicateCandles(sortCandles(chartData.filter(isValidCandle)))
+
+        if (pairData.candles.length > MAX_CANDLES) {
+            pairData.candles = pairData.candles.slice(-MAX_CANDLES)
+        }
+
+        pairData.initialized = true
+        pairData.currentPrice = initialPrice
+        pairData.basePrice = initialPrice
+        pairData.nextUrl = nextUrl
+        pairData.hasMoreHistoricalData = !!nextUrl
+
+        if (pairData.candles.length > 0) {
+            pairData.lastCandleTime = pairData.candles[pairData.candles.length - 1].time * 1000
+        }
+
+        broadcastStateChange('CANDLES_INITIALIZED', {
+            pair,
+            data: {
+                currentPrice: initialPrice,
+                lastCandleTime: pairData.lastCandleTime,
+                basePrice: initialPrice,
+                candleInterval: pairData.candleInterval,
+                initialized: true,
+                nextUrl: nextUrl,
+                hasMoreHistoricalData: !!nextUrl
+            }
+        })
+    }
+
+    function prependHistoricalCandles(
+        pair: string,
+        historicalCandles: Candle[],
+        nextUrl: string | null = null
+    ) {
+        if (!pair || !pairDataMap.value[pair]) {
+            console.warn('Invalid pair or pair data not initialized')
+            return
+        }
+
+        const pairData = pairDataMap.value[pair]
+
+        if (!Array.isArray(historicalCandles) || historicalCandles.length === 0) {
+            console.warn('No historical candles to prepend')
+            pairData.isLoadingHistorical = false
+            pairData.hasMoreHistoricalData = false
+            pairData.nextUrl = null
+            return
+        }
+
+        const validHistoricalCandles = historicalCandles.filter(isValidCandle)
+
+        pairData.candles = [...validHistoricalCandles, ...pairData.candles]
+        pairData.candles = deduplicateCandles(sortCandles(pairData.candles))
+
+        if (pairData.candles.length > MAX_CANDLES) {
+            pairData.candles = pairData.candles.slice(-MAX_CANDLES)
+        }
+
+        pairData.nextUrl = nextUrl
+        pairData.hasMoreHistoricalData = !!nextUrl
+        pairData.isLoadingHistorical = false
+
+        broadcastStateChange('HISTORICAL_CANDLES_PREPENDED', {
+            pair,
+            candles: validHistoricalCandles,
+            nextUrl: nextUrl,
+            hasMoreHistoricalData: !!nextUrl
+        })
+    }
+
+    function setHistoricalLoadingState(pair: string, isLoading: boolean) {
+        if (!pair || !pairDataMap.value[pair]) {
+            return
+        }
+        pairDataMap.value[pair].isLoadingHistorical = isLoading
     }
 
     function updatePairData(pair: string, updates: Partial<PairData>) {
         if (!pairDataMap.value[pair]) {
-            console.warn(`Pair ${pair} not found in pairDataMap`)
+            console.warn(`Pair ${pair} not found`)
             return
         }
 
-        if (updates.currentPrice !== undefined) {
-            if (!isFinite(updates.currentPrice) || updates.currentPrice <= 0) {
-                console.warn('Invalid currentPrice in updates, skipping')
-                delete updates.currentPrice
+        const validUpdates: Record<string, any> = {}
+        for (const key in updates) {
+            const value = (updates as any)[key]
+            if (value !== undefined && value !== null) {
+                validUpdates[key] = value
             }
         }
 
-        if (updates.candles !== undefined) {
-            if (!Array.isArray(updates.candles)) {
-                console.warn('Invalid candles in updates, skipping')
-                delete updates.candles
-            } else {
-                updates.candles = updates.candles.filter(isValidCandle)
-                updates.candles = sortCandles(deduplicateCandles(updates.candles))
+        if (Object.keys(validUpdates).length > 0) {
+            Object.assign(pairDataMap.value[pair], validUpdates)
+            try {
+                broadcastStateChange('PAIR_DATA_UPDATE', { pair, data: validUpdates })
+            } catch (error) {
+                console.warn('Failed to broadcast pair data update:', error)
             }
-        }
-
-        Object.assign(pairDataMap.value[pair], updates)
-
-        try {
-            broadcastStateChange('PAIR_DATA_UPDATE', { pair, data: updates })
-        } catch (error) {
-            console.warn('Failed to broadcast pair data update:', error)
         }
     }
 
     function addCandle(pair: string, candle: Candle) {
-        const pairData = pairDataMap.value[pair]
-        if (!pairData || !pairData.initialized) {
-            console.warn(`Cannot add candle: pair ${pair} not initialized`)
+        if (!pairDataMap.value[pair]) {
+            console.warn(`Pair ${pair} not found`)
             return
         }
 
+        const pairData = pairDataMap.value[pair]
+
         if (!isValidCandle(candle)) {
-            console.warn('Attempted to add invalid candle:', candle)
+            console.warn('Invalid candle, skipping:', candle)
             return
         }
 
         const exists = pairData.candles.some(c => c.time === candle.time)
-        if (!exists) {
-            pairData.candles.push(candle)
-            pairData.candles = sortCandles(pairData.candles)
-            if (pairData.candles.length > MAX_CANDLES) {
-                pairData.candles.shift()
-            }
-            pairData.lastCandleTime = Math.max(pairData.lastCandleTime, candle.time)
-            try {
-                broadcastStateChange('CANDLE_ADDED', { pair, candle })
-            } catch (error) {
-                console.warn('Failed to broadcast candle added:', error)
-            }
+        if (exists) {
+            return
+        }
+
+        pairData.candles.push(candle)
+        pairData.candles = sortCandles(pairData.candles)
+
+        if (pairData.candles.length > MAX_CANDLES) {
+            pairData.candles.shift()
+        }
+
+        pairData.lastCandleTime = Math.max(pairData.lastCandleTime, candle.time * 1000)
+
+        try {
+            broadcastStateChange('CANDLE_ADDED', { pair, candle })
+        } catch (error) {
+            console.warn('Failed to broadcast candle addition:', error)
         }
     }
 
     function updateLastCandle(pair: string, updates: Partial<Candle>) {
+        if (!pairDataMap.value[pair]?.initialized) {
+            return
+        }
+
         const pairData = pairDataMap.value[pair]
-        if (!pairData || !pairData.initialized || pairData.candles.length === 0) {
-            console.warn(`Cannot update last candle: pair ${pair} not properly initialized`)
+        if (pairData.candles.length === 0) {
             return
         }
 
         const lastCandle = pairData.candles[pairData.candles.length - 1]
-        if (lastCandle) {
-            const updatedCandle = { ...lastCandle, ...updates }
-            if (isValidCandle(updatedCandle)) {
-                Object.assign(lastCandle, updates)
-                try {
-                    broadcastStateChange('LAST_CANDLE_UPDATE', { pair, updates })
-                } catch (error) {
-                    console.warn('Failed to broadcast last candle update:', error)
-                }
-            } else {
-                console.warn('Invalid candle update, skipping:', updates)
+
+        for (const key in updates) {
+            const value = (updates as any)[key]
+            if (value !== undefined && value !== null && isFinite(value) && value > 0) {
+                (lastCandle as any)[key] = value
             }
+        }
+
+        if (!isValidCandle(lastCandle)) {
+            console.warn('Updated candle is invalid, skipping broadcast')
+            return
+        }
+
+        try {
+            broadcastStateChange('LAST_CANDLE_UPDATE', { pair, updates })
+        } catch (error) {
+            console.warn('Failed to broadcast last candle update:', error)
         }
     }
 
@@ -659,6 +776,8 @@ export const useChartStore = defineStore('chart', () => {
         initializePairData,
         initializeCandlesFromOHLC,
         initializeCandlesFromForexData,
+        prependHistoricalCandles,
+        setHistoricalLoadingState,
         updatePairData,
         addCandle,
         updateLastCandle,

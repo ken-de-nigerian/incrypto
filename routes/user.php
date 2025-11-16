@@ -85,6 +85,9 @@ Route::prefix('user')
                 Route::get('/stock', 'stock')->name('stock');
                 Route::get('/crypto', 'crypto')->name('crypto');
 
+                Route::get('/chart/paginate', 'getPaginatedChartData')
+                    ->name('chart.paginate');
+
                 Route::get('/chart/{symbol}', 'getChartData')
                     ->where('symbol', '.*')
                     ->name('chart.data');

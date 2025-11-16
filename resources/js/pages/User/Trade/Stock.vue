@@ -288,7 +288,13 @@
                         price: pairData.price || String(chartData.value.data[chartData.value.data.length - 1]?.close || 0)
                     };
 
-                    chartStore.initializeCandlesFromOHLC(symbol, formattedData);
+                    const nextUrl = response.data.next_url || null;
+                    chartStore.initializeCandlesFromForexData(
+                        symbol,
+                        chartData.value.data,
+                        parseFloat(formattedData.price),
+                        nextUrl
+                    );
                     hasChartData.value = true;
                 }
 

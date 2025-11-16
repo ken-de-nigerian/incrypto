@@ -6,6 +6,7 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Throwable;
+use Carbon\Carbon;
 class GatewayHandlerService
 {
     /**
@@ -33,6 +34,20 @@ class GatewayHandlerService
         'Arbitrum' => 42161,
         'Optimism' => 10,
     ];
+
+    /**
+     * Circuit Breaker constants
+     */
+    private const CIRCUIT_BREAKER_TIMEOUT = 60; // seconds to keep circuit open
+    private const FAILURE_THRESHOLD = 5; // consecutive failures to open circuit
+
+    /**
+     * Global Request Queuing (Token Bucket) constants
+     * Adjust based on API rate limits
+     */
+    private const MAX_TOKENS = 100; // maximum tokens in bucket
+    private const REFILL_TOKENS_PER_MINUTE = 100; // refill rate per minute
+    private const QUEUE_CHECK_INTERVAL = 1; // seconds to wait before checking token again
 
     private const API_PROVIDERS = [
         'price' => ['cryptocompare', 'coinmarketcap', 'coingecko'],
@@ -69,12 +84,14 @@ class GatewayHandlerService
     /**
      * Fetch historical chart data for a trading pair
      */
-    public function fetchTradeChartData(string $symbol, string $category = 'forex', bool $fullHistory = true): array
+    public function fetchTradeChartData(string $symbol, string $category = 'forex'): array
     {
-        // Validate category early
+        // Validate category
         $supportedCategories = ['forex', 'stock', 'crypto'];
         if (!in_array($category, $supportedCategories)) {
-            return ['success' => false, 'error' => "Unsupported category: $category. Supported: " . implode(', ', $supportedCategories)];
+            $error = "Unsupported category: $category. Supported: " . implode(', ', $supportedCategories);
+            Log::warning($error, ['method' => __METHOD__, 'symbol' => $symbol, 'category' => $category]);
+            return ['success' => false, 'error' => $error];
         }
 
         // Fetch pairs based on category
@@ -88,16 +105,20 @@ class GatewayHandlerService
         $pairData = collect($allPairs)->firstWhere('symbol', $symbol);
 
         if (!$pairData || !isset($pairData['polygon'])) {
-            return ['success' => false, 'error' => 'Pair not found'];
+            $error = 'Pair not found';
+            Log::warning($error, ['method' => __METHOD__, 'symbol' => $symbol, 'category' => $category]);
+            return ['success' => false, 'error' => $error];
         }
 
         $apiKey = config('services.massive.key');
         if (!$apiKey) {
-            return ['success' => false, 'error' => 'API key not configured'];
+            $error = 'API key not configured';
+            Log::error($error, ['method' => __METHOD__, 'service' => 'massive']);
+            return ['success' => false, 'error' => $error];
         }
 
         // Dynamic cache key
-        $cacheKey = "chart_{$category}_{$symbol}_" . ($fullHistory ? 'full' : 'recent');
+        $cacheKey = "chart_{$category}_$symbol";
 
         $cached = Cache::get($cacheKey);
         if ($cached && ($cached['success'] ?? false)) {
@@ -105,43 +126,49 @@ class GatewayHandlerService
         }
 
         try {
+
             $to = now()->format('Y-m-d');
-            $from = $fullHistory
-                ? now()->subYears(2)->format('Y-m-d')
-                : now()->subDays(300)->format('Y-m-d');
+            $from = now()->subYears(5)->format('Y-m-d');
             $encodedApiKey = urlencode($apiKey);
+            $limit = 120;
 
-            // High limit to reduce pagination needs; max 50,000
-            $limit = $fullHistory ? 50000 : 500;
-            $baseUrl = "https://api.massive.com/v2/aggs/ticker/{$pairData['polygon']}/range/1/day/$from/$to?adjusted=true&sort=asc&limit=$limit&apiKey=$encodedApiKey";
+            $baseUrl = "https://api.massive.com/v2/aggs/ticker/{$pairData['polygon']}/range/1/day/$from/$to?adjusted=true&sort=desc&limit=$limit&apiKey=$encodedApiKey";
 
-            // Initial fetch
-            $response = Http::timeout(30)->get($baseUrl);
-            $this->handleApiError($response);
+            // Initial fetch with resilience
+            $responseData = $this->makeResilientRequest('massive', $baseUrl, [], 30);
+            $data = $responseData['json'];
 
-            $data = $response->json();
             $allResults = $data['results'] ?? [];
 
-            // Pagination loop
-            $currentUrl = $data['next_url'] ?? null;
-            while ($currentUrl) {
-                $nextResponse = Http::timeout(30)->get($currentUrl);
-                $this->handleApiError($nextResponse);
+            // Pagination url
+            $nextUrl = $data['next_url'] ?? null;
 
-                $nextData = $nextResponse->json();
-                if (empty($nextData['results'])) {
-                    break;
+            // Create a proxied next_url
+            $proxiedNextUrl = null;
+
+            if ($nextUrl) {
+
+                // Parse the full next_url
+                $parsedUrl = parse_url($nextUrl);
+                parse_str($parsedUrl['query'] ?? '', $queryParams);
+
+                // Extract all necessary parameters
+                $cursor = $queryParams['cursor'] ?? null;
+
+                // Extract the new 'from' timestamp from the path
+                $pathParts = explode('/', $parsedUrl['path'] ?? '');
+                $fromTimestamp = $pathParts[count($pathParts) - 2] ?? null;
+                $toDate = $pathParts[count($pathParts) - 1] ?? null;
+
+                if ($cursor && $fromTimestamp) {
+                    $proxiedNextUrl = route('user.trade.chart.paginate', [
+                        'symbol' => $symbol,
+                        'category' => $category,
+                        'cursor' => $cursor,
+                        'from' => $fromTimestamp,
+                        'to' => $toDate
+                    ]);
                 }
-
-                $allResults = array_merge($allResults, $nextData['results']);
-                $currentUrl = $nextData['next_url'] ?? null;
-
-                // Optional: Log progress
-                Log::info("Fetched additional " . count($nextData['results']) . " bars for $symbol");
-            }
-
-            if (empty($allResults)) {
-                return ['success' => false, 'error' => 'No data available'];
             }
 
             $resultsCollection = collect($allResults);
@@ -156,14 +183,14 @@ class GatewayHandlerService
                     'close' => $candle['c'],
                     'volume' => $candle['v'] ?? 0
                 ];
-            })->toArray();
+            })->reverse()->values()->toArray();
 
-            // Latest is now truly the most recent (last in asc-sorted results)
             $latestResult = $resultsCollection->last();
 
             $result = [
                 'success' => true,
                 'data' => $chartData,
+                'next_url' => $proxiedNextUrl,
                 'symbol' => $symbol,
                 'timeframe' => '1D',
                 'total_bars' => count($chartData),
@@ -176,11 +203,361 @@ class GatewayHandlerService
 
             return $result;
         } catch (Throwable $e) {
+            $error = $e->getMessage();
+            Log::error("Failed to fetch trade chart data", [
+                'method' => __METHOD__,
+                'symbol' => $symbol,
+                'category' => $category,
+                'error' => $error,
+                'trace' => $e->getTraceAsString()
+            ]);
             return [
                 'success' => false,
-                'error' => $e->getMessage()
+                'error' => $error
             ];
         }
+    }
+
+    /**
+     * Fetch paginated chart data for a trading pair
+     */
+    public function fetchPaginatedChartData(string $symbol, string $category, string $cursor, ?string $from = null, ?string $to = null): array
+    {
+        try {
+
+            // Validate category
+            $supportedCategories = ['forex', 'stock', 'crypto'];
+            if (!in_array($category, $supportedCategories)) {
+                $error = "Unsupported category: $category";
+                Log::warning($error, ['method' => __METHOD__, 'symbol' => $symbol, 'category' => $category]);
+                return ['success' => false, 'error' => $error];
+            }
+
+            // Get pair data
+            $allPairs = match($category) {
+                'forex' => $this->getAllForexPairs(),
+                'stock' => $this->getAllStocksPairs(),
+                'crypto' => $this->getAllCryptoPairs(),
+                default => $this->getAllForexPairs()
+            };
+
+            $pairData = collect($allPairs)->firstWhere('symbol', $symbol);
+
+            if (!$pairData || !isset($pairData['polygon'])) {
+                $error = 'Pair not found';
+                Log::warning($error, ['method' => __METHOD__, 'symbol' => $symbol, 'category' => $category]);
+                return ['success' => false, 'error' => $error];
+            }
+
+            $apiKey = config('services.massive.key');
+            if (!$apiKey) {
+                $error = 'API key not configured';
+                Log::error($error, ['method' => __METHOD__, 'service' => 'massive']);
+                return ['success' => false, 'error' => $error];
+            }
+
+            // Use provided from/to or default to current date range
+            if (!$from) {
+                $from = now()->subYears(5)->startOfDay()->timestamp * 1000;
+            }
+            if (!$to) {
+                $to = now()->format('Y-m-d');
+            }
+
+            $encodedApiKey = urlencode($apiKey);
+            $limit = 120;
+            $url = "https://api.massive.com/v2/aggs/ticker/{$pairData['polygon']}/range/1/day/$from/$to?adjusted=true&sort=desc&limit=$limit&cursor=$cursor&apiKey=$encodedApiKey";
+
+            // Fetch with resilience
+            $responseData = $this->makeResilientRequest('massive', $url, [], 30);
+            $data = $responseData['json'];
+
+            $allResults = $data['results'] ?? [];
+
+            // Get next cursor
+            $nextUrl = $data['next_url'] ?? null;
+            $proxiedNextUrl = null;
+
+            if ($nextUrl) {
+
+                // Parse the next_url
+                $parsedUrl = parse_url($nextUrl);
+                parse_str($parsedUrl['query'] ?? '', $queryParams);
+                $newCursor = $queryParams['cursor'] ?? null;
+
+                // Extract the new 'from' timestamp from the path
+                $pathParts = explode('/', $parsedUrl['path'] ?? '');
+                $newFromTimestamp = $pathParts[count($pathParts) - 2] ?? null;
+                $newToDate = $pathParts[count($pathParts) - 1] ?? null;
+
+                if ($newCursor && $newFromTimestamp) {
+                    $proxiedNextUrl = route('user.trade.chart.paginate', [
+                        'symbol' => $symbol,
+                        'category' => $category,
+                        'cursor' => $newCursor,
+                        'from' => $newFromTimestamp,
+                        'to' => $newToDate
+                    ]);
+                } else {
+                    Log::warning('Could not extract pagination parameters from next_url');
+                }
+            }
+
+            // Transform to frontend format
+            $chartData = collect($allResults)->map(function ($candle) {
+                return [
+                    'time' => $candle['t'] / 1000,  // Convert milliseconds to seconds
+                    'open' => $candle['o'],
+                    'high' => $candle['h'],
+                    'low' => $candle['l'],
+                    'close' => $candle['c'],
+                    'volume' => $candle['v'] ?? 0
+                ];
+            })->reverse()->values()->toArray();
+
+            return [
+                'success' => true,
+                'data' => $chartData,
+                'next_url' => $proxiedNextUrl,
+                'symbol' => $symbol,
+                'timeframe' => '1D',
+                'total_bars' => count($chartData)
+            ];
+
+        } catch (Throwable $e) {
+            $error = $e->getMessage();
+            Log::error("Failed to fetch paginated chart data", [
+                'method' => __METHOD__,
+                'symbol' => $symbol,
+                'category' => $category,
+                'cursor' => $cursor,
+                'error' => $error,
+                'trace' => $e->getTraceAsString()
+            ]);
+            return [
+                'success' => false,
+                'error' => $error
+            ];
+        }
+    }
+
+    /**
+     * Make resilient API request with circuit breaker, token bucket, and retry logic.
+     * @throws Exception
+     */
+    private function makeResilientRequest(string $provider, string $url, array $params = [], int $timeout = 10): array
+    {
+        $headers = [];
+        // Build full URL with params
+        if (!empty($params)) {
+            $url .= (!str_contains($url, '?') ? '?' : '&') . http_build_query($params);
+        }
+
+        // Add API keys based on provider
+        $apiKey = config("services.$provider.key");
+        if ($apiKey) {
+            switch ($provider) {
+                case 'coingecko':
+                    if (!str_contains($url, 'x_cg_api_key=')) {
+                        $url .= (!str_contains($url, '?') ? '?' : '&') . 'x_cg_api_key=' . $apiKey;
+                    }
+                    break;
+                case 'cryptocompare':
+                    if (!str_contains($url, 'api_key=')) {
+                        $url .= (!str_contains($url, '?') ? '?' : '&') . 'api_key=' . $apiKey;
+                    }
+                    break;
+                case 'coinmarketcap':
+                    $headers['X-CMC_PRO_API_KEY'] = $apiKey;
+                    break;
+                // For massive, etherscan, coinpaprika: assume URL has key or no key needed
+                default:
+                    // No additional action
+            }
+        }
+
+        // Check circuit breaker
+        if ($this->isCircuitOpen($provider)) {
+            $error = "Circuit breaker is open for $provider: API temporarily unavailable";
+            Log::warning($error, ['method' => __METHOD__, 'provider' => $provider]);
+            throw new Exception($error);
+        }
+
+        $maxRetries = self::MAX_RETRIES;
+        $rateLimitRetries = 0;
+
+        for ($attempt = 0; $attempt < $maxRetries; $attempt++) {
+            // Global request queuing: wait for token if necessary
+            if (!$this->consumeToken($provider)) {
+                sleep(self::QUEUE_CHECK_INTERVAL);
+                continue;
+            }
+
+            try {
+                $response = Http::timeout($timeout)->withHeaders($headers)->get($url);
+
+                if ($response->status() === 429) {
+                    $this->recordFailure($provider);
+                    $rateLimitRetries++;
+                    if ($rateLimitRetries > self::RATE_LIMIT_MAX_RETRIES) {
+                        $error = "Rate limit exceeded after maximum retries for $provider";
+                        Log::warning($error, ['method' => __METHOD__, 'provider' => $provider, 'url' => $url]);
+                        throw new Exception($error);
+                    }
+                    sleep(self::RATE_LIMIT_RETRY_DELAY);
+                    continue;
+                }
+
+                if ($response->successful()) {
+                    $this->recordSuccess($provider);
+                    return [
+                        'status' => $response->status(),
+                        'json' => $response->json()
+                    ];
+                } else {
+                    $this->recordFailure($provider);
+                    $error = "API returned HTTP {$response->status()} for $provider";
+                    Log::error($error, ['method' => __METHOD__, 'provider' => $provider, 'url' => $url]);
+                    throw new Exception($error);
+                }
+            } catch (ConnectionException|Throwable $e) {
+                $this->recordFailure($provider);
+                Log::error("Request failed during execution", [
+                    'method' => __METHOD__,
+                    'provider' => $provider,
+                    'url' => $url,
+                    'attempt' => $attempt + 1,
+                    'error' => $e->getMessage(),
+                    'trace' => $e->getTraceAsString()
+                ]);
+            }
+
+            // Exponential backoff for non-rate-limit errors
+            if ($attempt < $maxRetries - 1) {
+                $delay = self::RETRY_BASE_DELAY * pow(2, $attempt);
+                sleep($delay);
+            }
+        }
+
+        $error = "Max retries exceeded for $provider API request";
+        Log::error($error, ['method' => __METHOD__, 'provider' => $provider, 'url' => $url]);
+        throw new Exception($error);
+    }
+
+    /**
+     * Circuit Breaker: Check if circuit is open for a provider.
+     */
+    private function isCircuitOpen(string $provider): bool
+    {
+        $state = $this->getCircuitState($provider);
+
+        if ($state['state'] === 'open') {
+            $lastFailure = $state['last_failure'] ? Carbon::parse($state['last_failure']) : now()->subSeconds(self::CIRCUIT_BREAKER_TIMEOUT + 1);
+            $timeoutExpired = now()->diffInSeconds($lastFailure) > self::CIRCUIT_BREAKER_TIMEOUT;
+            if ($timeoutExpired) {
+                // Transition to half-open
+                $state['state'] = 'half-open';
+                $state['failure_count'] = 0;
+                $this->setCircuitState($provider, $state);
+                return false; // Allow request in half-open state
+            }
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * Circuit Breaker: Record a failure for a provider.
+     */
+    private function recordFailure(string $provider): void
+    {
+        $state = $this->getCircuitState($provider);
+        $state['failure_count'] = ($state['failure_count'] ?? 0) + 1;
+        $state['last_failure'] = now()->toDateTimeString();
+
+        if ($state['state'] === 'half-open') {
+            $state['state'] = 'open';
+            $state['failure_count'] = 1;
+        } elseif ($state['failure_count'] >= self::FAILURE_THRESHOLD) {
+            $state['state'] = 'open';
+        }
+
+        $this->setCircuitState($provider, $state);
+    }
+
+    /**
+     * Circuit Breaker: Record a success for a provider.
+     */
+    private function recordSuccess(string $provider): void
+    {
+        $state = $this->getCircuitState($provider);
+        $state['state'] = 'closed';
+        $state['failure_count'] = 0;
+        $this->setCircuitState($provider, $state);
+    }
+
+    /**
+     * Circuit Breaker: Get current state for a provider from cache.
+     */
+    private function getCircuitState(string $provider): array
+    {
+        $key = "circuit_$provider";
+        return Cache::get($key, [
+            'state' => 'closed',
+            'failure_count' => 0,
+            'last_failure' => null
+        ]);
+    }
+
+    /**
+     * Circuit Breaker: Set state in cache for a provider.
+     */
+    private function setCircuitState(string $provider, array $state): void
+    {
+        $key = "circuit_$provider";
+        Cache::put($key, $state, self::CIRCUIT_BREAKER_TIMEOUT);
+    }
+
+    /**
+     * Global Request Queuing: Token bucket implementation for a provider.
+     * Returns true if token consumed, false if queued (wait needed).
+     */
+    private function consumeToken(string $provider): bool
+    {
+        $bucket = $this->refillBucket($provider);
+
+        if ($bucket['tokens'] < 1) {
+            return false;
+        }
+
+        $bucket['tokens']--;
+        $bucketKey = "token_bucket_$provider";
+        Cache::put($bucketKey, $bucket, 60); // Cache for 1 minute
+
+        return true;
+    }
+
+    /**
+     * Refill the token bucket for a provider based on time elapsed.
+     */
+    private function refillBucket(string $provider): array
+    {
+        $bucketKey = "token_bucket_$provider";
+        $bucket = Cache::get($bucketKey, [
+            'tokens' => (float) self::MAX_TOKENS,
+            'last_refill' => now()
+        ]);
+
+        $now = now();
+        $secondsElapsed = $now->diffInSeconds($bucket['last_refill']);
+        $minutesElapsed = $secondsElapsed / 60.0;
+        $refillAmount = $minutesElapsed * self::REFILL_TOKENS_PER_MINUTE;
+
+        $bucket['tokens'] = min(self::MAX_TOKENS, $bucket['tokens'] + $refillAmount);
+        $bucket['last_refill'] = $now;
+
+        return $bucket;
     }
 
     /**
@@ -244,7 +621,6 @@ class GatewayHandlerService
         return Cache::remember($cacheKey, $ttl, function () {
             $data = $this->coinGeckoNoPagination();
             if (empty($data)) {
-                Log::warning('Failed to fetch full cryptos list from CoinGecko.');
                 return [];
             }
             usort($data, function ($a, $b) {
@@ -264,7 +640,8 @@ class GatewayHandlerService
             "raw_coingecko_no_pagination_temp",
             $url,
             self::CACHE_TTL['CRYPTOS_LIST'],
-            "Failed to fetch CoinGecko top cryptos"
+            "Failed to fetch CoinGecko top cryptos",
+            'coingecko'
         );
     }
 
@@ -321,7 +698,11 @@ class GatewayHandlerService
                 return $gateway;
             }, $gateways);
         } catch (Throwable $e) {
-            Log::error('Error in getGateways(): ' . $e->getMessage());
+            Log::error("Failed to fetch gateways", [
+                'method' => __METHOD__,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
             return [];
         }
     }
@@ -334,8 +715,9 @@ class GatewayHandlerService
     public function fetchChartData(string $symbol, float $days = 1): array
     {
         if ($days < 0.01 || $days > 365) {
-            Log::warning('Invalid days parameter for chart data', ['days' => $days]);
-            return ['error' => 'Days must be between 0.01 and 365'];
+            $error = 'Days must be between 0.01 and 365';
+            Log::warning($error, ['method' => __METHOD__, 'symbol' => $symbol, 'days' => $days]);
+            return ['error' => $error];
         }
         $cacheKey = "chart_{$symbol}_$days";
         $cached = Cache::get($cacheKey);
@@ -352,19 +734,27 @@ class GatewayHandlerService
     private function fetchChartDataWithProviderFallback(string $symbol, float $days): array
     {
         foreach (self::API_PROVIDERS['chart'] as $provider) {
-            $result = $this->fetchChartDataWithRetry($provider, $symbol, $days);
-            if ($result['success']) {
-                return $result;
+            try {
+                $result = $this->fetchChartDataWithRetry($provider, $symbol, $days);
+                if ($result['success']) {
+                    return $result;
+                }
+            } catch (Throwable $e) {
+                Log::warning("Failed to fetch chart data from $provider after retries, trying next provider", [
+                    'method' => __METHOD__,
+                    'symbol' => $symbol,
+                    'days' => $days,
+                    'provider' => $provider,
+                    'error' => $e->getMessage()
+                ]);
             }
-            Log::warning("Failed to fetch chart data from $provider after retries, trying next provider", [
-                'symbol' => $symbol,
-                'error' => $result['error'] ?? 'Unknown error'
-            ]);
         }
-        Log::error('All chart data providers failed', ['symbol' => $symbol]);
+
+        $error = 'All API providers failed';
+        Log::error($error, ['method' => __METHOD__, 'symbol' => $symbol, 'days' => $days]);
         return [
             'success' => false,
-            'error' => 'All API providers failed',
+            'error' => $error,
             'message' => 'Unable to fetch chart data from any provider'
         ];
     }
@@ -372,51 +762,35 @@ class GatewayHandlerService
     private function fetchChartDataWithRetry(string $provider, string $symbol, float $days): array
     {
         $maxRetries = self::MAX_RETRIES;
-        $rateLimitRetries = 0;
         for ($attempt = 0; $attempt < $maxRetries; $attempt++) {
-            $result = $this->fetchChartDataFromProvider($provider, $symbol, $days);
-            if ($result['success']) {
-                return $result;
-            }
-            if (isset($result['status']) && $result['status'] === 429) {
-                $rateLimitRetries++;
-                if ($rateLimitRetries > self::RATE_LIMIT_MAX_RETRIES) {
-                    Log::warning("Rate limit retry limit exceeded for $provider", [
-                        'symbol' => $symbol,
-                        'attempts' => $rateLimitRetries
-                    ]);
-                    return $result;
+            try {
+                return $this->fetchChartDataFromProvider($provider, $symbol, $days);
+            } catch (Throwable) {
+                if ($attempt < $maxRetries - 1) {
+                    $delay = self::RETRY_BASE_DELAY * pow(2, $attempt);
+                    sleep($delay);
                 }
-                sleep(self::RATE_LIMIT_RETRY_DELAY);
-                continue;
-            }
-            if ($attempt < $maxRetries - 1) {
-                $delay = self::RETRY_BASE_DELAY * pow(2, $attempt);
-                sleep($delay);
             }
         }
+        $error = "Failed after " . self::MAX_RETRIES . " attempts";
+        Log::warning($error, ['method' => __METHOD__, 'provider' => $provider, 'symbol' => $symbol, 'days' => $days]);
         return [
             'success' => false,
-            'error' => "Failed after $maxRetries attempts"
+            'error' => $error
         ];
     }
 
+    /**
+     * @throws Exception
+     */
     private function fetchChartDataFromProvider(string $provider, string $symbol, float $days): array
     {
-        try {
-            return match ($provider) {
-                'coingecko' => $this->fetchChartDataFromCoinGecko($symbol, $days),
-                'coinmarketcap' => $this->fetchChartDataFromCoinMarketCap($symbol, $days),
-                'coinpaprika' => $this->fetchChartDataFromCoinPaprika($symbol, $days),
-                default => ['success' => false, 'error' => 'Unknown provider'],
-            };
-        } catch (Throwable $e) {
-            Log::error("Exception fetching chart data from $provider", [
-                'symbol' => $symbol,
-                'error' => $e->getMessage()
-            ]);
-            return ['success' => false, 'error' => $e->getMessage()];
-        }
+        return match ($provider) {
+            'coingecko' => $this->fetchChartDataFromCoinGecko($symbol, $days),
+            'coinmarketcap' => $this->fetchChartDataFromCoinMarketCap($symbol, $days),
+            'coinpaprika' => $this->fetchChartDataFromCoinPaprika($symbol, $days),
+            default => ['success' => false, 'error' => 'Unknown provider'],
+        };
     }
 
     /**
@@ -426,33 +800,26 @@ class GatewayHandlerService
     {
         try {
             $mappedSymbol = $this->getMappedSymbol($symbol, 'coingecko');
-            $apiKey = config('services.coingecko.key', '');
             $url = "https://api.coingecko.com/api/v3/coins/$mappedSymbol/market_chart";
             $params = [
                 'vs_currency' => 'usd',
                 'days' => $days,
             ];
-            if ($apiKey) {
-                $params['x_cg_api_key'] = $apiKey;
+            $responseData = $this->makeResilientRequest('coingecko', $url, $params);
+            $data = $responseData['json'];
+            if (!isset($data['prices']) || !is_array($data['prices'])) {
+                throw new Exception('Invalid chart data structure received');
             }
-            $response = Http::timeout(10)->get($url, $params);
-            if ($response->status() === 429) {
-                return ['success' => false, 'error' => 'Rate limit exceeded', 'status' => 429];
-            }
-            if ($response->successful()) {
-                $data = $response->json();
-                if (!isset($data['prices']) || !is_array($data['prices'])) {
-                    throw new Exception('Invalid chart data structure received');
-                }
-                return ['success' => true, 'data' => $data, 'provider' => 'coingecko'];
-            }
-            return [
-                'success' => false,
-                'error' => 'Failed to fetch from CoinGecko',
-                'status' => $response->status()
-            ];
-        } catch (ConnectionException $e) {
-            return ['success' => false, 'error' => 'Connection timeout ' . $e];
+            return ['success' => true, 'data' => $data, 'provider' => 'coingecko'];
+        } catch (Throwable $e) {
+            $error = $e->getMessage();
+            Log::error("Failed to fetch chart data from CoinGecko", [
+                'method' => __METHOD__,
+                'symbol' => $symbol,
+                'days' => $days,
+                'error' => $error
+            ]);
+            return ['success' => false, 'error' => $error];
         }
     }
 
@@ -461,8 +828,9 @@ class GatewayHandlerService
         $mappedSymbol = strtoupper($this->getMappedSymbol($symbol, 'coinmarketcap'));
         $apiKey = config('services.coinmarketcap.key');
         if (!$apiKey) {
-            Log::warning('CoinMarketCap API key not configured, skipping chart provider.');
-            return ['success' => false, 'error' => 'API key missing', 'status' => 401];
+            $error = 'API key missing';
+            Log::error($error, ['method' => __METHOD__, 'provider' => 'coinmarketcap']);
+            return ['success' => false, 'error' => $error];
         }
         try {
             $timeStart = now()->subDays($days)->toIso8601String();
@@ -474,47 +842,42 @@ class GatewayHandlerService
                 default => '1d',
             };
             $url = "https://pro-api.coinmarketcap.com/v1/cryptocurrency/quotes/historical";
-            $response = Http::timeout(10)
-                ->withHeaders(['X-CMC_PRO_API_KEY' => $apiKey])
-                ->get($url, [
-                    'symbol' => $mappedSymbol,
-                    'convert' => 'USD',
-                    'time_start' => $timeStart,
-                    'time_end' => $timeEnd,
-                    'interval' => $interval,
-                ]);
-            if ($response->status() === 429) {
-                return ['success' => false, 'error' => 'Rate limit exceeded', 'status' => 429];
-            }
-            if ($response->successful()) {
-                $data = $response->json();
-                $coinData = collect($data['data'])->first();
-                $quotes = $coinData['quotes'] ?? [];
-                if (empty($quotes)) {
-                    Log::warning('CoinMarketCap returned no quotes', ['symbol' => $mappedSymbol]);
-                    return ['success' => false, 'error' => 'No chart data available', 'status' => 200];
-                }
-                $prices = collect($quotes)->map(function ($item) {
-                    $timestamp = strtotime($item['timestamp']);
-                    $price = $item['quote']['USD']['price'] ?? 0.0;
-                    return [
-                        $timestamp * 1000,
-                        $price
-                    ];
-                })->values()->toArray();
-                return [
-                    'success' => true,
-                    'data' => ['prices' => $prices],
-                    'provider' => 'coinmarketcap'
-                ];
-            }
-            return [
-                'success' => false,
-                'error' => 'Failed to fetch from CoinMarketCap',
-                'status' => $response->status()
+            $params = [
+                'symbol' => $mappedSymbol,
+                'convert' => 'USD',
+                'time_start' => $timeStart,
+                'time_end' => $timeEnd,
+                'interval' => $interval,
             ];
-        } catch (ConnectionException $e) {
-            return ['success' => false, 'error' => 'Connection timeout ' . $e];
+            $responseData = $this->makeResilientRequest('coinmarketcap', $url, $params);
+            $data = $responseData['json'];
+            $coinData = collect($data['data'])->first();
+            $quotes = $coinData['quotes'] ?? [];
+            if (empty($quotes)) {
+                return ['success' => false, 'error' => 'No chart data available'];
+            }
+            $prices = collect($quotes)->map(function ($item) {
+                $timestamp = strtotime($item['timestamp']);
+                $price = $item['quote']['USD']['price'] ?? 0.0;
+                return [
+                    $timestamp * 1000,
+                    $price
+                ];
+            })->values()->toArray();
+            return [
+                'success' => true,
+                'data' => ['prices' => $prices],
+                'provider' => 'coinmarketcap'
+            ];
+        } catch (Throwable $e) {
+            $error = $e->getMessage();
+            Log::error("Failed to fetch chart data from CoinMarketCap", [
+                'method' => __METHOD__,
+                'symbol' => $symbol,
+                'days' => $days,
+                'error' => $error
+            ]);
+            return ['success' => false, 'error' => $error];
         }
     }
 
@@ -525,34 +888,32 @@ class GatewayHandlerService
             $interval = $days <= 1 ? '1h' : ($days <= 7 ? '6h' : '1d');
             $start = now()->subDays($days)->toIso8601String();
             $url = "https://api.coinpaprika.com/v1/tickers/$mappedSymbol/historical";
-            $response = Http::timeout(10)->get($url, [
+            $params = [
                 'start' => $start,
                 'interval' => $interval,
-            ]);
-            if ($response->status() === 429) {
-                return ['success' => false, 'error' => 'Rate limit exceeded', 'status' => 429];
-            }
-            if ($response->successful()) {
-                $data = $response->json();
-                $prices = collect($data)->map(function ($item) {
-                    return [
-                        strtotime($item['timestamp']) * 1000,
-                        $item['price']
-                    ];
-                })->values()->toArray();
-                return [
-                    'success' => true,
-                    'data' => ['prices' => $prices],
-                    'provider' => 'coinpaprika'
-                ];
-            }
-            return [
-                'success' => false,
-                'error' => 'Failed to fetch from CoinPaprika',
-                'status' => $response->status()
             ];
-        } catch (ConnectionException $e) {
-            return ['success' => false, 'error' => 'Connection timeout ' . $e];
+            $responseData = $this->makeResilientRequest('coinpaprika', $url, $params);
+            $data = $responseData['json'];
+            $prices = collect($data)->map(function ($item) {
+                return [
+                    strtotime($item['timestamp']) * 1000,
+                    $item['price']
+                ];
+            })->values()->toArray();
+            return [
+                'success' => true,
+                'data' => ['prices' => $prices],
+                'provider' => 'coinpaprika'
+            ];
+        } catch (Throwable $e) {
+            $error = $e->getMessage();
+            Log::error("Failed to fetch chart data from CoinPaprika", [
+                'method' => __METHOD__,
+                'symbol' => $symbol,
+                'days' => $days,
+                'error' => $error
+            ]);
+            return ['success' => false, 'error' => $error];
         }
     }
 
@@ -561,7 +922,7 @@ class GatewayHandlerService
         $cacheKey = "etherscan_gas_prices_$chain";
         $apiKey = config('services.etherscan.key');
         if (!$apiKey) {
-            Log::error('Etherscan API key is not configured.');
+            Log::warning('Etherscan API key missing, using fallback gas prices', ['method' => __METHOD__, 'chain' => $chain]);
             return $this->getFallbackGasPrices();
         }
         $chainId = self::CHAIN_IDS[$chain] ?? 1;
@@ -573,7 +934,8 @@ class GatewayHandlerService
                     "etherscan_gas_oracle_$chain",
                     $url,
                     self::CACHE_TTL['GAS_PRICE_DATA'],
-                    "Failed to fetch Etherscan V2 Gas Oracle data for chain $chain"
+                    "Failed to fetch Etherscan V2 Gas Oracle data for chain $chain",
+                    'etherscan'
                 );
                 if (($response['status'] ?? '0') !== '1' || !isset($response['result'])) {
                     throw new Exception('Invalid response from Etherscan V2 Gas Oracle API: ' . ($response['message'] ?? 'Unknown error'));
@@ -604,10 +966,11 @@ class GatewayHandlerService
                     ],
                 ];
             } catch (Throwable $e) {
-                Log::error('Failed to fetch gas prices: ' . $e->getMessage(), [
-                    'api_key' => substr($apiKey, 0, 4) . '****',
+                Log::error("Failed to fetch gas prices for chain $chain", [
+                    'method' => __METHOD__,
                     'chain' => $chain,
-                    'chainid' => $chainId,
+                    'error' => $e->getMessage(),
+                    'trace' => $e->getTraceAsString()
                 ]);
                 return $this->getFallbackGasPrices();
             }
@@ -634,8 +997,8 @@ class GatewayHandlerService
         if ($price > 0.0) {
             Cache::put($cacheKey, $price, self::CACHE_TTL['PRICE_DATA']);
         } else {
-            Log::warning('Using fallback ETH price');
             $price = 2000.0;
+            Log::warning('Using fallback ETH price due to fetch failure', ['method' => __METHOD__, 'fallback_price' => $price]);
         }
         return $price;
     }
@@ -643,142 +1006,113 @@ class GatewayHandlerService
     private function fetchPriceDataWithProviderFallback(): float
     {
         foreach (self::API_PROVIDERS['price'] as $provider) {
-            $price = $this->fetchPriceDataWithRetry($provider);
-            if ($price > 0.0) {
-                return $price;
+            try {
+                $price = $this->fetchPriceDataWithRetry($provider);
+                if ($price > 0.0) {
+                    return $price;
+                }
+            } catch (Throwable $e) {
+                Log::warning("Failed to fetch price data from $provider after retries, trying next provider", [
+                    'method' => __METHOD__,
+                    'symbol' => 'ethereum',
+                    'provider' => $provider,
+                    'error' => $e->getMessage()
+                ]);
             }
-            Log::warning("Failed to fetch price data from $provider after retries, trying next provider", [
-                'symbol' => 'ethereum',
-            ]);
         }
+        Log::error('All price providers failed for ETH', ['method' => __METHOD__]);
         return 0.0;
     }
 
     private function fetchPriceDataWithRetry(string $provider): float
     {
         $maxRetries = self::MAX_RETRIES;
-        $rateLimitRetries = 0;
         for ($attempt = 0; $attempt < $maxRetries; $attempt++) {
-            $result = $this->fetchPriceDataFromProvider($provider);
-            $price = $result['price'] ?? 0.0;
-            if ($price > 0.0) {
-                return $price;
-            }
-            if (($result['status'] ?? 0) === 429) {
-                $rateLimitRetries++;
-                if ($rateLimitRetries > self::RATE_LIMIT_MAX_RETRIES) {
-                    Log::warning("Rate limit retry limit exceeded for $provider price", [
-                        'symbol' => 'ethereum',
-                    ]);
-                    return 0.0;
+            try {
+                $result = $this->fetchPriceDataFromProvider($provider);
+                $price = $result['price'] ?? 0.0;
+                if ($price > 0.0) {
+                    return $price;
                 }
-                sleep(self::RATE_LIMIT_RETRY_DELAY);
-                continue;
-            }
-            if ($attempt < $maxRetries - 1) {
-                $delay = self::RETRY_BASE_DELAY * pow(2, $attempt);
-                sleep($delay);
+            } catch (Throwable) {
+                if ($attempt < $maxRetries - 1) {
+                    $delay = self::RETRY_BASE_DELAY * pow(2, $attempt);
+                    sleep($delay);
+                }
             }
         }
+        Log::warning("Price fetch failed after max retries for provider $provider", ['method' => __METHOD__, 'provider' => $provider]);
         return 0.0;
     }
 
+    /**
+     * @throws Exception
+     */
     private function fetchPriceDataFromProvider(string $provider): array
     {
-        try {
-            return match ($provider) {
-                'cryptocompare' => $this->fetchPriceDataFromCryptoCompare(),
-                'coinmarketcap' => $this->fetchPriceDataFromCoinMarketCap(),
-                'coingecko' => $this->fetchPriceDataFromCoinGeckoSimple(),
-                default => ['price' => 0.0, 'status' => 501],
-            };
-        } catch (Throwable $e) {
-            Log::error("Exception fetching price data from $provider", [
-                'symbol' => 'ethereum',
-                'error' => $e->getMessage()
-            ]);
-            return ['price' => 0.0, 'status' => 500];
-        }
+        return match ($provider) {
+            'cryptocompare' => $this->fetchPriceDataFromCryptoCompare(),
+            'coinmarketcap' => $this->fetchPriceDataFromCoinMarketCap(),
+            'coingecko' => $this->fetchPriceDataFromCoinGeckoSimple(),
+            default => ['price' => 0.0],
+        };
     }
 
     /**
-     * @throws ConnectionException
+     * @throws Exception
      */
     private function fetchPriceDataFromCryptoCompare(): array
     {
         $mappedSymbol = $this->getMappedSymbol('ethereum', 'cryptocompare');
         $apiKey = config('services.cryptocompare.key');
         if (!$apiKey) {
-            Log::warning('CryptoCompare API key not configured, skipping primary price provider.');
-            return ['price' => 0.0, 'status' => 401];
+            Log::error('CryptoCompare API key missing', ['method' => __METHOD__]);
+            return ['price' => 0.0];
         }
-        $url = "https://min-api.cryptocompare.com/data/price?fsym=$mappedSymbol&tsyms=USD&api_key=$apiKey";
-        $response = Http::timeout(10)->get($url);
-        if ($response->status() === 429) {
-            return ['price' => 0.0, 'status' => 429];
+        $url = "https://min-api.cryptocompare.com/data/price?fsym=$mappedSymbol&tsyms=USD";
+        $responseData = $this->makeResilientRequest('cryptocompare', $url);
+        $data = $responseData['json'];
+        $price = $data['USD'] ?? 0.0;
+        if (isset($data['Response']) && $data['Response'] === 'Error') {
+            Log::warning('CryptoCompare API returned error response', ['method' => __METHOD__, 'response' => $data]);
+            return ['price' => 0.0];
         }
-        if ($response->successful()) {
-            $data = $response->json();
-            $price = $data['USD'] ?? 0.0;
-            if (isset($data['Response']) && $data['Response'] === 'Error') {
-                Log::warning('CryptoCompare error response', ['message' => $data['Message'] ?? '']);
-                return ['price' => 0.0, 'status' => 400];
-            }
-            return ['price' => (float)$price, 'status' => 200];
-        }
-        return ['price' => 0.0, 'status' => $response->status()];
+        return ['price' => (float)$price];
     }
 
     /**
-     * @throws ConnectionException
+     * @throws Exception
      */
     private function fetchPriceDataFromCoinMarketCap(): array
     {
         $mappedSymbol = strtoupper($this->getMappedSymbol('ethereum', 'coinmarketcap'));
         $apiKey = config('services.coinmarketcap.key');
         if (!$apiKey) {
-            Log::warning('CoinMarketCap API key not configured, skipping secondary price provider.');
-            return ['price' => 0.0, 'status' => 401];
+            Log::error('CoinMarketCap API key missing', ['method' => __METHOD__]);
+            return ['price' => 0.0];
         }
         $url = "https://pro-api.coinmarketcap.com/v1/cryptocurrency/quotes/latest";
-        $response = Http::timeout(10)
-            ->withHeaders(['X-CMC_PRO_API_KEY' => $apiKey])
-            ->get($url, ['symbol' => $mappedSymbol, 'convert' => 'USD']);
-        if ($response->status() === 429) {
-            return ['price' => 0.0, 'status' => 429];
+        $params = ['symbol' => $mappedSymbol, 'convert' => 'USD'];
+        $responseData = $this->makeResilientRequest('coinmarketcap', $url, $params);
+        $data = $responseData['json'];
+        $price = $data['data'][$mappedSymbol]['quote']['USD']['price'] ?? 0.0;
+        if (!$price && !empty($data['status']['error_message'])) {
+            Log::warning('CoinMarketCap error response', ['method' => __METHOD__, 'message' => $data['status']['error_message']]);
         }
-        if ($response->successful()) {
-            $data = $response->json();
-            $price = $data['data'][$mappedSymbol]['quote']['USD']['price'] ?? 0.0;
-            if (!$price && !empty($data['status']['error_message'])) {
-                Log::warning('CoinMarketCap error response', ['message' => $data['status']['error_message']]);
-            }
-            return ['price' => (float)$price, 'status' => 200];
-        }
-        return ['price' => 0.0, 'status' => $response->status()];
+        return ['price' => (float)$price];
     }
 
     /**
-     * @throws ConnectionException
+     * @throws Exception
      */
     private function fetchPriceDataFromCoinGeckoSimple(): array
     {
         $mappedSymbol = $this->getMappedSymbol('ethereum', 'coingecko');
-        $apiKey = config('services.coingecko.key', '');
         $url = "https://api.coingecko.com/api/v3/simple/price?ids=$mappedSymbol&vs_currencies=usd";
-        if ($apiKey) {
-            $url .= '&x_cg_api_key=' . $apiKey;
-        }
-        $response = Http::timeout(10)->get($url);
-        if ($response->status() === 429) {
-            return ['price' => 0.0, 'status' => 429];
-        }
-        if ($response->successful()) {
-            $data = $response->json();
-            $price = $data[$mappedSymbol]['usd'] ?? 0.0;
-            return ['price' => (float)$price, 'status' => 200];
-        }
-        return ['price' => 0.0, 'status' => $response->status()];
+        $responseData = $this->makeResilientRequest('coingecko', $url);
+        $data = $responseData['json'];
+        $price = $data[$mappedSymbol]['usd'] ?? 0.0;
+        return ['price' => (float)$price];
     }
 
     private function fetchCoinGeckoMarketData(array $coinIds): array
@@ -793,12 +1127,19 @@ class GatewayHandlerService
         if (is_array($cached) && !empty($cached)) {
             return $cached;
         }
-        $result = $this->fetchMarketDataFromCoinGeckoWithRetry($coinIds);
-        if (!empty($result)) {
-            Cache::put($cacheKey, $result, self::CACHE_TTL['PRICE_DATA']);
-            return $result;
+        try {
+            $result = $this->fetchMarketDataFromCoinGeckoWithRetry($coinIds);
+            if (!empty($result)) {
+                Cache::put($cacheKey, $result, self::CACHE_TTL['PRICE_DATA']);
+                return $result;
+            }
+        } catch (Throwable $e) {
+            Log::warning('CoinGecko market data fetch failed, falling back to CoinPaprika', [
+                'method' => __METHOD__,
+                'coin_ids' => $coinIds,
+                'error' => $e->getMessage()
+            ]);
         }
-        Log::warning('Falling back to CoinPaprika for market data after CoinGecko failed');
         $fallbackResult = $this->fetchMarketDataFromCoinPaprika($coinIds);
         if (!empty($fallbackResult)) {
             Cache::put($cacheKey, $fallbackResult, self::CACHE_TTL['PRICE_DATA']);
@@ -809,7 +1150,6 @@ class GatewayHandlerService
     private function fetchMarketDataFromCoinGeckoWithRetry(array $coinIds): array
     {
         $maxRetries = self::MAX_RETRIES;
-        $rateLimitRetries = 0;
         for ($attempt = 0; $attempt < $maxRetries; $attempt++) {
             try {
                 $result = $this->fetchMarketDataFromCoinGecko($coinIds);
@@ -822,14 +1162,9 @@ class GatewayHandlerService
                 }
             } catch (Throwable $e) {
                 if (str_contains($e->getMessage(), '429') || str_contains($e->getMessage(), 'rate limit')) {
-                    $rateLimitRetries++;
-                    if ($rateLimitRetries > self::RATE_LIMIT_MAX_RETRIES) {
-                        Log::warning('Rate limit retry limit exceeded for CoinGecko market data', [
-                            'attempts' => $rateLimitRetries
-                        ]);
-                        break;
+                    if ($attempt < $maxRetries - 1) {
+                        sleep(self::RATE_LIMIT_RETRY_DELAY);
                     }
-                    sleep(self::RATE_LIMIT_RETRY_DELAY);
                     continue;
                 }
                 if ($attempt < $maxRetries - 1) {
@@ -838,6 +1173,7 @@ class GatewayHandlerService
                 }
             }
         }
+        Log::warning('CoinGecko market data fetch exhausted retries', ['method' => __METHOD__, 'coin_ids' => $coinIds]);
         return [];
     }
 
@@ -850,14 +1186,19 @@ class GatewayHandlerService
                 'temp_coingecko_market_data',
                 $url,
                 self::CACHE_TTL['PRICE_DATA'],
-                'Failed to fetch CoinGecko market data for specific IDs'
+                'Failed to fetch CoinGecko market data for specific IDs',
+                'coingecko'
             );
             if (!empty($rawData)) {
                 return $this->transformCoinGeckoMarketData($rawData);
             }
             return [];
         } catch (Throwable $e) {
-            Log::warning('CoinGecko market data fetch failed', ['error' => $e->getMessage()]);
+            Log::error("Failed to fetch market data from CoinGecko", [
+                'method' => __METHOD__,
+                'coin_ids' => $coinIds,
+                'error' => $e->getMessage()
+            ]);
             return [];
         }
     }
@@ -885,24 +1226,27 @@ class GatewayHandlerService
         foreach ($coinIds as $coinId) {
             try {
                 $mappedId = $this->getMappedSymbol($coinId, 'coinpaprika');
-                $response = Http::timeout(10)->get("https://api.coinpaprika.com/v1/tickers/$mappedId");
-                if ($response->successful()) {
-                    $data = $response->json();
-                    $quotes = $data['quotes']['USD'] ?? [];
-                    $results[] = [
-                        'id' => $coinId,
-                        'symbol' => $data['symbol'] ?? '',
-                        'name' => $data['name'] ?? '',
-                        'image' => asset('assets/images/crypto.png'),
-                        'current_price' => $quotes['price'] ?? 0.0,
-                        'market_cap' => $quotes['market_cap'] ?? 0,
-                        'price_change_24h' => 0.0,
-                        'price_change_percentage_24h' => $quotes['percent_change_24h'] ?? 0.0,
-                        'total_volume' => $quotes['volume_24h'] ?? 0.0,
-                    ];
-                }
+                $url = "https://api.coinpaprika.com/v1/tickers/$mappedId";
+                $responseData = $this->makeResilientRequest('coinpaprika', $url);
+                $data = $responseData['json'];
+                $quotes = $data['quotes']['USD'] ?? [];
+                $results[] = [
+                    'id' => $coinId,
+                    'symbol' => $data['symbol'] ?? '',
+                    'name' => $data['name'] ?? '',
+                    'image' => asset('assets/images/crypto.png'),
+                    'current_price' => $quotes['price'] ?? 0.0,
+                    'market_cap' => $quotes['market_cap'] ?? 0,
+                    'price_change_24h' => 0.0,
+                    'price_change_percentage_24h' => $quotes['percent_change_24h'] ?? 0.0,
+                    'total_volume' => $quotes['volume_24h'] ?? 0.0,
+                ];
             } catch (Throwable $e) {
-                Log::warning("Failed to fetch $coinId from CoinPaprika", ['error' => $e->getMessage()]);
+                Log::warning("Failed to fetch $coinId from CoinPaprika", [
+                    'method' => __METHOD__,
+                    'coin_id' => $coinId,
+                    'error' => $e->getMessage()
+                ]);
             }
         }
         return $results;
@@ -920,12 +1264,10 @@ class GatewayHandlerService
             ->unique()
             ->all();
         if (empty($coinIds)) {
-            Log::warning('No CoinGecko IDs found in gateway configuration.');
             return [];
         }
         $coinData = $this->fetchCoinGeckoMarketData($coinIds);
         if (empty($coinData)) {
-            Log::warning('Received empty market data from all providers.', ['ids' => $coinIds]);
             return [];
         }
         $coinDataById = collect($coinData)->keyBy('id')->all();
@@ -948,9 +1290,8 @@ class GatewayHandlerService
             $url .= "?api_key=" . $apiKey;
         }
         $cachedData = Cache::remember($cacheKey, $ttl, function () use ($url) {
-            $response = $this->fetchFromAPIWithRetry($url);
+            $response = $this->fetchFromAPIWithRetry($url, 'cryptocompare');
             if ($response['error'] ?? false) {
-                Log::warning("Failed to fetch CryptoCompare wallets data for caching.");
                 return ['Data' => [], 'Message' => 'API fetch failed', 'Type' => 0];
             }
             $data = $response['data'] ?? [];
@@ -998,19 +1339,15 @@ class GatewayHandlerService
         return null;
     }
 
-    private function fetchData(string $cacheKey, string $apiUrl, int $ttl, string $errorContext = ''): array
+    private function fetchData(string $cacheKey, string $apiUrl, int $ttl, string $errorContext, string $provider): array
     {
         $cached = Cache::get($cacheKey);
         if (is_array($cached) && !empty($cached)) {
             return $cached;
         }
-        $response = $this->fetchFromAPIWithRetry($apiUrl);
+        $response = $this->fetchFromAPIWithRetry($apiUrl, $provider);
         if ($response['error'] ?? false) {
-            Log::warning("API fetch failed after all retries.", [
-                'context' => $errorContext,
-                'url' => $apiUrl,
-                'final_status' => $response['status'] ?? 'N/A'
-            ]);
+            Log::warning($errorContext, ['method' => __METHOD__, 'provider' => $provider, 'url' => $apiUrl]);
             return [];
         }
         $data = $response['data'] ?? [];
@@ -1020,68 +1357,23 @@ class GatewayHandlerService
         return $data;
     }
 
-    private function fetchFromAPIWithRetry(string $apiUrl): array
-    {
-        $retries = 0;
-        $response = [];
-        while ($retries < self::MAX_RETRIES) {
-            $response = $this->makeApiRequest($apiUrl);
-            if ($response['status'] >= 200 && $response['status'] < 300) {
-                return ['error' => false, 'data' => $response['data']];
-            }
-            if ($response['status'] === 429) {
-                Log::warning("Rate limit hit, retrying utility fetch", ['url' => $apiUrl]);
-                sleep(self::RATE_LIMIT_RETRY_DELAY);
-                $retries++;
-                continue;
-            }
-            $retries++;
-            if ($retries < self::MAX_RETRIES) {
-                $delay = self::RETRY_BASE_DELAY * pow(2, $retries - 1);
-                sleep($delay);
-            }
-        }
-        return ['error' => true, 'status' => $response['status'] ?? 500, 'data' => []];
-    }
-
-    private function makeApiRequest(string $apiUrl): array
+    private function fetchFromAPIWithRetry(string $apiUrl, string $provider): array
     {
         try {
-            $urlWithKey = $apiUrl;
-            $coingeckoKey = config('services.coingecko.key', '');
-            if ($coingeckoKey && str_contains($apiUrl, 'coingecko.com') && !str_contains($apiUrl, 'x_cg_api_key=')) {
-                $urlWithKey = $apiUrl . (str_contains($apiUrl, '?') ? '&' : '?') . 'x_cg_api_key=' . $coingeckoKey;
+            $responseData = $this->makeResilientRequest($provider, $apiUrl, [], 20);
+            if ($responseData['status'] >= 200 && $responseData['status'] < 300) {
+                return ['error' => false, 'data' => $responseData['json']];
             }
-            $cryptoCompareKey = config('services.cryptocompare.key');
-            if ($cryptoCompareKey && str_contains($apiUrl, 'cryptocompare.com') && !str_contains($apiUrl, 'api_key=')) {
-                $urlWithKey = $apiUrl . (str_contains($apiUrl, '?') ? '&' : '?') . 'api_key=' . $cryptoCompareKey;
-            }
-            $headers = [];
-            $response = Http::timeout(20)->withHeaders($headers)->get($urlWithKey);
-            return [
-                'status' => $response->status(),
-                'data' => $response->json() ?? [],
-            ];
-        } catch (ConnectionException $e) {
-            Log::error("API request connection exception", ['url' => $apiUrl, 'error' => $e->getMessage()]);
-            return ['status' => 504, 'data' => []];
-        } catch (Exception $e) {
-            Log::error("Generic API request exception", ['url' => $apiUrl, 'error' => $e->getMessage()]);
-            return ['status' => 500, 'data' => []];
-        }
-    }
-
-    /**
-     * Helper to handle common API errors (refactored for loop reuse)
-     * @throws Exception
-     */
-    private function handleApiError($response): void
-    {
-        if ($response->status() === 429) {
-            throw new Exception('Rate limit exceeded', 429);
-        }
-        if (!$response->successful()) {
-            throw new Exception("Failed to fetch chart data: " . $response->status());
+            return ['error' => true, 'status' => $responseData['status'], 'data' => []];
+        } catch (Throwable $e) {
+            Log::error("API fetch with retry failed", [
+                'method' => __METHOD__,
+                'provider' => $provider,
+                'url' => $apiUrl,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            return ['error' => true, 'status' => 500, 'data' => []];
         }
     }
 }

@@ -292,7 +292,13 @@
                         price: pairData.price || String(chartData.value.data[chartData.value.data.length - 1]?.close || 0)
                     };
 
-                    chartStore.initializeCandlesFromForexData(symbol, formattedData, parseFloat(formattedData.price));
+                    const nextUrl = response.data.next_url || null;
+                    chartStore.initializeCandlesFromForexData(
+                        symbol,
+                        chartData.value.data,
+                        parseFloat(formattedData.price),
+                        nextUrl
+                    );
                     hasChartData.value = true;
                 }
 
@@ -730,13 +736,13 @@
 </template>
 
 <style scoped>
-@media (max-width: 640px) {
-    .padding-bottom {
-        margin-bottom: 50px;
-    }
+    @media (max-width: 640px) {
+        .padding-bottom {
+            margin-bottom: 50px;
+        }
 
-    .height-300 {
-        height: 300px !important;
+        .height-300 {
+            height: 300px !important;
+        }
     }
-}
 </style>

@@ -1,13 +1,13 @@
 <script setup lang="ts">
-import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
-import { ArrowDown, ArrowUp, Maximize2, Radio, ZoomIn, ZoomOut } from 'lucide-vue-next';
-import { OpenTrade, TradeWithPnL, useChartStore } from '@/stores/chartStore';
-import { router } from '@inertiajs/vue3';
-import type { CandlestickData, IChartApi, ISeriesApi, MouseEventParams } from 'lightweight-charts';
-import { createChart } from 'lightweight-charts';
-import seedrandom from 'seedrandom';
+    import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
+    import { ArrowDown, ArrowUp, LoaderCircle, Maximize2, Radio, ZoomIn, ZoomOut } from 'lucide-vue-next';
+    import { OpenTrade, TradeWithPnL, useChartStore } from '@/stores/chartStore';
+    import { router } from '@inertiajs/vue3';
+    import type { CandlestickData, IChartApi, ISeriesApi, MouseEventParams, LogicalRange } from 'lightweight-charts';
+    import { createChart } from 'lightweight-charts';
+    import seedrandom from 'seedrandom';
 
-interface Candle {
+    interface Candle {
         time: number
         open: number
         high: number
@@ -63,6 +63,10 @@ interface Candle {
     let streamingDataProvider: Generator<CandlestickData<number>, void, unknown> | null = null
     let mo: MutationObserver | null = null
     let timeSyncInterval: ReturnType<typeof setInterval> | null = null
+
+    let isLoadingHistoricalData = ref(false)
+    let hasSubscribedToRange = false
+    const SCROLL_THRESHOLD = 10
 
     const TICK_MS = 2000
     const UPDATES_PER_CANDLE = 20
@@ -311,6 +315,85 @@ interface Candle {
                 chartStore.updateTradePnL(t.id, currentPrice.value)
             }
         })
+    }
+
+    async function loadMoreHistoricalData() {
+        if (isLoadingHistoricalData.value) {
+            return;
+        }
+
+        const pairData = chartStore.currentPairData;
+        if (!pairData) {
+            return;
+        }
+
+        if (!pairData.hasMoreHistoricalData || !pairData.nextUrl) {
+            return;
+        }
+
+        isLoadingHistoricalData.value = true;
+        chartStore.setHistoricalLoadingState(props.pair, true);
+
+        try {
+
+            const response = await fetch(pairData.nextUrl);
+
+            if (!response.ok) {
+                throw new Error(`Failed to fetch historical data: ${response.status}`);
+            }
+
+            const data = await response.json();
+
+            if (!data.success || !data.data || data.data.length === 0) {
+                chartStore.prependHistoricalCandles(props.pair, [], null);
+                return;
+            }
+
+            const historicalCandles: Candle[] = data.data.map((item: any) => ({
+                time: item.time,
+                open: item.open,
+                high: item.high,
+                low: item.low,
+                close: item.close,
+                volume: item.volume || 0
+            }));
+
+            chartStore.prependHistoricalCandles(
+                props.pair,
+                historicalCandles,
+                data.next_url || null
+            );
+
+            if (candlestickSeries && candles.value.length > 0) {
+                const lwData = candles.value.map(mapToLWData);
+                candlestickSeries.setData(lwData);
+            }
+
+        } catch (error) {
+            chartStore.setHistoricalLoadingState(props.pair, false);
+        } finally {
+            isLoadingHistoricalData.value = false;
+        }
+    }
+
+    function setupInfiniteScroll() {
+        if (!chart || hasSubscribedToRange) {
+            return;
+        }
+
+        hasSubscribedToRange = true;
+
+        chart.timeScale().subscribeVisibleLogicalRangeChange((logicalRange: LogicalRange | null) => {
+            if (!logicalRange) {
+                return;
+            }
+
+            const barsFromStart = logicalRange.from;
+
+            if (barsFromStart <= SCROLL_THRESHOLD) {
+                loadMoreHistoricalData();
+            }
+        });
     }
 
     function* createRealtimeTickGenerator(historicalCandles: Candle[]): Generator<CandlestickData<number>, void, unknown> {
@@ -633,6 +716,11 @@ interface Candle {
             candlestickSeries.setData(lwData)
         }
 
+        if (hasSubscribedToRange) {
+            hasSubscribedToRange = false;
+            setupInfiniteScroll();
+        }
+
         updateCurrentPriceLine();
     };
 
@@ -832,6 +920,8 @@ interface Candle {
 
             chart.subscribeCrosshairMove(handleCrosshairMove)
 
+            setupInfiniteScroll()
+
             nextTick(() => {
                 if (candles.value.length > 0 && candlestickSeries) {
                     const lwData = candles.value.map(mapToLWData)
@@ -952,6 +1042,47 @@ interface Candle {
         timeSyncInterval = setInterval(syncServerTime, 5 * 60 * 1000);
     })
 
+    onBeforeUnmount(() => {
+        isComponentMounted.value = false;
+
+        if (tickInterval) {
+            clearInterval(tickInterval)
+            tickInterval = null
+        }
+
+        if (tradeExpiryCheckInterval) {
+            clearInterval(tradeExpiryCheckInterval)
+            tradeExpiryCheckInterval = null
+        }
+
+        if (timeSyncInterval) {
+            clearInterval(timeSyncInterval)
+            timeSyncInterval = null
+        }
+
+        if (mo) {
+            mo.disconnect()
+            mo = null
+        }
+
+        if (resizeObserver && chartContainer.value) {
+            resizeObserver.unobserve(chartContainer.value)
+            resizeObserver.disconnect()
+            resizeObserver = null
+        }
+
+        window.removeEventListener('resize', handleResize)
+
+        if (chart) {
+            chart.remove()
+            chart = null
+        }
+
+        candlestickSeries = null
+        currentPriceLineId = null
+        streamingDataProvider = null
+    })
+
     watch([isDark], () => {
         applyChartTheme();
     })
@@ -964,11 +1095,18 @@ interface Candle {
         streamingDataProvider = null
         chartStore.setPair(newPair)
 
+        hasSubscribedToRange = false
+        isLoadingHistoricalData.value = false
+
         await syncServerTime();
         initializeSeededRNG(newPair)
 
         initPrice()
         dataSet.value = false
+
+        if (chart) {
+            setupInfiniteScroll()
+        }
     })
 
     watch(() => props.price, () => {
@@ -1009,6 +1147,9 @@ interface Candle {
 
                 prepareSimulationFromBackend();
                 startTicking();
+            } else if (newCandles.length && dataSet.value && candlestickSeries) {
+                const lwData = newCandles.map(mapToLWData);
+                candlestickSeries.setData(lwData);
             }
         } catch (error) {
             console.error('Error processing candles:', error);
@@ -1048,62 +1189,6 @@ interface Candle {
             prepareSimulationFromBackend();
         }
     }, { deep: true });
-
-    onBeforeUnmount(() => {
-        isComponentMounted.value = false;
-
-        if (tickInterval) {
-            clearInterval(tickInterval);
-            tickInterval = null;
-        }
-        if (tradeExpiryCheckInterval) {
-            clearInterval(tradeExpiryCheckInterval);
-            tradeExpiryCheckInterval = null;
-        }
-        if (timeSyncInterval) {
-            clearInterval(timeSyncInterval);
-            timeSyncInterval = null;
-        }
-
-        if (resizeObserver) {
-            if (chartContainer.value) {
-                try {
-                    resizeObserver.unobserve(chartContainer.value);
-                } catch (e) {
-                    console.warn('Error unobserving chartContainer:', e);
-                }
-            }
-            resizeObserver.disconnect();
-            resizeObserver = null;
-        }
-
-        if (mo) {
-            mo.disconnect();
-            mo = null;
-        }
-
-        window.removeEventListener('resize', handleResize);
-
-        if (chart) {
-            try {
-                chart.unsubscribeCrosshairMove(handleCrosshairMove);
-                chart.remove();
-            } catch (e) {
-                console.warn('Error removing chart:', e);
-            }
-            chart = null;
-        }
-
-        candlestickSeries = null;
-        currentPriceLineId = null;
-        tradePriceLineIds.value.clear();
-        streamingDataProvider = null;
-        dataSet.value = false;
-        closingTrades.value.clear();
-
-        isProcessingCandles = false;
-        isChartInitialized = false;
-    });
 </script>
 
 <template>
@@ -1197,6 +1282,10 @@ interface Candle {
         </div>
 
         <div class="relative w-full flex-1 min-h-[250px] sm:min-h-[300px]">
+            <div v-if="isLoadingHistoricalData" class="absolute top-2 left-2 bg-background/90 backdrop-blur-sm border border-border rounded-lg px-3 py-2 z-20 flex items-center gap-2">
+                <LoaderCircle class="h-5 w-5 animate-spin" />
+            </div>
+
             <div v-if="activePairTrades.length > 0"
                  class="absolute top-2 left-2 bg-gradient-to-br from-background to-background/95 backdrop-blur-md border border-border/50 rounded-lg shadow-md z-10 w-[200px] sm:w-[280px] overflow-hidden text-xs">
                 <div class="p-2 border-b border-border/50 bg-background/50">
@@ -1292,21 +1381,21 @@ interface Candle {
 </template>
 
 <style scoped>
-.no-scrollbar::-webkit-scrollbar {
-    display: none;
-}
-.no-scrollbar {
-    -ms-overflow-style: none;
-    scrollbar-width: none;
-}
-
-@media (max-width: 768px) {
-    * {
-        -webkit-tap-highlight-color: transparent;
+    .no-scrollbar::-webkit-scrollbar {
+        display: none;
+    }
+    .no-scrollbar {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
     }
 
-    button {
-        touch-action: manipulation;
+    @media (max-width: 768px) {
+        * {
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        button {
+            touch-action: manipulation;
+        }
     }
-}
 </style>

@@ -23,7 +23,7 @@ class TradeService
 
         $shouldWin = false;
         if ($data['trading_mode'] === 'demo') {
-            $shouldWin = mt_rand(0, 99) < 90;
+            $shouldWin = true;
         }
 
         $execution = DB::transaction(function () use ($user, $data, $expiryTime, $shouldWin) {
@@ -95,19 +95,6 @@ class TradeService
 
             if ($trade->status !== 'Open') {
                 return false;
-            }
-
-            if ($trade->trading_mode === 'demo' && $trade->is_demo_forced_win && $isAutoClose) {
-
-                if ($data['pnl'] < 0) {
-
-                    $forceWin = mt_rand(0, 100) / 100 < 0.5;
-
-                    if ($forceWin) {
-                        $forcedPnL = $trade->amount * 0.05;
-                        $data['pnl'] = $forcedPnL;
-                    }
-                }
             }
 
             $updated = $trade->update([

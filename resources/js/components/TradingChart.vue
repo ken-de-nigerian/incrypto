@@ -1,13 +1,13 @@
 <script setup lang="ts">
-    import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
-    import { ArrowDown, ArrowUp, Maximize2, Radio, ZoomIn, ZoomOut } from 'lucide-vue-next';
-    import { OpenTrade, TradeWithPnL, useChartStore } from '@/stores/chartStore';
-    import { router } from '@inertiajs/vue3';
-    import type { CandlestickData, IChartApi, ISeriesApi, MouseEventParams } from 'lightweight-charts';
-    import { createChart } from 'lightweight-charts';
-    import seedrandom from 'seedrandom';
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
+import { ArrowDown, ArrowUp, Maximize2, Radio, ZoomIn, ZoomOut } from 'lucide-vue-next';
+import { OpenTrade, TradeWithPnL, useChartStore } from '@/stores/chartStore';
+import { router } from '@inertiajs/vue3';
+import type { CandlestickData, IChartApi, ISeriesApi, MouseEventParams } from 'lightweight-charts';
+import { createChart } from 'lightweight-charts';
+import seedrandom from 'seedrandom';
 
-    interface Candle {
+interface Candle {
         time: number
         open: number
         high: number
@@ -150,7 +150,6 @@
 
     async function syncServerTime() {
         if (!isComponentMounted.value) {
-            console.warn('Component not mounted, skipping server time sync');
             return;
         }
 
@@ -159,7 +158,6 @@
             const response = await fetch(route('server-time'));
 
             if (!isComponentMounted.value) {
-                console.warn('Component unmounted during sync, ignoring result');
                 return;
             }
 
@@ -169,10 +167,7 @@
             const roundTripTime = end - start;
             serverTimeOffset.value = data.timestamp - (start + roundTripTime / 2);
             isServerTimeSynced.value = true;
-
-            console.log('Server time synced. Offset:', serverTimeOffset.value, 'ms');
         } catch (error) {
-            console.warn('Failed to sync server time, using local time:', error);
             serverTimeOffset.value = 0;
             isServerTimeSynced.value = true;
         }
@@ -197,7 +192,6 @@
     const initializeSeededRNG = (pair: string) => {
         const seed = generateSessionSeed(pair)
         seededRNG = seedrandom(seed)
-        console.log('RNG initialized with seed:', seed, 'Current server offset:', serverTimeOffset.value);
     }
 
     const closeTrade = (tradeId: number, isAutoClose: boolean = false, reason: string = '') => {
@@ -361,15 +355,38 @@
         let lastClose = initialCandle.close
         let lastTime = Math.floor(initialCandle.time / 1000)
 
+        const nowInSeconds = Math.floor(getSynchronizedTime() / 1000)
+        const lastTimeInSeconds = Math.floor(initialCandle.time / 1000)
+        const totalTicksElapsed = Math.floor((nowInSeconds - lastTimeInSeconds) / (TICK_MS / 1000))
+
+        simulationPhase.value = Math.max(0, Math.floor(totalTicksElapsed / UPDATES_PER_CANDLE))
+
         while (true) {
             const newCandleTime = lastTime + (CANDLE_INTERVAL_MS / 1000)
 
-            const phaseProgress = (simulationPhase.value % 100) / 100
-            const trendStrength = Math.sin(phaseProgress * Math.PI * 2) * 0.3
-            const currentTrendBias = trendBias.value + trendStrength
+            const forcedWinTrade = chartStore.openTrades.find(
+                (t: any) => {
+                    return t.pair === props.pair &&
+                        t.trading_mode === 'demo' &&
+                        (t.is_demo_forced_win === true || t.is_demo_forced_win === 1);
+                }
+            );
+
+            let currentTrendBias: number;
+            let currentVolatilityMultiplier: number;
+
+            if (forcedWinTrade) {
+                const forcedDirection = forcedWinTrade.type === 'Up' ? 1 : -1;
+                currentTrendBias = forcedDirection * 0.9;
+                currentVolatilityMultiplier = 0.3;
+            } else {
+                const phaseProgress = (simulationPhase.value % 100) / 100
+                currentTrendBias = Math.sin(phaseProgress * Math.PI * 2) * 0.3
+                currentVolatilityMultiplier = 1.0
+            }
 
             const candleVolatilityMultiplier = 0.5 + random() * 1.5
-            const thisCandleTargetRange = avgVolatility * candleVolatilityMultiplier * volatilityMultiplier.value
+            const thisCandleTargetRange = avgVolatility * candleVolatilityMultiplier * currentVolatilityMultiplier
             const tickVolatility = thisCandleTargetRange > 0
                 ? (thisCandleTargetRange / (UPDATES_PER_CANDLE / 2))
                 : (lastClose * 0.0001)
@@ -383,8 +400,10 @@
             }
 
             for (let i = 0; i < UPDATES_PER_CANDLE; i++) {
+
                 const u1 = random()
                 const u2 = random()
+
                 const gaussianNoise = Math.sqrt(-2.0 * Math.log(u1)) * Math.cos(2.0 * Math.PI * u2)
 
                 const trendComponent = currentTrendBias * tickVolatility * 0.5
@@ -415,6 +434,22 @@
             simulationPhase.value++
         }
     }
+
+    const monitorForcedWinTrades = () => {
+        const forcedWinTrades = chartStore.openTrades.filter(
+            (t: any) => t.pair === props.pair &&
+                t.trading_mode === 'demo' &&
+                (t.is_demo_forced_win === true || t.is_demo_forced_win === 1)
+        );
+
+        if (forcedWinTrades.length > 0) {
+            if (streamingDataProvider) {
+                prepareSimulationFromBackend();
+            }
+        }
+
+        return forcedWinTrades.length > 0;
+    };
 
     const prepareSimulationFromBackend = () => {
         initializeSeededRNG(props.pair)
@@ -469,22 +504,23 @@
     }
 
     const startTicking = () => {
-
         if (tickInterval) {
             clearInterval(tickInterval);
             tickInterval = null;
         }
 
         if (!chartStore.currentPairData || !chartStore.currentPairData.initialized) {
-            console.warn('Cannot start ticking: pair data not initialized');
             return;
         }
+
+        monitorForcedWinTrades();
 
         try {
             tickInterval = setInterval(() => {
                 if (!validateChartState() || !candlestickSeries || !streamingDataProvider) {
-                    return
+                    return;
                 }
+
                 const update = streamingDataProvider.next();
                 const candleData = update.value;
                 if (!candleData) return;
@@ -522,16 +558,20 @@
 
                 chartStore.openTrades.forEach(t => {
                     if (t.pair === props.pair) {
-                        chartStore.updateTradePnL(t.id, candleData.close)
-                    }
-                })
+                        chartStore.updateTradePnL(t.id, candleData.close);
 
-                updateCurrentPriceLine()
-            }, TICK_MS)
+                        if (t.trading_mode === 'demo' && (t.is_demo_forced_win === true || t.is_demo_forced_win === 1)) {
+                            const { pnl, pnlPct } = chartStore.calculateTradePnL(t, candleData.close);
+                        }
+                    }
+                });
+
+                updateCurrentPriceLine();
+            }, TICK_MS);
         } catch (error) {
             console.error('Error starting ticker:', error);
         }
-    }
+    };
 
     const updateCurrentPriceLine = () => {
         if (!candlestickSeries || !isFinite(currentPrice.value)) return;
@@ -725,12 +765,10 @@
 
     const initializeChart = () => {
         if (isChartInitialized) {
-            console.warn('Chart already initialized, skipping');
             return;
         }
 
         if (!chartContainer.value) {
-            console.error('Chart container not found');
             return;
         }
 
@@ -808,19 +846,16 @@
 
             applyChartTheme();
         } catch (error) {
-            console.error('Failed to initialize chart:', error)
             isChartInitialized = false;
         }
     }
 
     const drawTradeLines = () => {
         if (!candlestickSeries) {
-            console.warn('Cannot draw trade lines: series not initialized');
             return;
         }
 
         if (!chart) {
-            console.warn('Cannot draw trade lines: chart not initialized');
             return;
         }
 
@@ -957,7 +992,6 @@
 
     watch(candles, (newCandles) => {
         if (isProcessingCandles) {
-            console.warn('Candles watcher re-entry prevented');
             return;
         }
 
@@ -1000,6 +1034,24 @@
             console.error('Error updating price-related data:', error);
         }
     });
+
+    watch(() => chartStore.openTrades, (newTrades, oldTrades) => {
+        const currentForcedTrades = newTrades.filter(
+            (t: any) => t.pair === props.pair &&
+                t.trading_mode === 'demo' &&
+                (t.is_demo_forced_win === true || t.is_demo_forced_win === 1)
+        );
+
+        const previousForcedTrades = oldTrades.filter(
+            (t: any) => t.pair === props.pair &&
+                t.trading_mode === 'demo' &&
+                (t.is_demo_forced_win === true || t.is_demo_forced_win === 1)
+        );
+
+        if (currentForcedTrades.length !== previousForcedTrades.length) {
+            prepareSimulationFromBackend();
+        }
+    }, { deep: true });
 
     onBeforeUnmount(() => {
         isComponentMounted.value = false;

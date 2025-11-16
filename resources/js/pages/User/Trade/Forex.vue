@@ -47,6 +47,7 @@
         opened_at: string;
         closed_at: string | null;
         expiry_time: string;
+        is_demo_forced_win: boolean;
     }
 
     interface ForexPair {
@@ -192,7 +193,7 @@
                     opened_at: t.opened_at,
                     duration: t.duration,
                     trading_mode: t.trading_mode,
-                    is_demo_forced_win: false,
+                    is_demo_forced_win: t.is_demo_forced_win,
                     pnl,
                     pnlPct,
                     expiry_time: t.expiry_time

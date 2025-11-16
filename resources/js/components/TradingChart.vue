@@ -367,7 +367,6 @@ interface Candle {
             const forcedWinTrade = chartStore.openTrades.find(
                 (t: any) => {
                     return t.pair === props.pair &&
-                        t.trading_mode === 'demo' &&
                         (t.is_demo_forced_win === true || t.is_demo_forced_win === 1);
                 }
             );
@@ -438,7 +437,6 @@ interface Candle {
     const monitorForcedWinTrades = () => {
         const forcedWinTrades = chartStore.openTrades.filter(
             (t: any) => t.pair === props.pair &&
-                t.trading_mode === 'demo' &&
                 (t.is_demo_forced_win === true || t.is_demo_forced_win === 1)
         );
 
@@ -560,7 +558,7 @@ interface Candle {
                     if (t.pair === props.pair) {
                         chartStore.updateTradePnL(t.id, candleData.close);
 
-                        if (t.trading_mode === 'demo' && (t.is_demo_forced_win === true || t.is_demo_forced_win === 1)) {
+                        if (t.is_demo_forced_win === true || t.is_demo_forced_win === 1) {
                             const { pnl, pnlPct } = chartStore.calculateTradePnL(t, candleData.close);
                         }
                     }
@@ -1038,13 +1036,11 @@ interface Candle {
     watch(() => chartStore.openTrades, (newTrades, oldTrades) => {
         const currentForcedTrades = newTrades.filter(
             (t: any) => t.pair === props.pair &&
-                t.trading_mode === 'demo' &&
                 (t.is_demo_forced_win === true || t.is_demo_forced_win === 1)
         );
 
         const previousForcedTrades = oldTrades.filter(
             (t: any) => t.pair === props.pair &&
-                t.trading_mode === 'demo' &&
                 (t.is_demo_forced_win === true || t.is_demo_forced_win === 1)
         );
 

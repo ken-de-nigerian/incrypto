@@ -76,10 +76,7 @@
 
     const serverTimeOffset = ref(0)
     const isServerTimeSynced = ref(false)
-
     const simulationPhase = ref(0)
-    const trendBias = ref(0)
-    const volatilityMultiplier = ref(1.0)
 
     const upColorLW = computed(() => isDark.value ? '#26a69a' : '#10b981')
     const downColorLW = computed(() => isDark.value ? '#ef5350' : '#ef4444')
@@ -174,6 +171,7 @@
         } catch (error) {
             serverTimeOffset.value = 0;
             isServerTimeSynced.value = true;
+            console.error('Error syncing server time:', error);
         }
     }
 
@@ -371,6 +369,7 @@
 
         } catch (error) {
             chartStore.setHistoricalLoadingState(props.pair, false);
+            console.error('Error loading more historical data:', error);
         } finally {
             isLoadingHistoricalData.value = false;
         }
@@ -642,7 +641,7 @@
                         chartStore.updateTradePnL(t.id, candleData.close);
 
                         if (t.is_demo_forced_win === true || t.is_demo_forced_win === 1) {
-                            const { pnl, pnlPct } = chartStore.calculateTradePnL(t, candleData.close);
+                            chartStore.calculateTradePnL(t, candleData.close);
                         }
                     }
                 });
@@ -934,6 +933,7 @@
 
             applyChartTheme();
         } catch (error) {
+            console.error('Error initializing chart:', error);
             isChartInitialized = false;
         }
     }
@@ -949,7 +949,7 @@
 
         try {
 
-            tradePriceLineIds.value.forEach((lineId, tradeId) => {
+            tradePriceLineIds.value.forEach((lineId) => {
                 if (lineId && candlestickSeries) {
                     try {
                         candlestickSeries.removePriceLine(lineId);

@@ -44,15 +44,11 @@ export interface OpenTrade {
     is_demo_forced_win: boolean
     pnl: number
     pnlPct: string
-    accumulated_pnl?: number
-    effective_entry_price?: number
 }
 
 export interface TradeWithPnL extends OpenTrade {
     pnl: number
     pnlPct: string
-    accumulated_pnl?: number
-    effective_entry_price?: number
 }
 
 const MAX_CANDLES = 5000
@@ -61,41 +57,9 @@ const MAX_ZOOM = 10
 const MAX_PAN_THRESHOLD = 100000
 const DEFAULT_CANDLE_INTERVAL_MS = 60000
 let broadcastChannel: BroadcastChannel | null = null
-let masterTabId: string | null = null
-let currentTabId: string | null = null
 
-if (typeof window !== 'undefined') {
-
-    currentTabId = `tab-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
-
-    if ('BroadcastChannel' in window) {
-        broadcastChannel = new BroadcastChannel('forex-chart-sync')
-    }
-
-    const checkMasterTab = () => {
-        const storedMaster = sessionStorage.getItem('forex-master-tab')
-        if (!storedMaster) {
-            masterTabId = currentTabId
-            sessionStorage.setItem('forex-master-tab', currentTabId!)
-        } else {
-            masterTabId = storedMaster
-        }
-    }
-
-    checkMasterTab()
-
-    window.addEventListener('beforeunload', () => {
-        const storedMaster = sessionStorage.getItem('forex-master-tab')
-        if (storedMaster === currentTabId) {
-            sessionStorage.removeItem('forex-master-tab')
-            if (broadcastChannel) {
-                broadcastChannel.postMessage({
-                    type: 'MASTER_TAB_CLOSED',
-                    timestamp: Date.now()
-                })
-            }
-        }
-    })
+if (typeof window !== 'undefined' && 'BroadcastChannel' in window) {
+    broadcastChannel = new BroadcastChannel('forex-chart-sync')
 }
 
 export const useChartStore = defineStore('chart', () => {
@@ -172,43 +136,6 @@ export const useChartStore = defineStore('chart', () => {
                 const { type, payload } = event.data
 
                 switch (type) {
-                    case 'MASTER_TAB_CLOSED':
-                        const storedMaster = sessionStorage.getItem('forex-master-tab')
-                        if (!storedMaster && currentTabId) {
-                            masterTabId = currentTabId
-                            sessionStorage.setItem('forex-master-tab', currentTabId)
-                        }
-                        break
-                    case 'SYNC_STATE_REQUEST':
-                        if (currentTabId === masterTabId) {
-                            broadcastStateChange('FULL_STATE_SYNC', {
-                                pairDataMap: pairDataMap.value,
-                                openTrades: openTrades.value,
-                                selectedPair: selectedPair.value
-                            })
-                        }
-                        break
-                    case 'FULL_STATE_SYNC':
-                        if (currentTabId !== masterTabId && payload) {
-                            if (payload.pairDataMap) {
-                                Object.keys(payload.pairDataMap).forEach(pair => {
-                                    if (!pairDataMap.value[pair]) {
-                                        pairDataMap.value[pair] = payload.pairDataMap[pair]
-                                    } else {
-                                        const masterData = payload.pairDataMap[pair]
-                                        const localData = pairDataMap.value[pair]
-                                        if (masterData.lastCandleTime > localData.lastCandleTime) {
-                                            pairDataMap.value[pair] = masterData
-                                        }
-                                    }
-                                })
-                            }
-                            if (payload.openTrades) {
-                                openTrades.value = payload.openTrades
-                                recalculateOpenTradesPnL()
-                            }
-                        }
-                        break
                     case 'PAIR_DATA_UPDATE':
                         if (pairDataMap.value[payload.pair]) {
                             Object.assign(pairDataMap.value[payload.pair], payload.data)
@@ -272,7 +199,6 @@ export const useChartStore = defineStore('chart', () => {
                         break
                     case 'OPEN_TRADES_UPDATE':
                         openTrades.value = payload.trades
-                        recalculateOpenTradesPnL()
                         break
                     case 'SELECTED_PAIR_CHANGE':
                         selectedPair.value = payload.pair
@@ -284,15 +210,6 @@ export const useChartStore = defineStore('chart', () => {
                 isProcessingBroadcast.value = false
             }
         }
-
-        setTimeout(() => {
-            if (currentTabId !== masterTabId) {
-                broadcastChannel?.postMessage({
-                    type: 'SYNC_STATE_REQUEST',
-                    timestamp: Date.now()
-                })
-            }
-        }, 100)
     }
 
     function setPair(pair: string) {
@@ -323,7 +240,7 @@ export const useChartStore = defineStore('chart', () => {
             pairDataMap.value[pair] = {
                 candles: [],
                 currentPrice: isFinite(initialPrice) && initialPrice > 0 ? initialPrice : 0,
-                lastCandleTime: Math.floor(Date.now() / 1000),
+                lastCandleTime: Date.now(),
                 basePrice: isFinite(initialPrice) && initialPrice > 0 ? initialPrice : 0,
                 candleInterval: DEFAULT_CANDLE_INTERVAL_MS,
                 initialized: false,
@@ -364,7 +281,6 @@ export const useChartStore = defineStore('chart', () => {
             pairData.basePrice = initialPrice
             pairData.nextUrl = nextUrl
             pairData.hasMoreHistoricalData = !!nextUrl
-            pairData.lastCandleTime = Math.floor(Date.now() / 1000)
             broadcastStateChange('CANDLES_INITIALIZED', {
                 pair,
                 data: {
@@ -414,7 +330,7 @@ export const useChartStore = defineStore('chart', () => {
         pairData.hasMoreHistoricalData = !!nextUrl
 
         if (pairData.candles.length > 0) {
-            pairData.lastCandleTime = pairData.candles[pairData.candles.length - 1].time
+            pairData.lastCandleTime = pairData.candles[pairData.candles.length - 1].time * 1000
         }
 
         broadcastStateChange('CANDLES_INITIALIZED', {
@@ -453,7 +369,6 @@ export const useChartStore = defineStore('chart', () => {
             pairData.basePrice = initialPrice
             pairData.nextUrl = nextUrl
             pairData.hasMoreHistoricalData = !!nextUrl
-            pairData.lastCandleTime = Math.floor(Date.now() / 1000)
             broadcastStateChange('CANDLES_INITIALIZED', {
                 pair,
                 data: {
@@ -482,7 +397,7 @@ export const useChartStore = defineStore('chart', () => {
         pairData.hasMoreHistoricalData = !!nextUrl
 
         if (pairData.candles.length > 0) {
-            pairData.lastCandleTime = pairData.candles[pairData.candles.length - 1].time
+            pairData.lastCandleTime = pairData.candles[pairData.candles.length - 1].time * 1000
         }
 
         broadcastStateChange('CANDLES_INITIALIZED', {
@@ -526,10 +441,6 @@ export const useChartStore = defineStore('chart', () => {
 
         if (pairData.candles.length > MAX_CANDLES) {
             pairData.candles = pairData.candles.slice(-MAX_CANDLES)
-        }
-
-        if (pairData.candles.length > 0) {
-            pairData.lastCandleTime = pairData.candles[pairData.candles.length - 1].time
         }
 
         pairData.nextUrl = nextUrl
@@ -600,7 +511,7 @@ export const useChartStore = defineStore('chart', () => {
             pairData.candles.shift()
         }
 
-        pairData.lastCandleTime = Math.max(pairData.lastCandleTime, candle.time)
+        pairData.lastCandleTime = Math.max(pairData.lastCandleTime, candle.time * 1000)
 
         try {
             broadcastStateChange('CANDLE_ADDED', { pair, candle })
@@ -620,7 +531,6 @@ export const useChartStore = defineStore('chart', () => {
         }
 
         const lastCandle = pairData.candles[pairData.candles.length - 1]
-        const original = { ...lastCandle }
 
         for (const key in updates) {
             const value = (updates as any)[key]
@@ -630,8 +540,7 @@ export const useChartStore = defineStore('chart', () => {
         }
 
         if (!isValidCandle(lastCandle)) {
-            console.warn('Updated candle is invalid, reverting:', lastCandle)
-            Object.assign(lastCandle, original)
+            console.warn('Updated candle is invalid, skipping broadcast')
             return
         }
 
@@ -654,13 +563,6 @@ export const useChartStore = defineStore('chart', () => {
         }
 
         pairDataMap.value[pair].currentPrice = price
-        openTrades.value.forEach(trade => {
-            if (trade.pair === pair) {
-                const { pnl, pnlPct } = calculateTradePnL(trade, price)
-                trade.pnl = pnl
-                trade.pnLPct = pnlPct
-            }
-        })
         try {
             broadcastStateChange('CURRENT_PRICE_UPDATE', { pair, price })
         } catch (error) {
@@ -706,56 +608,17 @@ export const useChartStore = defineStore('chart', () => {
             return
         }
 
-        openTrades.value = trades.map(trade => {
-            if (trade.accumulated_pnl === undefined) {
-                trade.accumulated_pnl = 0
-            }
-            if (trade.effective_entry_price === undefined) {
-                trade.effective_entry_price = trade.entry_price
-            }
-            return trade
-        })
-
-        recalculateOpenTradesPnL()
+        openTrades.value = trades
         try {
-            broadcastStateChange('OPEN_TRADES_UPDATE', { trades: openTrades.value })
+            broadcastStateChange('OPEN_TRADES_UPDATE', { trades })
         } catch (error) {
             console.warn('Failed to broadcast open trades update:', error)
         }
     }
 
-    function recalculateOpenTradesPnL() {
-        openTrades.value.forEach(trade => {
-            const pairData = pairDataMap.value[trade.pair]
-            if (pairData && isFinite(pairData.currentPrice) && pairData.currentPrice > 0) {
-                const { pnl, pnlPct } = calculateTradePnL(trade, pairData.currentPrice)
-                trade.pnl = pnl
-                trade.pnlPct = pnlPct
-            } else {
-                trade.pnl = trade.accumulated_pnl || 0
-                trade.pnlPct = '0%'
-            }
-        })
-    }
-
-    function accumulateTradesPnL() {
-        openTrades.value.forEach(trade => {
-            const pairData = pairDataMap.value[trade.pair]
-            if (pairData && isFinite(pairData.currentPrice) && pairData.currentPrice > 0) {
-                const { pnl } = calculateTradePnL(trade, pairData.currentPrice)
-                trade.accumulated_pnl = pnl
-                trade.effective_entry_price = pairData.currentPrice
-                trade.pnl = pnl
-            }
-        })
-
-        try {
-            broadcastStateChange('OPEN_TRADES_UPDATE', { trades: openTrades.value })
-        } catch (error) {
-            console.warn('Failed to broadcast accumulated trades update:', error)
-        }
-    }
-
+    /**
+     * OPTIMIZED: Client-side PnL calculation with proper rounding
+     */
     function getPricePrecision(pair: string): number {
         const symbol = pair.toUpperCase();
         if (symbol.includes('JPY') || symbol.includes('RUB')) {
@@ -779,31 +642,25 @@ export const useChartStore = defineStore('chart', () => {
 
     function calculateTradePnL(trade: OpenTrade, currentPrice: number): { pnl: number, pnlPct: string } {
         if (!trade || !isFinite(currentPrice) || currentPrice <= 0) {
-            return { pnl: trade.accumulated_pnl || 0, pnlPct: '0%' }
+            return { pnl: 0, pnlPct: '0%' }
         }
 
         if (!isFinite(trade.amount) || !isFinite(trade.leverage) || !isFinite(trade.entry_price)) {
-            return { pnl: trade.accumulated_pnl || 0, pnlPct: '0%' }
+            return { pnl: 0, pnlPct: '0%' }
         }
 
         const leverageFactor = trade.leverage || 1
         const roundedPrice = roundPrice(currentPrice, trade.pair)
-
-        const effectiveEntry = trade.effective_entry_price || trade.entry_price
-        const roundedEntry = roundPrice(effectiveEntry, trade.pair)
+        const roundedEntry = roundPrice(trade.entry_price, trade.pair)
 
         const priceChangePercent = trade.type === 'Up'
             ? (roundedPrice - roundedEntry) / roundedEntry
             : (roundedEntry - roundedPrice) / roundedEntry
 
-        const currentSessionPnL = trade.amount * leverageFactor * priceChangePercent
+        const pnl = trade.amount * leverageFactor * priceChangePercent
+        const pnlPct = ((pnl / trade.amount) * 100).toFixed(2)
 
-        const accumulatedPnL = trade.accumulated_pnl || 0
-        const totalPnL = accumulatedPnL + currentSessionPnL
-
-        const pnlPct = ((totalPnL / trade.amount) * 100).toFixed(2)
-
-        return { pnl: totalPnL, pnlPct: pnlPct + '%' }
+        return { pnl, pnlPct: pnlPct + '%' }
     }
 
     function updateTradePnL(tradeId: number, currentPrice: number) {
@@ -826,19 +683,20 @@ export const useChartStore = defineStore('chart', () => {
 
             if (!data.candles || !Array.isArray(data.candles)) {
                 console.warn(`Invalid candles array for ${pair}`)
-                data.candles = []
                 issuesFound = true
             }
 
-            if (data.candles.length > 1) {
+            if (!isFinite(data.currentPrice) || data.currentPrice <= 0) {
+                console.warn(`Invalid currentPrice for ${pair}:`, data.currentPrice)
+                issuesFound = true
+            }
+
+            if (data.candles && data.candles.length > 1) {
                 for (let i = 1; i < data.candles.length; i++) {
                     if (data.candles[i].time <= data.candles[i - 1].time) {
                         console.warn(`Candles out of order for ${pair}, sorting...`)
                         data.candles = sortCandles(deduplicateCandles(data.candles))
                         issuesFound = true
-                        if (data.candles.length > 0) {
-                            data.lastCandleTime = data.candles[data.candles.length - 1].time
-                        }
                         break
                     }
                 }
@@ -849,28 +707,6 @@ export const useChartStore = defineStore('chart', () => {
                 if (validCandles.length !== data.candles.length) {
                     console.warn(`Found ${data.candles.length - validCandles.length} invalid candles for ${pair}`)
                     data.candles = validCandles
-                    issuesFound = true
-                }
-            }
-
-            if (data.candles.length > 0) {
-                if (!isFinite(data.currentPrice) || data.currentPrice <= 0) {
-                    console.warn(`Invalid currentPrice for ${pair}, setting to last valid close`)
-                    data.currentPrice = data.candles[data.candles.length - 1].close
-                    data.basePrice = data.currentPrice
-                    issuesFound = true
-                }
-                if (!isFinite(data.lastCandleTime) || data.lastCandleTime <= 0) {
-                    console.warn(`Invalid lastCandleTime for ${pair}, setting to last candle time`)
-                    data.lastCandleTime = data.candles[data.candles.length - 1].time
-                    issuesFound = true
-                }
-            } else {
-                if (!isFinite(data.currentPrice) || data.currentPrice <= 0) {
-                    console.warn(`No candles and invalid currentPrice for ${pair}, resetting`)
-                    data.currentPrice = 0
-                    data.basePrice = 0
-                    data.lastCandleTime = Math.floor(Date.now() / 1000)
                     issuesFound = true
                 }
             }
@@ -912,17 +748,17 @@ export const useChartStore = defineStore('chart', () => {
     if (typeof window !== 'undefined') {
         setTimeout(() => {
             try {
-                validateDataIntegrity()
+                const isValid = validateDataIntegrity()
+                if (!isValid) {
+                    console.warn('Data integrity issues found during initialization')
+                    clearCorruptedData()
+                }
             } catch (error) {
                 console.error('Error during data validation:', error)
                 clearCorruptedData()
             }
         }, 100)
     }
-
-    const isMasterTab = computed(() => currentTabId === masterTabId)
-    const currentTab = computed(() => currentTabId)
-    const masterTab = computed(() => masterTabId)
 
     return {
         selectedPair,
@@ -957,19 +793,11 @@ export const useChartStore = defineStore('chart', () => {
         setChartError,
         clearChartError,
         clearCorruptedData,
-        recalculateOpenTradesPnL,
-        accumulateTradesPnL,
-        isMasterTab,
-        currentTab,
-        masterTab,
     }
 }, {
     persist: {
         key: 'forex-chart-store',
         storage: localStorage,
-        paths: ['selectedPair', 'zoom', 'panX', 'pairDataMap', 'openTrades'],
-        afterRestore: (ctx) => {
-            ctx.store.recalculateOpenTradesPnL()
-        }
+        paths: ['selectedPair', 'zoom', 'panX', 'pairDataMap']
     }
 })

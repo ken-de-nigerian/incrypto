@@ -70,6 +70,7 @@
 
     const TICK_MS = 2000
     const UPDATES_PER_CANDLE = 20
+    const CANDLE_INTERVAL_MS = TICK_MS * UPDATES_PER_CANDLE
     const TRADE_EXPIRY_CHECK_INTERVAL = 1000
     const CLOSE_BUTTON_DISABLE_THRESHOLD = 30000
 
@@ -303,10 +304,15 @@
         }
 
         if (chartStore.hasPairData && chartStore.currentPairData.currentPrice > 0) {
-            chartStore.recalculateOpenTradesPnL()
         } else {
             chartStore.updateCurrentPrice(props.pair, parsedPrice)
         }
+
+        chartStore.openTrades.forEach(t => {
+            if (t.pair === props.pair) {
+                chartStore.updateTradePnL(t.id, currentPrice.value)
+            }
+        })
     }
 
     async function loadMoreHistoricalData() {
@@ -418,7 +424,7 @@
         } else {
             const basePrice = storedCurrentPrice > 0 ? storedCurrentPrice : (parseFloat(String(props.price)) || 1.085)
             initialCandle = {
-                time: (Math.floor(getSynchronizedTime() / 1000) - 60),
+                time: (Date.now() - CANDLE_INTERVAL_MS),
                 open: basePrice,
                 high: basePrice + basePrice * 0.00025,
                 low: basePrice - basePrice * 0.00025,
@@ -429,16 +435,16 @@
         }
 
         let lastClose = initialCandle.close
-        let lastTime = initialCandle.time
+        let lastTime = Math.floor(initialCandle.time / 1000)
 
         const nowInSeconds = Math.floor(getSynchronizedTime() / 1000)
-        const lastTimeInSeconds = initialCandle.time
+        const lastTimeInSeconds = Math.floor(initialCandle.time / 1000)
         const totalTicksElapsed = Math.floor((nowInSeconds - lastTimeInSeconds) / (TICK_MS / 1000))
 
         simulationPhase.value = Math.max(0, Math.floor(totalTicksElapsed / UPDATES_PER_CANDLE))
 
         while (true) {
-            const newCandleTime = lastTime + 60
+            const newCandleTime = lastTime + (CANDLE_INTERVAL_MS / 1000)
 
             const forcedWinTrade = chartStore.openTrades.find(
                 (t: any) => {
@@ -493,10 +499,6 @@
                 let newClose = currentCandle.close + tickMovement
                 newClose = roundPrice(newClose, props.pair)
 
-                if (!isFinite(newClose) || newClose <= 0) {
-                    newClose = currentCandle.close
-                }
-
                 currentCandle.close = newClose
                 if (newClose > currentCandle.high) {
                     currentCandle.high = newClose
@@ -521,7 +523,7 @@
         );
 
         if (forcedWinTrades.length > 0) {
-            if (chartStore.isMasterTab && streamingDataProvider) {
+            if (streamingDataProvider) {
                 prepareSimulationFromBackend();
             }
         }
@@ -530,16 +532,12 @@
     };
 
     const prepareSimulationFromBackend = () => {
-        if (chartStore.openTrades.length > 0) {
-            chartStore.accumulateTradesPnL()
-        }
-
         initializeSeededRNG(props.pair)
         streamingDataProvider = createRealtimeTickGenerator(candles.value)
     }
 
     const mapToLWData = (candle: Candle): CandlestickData<number> => ({
-        time: candle.time,
+        time: Math.floor(candle.time / 1000),
         open: candle.open,
         high: candle.high,
         low: candle.low,
@@ -598,55 +596,55 @@
         monitorForcedWinTrades();
 
         try {
-
-            const isMaster = chartStore.isMasterTab;
-
             tickInterval = setInterval(() => {
-                if (!validateChartState() || !candlestickSeries) {
+                if (!validateChartState() || !candlestickSeries || !streamingDataProvider) {
                     return;
                 }
 
-                if (isMaster && streamingDataProvider) {
-                    const update = streamingDataProvider.next();
-                    const candleData = update.value;
-                    if (!candleData) return;
+                const update = streamingDataProvider.next();
+                const candleData = update.value;
+                if (!candleData) return;
 
-                    candlestickSeries.update(candleData);
+                candlestickSeries.update(candleData);
 
-                    const internalCandle: Candle = {
-                        time: candleData.time,
-                        open: candleData.open,
-                        high: candleData.high,
-                        low: candleData.low,
-                        close: candleData.close,
-                        volume: Math.floor(Math.random() * 500) + 100,
-                    };
+                const internalCandle: Candle = {
+                    time: candleData.time * 1000,
+                    open: candleData.open,
+                    high: candleData.high,
+                    low: candleData.low,
+                    close: candleData.close,
+                    volume: Math.floor(Math.random() * 500) + 100,
+                };
 
-                    if (candles.value.length > 0) {
-                        const lastCandle = candles.value[candles.value.length - 1];
-                        if (lastCandle.time === candleData.time) {
-                            chartStore.updateLastCandle(props.pair, {
-                                close: candleData.close,
-                                high: candleData.high,
-                                low: candleData.low,
-                                volume: internalCandle.volume
-                            });
-                        } else {
-                            chartStore.addCandle(props.pair, internalCandle);
-                            chartStore.updateLastCandleTime(props.pair, internalCandle.time);
-                        }
+                if (candles.value.length > 0) {
+                    const lastCandle = candles.value[candles.value.length - 1];
+                    if (Math.floor(lastCandle.time / 1000) === candleData.time) {
+                        chartStore.updateLastCandle(props.pair, {
+                            close: candleData.close,
+                            high: candleData.high,
+                            low: candleData.low,
+                            volume: internalCandle.volume
+                        });
                     } else {
                         chartStore.addCandle(props.pair, internalCandle);
                         chartStore.updateLastCandleTime(props.pair, internalCandle.time);
                     }
-
-                    chartStore.updateCurrentPrice(props.pair, candleData.close);
                 } else {
-                    if (candles.value.length > 0) {
-                        const lwData = candles.value.map(mapToLWData);
-                        candlestickSeries.setData(lwData);
-                    }
+                    chartStore.addCandle(props.pair, internalCandle);
+                    chartStore.updateLastCandleTime(props.pair, internalCandle.time);
                 }
+
+                chartStore.updateCurrentPrice(props.pair, candleData.close);
+
+                chartStore.openTrades.forEach(t => {
+                    if (t.pair === props.pair) {
+                        chartStore.updateTradePnL(t.id, candleData.close);
+
+                        if (t.is_demo_forced_win === true || t.is_demo_forced_win === 1) {
+                            chartStore.calculateTradePnL(t, candleData.close);
+                        }
+                    }
+                });
 
                 updateCurrentPriceLine();
             }, TICK_MS);
@@ -1006,10 +1004,7 @@
 
         await syncServerTime();
 
-        const isMaster = chartStore.isMasterTab;
-        if (isMaster) {
-            initializeSeededRNG(props.pair)
-        }
+        initializeSeededRNG(props.pair)
 
         initPrice()
 
@@ -1017,9 +1012,7 @@
 
         requestAnimationFrame(() => {
             initializeChart()
-            if (isMaster) {
-                prepareSimulationFromBackend()
-            }
+            prepareSimulationFromBackend()
             setTimeout(() => {
                 startTicking()
             }, 500)
@@ -1106,10 +1099,7 @@
         isLoadingHistoricalData.value = false
 
         await syncServerTime();
-
-        if (chartStore.isMasterTab) {
-            initializeSeededRNG(newPair)
-        }
+        initializeSeededRNG(newPair)
 
         initPrice()
         dataSet.value = false
@@ -1155,9 +1145,7 @@
                     tickInterval = null;
                 }
 
-                if (chartStore.isMasterTab) {
-                    prepareSimulationFromBackend();
-                }
+                prepareSimulationFromBackend();
                 startTicking();
             } else if (newCandles.length && dataSet.value && candlestickSeries) {
                 const lwData = newCandles.map(mapToLWData);
@@ -1175,6 +1163,9 @@
             if (isFinite(newPrice) && newPrice > 0) {
                 lastPrice.value = oldPrice;
                 updateCurrentPriceLine();
+                activePairTrades.value.forEach(trade => {
+                    chartStore.updateTradePnL(trade.id, newPrice);
+                });
             } else {
                 console.warn('Invalid price update:', newPrice);
             }

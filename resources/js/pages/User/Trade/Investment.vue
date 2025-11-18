@@ -71,6 +71,7 @@
         interest: number | string;
         period: number;
         repeat_time: number;
+        repeat_time_count: number;
         next_time: string;
         last_time: string;
         status: 'running' | 'completed' | 'cancelled';
@@ -99,6 +100,8 @@
         countdown: string;
         percentage: number;
         isExpired: boolean;
+        currentCycle: number;
+        totalCycles: number;
     }
 
     const props = defineProps<{
@@ -186,6 +189,7 @@
             const minimum = typeof plan.minimum === 'string' ? parseFloat(plan.minimum) : plan.minimum;
             const maximum = typeof plan.maximum === 'string' ? parseFloat(plan.maximum) : plan.maximum;
             const interest = typeof plan.interest === 'string' ? parseFloat(plan.interest) : plan.interest;
+            const repeatTime = typeof plan.repeat_time === 'string' ? parseInt(plan.repeat_time) : plan.repeat_time;
             const capitalBack = plan.capital_back_status === 'yes';
 
             return {
@@ -193,6 +197,7 @@
                 minimum,
                 maximum,
                 interest,
+                repeatTime,
                 capitalBack,
                 periodName: plan.plan_time_settings?.name || `${plan.period} Days`
             };
@@ -202,23 +207,41 @@
     const calculateInvestmentProgress = (history: any): InvestmentProgress => {
         const now = currentTime.value;
         const nextPayoutTime = new Date(history.next_time).getTime();
-        const createdTime = new Date(history.created_at).getTime();
 
-        const totalDuration = history.period * 60 * 60 * 1000;
-        const elapsed = now - createdTime;
+        const cycleStartTime = history.last_time
+            ? new Date(history.last_time).getTime()
+            : new Date(history.created_at).getTime();
+
+        const currentCycle = history.repeat_time_count || 0;
+        const totalCycles = history.repeat_time || 1;
+
+        const cycleDuration = history.period * 60 * 60 * 1000;
+
+        const elapsed = now - cycleStartTime;
         const remaining = nextPayoutTime - now;
 
-        if (remaining <= 0 || history.status !== 'running') {
+        if (currentCycle >= totalCycles || history.status !== 'running') {
             return {
-                countdown: 'Matured',
+                countdown: 'Completed',
                 percentage: 100,
-                isExpired: true
+                isExpired: true,
+                currentCycle,
+                totalCycles
             };
         }
 
-        const percentage = Math.min(100, Math.max(0, (elapsed / totalDuration) * 100));
+        if (remaining <= 0) {
+            return {
+                countdown: 'Cycle Matured',
+                percentage: 100,
+                isExpired: true,
+                currentCycle,
+                totalCycles
+            };
+        }
 
-        // Calculate countdown
+        const percentage = Math.min(100, Math.max(0, (elapsed / cycleDuration) * 100));
+
         const days = Math.floor(remaining / (1000 * 60 * 60 * 24));
         const hours = Math.floor((remaining % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
         const minutes = Math.floor((remaining % (1000 * 60 * 60)) / (1000 * 60));
@@ -238,7 +261,9 @@
         return {
             countdown,
             percentage,
-            isExpired: false
+            isExpired: false,
+            currentCycle,
+            totalCycles
         };
     };
 
@@ -262,10 +287,17 @@
             const interest = typeof history.interest === 'string' ? parseFloat(history.interest) : history.interest;
             const progress = calculateInvestmentProgress(history);
 
+            const interestPerCycle = interest;
+            const totalInterestEarned = interestPerCycle * (history.repeat_time_count || 0);
+
+            const totalProjectedInterest = interestPerCycle * history.repeat_time;
+
             return {
                 ...history,
                 amount,
                 interest,
+                totalInterestEarned,
+                totalProjectedInterest,
                 planName: history.plan?.name || `Plan #${history.plan_id}`,
                 periodName: history.plan?.plan_time_settings?.name || `${history.period} hours`,
                 progress
@@ -322,10 +354,19 @@
         return icons[status as keyof typeof icons] || ClockIcon;
     };
 
-    const goToPage = (url: string) => {
+    const goToPlansPage = (url: string) => {
         router.get(url, {}, {
             preserveState: true,
             preserveScroll: true,
+            only: ['plans'],
+        });
+    };
+
+    const goToHistoryPage = (url: string) => {
+        router.get(url, {}, {
+            preserveState: true,
+            preserveScroll: true,
+            only: ['investment_histories'],
         });
     };
 
@@ -337,7 +378,6 @@
     ]);
 
     onMounted(() => {
-        // Update countdown every second
         intervalId = window.setInterval(() => {
             currentTime.value = Date.now();
         }, 1000);
@@ -350,7 +390,11 @@
     });
 
     watch([isFundingModalOpen, isWithdrawalModalOpen, isInvestmentModalOpen, isCalculatorModalOpen], ([funding, withdrawal, investment, calculator]) => {
-        document.body.style.overflow = funding || withdrawal || investment || calculator ? 'hidden' : '';
+        if (funding || withdrawal || investment || calculator) {
+            document.body.style.overflow = 'hidden';
+        } else {
+            document.body.style.overflow = '';
+        }
     });
 </script>
 
@@ -420,7 +464,7 @@
 
             <!-- Investment Plans Section -->
             <div class="mt-6" id="plans-section">
-                <h2 class="text-xl sm:text-2xl font-bold text-card-foreground mb-4 flex items-center gap-2">
+                <h2 v-if="formattedPlans.length > 0" class="text-xl sm:text-2xl font-bold text-card-foreground mb-4 flex items-center gap-2">
                     Investment Plans
                 </h2>
 
@@ -469,7 +513,7 @@
                                 <ClockIcon class="w-4 h-4 text-muted-foreground" />
                                 <div>
                                     <p class="text-xs text-muted-foreground">Repeat Time</p>
-                                    <p class="text-sm font-semibold text-card-foreground">{{ plan.repeat_time }}x</p>
+                                    <p class="text-sm font-semibold text-card-foreground">{{ plan.repeatTime }}x</p>
                                 </div>
                             </div>
                         </div>
@@ -510,14 +554,14 @@
                     :from="plans.from"
                     :to="plans.to"
                     :total="plans.total"
-                    @go-to-page="goToPage"
+                    @go-to-page="goToPlansPage"
                     class="mt-6"
                 />
             </div>
 
             <!-- Investment History Section -->
             <div class="mt-8 margin-bottom" id="history-section">
-                <h2 class="text-xl sm:text-2xl font-bold text-card-foreground mb-4 flex items-center gap-2">
+                <h2 v-if="filteredHistories.length > 0" class="text-xl sm:text-2xl font-bold text-card-foreground mb-4 flex items-center gap-2">
                     Investment History
                 </h2>
 
@@ -547,9 +591,11 @@
                                     <tr>
                                         <th class="text-left text-xs font-semibold text-muted-foreground px-4 py-3">Plan</th>
                                         <th class="text-left text-xs font-semibold text-muted-foreground px-4 py-3">Amount</th>
-                                        <th class="text-left text-xs font-semibold text-muted-foreground px-4 py-3">Interest</th>
+                                        <th class="text-left text-xs font-semibold text-muted-foreground px-4 py-3">Interest/Cycle</th>
+                                        <th class="text-left text-xs font-semibold text-muted-foreground px-4 py-3">Total Earned</th>
                                         <th class="text-left text-xs font-semibold text-muted-foreground px-4 py-3">Progress</th>
                                         <th class="text-left text-xs font-semibold text-muted-foreground px-4 py-3">Countdown</th>
+                                        <th class="text-left text-xs font-semibold text-muted-foreground px-4 py-3">Cycles</th>
                                         <th class="text-left text-xs font-semibold text-muted-foreground px-4 py-3">Status</th>
                                     </tr>
                                 </thead>
@@ -558,6 +604,7 @@
                                         <td class="px-4 py-3 text-sm font-medium text-card-foreground">{{ history.planName }}</td>
                                         <td class="px-4 py-3 text-sm text-card-foreground">${{ history.amount.toLocaleString() }}</td>
                                         <td class="px-4 py-3 text-sm text-primary font-semibold">${{ history.interest.toLocaleString() }}</td>
+                                        <td class="px-4 py-3 text-sm text-green-600 font-semibold">${{ history.totalInterestEarned.toLocaleString() }}</td>
                                         <td class="px-4 py-3">
                                             <div class="space-y-1">
                                                 <div class="w-full bg-muted rounded-full h-1 overflow-hidden">
@@ -575,10 +622,16 @@
                                             <div class="flex items-center gap-2">
                                                 <ClockIcon class="w-4 h-4 text-muted-foreground" />
                                                 <span class="text-sm font-semibold"
-                                                      :class="history.progress.isExpired ? 'text-blue-600' : 'text-card-foreground'">
+                                                  :class="history.progress.isExpired ? 'text-blue-600' : 'text-card-foreground'">
                                                     {{ history.progress.countdown }}
                                                 </span>
                                             </div>
+                                        </td>
+
+                                        <td class="px-4 py-3">
+                                            <span class="text-sm font-semibold text-card-foreground">
+                                                {{ history.progress.currentCycle }} / {{ history.progress.totalCycles }}
+                                            </span>
                                         </td>
 
                                         <td class="px-4 py-3">
@@ -611,8 +664,18 @@
                                         </div>
 
                                         <div>
-                                            <p class="text-xs text-muted-foreground">Interest</p>
+                                            <p class="text-xs text-muted-foreground">Interest/Cycle</p>
                                             <p class="font-semibold text-primary">${{ history.interest.toLocaleString() }}</p>
+                                        </div>
+
+                                        <div>
+                                            <p class="text-xs text-muted-foreground">Total Earned</p>
+                                            <p class="font-semibold text-green-600">${{ history.totalInterestEarned.toLocaleString() }}</p>
+                                        </div>
+
+                                        <div>
+                                            <p class="text-xs text-muted-foreground">Cycles</p>
+                                            <p class="font-semibold text-card-foreground">{{ history.progress.currentCycle }} / {{ history.progress.totalCycles }}</p>
                                         </div>
                                     </div>
 
@@ -651,7 +714,7 @@
                                             <p class="text-xs text-card-foreground">{{ history.periodName }}</p>
                                         </div>
                                         <div>
-                                            <p class="text-xs text-muted-foreground">Repeat</p>
+                                            <p class="text-xs text-muted-foreground">Total Repeat</p>
                                             <p class="text-xs text-card-foreground">{{ history.repeat_time }}x</p>
                                         </div>
                                     </div>
@@ -673,7 +736,7 @@
                         :from="investment_histories.from"
                         :to="investment_histories.to"
                         :total="investment_histories.total"
-                        @go-to-page="goToPage"
+                        @go-to-page="goToHistoryPage"
                         class="md:mt-6 md:pt-6 md:border-t md:border-border"
                     />
                 </div>
@@ -719,16 +782,16 @@
 </template>
 
 <style scoped>
-button:focus-visible,
-input:focus-visible,
-select:focus-visible {
-    outline: 2px solid hsl(var(--primary));
-    outline-offset: 2px;
-}
-
-@media (max-width: 640px) {
-    .margin-bottom {
-        margin-bottom: 50px;
+    button:focus-visible,
+    input:focus-visible,
+    select:focus-visible {
+        outline: 2px solid hsl(var(--primary));
+        outline-offset: 2px;
     }
-}
+
+    @media (max-width: 640px) {
+        .margin-bottom {
+            margin-bottom: 50px;
+        }
+    }
 </style>

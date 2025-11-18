@@ -22,6 +22,7 @@ class InvestmentHistory extends Model
         'interest',
         'period',
         'repeat_time',
+        'repeat_time_count',
         'next_time',
         'last_time',
         'status',
@@ -38,6 +39,7 @@ class InvestmentHistory extends Model
         'interest' => 'decimal:2',
         'period' => 'integer',
         'repeat_time' => 'integer',
+        'repeat_time_count' => 'integer',
         'next_time' => 'datetime',
         'last_time' => 'datetime',
     ];

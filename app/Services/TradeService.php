@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Events\InvestmentExecuted;
+use App\Events\InvestmentPayout;
 use App\Events\TradeClosed;
 use App\Events\TradeExecuted;
 use App\Models\InvestmentHistory;
@@ -126,6 +127,8 @@ class TradeService
     }
 
     /**
+     * Execute a new investment
+     *
      * @throws Throwable
      */
     public function executeInvestment(User $user, array $data)
@@ -161,23 +164,24 @@ class TradeService
                 throw new Exception('Investment amount must be between $' . number_format($plan->minimum, 2) . ' and $' . number_format($plan->maximum, 2) . '.');
             }
 
-            // Calculate interest
-            $interest = $plan->interest * $plan->repeat_time;
-            $final_interest = ($interest * $data['amount']) / 100;
+            // Calculate interest PER CYCLE
+            $interestPerCycle = ($plan->interest * $data['amount']) / 100;
 
             // Calculate next_time
-            $now = Carbon::now()->toDateTimeString();
-            $nextTime = Carbon::parse($now)->addHours($plan->period)->toDateTimeString();
+            $now = Carbon::now();
+            $nextTime = $now->copy()->addHours($plan->period);
 
             // Create investment record
             $investment = InvestmentHistory::create([
                 'user_id' => $user->id,
                 'plan_id' => $plan->id,
                 'amount' => $data['amount'],
-                'interest' => $final_interest,
+                'interest' => $interestPerCycle,
                 'period' => $plan->plan_time_settings->period ?? $plan->period,
                 'repeat_time' => $plan->repeat_time,
-                'next_time' => $nextTime,
+                'repeat_time_count' => 0,
+                'next_time' => $nextTime->toDateTimeString(),
+                'last_time' => $now->toDateTimeString(),
                 'status' => 'running',
                 'capital_back_status' => $plan->capital_back_status,
             ]);
@@ -192,6 +196,132 @@ class TradeService
         event(new InvestmentExecuted($user, $data, $execution));
 
         return $execution;
+    }
+
+    /**
+     * Process payout for a matured investment cycle
+     *
+     * @param InvestmentHistory $investment
+     * @return bool
+     * @throws Throwable
+     */
+    public function processCyclePayout(InvestmentHistory $investment): bool
+    {
+        return DB::transaction(function () use ($investment) {
+
+            // Verify investment is running
+            if ($investment->status !== 'running') {
+                return false;
+            }
+
+            // Verify the cycle has matured
+            $now = Carbon::now();
+            $nextTime = Carbon::parse($investment->next_time);
+
+            if ($now->lt($nextTime)) {
+                return false;
+            }
+
+            // Get user
+            $user = $investment->user;
+            if (!$user) {
+                throw new Exception("User not found for investment ID: $investment->id");
+            }
+
+            // Increment cycle count
+            $newCycleCount = $investment->repeat_time_count + 1;
+
+            // Check if this is the final cycle
+            $isFinalCycle = $newCycleCount >= $investment->repeat_time;
+
+            // Calculate payout amount
+            $payoutAmount = $investment->interest; // Interest per cycle
+
+            // If final cycle and capital back is enabled, add the principal
+            if ($isFinalCycle && $investment->capital_back_status === 'yes') {
+                $payoutAmount += $investment->amount;
+            }
+
+            // Credit the payout to user's live trading balance
+            $user->profile()->increment('live_trading_balance', $payoutAmount);
+
+            // Update investment record
+            $updateData = [
+                'repeat_time_count' => $newCycleCount,
+                'last_time' => $now->toDateTimeString(),
+            ];
+
+            if ($isFinalCycle) {
+                // Mark as completed
+                $updateData['status'] = 'completed';
+                $updateData['next_time'] = $now->toDateTimeString();
+            } else {
+                // Schedule next cycle
+                $updateData['next_time'] = $now->copy()->addHours($investment->period)->toDateTimeString();
+            }
+
+            $investment->update($updateData);
+
+            // payout data
+            $payoutData = [
+                'cycle' => $newCycleCount,
+                'total_cycles' => $investment->repeat_time,
+                'payout_amount' => $payoutAmount,
+                'interest' => $investment->interest,
+                'capital_returned' => $isFinalCycle && $investment->capital_back_status === 'yes',
+                'is_final_cycle' => $isFinalCycle,
+            ];
+
+            // Dispatch payout event
+            event(new InvestmentPayout($user, $investment, $payoutData));
+
+            return true;
+        });
+    }
+
+    /**
+     * Process all matured investment cycles - called by a scheduled task (cron job)
+     *
+     * @return array
+     */
+    public function processAllMaturedCycles(): array
+    {
+        $now = Carbon::now();
+
+        // Get all running investments where next_time has passed
+        $maturedInvestments = InvestmentHistory::where('status', 'running')
+            ->where('next_time', '<=', $now->toDateTimeString())
+            ->with('user.profile')
+            ->get();
+
+        $processed = 0;
+        $failed = 0;
+        $errors = [];
+
+        foreach ($maturedInvestments as $investment) {
+            try {
+                $success = $this->processCyclePayout($investment);
+                if ($success) {
+                    $processed++;
+                } else {
+                    $failed++;
+                }
+            } catch (Throwable $e) {
+                $failed++;
+                $errors[] = [
+                    'investment_id' => $investment->id,
+                    'error' => $e->getMessage()
+                ];
+            }
+        }
+
+        return [
+            'total_matured' => $maturedInvestments->count(),
+            'processed' => $processed,
+            'failed' => $failed,
+            'errors' => $errors,
+            'timestamp' => $now->toDateTimeString()
+        ];
     }
 
     /**

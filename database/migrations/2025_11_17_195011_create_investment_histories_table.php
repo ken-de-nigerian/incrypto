@@ -19,6 +19,7 @@ return new class extends Migration
             $table->decimal('interest', 15)->default(0);
             $table->integer('period')->default(0);
             $table->integer('repeat_time')->default(0);
+            $table->integer('repeat_time_count')->default(0);
             $table->timestamp('next_time')->nullable();
             $table->timestamp('last_time')->nullable();
             $table->enum('status', ['running', 'completed', 'cancelled'])->default('running');

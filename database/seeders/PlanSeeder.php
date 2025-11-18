@@ -46,17 +46,17 @@ class PlanSeeder extends Seeder
         $plans = [
             [
                 'name' => 'Starter Plan',
-                'minimum' => 100.00,
+                'minimum' => 10.00,
                 'maximum' => 1000.00,
                 'interest' => 10.00,
-                'period' => 1,
+                'period' => 10,
                 'status' => 'active',
                 'capital_back_status' => 'yes',
                 'repeat_time' => 1,
             ],
             [
                 'name' => 'Premium Plan',
-                'minimum' => 1000.00,
+                'minimum' => 100.00,
                 'maximum' => 5000.00,
                 'interest' => 15.00,
                 'period' => 3,
@@ -96,7 +96,7 @@ class PlanSeeder extends Seeder
             ],
             [
                 'name' => 'Diamond Plan',
-                'minimum' => 2000.00,
+                'minimum' => 200.00,
                 'maximum' => 10000.00,
                 'interest' => 20.00,
                 'period' => 1,
@@ -116,7 +116,7 @@ class PlanSeeder extends Seeder
             ],
             [
                 'name' => 'Platinum Plan',
-                'minimum' => 5000.00,
+                'minimum' => 500.00,
                 'maximum' => 25000.00,
                 'interest' => 25.00,
                 'period' => 3,
@@ -136,7 +136,7 @@ class PlanSeeder extends Seeder
             ],
             [
                 'name' => 'VIP Plan',
-                'minimum' => 10000.00,
+                'minimum' => 1000.00,
                 'maximum' => 50000.00,
                 'interest' => 30.00,
                 'period' => 12,

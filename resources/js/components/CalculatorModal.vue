@@ -50,6 +50,7 @@
         const minimum = typeof props.plan.minimum === 'string' ? parseFloat(props.plan.minimum) : props.plan.minimum;
         const maximum = typeof props.plan.maximum === 'string' ? parseFloat(props.plan.maximum) : props.plan.maximum;
         const interest = typeof props.plan.interest === 'string' ? parseFloat(props.plan.interest) : props.plan.interest;
+        const repeatTime = typeof props.plan.repeat_time === 'string' ? parseInt(props.plan.repeat_time) : props.plan.repeat_time;
         const capitalBack = props.plan.capital_back_status === 'yes';
 
         return {
@@ -57,6 +58,7 @@
             minimum,
             maximum,
             interest,
+            repeatTime,
             capitalBack,
             periodName: props.plan.plan_time_settings?.name || `${props.plan.period} Days`
         };
@@ -68,14 +70,22 @@
         const amount = parseFloat(calculatorAmount.value);
         if (isNaN(amount) || amount < formattedPlan.value.minimum || amount > formattedPlan.value.maximum) return null;
 
-        const interest = (amount * formattedPlan.value.interest) / 100;
-        const total = formattedPlan.value.capitalBack ? amount + interest : interest;
+        // Calculate interest per cycle
+        const interestPerCycle = (amount * formattedPlan.value.interest) / 100;
+
+        // Calculate total interest for all cycles
+        const totalInterest = interestPerCycle * formattedPlan.value.repeatTime;
+
+        // Calculate total return (with or without capital back)
+        const total = formattedPlan.value.capitalBack ? amount + totalInterest : totalInterest;
 
         return {
             principal: amount,
-            interest,
+            interestPerCycle,
+            totalInterest,
             total,
-            period: formattedPlan.value.periodName
+            period: formattedPlan.value.periodName,
+            repeatTime: formattedPlan.value.repeatTime
         };
     });
 
@@ -181,6 +191,16 @@
                         <p class="text-muted-foreground text-xs">Period</p>
                         <p class="font-semibold text-card-foreground">{{ formattedPlan.periodName }}</p>
                     </div>
+                    <div>
+                        <p class="text-muted-foreground text-xs">Repeat Time</p>
+                        <p class="font-semibold text-card-foreground">{{ formattedPlan.repeatTime }}x</p>
+                    </div>
+                    <div>
+                        <p class="text-muted-foreground text-xs">Capital Back</p>
+                        <p class="font-semibold" :class="formattedPlan.capitalBack ? 'text-green-600' : 'text-red-600'">
+                            {{ formattedPlan.capitalBack ? 'Yes' : 'No' }}
+                        </p>
+                    </div>
                 </div>
             </div>
 
@@ -217,8 +237,13 @@
                 </div>
 
                 <div class="flex items-center justify-between">
-                    <span class="text-sm text-muted-foreground">Interest Earned</span>
-                    <span class="text-lg font-semibold text-primary">${{ calculatedReturn.interest.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}</span>
+                    <span class="text-sm text-muted-foreground">Interest Per Cycle</span>
+                    <span class="text-lg font-semibold text-primary">${{ calculatedReturn.interestPerCycle.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}</span>
+                </div>
+
+                <div class="flex items-center justify-between">
+                    <span class="text-sm text-muted-foreground">Total Interest ({{ calculatedReturn.repeatTime }}x)</span>
+                    <span class="text-lg font-semibold text-green-600">${{ calculatedReturn.totalInterest.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}</span>
                 </div>
 
                 <div class="border-t border-primary/20 pt-3">
@@ -226,7 +251,18 @@
                         <span class="text-sm font-medium text-card-foreground">Total Return</span>
                         <span class="text-2xl font-bold text-primary">${{ calculatedReturn.total.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}</span>
                     </div>
-                    <p class="text-xs text-muted-foreground mt-1">After {{ calculatedReturn.period }}</p>
+                    <p class="text-xs text-muted-foreground mt-1">
+                        After {{ calculatedReturn.repeatTime }} cycle{{ calculatedReturn.repeatTime > 1 ? 's' : '' }} of {{ calculatedReturn.period }}
+                    </p>
+                </div>
+
+                <!-- Breakdown Info -->
+                <div class="bg-muted/50 border border-border rounded-lg p-3 mt-3">
+                    <p class="text-xs text-muted-foreground">
+                        💡 This investment will run for {{ calculatedReturn.repeatTime }} cycle{{ calculatedReturn.repeatTime > 1 ? 's' : '' }},
+                        earning ${{ calculatedReturn.interestPerCycle.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}
+                        per cycle{{ formattedPlan.capitalBack ? ', with your capital returned at the end' : '' }}.
+                    </p>
                 </div>
             </div>
 

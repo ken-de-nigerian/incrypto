@@ -409,7 +409,8 @@
                 :from="props.users.from"
                 :to="props.users.to"
                 :total="props.users.total"
-                @go-to-page="goToPage" />
+                @go-to-page="goToPage"
+            />
         </div>
     </AppLayout>
 

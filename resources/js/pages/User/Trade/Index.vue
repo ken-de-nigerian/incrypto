@@ -140,17 +140,17 @@
             />
 
             <div class="grid grid-cols-1 gap-6 mt-6">
-                <!-- Trading Balance Card -->
+                <!-- Balance Card -->
                 <div class="bg-card border border-border rounded-2xl p-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
                     <div>
-                        <h2 class="text-xl font-semibold text-muted-foreground mb-1">Trading Balance</h2>
+                        <h2 class="text-xl font-semibold text-muted-foreground mb-1">Balance</h2>
                         <div class="flex items-end gap-3">
                             <span class="text-2xl sm:text-4xl font-extrabold text-card-foreground">
                                 ${{ (isLiveMode ? liveBalance : demoBalance).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}
                             </span>
                         </div>
                         <div class="text-sm font-medium text-muted-foreground mt-1">
-                            Mode: <span class="font-bold" :class="isLiveMode ? 'text-primary' : 'text-card-foreground'">{{ isLiveMode ? 'Live Trading' : 'Demo Mode' }}</span>
+                            Mode: <span class="font-bold" :class="isLiveMode ? 'text-primary' : 'text-card-foreground'">{{ isLiveMode ? 'Live' : 'Demo' }}</span>
                         </div>
                     </div>
 

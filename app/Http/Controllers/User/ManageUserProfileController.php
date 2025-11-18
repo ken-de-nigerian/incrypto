@@ -8,7 +8,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\DeleteAccountRequest;
 use App\Http\Requests\UpdatePasswordRequest;
 use App\Http\Requests\UpdateProfileRequest;
-use App\Http\Requests\updateTradingStatusRequest;
+use App\Http\Requests\UpdateTradingStatusRequest;
 use App\Http\Requests\UpdateWalletStatusRequest;
 use App\Services\ProfileService;
 use App\Services\UserSessionService;
@@ -79,7 +79,7 @@ class ManageUserProfileController extends Controller
         return $this->notify('success', 'Wallet status updated successfully.')->toBack();
     }
 
-    public function updateTradingStatus(updateTradingStatusRequest $request)
+    public function updateTradingStatus(UpdateTradingStatusRequest $request)
     {
         $validated = $request->validated();
         $request->user()->profile()->updateOrCreate(

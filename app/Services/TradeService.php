@@ -2,10 +2,14 @@
 
 namespace App\Services;
 
+use App\Events\InvestmentExecuted;
 use App\Events\TradeClosed;
 use App\Events\TradeExecuted;
+use App\Models\InvestmentHistory;
+use App\Models\Plan;
 use App\Models\Trade;
 use App\Models\User;
+use Carbon\Carbon;
 use DateTime;
 use Exception;
 use Illuminate\Support\Facades\DB;
@@ -119,6 +123,75 @@ class TradeService
         }
 
         return $closed;
+    }
+
+    /**
+     * @throws Throwable
+     */
+    public function executeInvestment(User $user, array $data)
+    {
+        $execution = DB::transaction(function () use ($user, $data) {
+
+            // Get Plan with relations
+            $plan = Plan::with('plan_time_settings')
+                ->findOrFail($data['plan_id']);
+
+            // Verify plan is active
+            if ($plan->status !== 'active') {
+                throw new Exception('This investment plan is not currently active.');
+            }
+
+            // Verify user is in live mode
+            if ($user->profile->trading_status !== 'live') {
+                throw new Exception('Investments can only be made in Live Mode.');
+            }
+
+            // Get live balance
+            $liveBalance = is_string($user->profile->live_trading_balance)
+                ? (float) $user->profile->live_trading_balance
+                : $user->profile->live_trading_balance;
+
+            // Verify sufficient balance
+            if ($data['amount'] > $liveBalance) {
+                throw new Exception('Insufficient live trading balance.');
+            }
+
+            // Verify amount is within plan limits
+            if ($data['amount'] < $plan->minimum || $data['amount'] > $plan->maximum) {
+                throw new Exception('Investment amount must be between $' . number_format($plan->minimum, 2) . ' and $' . number_format($plan->maximum, 2) . '.');
+            }
+
+            // Calculate interest
+            $interest = $plan->interest * $plan->repeat_time;
+            $final_interest = ($interest * $data['amount']) / 100;
+
+            // Calculate next_time
+            $now = Carbon::now()->toDateTimeString();
+            $nextTime = Carbon::parse($now)->addHours($plan->period)->toDateTimeString();
+
+            // Create investment record
+            $investment = InvestmentHistory::create([
+                'user_id' => $user->id,
+                'plan_id' => $plan->id,
+                'amount' => $data['amount'],
+                'interest' => $final_interest,
+                'period' => $plan->plan_time_settings->period ?? $plan->period,
+                'repeat_time' => $plan->repeat_time,
+                'next_time' => $nextTime,
+                'status' => 'running',
+                'capital_back_status' => $plan->capital_back_status,
+            ]);
+
+            // Deduct amount from live trading balance
+            $user->profile()->decrement('live_trading_balance', $data['amount']);
+
+            return $investment;
+        });
+
+        // Dispatch the event with the investment data
+        event(new InvestmentExecuted($user, $data, $execution));
+
+        return $execution;
     }
 
     /**

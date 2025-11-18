@@ -133,4 +133,9 @@ class User extends Authenticatable
     {
          return $this->hasMany(ReferralCommission::class, 'from_id', 'id');
     }
+
+    public function investmentHistories(): HasMany
+    {
+        return $this->hasMany(InvestmentHistory::class);
+    }
 }

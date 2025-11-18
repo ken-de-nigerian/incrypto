@@ -4,9 +4,11 @@ namespace App\Http\Controllers\User;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\CloseTradeRequest;
+use App\Http\Requests\ExecuteInvestmentRequest;
 use App\Http\Requests\ExecuteTradeRequest;
 use App\Http\Requests\FundAccountRequest;
 use App\Http\Requests\WithdrawAccountRequest;
+use App\Models\Plan;
 use App\Models\Trade;
 use App\Services\TradeService;
 use App\Services\GatewayHandlerService;
@@ -89,6 +91,46 @@ class ManageUserTradeController extends Controller
             ->toArray();
 
         return Inertia::render('User/Trade/Crypto', $pageData);
+    }
+
+    public function investment(): Response
+    {
+        $user = Auth::user();
+        $pageData = $this->tradeCrypto->getData($user);
+
+        $pageData['plans'] = Plan::where('status', 'active')
+            ->with('plan_time_settings')
+            ->paginate(10)
+            ->toArray();
+
+        $pageData['investment_histories'] = $user->investmentHistories()
+            ->with('plan.plan_time_settings')
+            ->latest()
+            ->paginate(20)
+            ->toArray();
+
+        return Inertia::render('User/Trade/Investment', $pageData);
+    }
+
+    /**
+     * @throws Throwable
+     */
+    public function executeInvestment(ExecuteInvestmentRequest $request, TradeService $tradeService)
+    {
+        try {
+            $result = $tradeService->executeInvestment(
+                $request->user(),
+                $request->validated()
+            );
+
+            if (!$result) {
+                return $this->notify('error', 'Failed to execute investment - invalid state')->toBack();
+            }
+
+            return $this->notify('success', 'Investment executed successfully')->toBack();
+        } catch (Exception $e) {
+            return $this->notify('error', __($e->getMessage()))->toBack();
+        }
     }
 
     /**

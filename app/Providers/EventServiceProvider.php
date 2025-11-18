@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use App\Events\AccountDeleted;
+use App\Events\InvestmentExecuted;
 use App\Events\TradeClosed;
 use App\Events\TradeExecuted;
 use App\Events\TradingAccountDebited;
@@ -28,6 +29,7 @@ use App\Listeners\SendBalanceAdjustedNotification;
 use App\Listeners\SendCryptoReceivedNotifications;
 use App\Listeners\SendCryptoSentNotifications;
 use App\Listeners\SendDebitedSuccessfulNotification;
+use App\Listeners\SendInvestmentExecutedNotification;
 use App\Listeners\SendTradeClosedNotification;
 use App\Listeners\SendTradeExecutedNotification;
 use App\Listeners\SendFundedSuccessfulNotification;
@@ -88,6 +90,9 @@ class EventServiceProvider extends ServiceProvider
         ],
         TradeClosed::class => [
             SendTradeClosedNotification::class
+        ],
+        InvestmentExecuted::class => [
+            SendInvestmentExecutedNotification::class
         ],
         DatabaseAndEmailNotificationDispatchedEvent::class => [
             DatabaseAndEmailNotificationListener::class,

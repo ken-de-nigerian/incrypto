@@ -528,7 +528,7 @@
 
             <div class="bg-card border border-border rounded-2xl p-4 sm:p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mt-6 flex-shrink-0">
                 <div>
-                    <h2 class="text-lg sm:text-xl font-semibold text-muted-foreground mb-1">Trading Balance</h2>
+                    <h2 class="text-lg sm:text-xl font-semibold text-muted-foreground mb-1">Balance</h2>
                     <div class="flex items-end gap-3">
                         <span class="text-2xl sm:text-4xl font-extrabold text-card-foreground">
                             ${{ currentBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}
@@ -536,7 +536,7 @@
                     </div>
                     <div class="text-xs sm:text-sm font-medium text-muted-foreground mt-1">
                         Mode: <span class="font-bold" :class="isLiveMode ? 'text-primary' : 'text-card-foreground'">
-                            {{ isLiveMode ? 'Live Trading' : 'Demo Mode' }}
+                            {{ isLiveMode ? 'Live' : 'Demo' }}
                         </span>
                     </div>
                 </div>

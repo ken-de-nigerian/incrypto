@@ -322,16 +322,6 @@
         return icons[status as keyof typeof icons] || ClockIcon;
     };
 
-    const formatDateTime = (date: string) => {
-        return new Date(date).toLocaleString('en-US', {
-            year: 'numeric',
-            month: 'short',
-            day: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit'
-        });
-    };
-
     const goToPage = (url: string) => {
         router.get(url, {}, {
             preserveState: true,

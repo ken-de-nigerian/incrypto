@@ -18,6 +18,9 @@ class DatabaseSeeder extends Seeder
         // 2. Seed bulk fake users and their profiles
         $this->call([
             UserSeeder::class,
+            PlanSeeder::class,
+            MasterTraderSeeder::class,
+            CopyTradeSeeder::class,
         ]);
     }
 }

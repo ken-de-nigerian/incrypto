@@ -8,6 +8,7 @@ use App\Http\Requests\ExecuteInvestmentRequest;
 use App\Http\Requests\ExecuteTradeRequest;
 use App\Http\Requests\FundAccountRequest;
 use App\Http\Requests\WithdrawAccountRequest;
+use App\Models\MasterTrader;
 use App\Models\Plan;
 use App\Models\Trade;
 use App\Services\TradeService;
@@ -110,6 +111,41 @@ class ManageUserTradeController extends Controller
             ->toArray();
 
         return Inertia::render('User/Trade/Investment', $pageData);
+    }
+
+    /**
+     * Display the copy trading network page.
+     */
+    public function network()
+    {
+        $user = Auth::user();
+        $pageData = $this->tradeCrypto->getData($user);
+
+        // Get active master traders with relationships
+        $pageData['masterTraders'] = MasterTrader::where('is_active', true)
+            ->with([
+                'user.profile',
+                'copyTrades' => function ($query) {
+                    $query->where('status', 'active');
+                },
+                'activeCopyTrades'
+            ])
+            ->withCount('activeCopyTrades as copiers_count')
+            ->orderBy('gain_percentage', 'desc')
+            ->paginate(12);
+
+        // Get user's copy trades with all related data
+        $pageData['copyTrades'] = $user->copyTrades()
+            ->with([
+                'masterTrader.user.profile',
+                'transactions' => function ($query) {
+                    $query->orderBy('created_at', 'desc');
+                }
+            ])
+            ->latest()
+            ->paginate(20);
+
+        return Inertia::render('User/Trade/Network', $pageData);
     }
 
     /**

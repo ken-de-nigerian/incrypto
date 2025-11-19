@@ -110,7 +110,7 @@
 <template>
     <TransitionGroup
         tag="div"
-        class="fixed top-0 sm:top-4 left-0 right-0 z-50 flex flex-col gap-3 sm:left-auto sm:w-full sm:max-w-md sm:right-4"
+        class="fixed top-0 sm:top-4 left-0 right-0 z-[9999] flex flex-col gap-3 sm:left-auto sm:w-full sm:max-w-md sm:right-4"
         enter-active-class="transition-all duration-300"
         enter-from-class="opacity-0 translate-x-full"
         enter-to-class="opacity-100 translate-x-0"
@@ -122,7 +122,7 @@
             :key="notification.id"
             class="group pointer-events-auto">
             <div
-                class="relative overflow-hidden rounded-none sm:rounded-lg border shadow-lg backdrop-blur-md transition-all duration-300"
+                class="relative overflow-hidden rounded-none sm:rounded-lg border shadow-2xl backdrop-blur-md transition-all duration-300"
                 :class="[
                     getTypeClasses(notification.type).bg,
                     getTypeClasses(notification.type).border,
@@ -160,7 +160,7 @@
                             v-if="notification.action"
                             @click="handleAction(notification)"
                             type="button"
-                            class="px-3 py-1 text-xs font-semibold rounded-md bg-white/20 hover:bg-white/30 transition-colors duration-200 whitespace-nowrap">
+                            class="px-3 py-1 text-xs font-semibold rounded-md bg-white/20 hover:bg-white/30 transition-colors duration-200 whitespace-nowrap cursor-pointer">
                             {{ notification.action.label }}
                         </button>
 
@@ -168,7 +168,7 @@
                             v-if="notification.dismissible"
                             @click="removeNotification(notification.id)"
                             type="button"
-                            class="inline-flex items-center justify-center p-1 rounded-md hover:bg-white/20 transition-colors duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/50">
+                            class="inline-flex items-center justify-center p-1 rounded-md hover:bg-white/20 transition-colors duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/50 cursor-pointer">
                             <span class="sr-only">Close notification</span>
                             <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />

@@ -101,7 +101,7 @@ class ManageUserTradeController extends Controller
 
         $pageData['plans'] = Plan::where('status', 'active')
             ->with('plan_time_settings')
-            ->paginate(10)
+            ->paginate(9)
             ->toArray();
 
         $pageData['investment_histories'] = $user->investmentHistories()
@@ -123,6 +123,7 @@ class ManageUserTradeController extends Controller
 
         // Get active master traders with relationships
         $pageData['masterTraders'] = MasterTrader::where('is_active', true)
+            ->where('user_id', '!=', $user->id)
             ->with([
                 'user.profile',
                 'copyTrades' => function ($query) {
@@ -132,7 +133,7 @@ class ManageUserTradeController extends Controller
             ])
             ->withCount('activeCopyTrades as copiers_count')
             ->orderBy('gain_percentage', 'desc')
-            ->paginate(12);
+            ->paginate(8);
 
         // Get user's copy trades with all related data
         $pageData['copyTrades'] = $user->copyTrades()
@@ -146,6 +147,43 @@ class ManageUserTradeController extends Controller
             ->paginate(20);
 
         return Inertia::render('User/Trade/Network', $pageData);
+    }
+
+    /**
+     * Display the page for all copied traders.
+     */
+    public function copied()
+    {
+        $user = Auth::user();
+        $pageData = $this->tradeCrypto->getData($user);
+
+        // Get user's copy trades with all related data
+        $pageData['copyTrades'] = $user->copyTrades()
+            ->with([
+                'masterTrader.user.profile',
+                'transactions' => function ($query) {
+                    $query->orderBy('created_at', 'desc');
+                }
+            ])
+            ->latest()
+            ->paginate(20);
+
+        // Calculate stats for copy trades
+        $allCopyTrades = $user->copyTrades()->get();
+
+        $pageData['stats'] = [
+            'total_active' => $allCopyTrades->where('status', 'active')->count(),
+            'total_profit' => $allCopyTrades->sum('current_profit'),
+            'total_loss' => $allCopyTrades->sum('current_loss'),
+            'total_commission' => $allCopyTrades->sum('total_commission_paid'),
+            'net_profit' => $allCopyTrades->sum('current_profit') - $allCopyTrades->sum('current_loss'),
+            'active_traders' => $allCopyTrades->where('status', 'active')
+                ->pluck('master_trader_id')
+                ->unique()
+                ->count(),
+        ];
+
+        return Inertia::render('User/Trade/Partials/MyCopyTrades', $pageData);
     }
 
     /**

@@ -13,8 +13,10 @@
     import CustomSelectDropdown from '@/components/CustomSelectDropdown.vue';
     import ActionButton from '@/components/ActionButton.vue';
     import InputError from '@/components/InputError.vue';
+    import { useFlash } from '@/composables/useFlash';
 
     const page = usePage();
+    const { notify } = useFlash();
     const user = computed(() => page.props.auth.user);
     const notificationCount = computed(() => page.props.auth.notification_count);
 
@@ -108,11 +110,24 @@
     });
 
     const approveKyc = (kycId: number) => {
-        approveForm.post(route('admin.kyc.approve', kycId), {
-            preserveScroll: true,
-            onSuccess: () => {
-                closeKycDetailsModal();
-            },
+        notify('warning', 'Are you sure you want to approve this kyc?', {
+            title: 'Approve Kyc',
+            duration: 0,
+            dismissible: true,
+            action: {
+                label: 'Confirm',
+                callback: () => {
+                    router.post(route('admin.kyc.approve', kycId), {}, {
+                        preserveScroll: true,
+                        onSuccess: () => {
+                            closeKycDetailsModal();
+                        },
+                        onError: (errors) => {
+                            console.error('Failed to approve kyc:', errors);
+                        }
+                    });
+                }
+            }
         });
     };
 

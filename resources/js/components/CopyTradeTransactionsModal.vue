@@ -143,6 +143,15 @@
             filterType.value = 'all';
         }
     });
+
+    // Disable body scroll when modal is open
+    watch(() => props.isOpen, (isOpen) => {
+        if (isOpen) {
+            document.body.style.overflow = 'hidden';
+        } else {
+            document.body.style.overflow = '';
+        }
+    });
 </script>
 
 <template>
@@ -265,7 +274,7 @@
                         </div>
 
                         <!-- Transactions List -->
-                        <div class="flex-1 overflow-y-auto px-4 md:px-6 lg:px-6 py-4">
+                        <div class="flex-1 overflow-y-auto no-scrollbar px-4 md:px-6 lg:px-6 py-4">
                             <div v-if="transactions.length > 0" class="space-y-3">
                                 <div
                                     v-for="transaction in transactions"
@@ -397,22 +406,12 @@
 </template>
 
 <style scoped>
-    /* Custom scrollbar for transactions list */
-    .overflow-y-auto::-webkit-scrollbar {
-        width: 8px;
+    .no-scrollbar::-webkit-scrollbar {
+        display: none;
     }
 
-    .overflow-y-auto::-webkit-scrollbar-track {
-        background: hsl(var(--muted));
-        border-radius: 4px;
-    }
-
-    .overflow-y-auto::-webkit-scrollbar-thumb {
-        background: hsl(var(--muted-foreground) / 0.3);
-        border-radius: 4px;
-    }
-
-    .overflow-y-auto::-webkit-scrollbar-thumb:hover {
-        background: hsl(var(--muted-foreground) / 0.5);
+    .no-scrollbar {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
     }
 </style>

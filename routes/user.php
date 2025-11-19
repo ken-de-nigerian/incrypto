@@ -99,6 +99,7 @@ Route::prefix('user')
                 Route::post('/investment/execute', 'executeInvestment')->name('investment.execute');
 
                 Route::get('/network', 'network')->name('network');
+                Route::get('/network/copied', 'copied')->name('copied');
                 Route::post('/network/copy/{masterTrader}', 'startCopy')->name('copy.start');
                 Route::patch('/network/copy/{copyTrade}/pause', 'pauseCopy')->name('copy.pause');
                 Route::patch('/network/copy/{copyTrade}/resume', 'resumeCopy')->name('copy.resume');

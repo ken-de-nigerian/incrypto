@@ -1006,7 +1006,7 @@
     }
 
     .input-crypto {
-        background-color: hsl(var(--input));
+        background-color: hsl(var(--background));
         border: 1px solid hsl(var(--border));
         border-radius: 0.75rem;
         padding: 0.75rem 1rem;

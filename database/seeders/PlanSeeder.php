@@ -28,6 +28,10 @@ class PlanSeeder extends Seeder
                 'period' => 3,
             ],
             [
+                'name' => '10 Hours',
+                'period' => 10,
+            ],
+            [
                 'name' => '12 Hours',
                 'period' => 12,
             ],
@@ -49,10 +53,10 @@ class PlanSeeder extends Seeder
                 'minimum' => 10.00,
                 'maximum' => 1000.00,
                 'interest' => 10.00,
-                'period' => 10,
+                'period' => 1,
                 'status' => 'active',
                 'capital_back_status' => 'yes',
-                'repeat_time' => 1,
+                'repeat_time' => 24,
             ],
             [
                 'name' => 'Premium Plan',

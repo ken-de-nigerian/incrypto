@@ -422,7 +422,7 @@
                             <button
                                 v-if="isLiveMode"
                                 @click="handleFundingClick"
-                                class="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-background border border-border text-card-foreground rounded-xl text-sm font-semibold transition-colors hover:bg-muted cursor-pointer">
+                                class="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-background border border-border text-card-foreground rounded-xl text-sm font-semibold hover:bg-muted cursor-pointer">
                                 <WalletIcon class="w-4 h-4" />
                                 Deposit
                             </button>
@@ -430,7 +430,7 @@
                             <button
                                 v-if="isLiveMode"
                                 @click="handleWithdrawalClick"
-                                class="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-background border border-border text-card-foreground rounded-xl text-sm font-semibold transition-colors hover:bg-muted cursor-pointer">
+                                class="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-background border border-border text-card-foreground rounded-xl text-sm font-semibold hover:bg-muted cursor-pointer">
                                 <DollarSignIcon class="w-4 h-4" />
                                 Withdraw
                             </button>
@@ -580,7 +580,7 @@
                             @click="startCopying(trader)"
                             :disabled="!isLiveMode"
                             :class="[
-                                'w-full flex items-center justify-center gap-2 py-2.5 rounded-lg font-semibold transition-colors',
+                                'w-full flex items-center justify-center gap-2 py-2.5 rounded-lg font-semibold',
                                 isLiveMode
                                     ? 'bg-primary text-primary-foreground hover:bg-primary/90 cursor-pointer'
                                     : 'bg-muted text-muted-foreground cursor-not-allowed'
@@ -629,7 +629,7 @@
                                 </tr>
                                 </thead>
                                 <tbody>
-                                <tr v-for="trade in filteredCopyTrades" :key="trade.id" class="border-t border-border hover:bg-muted/30 transition-colors">
+                                <tr v-for="trade in filteredCopyTrades" :key="trade.id" class="border-t border-border hover:bg-muted/30">
                                     <td class="px-4 py-3">
                                         <div class="flex items-center gap-3">
                                             <div class="w-10 h-10 rounded-full bg-secondary flex items-center justify-center text-sm font-bold text-primary">
@@ -661,7 +661,7 @@
                                     <td class="px-4 py-3">
                                         <button
                                             @click="viewTransactions(trade)"
-                                            class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-primary text-primary-foreground rounded-lg text-xs font-semibold hover:bg-primary/90 transition-colors cursor-pointer">
+                                            class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-primary text-primary-foreground rounded-lg text-xs font-semibold hover:bg-primary/90 cursor-pointer">
                                             <EyeIcon class="w-3.5 h-3.5" />
                                             View Trades
                                         </button>
@@ -726,7 +726,7 @@
                                 <div class="pt-3 border-t border-border">
                                     <button
                                         @click="viewTransactions(trade)"
-                                        class="w-full inline-flex items-center justify-center gap-2 px-3 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-semibold hover:bg-primary/90 transition-colors cursor-pointer">
+                                        class="w-full inline-flex items-center justify-center gap-2 px-3 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-semibold hover:bg-primary/90 cursor-pointer">
                                         <EyeIcon class="w-4 h-4" />
                                         View Trades
                                     </button>

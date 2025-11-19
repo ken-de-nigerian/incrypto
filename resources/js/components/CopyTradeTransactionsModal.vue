@@ -182,7 +182,7 @@
                             </div>
                             <button
                                 @click="handleClose"
-                                class="p-2 hover:bg-muted rounded-lg transition-colors"
+                                class="p-2 hover:bg-muted rounded-lg"
                             >
                                 <X class="w-5 h-5 text-muted-foreground" />
                             </button>
@@ -231,7 +231,7 @@
                                 <button
                                     @click="filterType = 'all'"
                                     :class="[
-                                        'px-4 md:px-6 lg:px-6 py-2 rounded-lg text-sm font-semibold transition-colors',
+                                        'px-4 md:px-6 lg:px-6 py-2 rounded-lg text-sm font-semibold',
                                         filterType === 'all'
                                             ? 'bg-primary text-primary-foreground'
                                             : 'bg-background text-card-foreground hover:bg-muted'
@@ -242,7 +242,7 @@
                                 <button
                                     @click="filterType = 'up'"
                                     :class="[
-                                        'px-4 md:px-6 lg:px-6 py-2 rounded-lg text-sm font-semibold transition-colors',
+                                        'px-4 md:px-6 lg:px-6 py-2 rounded-lg text-sm font-semibold',
                                         filterType === 'up'
                                             ? 'bg-green-600 text-white'
                                             : 'bg-background text-card-foreground hover:bg-muted'
@@ -253,7 +253,7 @@
                                 <button
                                     @click="filterType = 'down'"
                                     :class="[
-                                        'px-4 md:px-6 lg:px-6 py-2 rounded-lg text-sm font-semibold transition-colors',
+                                        'px-4 md:px-6 lg:px-6 py-2 rounded-lg text-sm font-semibold',
                                         filterType === 'down'
                                             ? 'bg-red-600 text-white'
                                             : 'bg-background text-card-foreground hover:bg-muted'
@@ -270,7 +270,7 @@
                                 <div
                                     v-for="transaction in transactions"
                                     :key="transaction.id"
-                                    class="bg-background border border-border rounded-lg p-4 hover:border-primary/30 transition-colors"
+                                    class="bg-background border border-border rounded-lg p-4 hover:border-primary/30"
                                 >
                                     <div class="flex items-start justify-between gap-4">
                                         <!-- Left Section -->
@@ -361,14 +361,14 @@
                                     <template v-if="copyTrade.status === 'active'">
                                         <button
                                             @click="handlePause"
-                                            class="inline-flex items-center gap-2 px-4 py-2 bg-yellow-600 text-white rounded-lg text-sm font-semibold hover:bg-yellow-700 transition-colors cursor-pointer"
+                                            class="inline-flex items-center gap-2 px-4 py-2 bg-yellow-600 text-white rounded-lg text-sm font-semibold hover:bg-yellow-700 cursor-pointer"
                                         >
                                             <Pause class="w-4 h-4" />
                                             Pause
                                         </button>
                                         <button
                                             @click="handleStop"
-                                            class="inline-flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg text-sm font-semibold hover:bg-red-700 transition-colors cursor-pointer"
+                                            class="inline-flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg text-sm font-semibold hover:bg-red-700 cursor-pointer"
                                         >
                                             <StopCircle class="w-4 h-4" />
                                             Stop
@@ -377,7 +377,7 @@
                                     <template v-else-if="copyTrade.status === 'paused'">
                                         <button
                                             @click="handleResume"
-                                            class="inline-flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-semibold hover:bg-green-700 transition-colors cursor-pointer"
+                                            class="inline-flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-semibold hover:bg-green-700 cursor-pointer"
                                         >
                                             <Play class="w-4 h-4" />
                                             Resume

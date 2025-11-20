@@ -2,11 +2,13 @@
 
 namespace App\Services;
 
+use App\Events\CopyTradeStarted;
 use App\Events\InvestmentExecuted;
 use App\Events\InvestmentPayout;
 use App\Events\TradeClosed;
 use App\Events\TradeExecuted;
 use App\Models\InvestmentHistory;
+use App\Models\MasterTrader;
 use App\Models\Plan;
 use App\Models\Trade;
 use App\Models\User;
@@ -194,6 +196,47 @@ class TradeService
 
         // Dispatch the event with the investment data
         event(new InvestmentExecuted($user, $data, $execution));
+
+        return $execution;
+    }
+
+    /**
+     * @throws Throwable
+     */
+    public function startCopy(MasterTrader $masterTrader, User $user, array $data)
+    {
+        $execution = DB::transaction(function () use ($user, $masterTrader, $data) {
+
+            // Verify user is in live mode
+            if ($user->profile->trading_status !== 'live') {
+                throw new Exception('You must be in live trading mode to copy traders.');
+            }
+
+            // Get live balance
+            $liveBalance = is_string($user->profile->live_trading_balance)
+                ? (float) $user->profile->live_trading_balance
+                : $user->profile->live_trading_balance;
+
+            // Verify sufficient balance
+            if ($data['amount'] > $liveBalance) {
+                throw new Exception('Insufficient balance.');
+            }
+
+            // Create copy trade
+            $copyTrade = $user->copyTrades()->create([
+                'master_trader_id' => $masterTrader->id,
+                'status' => 'active',
+                'started_at' => now(),
+            ]);
+
+            // Deduct amount from live trading balance
+            $user->profile->update([ 'live_trading_balance' => $user->profile->live_trading_balance - $data['amount']]);
+
+            return $copyTrade;
+        });
+
+        // Dispatch the event with the copyTrade data
+        event(new CopyTradeStarted($user, $data, $execution, $masterTrader));
 
         return $execution;
     }

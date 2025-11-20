@@ -96,10 +96,11 @@ Route::prefix('user')
                 Route::patch('/{trade}/close', 'closeTrade')->name('close');
 
                 Route::get('/investment', 'investment')->name('investment');
+                Route::get('/investment/history', 'investmentHistory')->name('investment.history');
                 Route::post('/investment/execute', 'executeInvestment')->name('investment.execute');
 
                 Route::get('/network', 'network')->name('network');
-                Route::get('/network/copied', 'copied')->name('copied');
+                Route::get('/network/copied', 'networkCopied')->name('network.copied');
                 Route::post('/network/copy/{masterTrader}', 'startCopy')->name('copy.start');
                 Route::patch('/network/copy/{copyTrade}/pause', 'pauseCopy')->name('copy.pause');
                 Route::patch('/network/copy/{copyTrade}/resume', 'resumeCopy')->name('copy.resume');

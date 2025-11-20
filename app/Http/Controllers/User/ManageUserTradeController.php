@@ -7,6 +7,7 @@ use App\Http\Requests\CloseTradeRequest;
 use App\Http\Requests\ExecuteInvestmentRequest;
 use App\Http\Requests\ExecuteTradeRequest;
 use App\Http\Requests\FundAccountRequest;
+use App\Http\Requests\StartCopyRequest;
 use App\Http\Requests\WithdrawAccountRequest;
 use App\Models\MasterTrader;
 use App\Models\Plan;
@@ -104,13 +105,36 @@ class ManageUserTradeController extends Controller
             ->paginate(9)
             ->toArray();
 
+        return Inertia::render('User/Trade/Investment', $pageData);
+    }
+
+    public function investmentHistory()
+    {
+        $user = Auth::user();
+        $pageData = $this->tradeCrypto->getData($user);
+
+        // Get paginated history
         $pageData['investment_histories'] = $user->investmentHistories()
             ->with('plan.plan_time_settings')
             ->latest()
             ->paginate(20)
             ->toArray();
 
-        return Inertia::render('User/Trade/Investment', $pageData);
+        // Fetch all records once to calculate stats efficiently
+        $allInvestments = $user->investmentHistories()->get();
+        $totalEarned = $allInvestments->reduce(function ($carry, $item) {
+            return $carry + ($item->interest * $item->repeat_time_count);
+        }, 0);
+
+        $pageData['stats'] = [
+            'total_invested' => $allInvestments->sum('amount'),
+            'total_earned' => $totalEarned,
+            'active_investments' => $allInvestments->where('status', 'running')->count(),
+            'completed_investments' => $allInvestments->where('status', 'completed')->count(),
+            'total_profit' => $totalEarned,
+        ];
+
+        return Inertia::render('User/Trade/Partials/InvestmentHistory', $pageData);
     }
 
     /**
@@ -152,7 +176,7 @@ class ManageUserTradeController extends Controller
     /**
      * Display the page for all copied traders.
      */
-    public function copied()
+    public function networkCopied()
     {
         $user = Auth::user();
         $pageData = $this->tradeCrypto->getData($user);
@@ -189,6 +213,29 @@ class ManageUserTradeController extends Controller
     /**
      * @throws Throwable
      */
+    public function startCopy(StartCopyRequest $request, MasterTrader $masterTrader, TradeService $tradeService)
+    {
+        try {
+            $result = $tradeService->startCopy(
+                $masterTrader,
+                $request->user(),
+                $request->validated()
+            );
+
+            if (!$result) {
+                return $this->notify('error', 'Failed to start copying trader - invalid state')->toBack();
+            }
+
+            return $this->notify('success', 'Successfully started copying ' . $masterTrader->user->first_name)
+                ->toRoute('user.trade.network.copied');
+        } catch (Exception $e) {
+            return $this->notify('error', __($e->getMessage()))->toBack();
+        }
+    }
+
+    /**
+     * @throws Throwable
+     */
     public function executeInvestment(ExecuteInvestmentRequest $request, TradeService $tradeService)
     {
         try {
@@ -201,7 +248,8 @@ class ManageUserTradeController extends Controller
                 return $this->notify('error', 'Failed to execute investment - invalid state')->toBack();
             }
 
-            return $this->notify('success', 'Investment executed successfully')->toBack();
+            return $this->notify('success', 'Investment executed successfully')
+                ->toRoute('user.trade.investment.history');
         } catch (Exception $e) {
             return $this->notify('error', __($e->getMessage()))->toBack();
         }

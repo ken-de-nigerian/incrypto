@@ -58,7 +58,7 @@
     <header class="flex flex-col lg:flex-row lg:items-start lg:justify-between lg:mb-8 lg:p-2">
         <div>
             <nav aria-label="breadcrumb">
-                <ol class="flex items-center space-x-2 text-sm text-muted-foreground">
+                <ol class="flex items-center space-x-2 text-xs md:text-sm text-muted-foreground">
                     <template v-for="(item, index) in breadcrumbItems" :key="index">
                         <li>
                             <TextLink

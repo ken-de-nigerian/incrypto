@@ -3,7 +3,7 @@
     import { Head, router, usePage } from '@inertiajs/vue3';
     import {
         AlertTriangleIcon,
-        DollarSignIcon,
+        DollarSignIcon, HistoryIcon,
         Search,
         UsersIcon,
         WalletIcon
@@ -303,17 +303,7 @@
                 </div>
             </div>
 
-            <div class="margin-bottom mt-6">
-                <!-- Header with link -->
-                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
-                    <h2 v-if="filteredMasterTraders.length > 0" class="text-xl sm:text-2xl font-bold text-card-foreground">Master Traders Rating</h2>
-                    <TextLink
-                        :href="route('user.trade.copied')"
-                        class="inline-flex items-center justify-center px-4 py-2 bg-primary text-primary-foreground font-medium rounded-md hover:bg-primary/90 transition-colors shadow-sm">
-                        My Copy Trades
-                    </TextLink>
-                </div>
-
+            <div class="mt-6" :class="{ 'margin-bottom': !filteredMasterTraders.length > 0 }">
                 <!-- Filters and Search -->
                 <div class="bg-card border border-border rounded-xl p-4 mb-6">
                     <div class="flex flex-col lg:flex-row gap-4">
@@ -325,7 +315,7 @@
                                     v-model="searchQuery"
                                     type="text"
                                     placeholder="Search traders by name..."
-                                    class="w-full pl-10 pr-4 py-2.5 bg-background border border-border rounded-lg text-sm text-card-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20"
+                                    class="w-full pl-10 pr-4 py-2.5 bg-background border border-border rounded-lg text-sm text-card-foreground placeholder:text-muted-foreground"
                                 />
                             </div>
                         </div>
@@ -351,7 +341,7 @@
                                     v-model="showFreeTrial"
                                     type="checkbox"
                                     id="freeTrial"
-                                    class="w-4 h-4 text-primary bg-background border-border rounded focus:ring-primary/20 focus:ring-2"
+                                    class="w-4 h-4 text-primary bg-background border-border rounded"
                                 />
                                 <label for="freeTrial" class="text-sm font-medium text-card-foreground cursor-pointer whitespace-nowrap">
                                     Free/Low Commission
@@ -359,6 +349,18 @@
                             </div>
                         </div>
                     </div>
+                </div>
+
+                <div class="flex items-center justify-between gap-3 mb-4">
+                    <h2 class="text-xl sm:text-2xl font-bold text-card-foreground">
+                        Copy Traders
+                    </h2>
+
+                    <TextLink :href="route('user.trade.network.copied')" class="inline-flex items-center gap-1.5 sm:gap-2 px-3 py-1.5 sm:px-4 sm:py-2 bg-background border border-border text-card-foreground rounded-lg text-xs sm:text-sm font-semibold hover:bg-muted transition-colors shrink-0">
+                        <HistoryIcon class="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                        <span class="hidden xs:inline">My Copy Trades</span>
+                        <span class="xs:hidden">History</span>
+                    </TextLink>
                 </div>
 
                 <!-- Master Traders Grid -->
@@ -383,9 +385,9 @@
                                         </h3>
 
                                         <div class="flex items-center gap-1.5 mt-1">
-                                        <span :class="['text-[10px] px-2 py-0.5 rounded-full border font-medium uppercase tracking-wider', getExpertiseColor(trader.expertise)]">
-                                            {{ trader.expertise }}
-                                        </span>
+                                            <span :class="['text-[10px] px-2 py-0.5 rounded-full border font-medium uppercase tracking-wider', getExpertiseColor(trader.expertise)]">
+                                                {{ trader.expertise }}
+                                            </span>
                                         </div>
                                     </div>
                                 </div>
@@ -402,23 +404,23 @@
                                 <div class="flex flex-col items-center justify-center border-r border-border/50 last:border-0">
                                     <span class="text-[10px] text-muted-foreground font-medium mb-1">Risk</span>
                                     <span class="text-xs font-bold px-2 py-0.5 rounded bg-background border border-border text-card-foreground">
-                                    {{ trader.risk_score }}/10
-                                </span>
+                                        {{ trader.risk_score }}/10
+                                    </span>
                                 </div>
 
                                 <div class="flex flex-col items-center justify-center border-r border-border/50 last:border-0">
                                     <span class="text-[10px] text-muted-foreground font-medium mb-1">Copiers</span>
                                     <span class="text-sm font-bold text-card-foreground flex items-center gap-1">
                                     <UsersIcon class="w-3 h-3 text-muted-foreground" />
-                                    {{ trader.copiers_count }}
-                                </span>
+                                        {{ trader.copiers_count }}
+                                    </span>
                                 </div>
 
                                 <div class="flex flex-col items-center justify-center">
                                     <span class="text-[10px] text-muted-foreground font-medium mb-1">Fee</span>
                                     <span class="text-sm font-bold" :class="!trader.commission_rate || parseFloat(trader.commission_rate as string) === 0 ? 'text-green-600' : 'text-card-foreground'">
-                                     {{ !trader.commission_rate || parseFloat(trader.commission_rate as string) === 0 ? 'FREE' : `$${parseFloat(trader.commission_rate as string).toFixed(2)}` }}
-                                </span>
+                                         {{ !trader.commission_rate || parseFloat(trader.commission_rate as string) === 0 ? 'FREE' : `$${parseFloat(trader.commission_rate as string).toFixed(2)}` }}
+                                    </span>
                                 </div>
                             </div>
 

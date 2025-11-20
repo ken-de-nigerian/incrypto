@@ -13,8 +13,7 @@
         Eye as EyeIcon,
         Users as UsersIcon,
         Calendar,
-        WalletIcon,
-        AlertTriangleIcon
+        WalletIcon
     } from 'lucide-vue-next';
     import AppLayout from '@/components/layout/user/dashboard/AppLayout.vue';
     import NotificationsModal from '@/components/utilities/NotificationsModal.vue';
@@ -195,7 +194,8 @@
     const breadcrumbItems = [
         { label: 'Dashboard', href: route('user.dashboard') },
         { label: 'Trading', href: route('user.trade.index') },
-        { label: 'My Copy Trades' }
+        { label: 'Copy Trading', href: route('user.trade.network') },
+        { label: 'History' }
     ];
 
     const filteredCopyTrades = computed(() => {
@@ -391,11 +391,6 @@
                         <div class="text-sm font-medium text-muted-foreground mt-1">
                             Mode: <span class="font-bold" :class="isLiveMode ? 'text-primary' : 'text-card-foreground'">{{ isLiveMode ? 'Live' : 'Demo' }}</span>
                         </div>
-
-                        <div v-if="!isLiveMode" class="flex items-center gap-2 mt-2 text-xs border rounded-lg px-3 py-2">
-                            <AlertTriangleIcon class="w-3 h-3" />
-                            <span>Switch to Live Mode to start copy trading</span>
-                        </div>
                     </div>
 
                     <div class="flex flex-col sm:flex-row md:items-end gap-4 md:gap-3 w-full md:w-auto">
@@ -427,58 +422,70 @@
                 </div>
             </div>
 
+            <!-- Stats Overview -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 mt-6 mb-6">
+                <div class="bg-card border border-border rounded-xl p-4">
+                    <div class="flex items-center gap-2 mb-2">
+                        <Activity class="w-4 h-4 text-primary" />
+                        <p class="text-xs text-muted-foreground font-semibold">Active Trades</p>
+                    </div>
+                    <p class="text-2xl font-bold text-card-foreground">{{ props.stats.total_active }}</p>
+                </div>
+
+                <div class="bg-card border border-border rounded-xl p-4">
+                    <div class="flex items-center gap-2 mb-2">
+                        <UsersIcon class="w-4 h-4 text-cyan-600" />
+                        <p class="text-xs text-muted-foreground font-semibold">Traders Copied</p>
+                    </div>
+                    <p class="text-2xl font-bold text-card-foreground">{{ props.stats.active_traders }}</p>
+                </div>
+
+                <div class="bg-card border border-border rounded-xl p-4">
+                    <div class="flex items-center gap-2 mb-2">
+                        <TrendingUp class="w-4 h-4 text-green-600" />
+                        <p class="text-xs text-muted-foreground font-semibold">Total Profit</p>
+                    </div>
+                    <p class="text-2xl font-bold text-green-600">+${{ props.stats.total_profit.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}</p>
+                </div>
+
+                <div class="bg-card border border-border rounded-xl p-4">
+                    <div class="flex items-center gap-2 mb-2">
+                        <TrendingDown class="w-4 h-4 text-red-600" />
+                        <p class="text-xs text-muted-foreground font-semibold">Total Loss</p>
+                    </div>
+                    <p class="text-2xl font-bold text-red-600">-${{ props.stats.total_loss.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}</p>
+                </div>
+
+                <div class="bg-card border border-border rounded-xl p-4">
+                    <div class="flex items-center gap-2 mb-2">
+                        <BarChart3 class="w-4 h-4" :class="props.stats.net_profit >= 0 ? 'text-green-600' : 'text-red-600'" />
+                        <p class="text-xs text-muted-foreground font-semibold">Net P/L</p>
+                    </div>
+                    <p class="text-2xl font-bold" :class="props.stats.net_profit >= 0 ? 'text-green-600' : 'text-red-600'">
+                        {{ props.stats.net_profit >= 0 ? '+' : '' }}${{ Math.abs(props.stats.net_profit).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}
+                    </p>
+                </div>
+
+                <div class="bg-card border border-border rounded-xl p-4">
+                    <div class="flex items-center gap-2 mb-2">
+                        <DollarSignIcon class="w-4 h-4 text-orange-600" />
+                        <p class="text-xs text-muted-foreground font-semibold">Commission Paid</p>
+                    </div>
+                    <p class="text-2xl font-bold text-card-foreground">${{ props.stats.total_commission.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}</p>
+                </div>
+            </div>
+
             <div class="margin-bottom mt-6">
-                <!-- Stats Overview -->
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 mb-6">
-                    <div class="bg-card border border-border rounded-xl p-4">
-                        <div class="flex items-center gap-2 mb-2">
-                            <Activity class="w-4 h-4 text-primary" />
-                            <p class="text-xs text-muted-foreground font-semibold">Active Trades</p>
-                        </div>
-                        <p class="text-2xl font-bold text-card-foreground">{{ props.stats.total_active }}</p>
-                    </div>
+                <div class="flex items-center justify-between gap-3 mb-4">
+                    <h2 class="text-xl sm:text-2xl font-bold text-card-foreground">
+                        Copy Trading History
+                    </h2>
 
-                    <div class="bg-card border border-border rounded-xl p-4">
-                        <div class="flex items-center gap-2 mb-2">
-                            <UsersIcon class="w-4 h-4 text-cyan-600" />
-                            <p class="text-xs text-muted-foreground font-semibold">Traders Copied</p>
-                        </div>
-                        <p class="text-2xl font-bold text-card-foreground">{{ props.stats.active_traders }}</p>
-                    </div>
-
-                    <div class="bg-card border border-border rounded-xl p-4">
-                        <div class="flex items-center gap-2 mb-2">
-                            <TrendingUp class="w-4 h-4 text-green-600" />
-                            <p class="text-xs text-muted-foreground font-semibold">Total Profit</p>
-                        </div>
-                        <p class="text-2xl font-bold text-green-600">+${{ props.stats.total_profit.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}</p>
-                    </div>
-
-                    <div class="bg-card border border-border rounded-xl p-4">
-                        <div class="flex items-center gap-2 mb-2">
-                            <TrendingDown class="w-4 h-4 text-red-600" />
-                            <p class="text-xs text-muted-foreground font-semibold">Total Loss</p>
-                        </div>
-                        <p class="text-2xl font-bold text-red-600">-${{ props.stats.total_loss.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}</p>
-                    </div>
-
-                    <div class="bg-card border border-border rounded-xl p-4">
-                        <div class="flex items-center gap-2 mb-2">
-                            <BarChart3 class="w-4 h-4" :class="props.stats.net_profit >= 0 ? 'text-green-600' : 'text-red-600'" />
-                            <p class="text-xs text-muted-foreground font-semibold">Net P/L</p>
-                        </div>
-                        <p class="text-2xl font-bold" :class="props.stats.net_profit >= 0 ? 'text-green-600' : 'text-red-600'">
-                            {{ props.stats.net_profit >= 0 ? '+' : '' }}${{ Math.abs(props.stats.net_profit).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}
-                        </p>
-                    </div>
-
-                    <div class="bg-card border border-border rounded-xl p-4">
-                        <div class="flex items-center gap-2 mb-2">
-                            <DollarSignIcon class="w-4 h-4 text-orange-600" />
-                            <p class="text-xs text-muted-foreground font-semibold">Commission Paid</p>
-                        </div>
-                        <p class="text-2xl font-bold text-card-foreground">${{ props.stats.total_commission.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}</p>
-                    </div>
+                    <TextLink :href="route('user.trade.network')" class="inline-flex items-center gap-1.5 sm:gap-2 px-3 py-1.5 sm:px-4 sm:py-2 bg-background border border-border text-card-foreground rounded-lg text-xs sm:text-sm font-semibold hover:bg-muted transition-colors shrink-0">
+                        <UsersIcon class="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                        <span class="hidden xs:inline">Copy Trading</span>
+                        <span class="xs:hidden">Copy Trading</span>
+                    </TextLink>
                 </div>
 
                 <!-- Copy Trades Content -->
@@ -488,61 +495,61 @@
                         <div class="hidden lg:block overflow-x-auto">
                             <table class="w-full">
                                 <thead class="bg-muted/50 border-b border-border">
-                                <tr>
-                                    <th class="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">Trader</th>
-                                    <th class="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">Status</th>
-                                    <th class="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">Profit/Loss</th>
-                                    <th class="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">Fee</th>
-                                    <th class="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">Started</th>
-                                    <th class="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">Actions</th>
-                                </tr>
+                                    <tr>
+                                        <th class="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">Trader</th>
+                                        <th class="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">Status</th>
+                                        <th class="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">Profit/Loss</th>
+                                        <th class="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">Fee</th>
+                                        <th class="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">Started</th>
+                                        <th class="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">Actions</th>
+                                    </tr>
                                 </thead>
                                 <tbody class="divide-y divide-border">
-                                <tr v-for="trade in filteredCopyTrades" :key="trade.id" class="hover:bg-muted/20 transition-colors">
-                                    <td class="px-4 py-4">
-                                        <div class="flex items-center gap-3">
-                                            <div class="w-10 h-10 rounded-full bg-secondary flex items-center justify-center text-sm font-bold text-primary">
-                                                {{ getTraderInitials(trade.master_trader!) }}
+                                    <tr v-for="trade in filteredCopyTrades" :key="trade.id" class="hover:bg-muted/20 transition-colors">
+                                        <td class="px-4 py-4">
+                                            <div class="flex items-center gap-3">
+                                                <div class="w-10 h-10 rounded-full bg-secondary flex items-center justify-center text-sm font-bold text-primary">
+                                                    {{ getTraderInitials(trade.master_trader!) }}
+                                                </div>
+                                                <div>
+                                                    <p class="font-semibold text-card-foreground">{{ getTraderName(trade.master_trader!) }}</p>
+                                                    <span :class="['text-[10px] px-2 py-0.5 rounded-full border font-medium uppercase tracking-wider inline-block mt-1', getExpertiseColor(trade.master_trader?.expertise || 'Newcomer')]">
+                                                            {{ trade.master_trader?.expertise || 'Unknown' }}
+                                                        </span>
+                                                </div>
                                             </div>
-                                            <div>
-                                                <p class="font-semibold text-card-foreground">{{ getTraderName(trade.master_trader!) }}</p>
-                                                <span :class="['text-[10px] px-2 py-0.5 rounded-full border font-medium uppercase tracking-wider inline-block mt-1', getExpertiseColor(trade.master_trader?.expertise || 'Newcomer')]">
-                                                        {{ trade.master_trader?.expertise || 'Unknown' }}
-                                                    </span>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td class="px-4 py-4">
-                                        <span :class="['inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-full border', getStatusBadgeClass(trade.status)]">
-                                            <component :is="getStatusIcon(trade.status)" class="w-3.5 h-3.5" />
-                                            {{ trade.status.charAt(0).toUpperCase() + trade.status.slice(1) }}
-                                        </span>
-                                    </td>
-                                    <td class="px-4 py-4">
-                                        <div class="flex flex-col gap-1">
-                                            <span class="text-sm font-semibold text-green-600">+${{ parseFloat(trade.current_profit as string).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}</span>
-                                            <span class="text-sm font-semibold text-red-600">-${{ parseFloat(trade.current_loss as string).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}</span>
-                                            <span class="text-sm font-bold mt-1" :class="getNetProfit(trade) >= 0 ? 'text-green-600' : 'text-red-600'">
-                                                Net: {{ getNetProfit(trade) >= 0 ? '+' : '' }}${{ Math.abs(getNetProfit(trade)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}
+                                        </td>
+                                        <td class="px-4 py-4">
+                                            <span :class="['inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-full border', getStatusBadgeClass(trade.status)]">
+                                                <component :is="getStatusIcon(trade.status)" class="w-3.5 h-3.5" />
+                                                {{ trade.status.charAt(0).toUpperCase() + trade.status.slice(1) }}
                                             </span>
-                                        </div>
-                                    </td>
-                                    <td class="px-4 py-4 text-sm font-semibold text-card-foreground">${{ parseFloat(trade.total_commission_paid as string).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}</td>
-                                    <td class="px-4 py-4">
-                                        <div class="flex items-center gap-2 text-sm text-muted-foreground">
-                                            <Calendar class="w-4 h-4" />
-                                            <span>{{ new Date(trade.started_at).toLocaleDateString() }}</span>
-                                        </div>
-                                    </td>
-                                    <td class="px-4 py-4">
-                                        <button
-                                            @click="viewTransactions(trade)"
-                                            class="inline-flex items-center gap-1.5 px-4 py-2 bg-primary text-primary-foreground rounded-lg text-xs font-semibold hover:bg-primary/90 cursor-pointer transition-colors">
-                                            <EyeIcon class="w-3.5 h-3.5" />
-                                            View Details
-                                        </button>
-                                    </td>
-                                </tr>
+                                        </td>
+                                        <td class="px-4 py-4">
+                                            <div class="flex flex-col gap-1">
+                                                <span class="text-sm font-semibold text-green-600">+${{ parseFloat(trade.current_profit as string).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}</span>
+                                                <span class="text-sm font-semibold text-red-600">-${{ parseFloat(trade.current_loss as string).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}</span>
+                                                <span class="text-sm font-bold mt-1" :class="getNetProfit(trade) >= 0 ? 'text-green-600' : 'text-red-600'">
+                                                    Net: {{ getNetProfit(trade) >= 0 ? '+' : '' }}${{ Math.abs(getNetProfit(trade)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}
+                                                </span>
+                                            </div>
+                                        </td>
+                                        <td class="px-4 py-4 text-sm font-semibold text-card-foreground">${{ parseFloat(trade.total_commission_paid as string).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}</td>
+                                        <td class="px-4 py-4">
+                                            <div class="flex items-center gap-2 text-sm text-muted-foreground">
+                                                <Calendar class="w-4 h-4" />
+                                                <span>{{ new Date(trade.started_at).toLocaleDateString() }}</span>
+                                            </div>
+                                        </td>
+                                        <td class="px-4 py-4">
+                                            <button
+                                                @click="viewTransactions(trade)"
+                                                class="inline-flex items-center gap-1.5 px-4 py-2 bg-primary text-primary-foreground rounded-lg text-xs font-semibold hover:bg-primary/90 cursor-pointer transition-colors">
+                                                <EyeIcon class="w-3.5 h-3.5" />
+                                                View Trades
+                                            </button>
+                                        </td>
+                                    </tr>
                                 </tbody>
                             </table>
                         </div>
@@ -636,7 +643,7 @@
                                         @click="viewTransactions(trade)"
                                         class="w-full flex items-center justify-center gap-2 py-3 rounded-xl font-bold text-sm bg-primary text-primary-foreground hover:bg-primary/90 cursor-pointer">
                                         <EyeIcon class="w-4 h-4" />
-                                        View Details
+                                        View Trades
                                     </button>
                                 </div>
                             </div>
@@ -657,8 +664,7 @@
                             }}
                         </p>
 
-                        <TextLink :href="route('user.trade.network')"
-                                  class="inline-flex items-center gap-2 px-6 py-3 bg-primary text-primary-foreground rounded-xl font-semibold hover:bg-primary/90 transition-colors">
+                        <TextLink :href="route('user.trade.network')" class="inline-flex items-center gap-2 px-6 py-3 bg-primary text-primary-foreground rounded-xl font-semibold hover:bg-primary/90 transition-colors">
                             <UsersIcon class="w-5 h-5" />
                             Browse Master Traders
                         </TextLink>

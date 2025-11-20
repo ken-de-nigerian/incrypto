@@ -184,14 +184,14 @@
                         <!-- Header -->
                         <div class="px-4 md:px-6 lg:px-6 py-4 border-b border-border flex items-center justify-between bg-muted/30">
                             <div>
-                                <h2 class="text-xl font-bold text-card-foreground">Transaction History</h2>
+                                <h2 class="text-xl font-bold text-card-foreground">Trade History</h2>
                                 <p class="text-sm text-muted-foreground mt-0.5">
                                     Copy trading with {{ getTraderName }}
                                 </p>
                             </div>
                             <button
                                 @click="handleClose"
-                                class="p-2 hover:bg-muted rounded-lg"
+                                class="p-2 hover:bg-muted rounded-lg cursor-pointer"
                             >
                                 <X class="w-5 h-5 text-muted-foreground" />
                             </button>
@@ -240,34 +240,33 @@
                                 <button
                                     @click="filterType = 'all'"
                                     :class="[
-                                        'px-4 md:px-6 lg:px-6 py-2 rounded-lg text-sm font-semibold',
+                                        'px-4 md:px-6 lg:px-6 py-2 rounded-lg text-sm font-semibold cursor-pointer',
                                         filterType === 'all'
                                             ? 'bg-primary text-primary-foreground'
                                             : 'bg-background text-card-foreground hover:bg-muted'
-                                    ]"
-                                >
+                                    ]">
                                     All ({{ transactions.length }})
                                 </button>
+
                                 <button
                                     @click="filterType = 'up'"
                                     :class="[
-                                        'px-4 md:px-6 lg:px-6 py-2 rounded-lg text-sm font-semibold',
+                                        'px-4 md:px-6 lg:px-6 py-2 rounded-lg text-sm font-semibold cursor-pointer',
                                         filterType === 'up'
                                             ? 'bg-green-600 text-white'
                                             : 'bg-background text-card-foreground hover:bg-muted'
-                                    ]"
-                                >
+                                    ]">
                                     Profits ({{ stats?.profitTransactions }})
                                 </button>
+
                                 <button
                                     @click="filterType = 'down'"
                                     :class="[
-                                        'px-4 md:px-6 lg:px-6 py-2 rounded-lg text-sm font-semibold',
+                                        'px-4 md:px-6 lg:px-6 py-2 rounded-lg text-sm font-semibold cursor-pointer',
                                         filterType === 'down'
                                             ? 'bg-red-600 text-white'
                                             : 'bg-background text-card-foreground hover:bg-muted'
-                                    ]"
-                                >
+                                    ]">
                                     Losses ({{ stats?.lossTransactions }})
                                 </button>
                             </div>
@@ -357,8 +356,8 @@
 
                             <div v-else class="flex flex-col items-center justify-center text-center py-12">
                                 <Activity class="w-16 h-16 text-muted-foreground/50 mb-4" />
-                                <h3 class="text-lg font-semibold text-card-foreground mb-2">No Transactions Yet</h3>
-                                <p class="text-sm text-muted-foreground">Transactions will appear here once trading begins.</p>
+                                <h3 class="text-lg font-semibold text-card-foreground mb-2">No Trades Yet</h3>
+                                <p class="text-sm text-muted-foreground">Trades will appear here once trading begins.</p>
                             </div>
                         </div>
 

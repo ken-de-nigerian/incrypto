@@ -25,20 +25,17 @@ use Throwable;
 class TradeService
 {
     /**
+     * Execute a new trade for the user
+     *
      * @throws Exception
      * @throws Throwable
      */
     public function executeTrade(User $user, array $data)
     {
         $expiryTime = $this->calculateExpiryTime($data['duration']);
-
-        $shouldWin = false;
-        if ($data['trading_mode'] === 'demo') {
-            $shouldWin = true;
-        }
+        $shouldWin = $data['trading_mode'] === 'demo';
 
         $execution = DB::transaction(function () use ($user, $data, $expiryTime, $shouldWin) {
-
             $profile = $user->profile()->lockForUpdate()->first();
 
             if ($data['trading_mode'] !== $profile->trading_status) {
@@ -81,55 +78,136 @@ class TradeService
 
             // Deduct Master's Balance
             if ($data['trading_mode'] === 'live') {
-
                 $profile->decrement('live_trading_balance', $data['amount']);
 
-                // Find the MasterTrader record for this user
                 $isMasterTrader = $user->isMasterTrader();
                 $masterTrader = $user->masterTrader()->lockForUpdate()->first();
 
                 if ($isMasterTrader) {
-
-                    // Update Master Trader Stats: Increment total trades
                     $masterTrader->increment('total_trades');
 
-                    // Fetch active copiers
                     $activeCopies = CopyTrade::where('master_trader_id', $masterTrader->id)
                         ->where('status', 'active')
                         ->with(['user.profile'])
                         ->get();
 
+                    // Prepare bulk operations
+                    $copierTrades = [];
+                    $copyTransactions = [];
+                    $balanceUpdates = [];
+                    $eventsToDispatch = [];
+
                     foreach ($activeCopies as $copyTrade) {
                         $copierUser = $copyTrade->user;
-
-                        // Amount copied
-                        $copyAmount = $data['amount'];
-
-                        // Check Copier's Balance
+                        $copyAmount = $data['amount'] * $copyTrade->multiplier;
                         $copierBalance = $copierUser->profile->live_trading_balance;
 
                         if ($copierBalance >= $copyAmount) {
+                            // Store balance update for bulk processing
+                            $balanceUpdates[] = [
+                                'user_id' => $copierUser->id,
+                                'amount' => $copyAmount
+                            ];
 
-                            // Deduct balance from Copier
-                            $copierUser->profile()->decrement('live_trading_balance', $copyAmount);
+                            // Prepare copier trade data
+                            $copierTradeData = [
+                                'user_id' => $copierUser->id,
+                                'category' => $data['category'],
+                                'pair' => $data['pair'],
+                                'pair_name' => $data['pair_name'],
+                                'type' => $data['type'],
+                                'amount' => $copyAmount,
+                                'leverage' => $data['leverage'],
+                                'duration' => $data['duration'],
+                                'entry_price' => $data['entry_price'],
+                                'trading_mode' => 'live',
+                                'is_demo_forced_win' => false,
+                                'status' => 'Open',
+                                'pnl' => 0,
+                                'expiry_time' => $expiryTime,
+                                'opened_at' => now(),
+                            ];
+                            $copierTrades[] = $copierTradeData;
 
-                            // Map the trade type
                             $transactionType = match(strtolower($data['type'])) {
                                 'buy', 'long', 'up', 'call' => 'up',
                                 default => 'down',
                             };
 
-                            // Create Transaction Record
-                            $transaction = CopyTradeTransaction::create([
+                            // Prepare transaction data
+                            $copyTransactions[] = [
                                 'copy_trade_id' => $copyTrade->id,
+                                'copier_user' => $copierUser,
                                 'type' => $transactionType,
                                 'amount' => $copyAmount,
-                                'description' => "Copied trade on {$data['pair_name']}",
-                                'metadata' => $trade->toArray(),
-                            ]);
+                                'description' => "Copied trade on {$data['pair_name']} (×$copyTrade->multiplier)",
+                                'metadata' => array_merge($trade->toArray(), [
+                                    'multiplier' => $copyTrade->multiplier,
+                                    'master_amount' => $data['amount'],
+                                ]),
+                            ];
+                        }
+                    }
 
-                            // Notify the copier
-                            event(new CopyTradeExecuted($copierUser, $transaction));
+                    // Update balances instead of individual decrements
+                    if (!empty($balanceUpdates)) {
+                        foreach ($balanceUpdates as $update) {
+                            DB::table('user_profiles')
+                                ->where('user_id', $update['user_id'])
+                                ->decrement('live_trading_balance', $update['amount']);
+                        }
+                    }
+
+                    // Insert copier trades
+                    if (!empty($copierTrades)) {
+                        Trade::insert($copierTrades);
+
+                        $insertedTrades = Trade::where('entry_price', $data['entry_price'])
+                            ->where('opened_at', now())
+                            ->whereIn('user_id', array_column($balanceUpdates, 'user_id'))
+                            ->get()
+                            ->keyBy('user_id');
+                    }
+
+                    // Insert copy trade transactions with proper copier_trade_id
+                    if (!empty($copyTransactions)) {
+                        $transactionsToInsert = [];
+                        foreach ($copyTransactions as $transactionData) {
+                            $copierUserId = $transactionData['copier_user']->id;
+                            $copierTradeId = $insertedTrades[$copierUserId]->id ?? null;
+
+                            $metadata = $transactionData['metadata'];
+                            $metadata['copier_trade_id'] = $copierTradeId;
+
+                            $transactionsToInsert[] = [
+                                'copy_trade_id' => $transactionData['copy_trade_id'],
+                                'type' => $transactionData['type'],
+                                'amount' => $transactionData['amount'],
+                                'description' => $transactionData['description'],
+                                'metadata' => json_encode($metadata),
+                                'created_at' => now(),
+                                'updated_at' => now(),
+                            ];
+
+                            // Store for event dispatching
+                            $eventsToDispatch[] = [
+                                'user' => $transactionData['copier_user'],
+                                'transaction_id' => null,
+                            ];
+                        }
+
+                        CopyTradeTransaction::insert($transactionsToInsert);
+
+                        // Get inserted transactions for events
+                        $insertedTransactions = CopyTradeTransaction::whereIn('copy_trade_id', array_column($transactionsToInsert, 'copy_trade_id'))
+                            ->where('created_at', now())
+                            ->get();
+
+                        // Dispatch events
+                        foreach ($insertedTransactions as $idx => $transaction) {
+                            if (isset($eventsToDispatch[$idx])) {
+                                event(new CopyTradeExecuted($eventsToDispatch[$idx]['user'], $transaction));
+                            }
                         }
                     }
                 }
@@ -140,13 +218,14 @@ class TradeService
             return $trade;
         });
 
-        // Dispatch the event with the new transaction data
         event(new TradeExecuted($user, $data, $expiryTime));
 
         return $execution;
     }
 
     /**
+     * Close a trade
+     *
      * @throws Throwable
      */
     public function closeTrade(User $user, array $data, Trade $trade)
@@ -154,7 +233,6 @@ class TradeService
         $isAutoClose = $data['is_auto_close'] ?? false;
 
         $execution = DB::transaction(function () use ($user, $data, $trade, $isAutoClose) {
-
             $trade->lockForUpdate();
             $trade->refresh();
 
@@ -178,38 +256,38 @@ class TradeService
 
             $user->profile->increment($balanceField, $trade->amount + $data['pnl']);
 
-            // Handle Master Trader Stats & Copiers (Only for Live Trades)
             if ($trade->trading_mode === 'live') {
-
                 $isMasterTrader = $user->isMasterTrader();
                 $masterTrader = $user->masterTrader()->lockForUpdate()->first();
 
                 if ($isMasterTrader) {
+                    // Update profit/loss
                     if ($data['pnl'] >= 0) {
                         $masterTrader->increment('total_profit', $data['pnl']);
                     } else {
                         $masterTrader->increment('total_loss', abs($data['pnl']));
                     }
 
-                    // Recalculate Stats
-                    $allTrades = Trade::where('user_id', $user->id)
+                    $tradeStats = Trade::where('user_id', $user->id)
                         ->where('trading_mode', 'live')
                         ->where('status', 'Closed')
-                        ->get();
+                        ->selectRaw('
+                        COUNT(*) as total_trades,
+                        SUM(CASE WHEN pnl >= 0 THEN 1 ELSE 0 END) as winning_trades,
+                        SUM(pnl) as total_pnl,
+                        SUM(amount) as total_invested
+                    ')->first();
 
-                    $totalTrades = $allTrades->count();
-                    $winningTrades = $allTrades->where('pnl', '>=', 0)->count();
+                    $totalTrades = $tradeStats->total_trades;
+                    $winningTrades = $tradeStats->winning_trades;
                     $losingTrades = $totalTrades - $winningTrades;
 
-                    // Win Rate
                     $winRate = $totalTrades > 0 ? ($winningTrades / $totalTrades) * 100 : 0;
 
-                    // Gain Percentage (Total PnL / Total Invested)
-                    $totalPnl = $allTrades->sum('pnl');
-                    $totalInvested = $allTrades->sum('amount');
+                    $totalPnl = $tradeStats->total_pnl;
+                    $totalInvested = $tradeStats->total_invested;
                     $gainPercentage = $totalInvested > 0 ? ($totalPnl / $totalInvested) * 100 : 0;
 
-                    // Risk Score Calculation (1-10)
                     $riskScore = 1;
                     if ($totalTrades > 0) {
                         $lossRate = $losingTrades / $totalTrades;
@@ -224,8 +302,16 @@ class TradeService
                     ]);
                 }
 
-                // Find corresponding transactions for copiers using metadata->id
-                $copyTransactions = CopyTradeTransaction::where('metadata->id', $trade->id)->get();
+                $copyTransactions = CopyTradeTransaction::where('metadata->id', $trade->id)
+                    ->with(['copyTrade.user.profile'])
+                    ->get();
+
+                // Prepare bulk updates
+                $balanceUpdates = [];
+                $copyTradeStatUpdates = [];
+                $copierTradeUpdates = [];
+                $transactionUpdates = [];
+                $eventsToDispatch = [];
 
                 foreach ($copyTransactions as $transaction) {
                     $copyTrade = $transaction->copyTrade;
@@ -233,40 +319,101 @@ class TradeService
 
                     if (!$copyTrade || !$copierUser) continue;
 
-                    // Calculate Copier PnL: (Copier Amount / Master Amount) * Master PnL
-                    $copierPnl = 0.0;
-                    if ($trade->amount > 0) {
-                        // Use high precision for calculation
-                        $copierPnl = ((float)$transaction->amount / (float)$trade->amount) * (float)$data['pnl'];
+                    $multiplier = $transaction->metadata['multiplier'] ?? 1;
+                    $copierPnl = (float)$data['pnl'] * (float)$multiplier;
+
+                    // Prepare copier trade update
+                    $copierTradeId = $transaction->metadata['copier_trade_id'] ?? null;
+                    if ($copierTradeId) {
+                        $copierTradeUpdates[] = [
+                            'id' => $copierTradeId,
+                            'exit_price' => $data['exit_price'],
+                            'pnl' => $copierPnl,
+                            'status' => 'Closed',
+                            'closed_at' => $data['closed_at'],
+                            'is_auto_close' => $isAutoClose
+                        ];
                     }
 
-                    // Update Copier Balance
-                    $copierUser->profile()->increment('live_trading_balance', $transaction->amount + $copierPnl);
+                    // Prepare balance update
+                    $balanceUpdates[] = [
+                        'user_id' => $copierUser->id,
+                        'amount' => $transaction->amount + $copierPnl
+                    ];
 
-                    // Update CopyTrade Stats (Cumulative)
-                    if ($copierPnl >= 0) {
-                        $copyTrade->increment('current_profit', $copierPnl);
-                    } else {
-                        $copyTrade->increment('current_loss', abs($copierPnl));
-                    }
+                    // Prepare copy trade stats update
+                    $copyTradeStatUpdates[] = [
+                        'id' => $copyTrade->id,
+                        'field' => $copierPnl >= 0 ? 'current_profit' : 'current_loss',
+                        'amount' => abs($copierPnl)
+                    ];
 
-                    // Update Transaction Metadata with Close Details
+                    // Prepare transaction metadata update
                     $metadata = $transaction->metadata ?? [];
                     $metadata['exit_price'] = $data['exit_price'];
-
-                    // Store PnL without number_format to preserve precision
                     $metadata['pnl'] = $copierPnl;
-
+                    $metadata['master_pnl'] = $data['pnl'];
                     $metadata['status'] = 'Closed';
                     $metadata['closed_at'] = $data['closed_at'];
 
-                    // We force the update to ensure JSON encoding picks up the float type correctly
-                    $transaction->update([
+                    $transactionUpdates[] = [
+                        'id' => $transaction->id,
                         'metadata' => $metadata
-                    ]);
+                    ];
 
-                    // Notify the copier that their copied trade has closed
-                    event(new CopyTradeClosed($copierUser, $transaction));
+                    $eventsToDispatch[] = [
+                        'user' => $copierUser,
+                        'transaction' => $transaction
+                    ];
+                }
+
+                // Update copier trades
+                if (!empty($copierTradeUpdates)) {
+                    foreach ($copierTradeUpdates as $update) {
+                        Trade::where('id', $update['id'])
+                            ->where('status', 'Open')
+                            ->update([
+                                'exit_price' => $update['exit_price'],
+                                'pnl' => $update['pnl'],
+                                'status' => $update['status'],
+                                'closed_at' => $update['closed_at'],
+                                'is_auto_close' => $update['is_auto_close'],
+                                'updated_at' => now()
+                            ]);
+                    }
+                }
+
+                // Update balances
+                if (!empty($balanceUpdates)) {
+                    foreach ($balanceUpdates as $update) {
+                        DB::table('user_profiles')
+                            ->where('user_id', $update['user_id'])
+                            ->increment('live_trading_balance', $update['amount']);
+                    }
+                }
+
+                // Update copy trade stats
+                if (!empty($copyTradeStatUpdates)) {
+                    foreach ($copyTradeStatUpdates as $update) {
+                        CopyTrade::where('id', $update['id'])
+                            ->increment($update['field'], $update['amount']);
+                    }
+                }
+
+                // Update transaction metadata
+                if (!empty($transactionUpdates)) {
+                    foreach ($transactionUpdates as $update) {
+                        CopyTradeTransaction::where('id', $update['id'])
+                            ->update([
+                                'metadata' => $update['metadata'],
+                                'updated_at' => now()
+                            ]);
+                    }
+                }
+
+                // Dispatch events
+                foreach ($eventsToDispatch as $eventData) {
+                    event(new CopyTradeClosed($eventData['user'], $eventData['transaction']));
                 }
             }
 
@@ -380,21 +527,22 @@ class TradeService
                 : $user->profile->live_trading_balance;
 
             // Verify sufficient balance
-            if ($data['amount'] > $liveBalance) {
-                throw new Exception('Insufficient balance.');
+            if ($data['commission_fee'] > $liveBalance) {
+                throw new Exception('Insufficient balance required to copy trader.');
             }
 
             // Create copy trade
             $copyTrade = $user->copyTrades()->create([
                 'master_trader_id' => $masterTrader->id,
-                'total_commission_paid' => $data['amount'],
+                'multiplier' => $data['multiplier'],
+                'total_commission_paid' => $data['commission_fee'],
                 'status' => 'active',
                 'started_at' => now(),
             ]);
 
             // Deduct amount from live trading balance
             $user->profile->update([
-                'live_trading_balance' => $user->profile->live_trading_balance - $data['amount']
+                'live_trading_balance' => $user->profile->live_trading_balance - $data['commission_fee']
             ]);
 
             return $copyTrade;

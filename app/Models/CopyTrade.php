@@ -22,6 +22,7 @@ class CopyTrade extends Model
         'master_trader_id',
         'current_profit',
         'current_loss',
+        'multiplier',
         'total_commission_paid',
         'status',
         'started_at',
@@ -37,6 +38,7 @@ class CopyTrade extends Model
     protected $casts = [
         'current_profit' => 'decimal:2',
         'current_loss' => 'decimal:2',
+        'multiplier' => 'integer',
         'total_commission_paid' => 'decimal:2',
         'started_at' => 'datetime',
         'paused_at' => 'datetime',

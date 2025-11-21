@@ -21,6 +21,8 @@ class CopyTradeTransaction extends Model
         'amount',
         'description',
         'metadata',
+        'multiplier',
+        'master_amount',
     ];
 
     /**

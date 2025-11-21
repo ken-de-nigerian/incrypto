@@ -25,7 +25,27 @@ class StartCopyRequest extends FormRequest
     {
         $user = Auth::user();
         return [
-            'amount' => 'required|numeric|min:1|max:' . $user->profile->live_trading_balance,
+            'multiplier' => 'required|numeric|min:0.1|max:100',
+            'commission_fee' => 'required|numeric|min:0|max:' . $user->profile->live_trading_balance,
+        ];
+    }
+
+    /**
+     * Get custom validation messages.
+     *
+     * @return array<string, string>
+     */
+    public function messages(): array
+    {
+        return [
+            'multiplier.required' => 'Copy multiplier is required.',
+            'multiplier.numeric' => 'Copy multiplier must be a number.',
+            'multiplier.min' => 'Copy multiplier must be at least 0.1.',
+            'multiplier.max' => 'Copy multiplier cannot exceed 100.',
+            'commission_fee.required' => 'Commission fee is required.',
+            'commission_fee.numeric' => 'Commission fee must be a valid number.',
+            'commission_fee.min' => 'Commission fee cannot be negative.',
+            'commission_fee.max' => 'Insufficient balance to cover the commission fee.',
         ];
     }
 }

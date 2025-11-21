@@ -25,6 +25,9 @@
         updated_at?: string;
         position_size?: number;
         holding_time_minutes?: number;
+        multiplier?: number;
+        master_amount?: number;
+        master_pnl?: number;
     }
 
     interface CopyTradeTransaction {
@@ -54,6 +57,7 @@
         total_commission_paid: number | string;
         status: string;
         started_at: string;
+        multiplier: number;
         master_trader: MasterTrader | null;
         transactions?: CopyTradeTransaction[];
     }
@@ -91,7 +95,6 @@
 
         const totalTransactions = transactions.value.length;
 
-        // Use PnL from metadata to determine actual profit/loss
         const profitTransactions = transactions.value.filter(t => {
             const pnl = t.metadata?.pnl ?? 0;
             return pnl > 0;
@@ -171,6 +174,18 @@
         return getTransactionPnL(transaction) > 0;
     };
 
+    const getMultiplier = (transaction: CopyTradeTransaction) => {
+        return transaction.metadata?.multiplier ?? props.copyTrade?.multiplier ?? 1;
+    };
+
+    const getMasterAmount = (transaction: CopyTradeTransaction) => {
+        return transaction.metadata?.master_amount;
+    };
+
+    const getMasterPnL = (transaction: CopyTradeTransaction) => {
+        return transaction.metadata?.master_pnl;
+    };
+
     const handleClose = () => {
         emit('close');
     };
@@ -226,7 +241,7 @@
                             <div class="pr-4">
                                 <h2 class="text-lg sm:text-xl font-bold text-card-foreground truncate">Trade History</h2>
                                 <p class="text-xs sm:text-sm text-muted-foreground mt-0.5 truncate">
-                                    With {{ getTraderName }}
+                                    With {{ getTraderName }} (×{{ copyTrade.multiplier }})
                                 </p>
                             </div>
 
@@ -371,11 +386,27 @@
                                                         </span>
                                                     </div>
 
-                                                    <!-- Trade Amount -->
+                                                    <!-- Copy Multiplier -->
                                                     <div class="flex flex-col gap-0.5">
-                                                        <span class="text-muted-foreground">Amount</span>
+                                                        <span class="text-muted-foreground">Multiplier</span>
+                                                        <span class="font-medium text-primary">
+                                                            ×{{ getMultiplier(transaction) }}
+                                                        </span>
+                                                    </div>
+
+                                                    <!-- Your Trade Amount -->
+                                                    <div class="flex flex-col gap-0.5">
+                                                        <span class="text-muted-foreground">Your Amount</span>
                                                         <span class="font-medium text-card-foreground">
                                                             ${{ parseFloat(transaction.amount as string).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}
+                                                        </span>
+                                                    </div>
+
+                                                    <!-- Master's Amount -->
+                                                    <div v-if="getMasterAmount(transaction)" class="flex flex-col gap-0.5">
+                                                        <span class="text-muted-foreground">Master Amount</span>
+                                                        <span class="font-medium text-muted-foreground">
+                                                            ${{ parseFloat(String(getMasterAmount(transaction))).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}
                                                         </span>
                                                     </div>
 
@@ -400,6 +431,14 @@
                                                         <span class="text-muted-foreground">Status</span>
                                                         <span class="font-medium capitalize truncate" :class="transaction.metadata.status === 'Closed' ? 'text-muted-foreground' : 'text-primary'">
                                                             {{ transaction.metadata.status || 'Completed' }}
+                                                        </span>
+                                                    </div>
+
+                                                    <!-- Master's PnL (if available) -->
+                                                    <div v-if="getMasterPnL(transaction) !== undefined" class="flex flex-col gap-0.5">
+                                                        <span class="text-muted-foreground">Master PnL</span>
+                                                        <span class="font-medium" :class="getMasterPnL(transaction) >= 0 ? 'text-green-600' : 'text-red-600'">
+                                                            {{ getMasterPnL(transaction) >= 0 ? '+' : '' }}${{ Math.abs(getMasterPnL(transaction)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}
                                                         </span>
                                                     </div>
                                                 </div>

@@ -457,14 +457,14 @@
             </div>
 
             <div class="mt-6 mb-8 sm:mb-0">
-                <div class="flex items-center justify-between gap-3 mb-4">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-5">
                     <h2 class="text-xl sm:text-2xl font-bold text-card-foreground">
-                        Investment History
+                        My Investments
                     </h2>
 
-                    <TextLink :href="route('user.trade.investment')" class="inline-flex items-center gap-1.5 sm:gap-2 px-3 py-2 bg-background border border-border text-card-foreground rounded-lg text-xs sm:text-sm font-semibold hover:bg-muted transition-colors touch-manipulation">
-                        <DollarSignIcon class="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                        <span>Plans</span>
+                    <TextLink :href="route('user.trade.investment')" class="w-full sm:w-auto inline-flex justify-center items-center gap-2 px-4 py-3 sm:py-2 bg-background border border-border text-card-foreground rounded-xl text-sm font-semibold hover:bg-muted transition-colors touch-manipulation">
+                        <DollarSignIcon class="w-4 h-4" />
+                        <span>Investment Plans</span>
                     </TextLink>
                 </div>
 

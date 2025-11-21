@@ -300,7 +300,7 @@
     };
 
     const handleResumeCopyTrade = (copyTrade: CopyTrade) => {
-        notify('info', 'Are you sure you want to resume this copy trade?', {
+        notify('success', 'Are you sure you want to resume this copy trade?', {
             title: 'Confirm Resume',
             duration: 0,
             dismissible: true,
@@ -438,14 +438,14 @@
             </div>
 
             <div class="margin-bottom mt-6">
-                <div class="flex items-center justify-between gap-3 mb-4">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-5">
                     <h2 class="text-xl sm:text-2xl font-bold text-card-foreground">
-                        Copy Trading History
+                        My Copy Trades
                     </h2>
 
-                    <TextLink :href="route('user.trade.network')" class="inline-flex items-center gap-1.5 sm:gap-2 px-3 py-2 bg-background border border-border text-card-foreground rounded-lg text-xs sm:text-sm font-semibold hover:bg-muted transition-colors touch-manipulation">
-                        <UsersIcon class="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                        <span>Traders</span>
+                    <TextLink :href="route('user.trade.network')" class="w-full sm:w-auto inline-flex justify-center items-center gap-2 px-4 py-3 sm:py-2 bg-background border border-border text-card-foreground rounded-xl text-sm font-semibold hover:bg-muted transition-colors touch-manipulation">
+                        <UsersIcon class="w-4 h-4" />
+                        <span>Master Traders</span>
                     </TextLink>
                 </div>
 

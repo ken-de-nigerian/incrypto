@@ -14,6 +14,7 @@ return new class extends Migration
             $table->foreignId('master_trader_id')->constrained('master_traders')->onDelete('cascade');
             $table->decimal('current_profit', 15)->default(0.00);
             $table->decimal('current_loss', 15)->default(0.00);
+            $table->integer('multiplier')->default(1);
             $table->decimal('total_commission_paid', 15)->default(0.00);
             $table->enum('status', ['active', 'paused', 'stopped'])->default('active');
             $table->timestamp('started_at');

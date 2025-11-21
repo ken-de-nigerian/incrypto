@@ -309,7 +309,7 @@
                                 @click="openInvestmentModal(plan)"
                                 :disabled="!isLiveMode"
                                 :class="[
-                                    'flex items-center justify-center gap-2 py-3 rounded-xl font-semibold transition-all active:scale-[0.98] touch-manipulation',
+                                    'flex items-center justify-center gap-2 py-3 rounded-xl font-semibold transition-all active:scale-[0.98] cursor-pointer touch-manipulation',
                                     isLiveMode
                                         ? 'bg-primary text-primary-foreground hover:bg-primary/90'
                                         : 'bg-muted text-muted-foreground cursor-not-allowed border border-border'

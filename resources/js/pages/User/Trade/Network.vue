@@ -1,23 +1,22 @@
 <script setup lang="ts">
-    import { computed, ref } from 'vue';
+    import { computed, ref, watch } from 'vue';
     import { Head, router, usePage } from '@inertiajs/vue3';
     import {
-        AlertTriangleIcon,
-        DollarSignIcon, HistoryIcon,
+        HistoryIcon,
         Search,
         UsersIcon,
-        WalletIcon
+        XIcon
     } from 'lucide-vue-next';
     import Breadcrumb from '@/components/Breadcrumb.vue';
     import AppLayout from '@/components/layout/user/dashboard/AppLayout.vue';
     import NotificationsModal from '@/components/utilities/NotificationsModal.vue';
-    import TradingModeSwitcher from '@/components/TradingModeSwitcher.vue';
     import FundingModal from '@/components/FundingModal.vue';
     import WithdrawalModal from '@/components/WithdrawalModal.vue';
     import CustomSelectDropdown from '@/components/CustomSelectDropdown.vue';
     import MasterTraderDetailsModal from '@/components/MasterTraderDetailsModal.vue';
     import PaginationControls from '@/components/PaginationControls.vue';
     import TextLink from '@/components/TextLink.vue';
+    import WalletBalanceCard from '@/components/WalletBalanceCard.vue';
 
     interface Token {
         symbol: string;
@@ -55,6 +54,7 @@
         total_trades: number | string;
         win_rate: number | string;
         user: User | null;
+        is_copied?: boolean;
     }
 
     interface PaginatedData<T> {
@@ -78,6 +78,7 @@
         userBalances: Record<string, number>;
         prices: Record<string, number>;
         masterTraders: PaginatedData<MasterTrader>;
+        activeCopiedTraderIds: number[];
         auth: {
             user: User;
             notification_count: number;
@@ -89,12 +90,15 @@
     const isWithdrawalModalOpen = ref(false);
     const isMasterTraderModalOpen = ref(false);
     const selectedMasterTrader = ref<MasterTrader | null>(null);
-    const sortFilter = ref<string>('risk');
-    const expertiseFilter = ref<string>('all');
-    const searchQuery = ref('');
-    const showFreeTrial = ref(false);
 
     const page = usePage();
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const sortFilter = ref<string>(urlParams.get('sort') || 'risk');
+    const expertiseFilter = ref<string>(urlParams.get('expertise') || 'all');
+    const searchQuery = ref(urlParams.get('search') || '');
+    const showFreeTrial = ref(urlParams.get('free_trial') === '1');
+
     const user = computed(() => page.props.auth?.user as User);
     const userProfile = computed(() => user.value?.profile as UserProfile);
     const isLiveMode = ref(userProfile.value?.trading_status === 'live');
@@ -148,35 +152,11 @@
         { label: 'Copy Trading' }
     ];
 
-    const filteredMasterTraders = computed(() => {
-        let filtered = [...props.masterTraders.data];
-
-        if (expertiseFilter.value !== 'all') {
-            filtered = filtered.filter(t => t.expertise === expertiseFilter.value);
-        }
-
-        if (showFreeTrial.value) {
-            filtered = filtered.filter(t => !t.commission_rate || parseFloat(t.commission_rate as string) === 0);
-        }
-
-        if (searchQuery.value) {
-            const query = searchQuery.value.toLowerCase();
-            filtered = filtered.filter(t =>
-                t.user?.first_name?.toLowerCase().includes(query) ||
-                t.user?.last_name?.toLowerCase().includes(query) ||
-                `${t.user?.first_name} ${t.user?.last_name}`?.toLowerCase().includes(query)
-            );
-        }
-
-        if (sortFilter.value === 'risk') {
-            filtered.sort((a, b) => parseFloat(a.risk_score as string) - parseFloat(b.risk_score as string));
-        } else if (sortFilter.value === 'gain') {
-            filtered.sort((a, b) => parseFloat(b.gain_percentage as string) - parseFloat(a.gain_percentage as string));
-        } else if (sortFilter.value === 'copiers') {
-            filtered.sort((a, b) => parseFloat(b.copiers_count as string) - parseFloat(a.copiers_count as string));
-        }
-
-        return filtered;
+    const hasActiveFilters = computed(() => {
+        return sortFilter.value !== 'risk' ||
+            expertiseFilter.value !== 'all' ||
+            searchQuery.value !== '' ||
+            showFreeTrial.value;
     });
 
     const getTraderName = (trader: MasterTrader) => {
@@ -202,7 +182,14 @@
         return colors[expertise as keyof typeof colors] || 'bg-gray-100 text-gray-800 border-gray-200';
     };
 
+    const isTraderCopied = (traderId: number) => {
+        return props.activeCopiedTraderIds.includes(traderId);
+    };
+
     const startCopying = (trader: MasterTrader) => {
+        if (isTraderCopied(trader.id)) {
+            return;
+        }
         selectedMasterTrader.value = trader;
         isMasterTraderModalOpen.value = true;
     };
@@ -215,13 +202,51 @@
         isWithdrawalModalOpen.value = true;
     };
 
+    const applyFilters = () => {
+        router.get(route('user.trade.network'), {
+            sort: sortFilter.value,
+            expertise: expertiseFilter.value,
+            search: searchQuery.value,
+            free_trial: showFreeTrial.value ? '1' : '0'
+        }, {
+            preserveState: true,
+            preserveScroll: true,
+            only: ['masterTraders', 'activeCopiedTraderIds'],
+        });
+    };
+
+    const clearAllFilters = () => {
+        sortFilter.value = 'risk';
+        expertiseFilter.value = 'all';
+        searchQuery.value = '';
+        showFreeTrial.value = false;
+
+        router.get(route('user.trade.network'), {}, {
+            preserveState: true,
+            preserveScroll: false,
+            only: ['masterTraders', 'activeCopiedTraderIds'],
+        });
+    };
+
     const goToMasterTradersPage = (url: string) => {
         router.get(url, {}, {
             preserveState: true,
             preserveScroll: true,
-            only: ['masterTraders'],
+            only: ['masterTraders', 'activeCopiedTraderIds'],
         });
     };
+
+    let searchTimeout: NodeJS.Timeout;
+    watch(searchQuery, () => {
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(() => {
+            applyFilters();
+        }, 500);
+    });
+
+    watch([sortFilter, expertiseFilter, showFreeTrial], () => {
+        applyFilters();
+    });
 
     const sortOptions = [
         { value: 'risk', label: 'Lowest Risk' },
@@ -240,8 +265,9 @@
 </script>
 
 <template>
+    <Head title="Copy Trading Network" />
+
     <AppLayout>
-        <Head title="Copy Trading Network" />
 
         <div class="lg:ml-64 pt-5 lg:pt-10 p-4 sm:p-6 lg:p-8 pb-24 lg:pb-8">
             <Breadcrumb
@@ -252,172 +278,151 @@
                 @open-notifications="isNotificationsModalOpen = true"
             />
 
-            <!-- Balance Card -->
-            <div class="grid grid-cols-1 gap-6 mt-6">
-                <div class="bg-card border border-border rounded-2xl p-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
-                    <div>
-                        <h2 class="text-xl font-semibold text-muted-foreground mb-1">Wallet Balance</h2>
+            <WalletBalanceCard
+                :current-balance="currentBalance"
+                v-model:is-live-mode="isLiveMode"
+                :live-balance="liveBalance"
+                :demo-balance="demoBalance"
+                warning-message="Switch to Live Mode to start copy trading with real funds."
+                @deposit="handleFundingClick"
+                @withdraw="handleWithdrawalClick"
+            />
 
-                        <div class="flex items-end gap-3">
-                            <span class="text-2xl sm:text-4xl font-extrabold text-card-foreground">
-                                ${{ currentBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}
-                            </span>
-                        </div>
-
-                        <div class="text-sm font-medium text-muted-foreground mt-1">
-                            Mode: <span class="font-bold" :class="isLiveMode ? 'text-primary' : 'text-card-foreground'">{{ isLiveMode ? 'Live' : 'Demo' }}</span>
-                        </div>
-
-                        <div v-if="!isLiveMode" class="flex items-center gap-2 mt-2 text-xs border rounded-lg px-3 py-2">
-                            <AlertTriangleIcon class="w-3 h-3" />
-                            <span>Switch to Live Mode to start copy trading</span>
-                        </div>
-                    </div>
-
-                    <div class="flex flex-col sm:flex-row md:items-end gap-4 md:gap-3 w-full md:w-auto">
-                        <div class="flex gap-3 w-full sm:w-auto">
-                            <button
-                                v-if="isLiveMode"
-                                @click="handleFundingClick"
-                                class="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-background border border-border text-card-foreground rounded-xl text-sm font-semibold hover:bg-muted cursor-pointer">
-                                <WalletIcon class="w-4 h-4" />
-                                Deposit
-                            </button>
-
-                            <button
-                                v-if="isLiveMode"
-                                @click="handleWithdrawalClick"
-                                class="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-background border border-border text-card-foreground rounded-xl text-sm font-semibold hover:bg-muted cursor-pointer">
-                                <DollarSignIcon class="w-4 h-4" />
-                                Withdraw
-                            </button>
-                        </div>
-
-                        <TradingModeSwitcher
-                            :is-live-mode="isLiveMode"
-                            :live-balance="liveBalance"
-                            :demo-balance="demoBalance"
-                            @update:is-live-mode="isLiveMode = $event"
-                        />
-                    </div>
-                </div>
-            </div>
-
-            <div class="mt-6" :class="{ 'margin-bottom': !filteredMasterTraders.length > 0 }">
-                <!-- Filters and Search -->
+            <div class="mt-6 mb-8 sm:mb-0">
                 <div class="bg-card border border-border rounded-xl p-4 mb-6">
-                    <div class="flex flex-col lg:flex-row gap-4">
-                        <!-- Search -->
-                        <div class="flex-1">
-                            <div class="relative">
-                                <Search class="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-                                <input
-                                    v-model="searchQuery"
-                                    type="text"
-                                    placeholder="Search traders by name..."
-                                    class="w-full pl-10 pr-4 py-2.5 bg-background border border-border rounded-lg text-sm text-card-foreground placeholder:text-muted-foreground"
-                                />
+                    <div class="flex flex-col gap-4">
+                        <div class="flex flex-col md:flex-row gap-3">
+                            <div class="flex-1">
+                                <div class="relative">
+                                    <Search class="absolute left-3.5 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                                    <input
+                                        v-model="searchQuery"
+                                        type="text"
+                                        placeholder="Search traders..."
+                                        class="w-full pl-11 pr-4 py-3 sm:py-2.5 bg-background border border-border rounded-lg text-base sm:text-sm text-card-foreground placeholder:text-muted-foreground transition-all"
+                                    />
+                                </div>
                             </div>
+
+                            <button
+                                v-if="hasActiveFilters"
+                                @click="clearAllFilters"
+                                class="flex items-center justify-center gap-2 px-4 py-3 sm:py-2.5 bg-background border border-border text-card-foreground rounded-lg text-sm font-semibold hover:bg-destructive hover:text-destructive-foreground hover:border-destructive transition-colors whitespace-nowrap cursor-pointer touch-manipulation">
+                                <XIcon class="w-4 h-4" />
+                                Clear Filters
+                            </button>
                         </div>
 
-                        <!-- Filters -->
-                        <div class="flex flex-col sm:flex-row gap-3">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                             <CustomSelectDropdown
                                 v-model="sortFilter"
                                 :options="sortOptions"
                                 placeholder="Sort by"
-                                class="w-full sm:w-48"
+                                class="w-full"
                             />
 
                             <CustomSelectDropdown
                                 v-model="expertiseFilter"
                                 :options="expertiseOptions"
                                 placeholder="Expertise"
-                                class="w-full sm:w-48"
+                                class="w-full"
                             />
 
-                            <div class="flex items-center gap-2 px-4 py-2 bg-background border border-border rounded-lg">
+                            <div class="sm:col-span-2 lg:col-span-1 flex items-center gap-3 px-4 py-3 sm:py-2 bg-background border border-border rounded-lg touch-manipulation">
                                 <input
                                     v-model="showFreeTrial"
                                     type="checkbox"
                                     id="freeTrial"
-                                    class="w-4 h-4 text-primary bg-background border-border rounded"
+                                    class="w-5 h-5 sm:w-4 sm:h-4 text-primary bg-background border-border rounded cursor-pointer"
                                 />
-                                <label for="freeTrial" class="text-sm font-medium text-card-foreground cursor-pointer whitespace-nowrap">
+                                <label for="freeTrial" class="text-sm font-medium text-card-foreground cursor-pointer whitespace-nowrap flex-1">
                                     Free/Low Commission
                                 </label>
                             </div>
                         </div>
+
+                        <div v-if="hasActiveFilters" class="flex flex-wrap items-center gap-2 pt-3 border-t border-border/60">
+                            <span class="text-xs font-medium text-muted-foreground uppercase tracking-wider">Active:</span>
+
+                            <span v-if="sortFilter !== 'risk'" class="inline-flex items-center gap-1 px-2.5 py-1 bg-primary/10 text-primary rounded-full text-xs font-medium border border-primary/10">
+                                {{ sortOptions.find(o => o.value === sortFilter)?.label }}
+                            </span>
+
+                            <span v-if="expertiseFilter !== 'all'" class="inline-flex items-center gap-1 px-2.5 py-1 bg-primary/10 text-primary rounded-full text-xs font-medium border border-primary/10">
+                                {{ expertiseOptions.find(o => o.value === expertiseFilter)?.label }}
+                            </span>
+
+                            <span v-if="searchQuery" class="inline-flex items-center gap-1 px-2.5 py-1 bg-primary/10 text-primary rounded-full text-xs font-medium border border-primary/10">
+                                "{{ searchQuery }}"
+                            </span>
+
+                            <span v-if="showFreeTrial" class="inline-flex items-center gap-1 px-2.5 py-1 bg-primary/10 text-primary rounded-full text-xs font-medium border border-primary/10">
+                                Free Trial
+                            </span>
+                        </div>
                     </div>
                 </div>
 
-                <div class="flex items-center justify-between gap-3 mb-4">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-5">
                     <h2 class="text-xl sm:text-2xl font-bold text-card-foreground">
-                        Copy Traders
+                        Master Traders
                     </h2>
 
-                    <TextLink :href="route('user.trade.network.copied')" class="inline-flex items-center gap-1.5 sm:gap-2 px-3 py-1.5 sm:px-4 sm:py-2 bg-background border border-border text-card-foreground rounded-lg text-xs sm:text-sm font-semibold hover:bg-muted transition-colors shrink-0">
-                        <HistoryIcon class="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                        <span class="hidden xs:inline">My Copy Trades</span>
-                        <span class="xs:hidden">History</span>
+                    <TextLink :href="route('user.trade.network.copied')" class="w-full sm:w-auto inline-flex justify-center items-center gap-2 px-4 py-3 sm:py-2 bg-background border border-border text-card-foreground rounded-xl text-sm font-semibold hover:bg-muted transition-colors touch-manipulation">
+                        <HistoryIcon class="w-4 h-4" />
+                        <span>My Copy Trades</span>
                     </TextLink>
                 </div>
 
-                <!-- Master Traders Grid -->
-                <div v-if="filteredMasterTraders.length > 0" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                <div v-if="props.masterTraders.data.length > 0" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
                     <div
-                        v-for="trader in filteredMasterTraders"
+                        v-for="trader in props.masterTraders.data"
                         :key="trader.id"
-                        class="group relative bg-card border border-border rounded-2xl overflow-hidden flex flex-col">
+                        class="group bg-card border border-border rounded-2xl overflow-hidden flex flex-col hover:border-primary/40 transition-colors">
 
                         <div class="p-5 flex-1 flex flex-col">
-                            <div class="flex items-center justify-between mb-5">
-                                <div class="flex items-center gap-3">
-                                    <div class="relative">
-                                        <div class="w-12 h-12 rounded-full bg-secondary flex items-center justify-center text-lg font-extrabold text-primary">
-                                            {{ getTraderInitials(trader) }}
-                                        </div>
+                            <div class="flex items-start justify-between mb-4">
+                                <div class="flex items-center gap-3 overflow-hidden">
+                                    <div class="w-12 h-12 rounded-full bg-secondary flex-shrink-0 flex items-center justify-center text-lg font-extrabold text-primary">
+                                        {{ getTraderInitials(trader) }}
                                     </div>
 
                                     <div class="min-w-0">
-                                        <h3 class="font-bold text-card-foreground text-base truncate leading-tight">
+                                        <h3 class="font-bold text-card-foreground text-base truncate leading-tight mb-1">
                                             {{ getTraderName(trader) }}
                                         </h3>
-
-                                        <div class="flex items-center gap-1.5 mt-1">
-                                            <span :class="['text-[10px] px-2 py-0.5 rounded-full border font-medium uppercase tracking-wider', getExpertiseColor(trader.expertise)]">
-                                                {{ trader.expertise }}
-                                            </span>
-                                        </div>
+                                        <span :class="['inline-block text-[10px] px-2 py-0.5 rounded-full border font-bold uppercase tracking-wide', getExpertiseColor(trader.expertise)]">
+                                            {{ trader.expertise }}
+                                        </span>
                                     </div>
                                 </div>
 
-                                <div class="text-right">
+                                <div class="text-right flex-shrink-0 pl-2">
                                     <p class="text-[10px] text-muted-foreground uppercase font-bold tracking-wider mb-0.5">Gain</p>
-                                    <p class="text-xl font-black" :class="parseFloat(trader.gain_percentage as string) >= 0 ? 'text-green-500' : 'text-red-500'">
+                                    <p class="text-lg font-black leading-none" :class="parseFloat(trader.gain_percentage as string) >= 0 ? 'text-green-600' : 'text-red-600'">
                                         {{ parseFloat(trader.gain_percentage as string) >= 0 ? '+' : '' }}{{ parseFloat(trader.gain_percentage as string).toFixed(2) }}%
                                     </p>
                                 </div>
                             </div>
 
-                            <div class="bg-muted/40 rounded-xl p-3 grid grid-cols-3 gap-2 mb-5 border border-border/50">
-                                <div class="flex flex-col items-center justify-center border-r border-border/50 last:border-0">
-                                    <span class="text-[10px] text-muted-foreground font-medium mb-1">Risk</span>
+                            <div class="bg-muted/30 rounded-xl p-3 grid grid-cols-3 gap-2 mb-5 border border-border/50">
+                                <div class="flex flex-col items-center justify-center text-center">
+                                    <span class="text-[10px] text-muted-foreground font-semibold mb-1">Risk</span>
                                     <span class="text-xs font-bold px-2 py-0.5 rounded bg-background border border-border text-card-foreground">
                                         {{ trader.risk_score }}/10
                                     </span>
                                 </div>
 
-                                <div class="flex flex-col items-center justify-center border-r border-border/50 last:border-0">
-                                    <span class="text-[10px] text-muted-foreground font-medium mb-1">Copiers</span>
+                                <div class="flex flex-col items-center justify-center text-center border-l border-border/50">
+                                    <span class="text-[10px] text-muted-foreground font-semibold mb-1">Copiers</span>
                                     <span class="text-sm font-bold text-card-foreground flex items-center gap-1">
-                                    <UsersIcon class="w-3 h-3 text-muted-foreground" />
+                                        <UsersIcon class="w-3 h-3 text-muted-foreground" />
                                         {{ trader.copiers_count }}
                                     </span>
                                 </div>
 
-                                <div class="flex flex-col items-center justify-center">
-                                    <span class="text-[10px] text-muted-foreground font-medium mb-1">Fee</span>
+                                <div class="flex flex-col items-center justify-center text-center border-l border-border/50">
+                                    <span class="text-[10px] text-muted-foreground font-semibold mb-1">Fee</span>
                                     <span class="text-sm font-bold" :class="!trader.commission_rate || parseFloat(trader.commission_rate as string) === 0 ? 'text-green-600' : 'text-card-foreground'">
                                          {{ !trader.commission_rate || parseFloat(trader.commission_rate as string) === 0 ? 'FREE' : `$${parseFloat(trader.commission_rate as string).toFixed(2)}` }}
                                     </span>
@@ -425,13 +430,13 @@
                             </div>
 
                             <div class="mt-auto">
-                                <div class="flex items-end justify-between text-xs mb-2">
+                                <div class="flex items-end justify-between text-xs mb-2 px-0.5">
                                     <div class="flex flex-col">
-                                        <span class="text-[10px] text-muted-foreground font-medium">Total Profit</span>
+                                        <span class="text-[10px] text-muted-foreground font-semibold">Profit</span>
                                         <span class="font-bold text-green-600">${{ parseFloat(trader.total_profit as string).toLocaleString('en-US', { maximumFractionDigits: 0 }) }}</span>
                                     </div>
                                     <div class="flex flex-col items-end">
-                                        <span class="text-[10px] text-muted-foreground font-medium">Total Loss</span>
+                                        <span class="text-[10px] text-muted-foreground font-semibold">Loss</span>
                                         <span class="font-bold text-red-600">${{ parseFloat(trader.total_loss as string).toLocaleString('en-US', { maximumFractionDigits: 0 }) }}</span>
                                     </div>
                                 </div>
@@ -449,29 +454,42 @@
                             </div>
                         </div>
 
-                        <div class="p-4 pt-0 mt-2">
+                        <div class="p-4 pt-0 mt-1">
                             <button
                                 @click="startCopying(trader)"
-                                :disabled="!isLiveMode"
+                                :disabled="!isLiveMode || isTraderCopied(trader.id)"
                                 :class="[
-                                'w-full flex items-center justify-center gap-2 py-3 rounded-xl font-bold text-sm',
-                                isLiveMode
-                                    ? 'bg-primary text-primary-foreground hover:bg-primary/90 cursor-pointer'
-                                    : 'bg-muted text-muted-foreground cursor-not-allowed opacity-70'
+                                'w-full flex items-center justify-center gap-2 py-3.5 sm:py-3 rounded-xl font-bold text-sm transition-all active:scale-[0.98] touch-manipulation',
+                                isTraderCopied(trader.id)
+                                    ? 'bg-muted text-muted-foreground cursor-not-allowed border border-border'
+                                    : isLiveMode
+                                        ? 'bg-primary text-primary-foreground hover:bg-primary/90 cursor-pointer'
+                                        : 'bg-muted text-muted-foreground cursor-not-allowed opacity-70'
                             ]">
-                                {{ !trader.commission_rate || parseFloat(trader.commission_rate as string) === 0 ? 'Start Free Trial' : 'Copy Strategy' }}
+                                <template v-if="isTraderCopied(trader.id)">
+                                    Already Copying
+                                </template>
+                                <template v-else>
+                                    {{ !trader.commission_rate || parseFloat(trader.commission_rate as string) === 0 ? 'Start Free Trial' : 'Copy Strategy' }}
+                                </template>
                             </button>
                         </div>
                     </div>
                 </div>
 
                 <div v-else class="bg-card border border-border rounded-xl p-12 text-center">
-                    <UsersIcon class="w-16 h-16 text-muted-foreground/50 mx-auto mb-4" />
+                    <UsersIcon class="w-16 h-16 text-muted-foreground/30 mx-auto mb-4" />
                     <h3 class="text-lg font-semibold text-card-foreground mb-2">No Master Traders Found</h3>
-                    <p class="text-sm text-muted-foreground">Try adjusting your filters to see more traders.</p>
+                    <p class="text-sm text-muted-foreground mb-6 max-w-xs mx-auto">Try adjusting your filters to see more traders.</p>
+                    <button
+                        v-if="hasActiveFilters"
+                        @click="clearAllFilters"
+                        class="inline-flex items-center gap-2 px-6 py-3 bg-primary text-primary-foreground rounded-xl text-sm font-semibold hover:bg-primary/90 transition-colors cursor-pointer touch-manipulation">
+                        <XIcon class="w-4 h-4" />
+                        Clear All Filters
+                    </button>
                 </div>
 
-                <!-- Pagination -->
                 <PaginationControls
                     v-if="props.masterTraders.last_page > 1"
                     :links="props.masterTraders.links"
@@ -479,12 +497,11 @@
                     :to="props.masterTraders.to"
                     :total="props.masterTraders.total"
                     @go-to-page="goToMasterTradersPage"
-                    class="md:mt-6 md:pt-6 md:border-t md:border-border"
+                    class="mt-8 pt-6 border-t border-border"
                 />
             </div>
         </div>
 
-        <!-- Modals -->
         <FundingModal
             :is-open="isFundingModalOpen"
             :live-balance="liveBalance"
@@ -521,11 +538,5 @@
     select:focus-visible {
         outline: 2px solid hsl(var(--primary));
         outline-offset: 2px;
-    }
-
-    @media (max-width: 640px) {
-        .margin-bottom {
-            margin-bottom: 50px;
-        }
     }
 </style>

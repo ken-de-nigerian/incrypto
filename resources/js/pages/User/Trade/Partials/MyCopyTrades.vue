@@ -12,8 +12,7 @@
         Clock as ClockIcon,
         Eye as EyeIcon,
         Users as UsersIcon,
-        Calendar,
-        WalletIcon
+        Calendar
     } from 'lucide-vue-next';
     import AppLayout from '@/components/layout/user/dashboard/AppLayout.vue';
     import NotificationsModal from '@/components/utilities/NotificationsModal.vue';
@@ -21,10 +20,10 @@
     import PaginationControls from '@/components/PaginationControls.vue';
     import TextLink from '@/components/TextLink.vue';
     import Breadcrumb from '@/components/Breadcrumb.vue';
-    import TradingModeSwitcher from '@/components/TradingModeSwitcher.vue';
     import FundingModal from '@/components/FundingModal.vue';
     import WithdrawalModal from '@/components/WithdrawalModal.vue';
     import { useFlash } from '@/composables/useFlash';
+    import WalletBalanceCard from '@/components/WalletBalanceCard.vue';
 
     interface Token {
         symbol: string;
@@ -285,7 +284,7 @@
             action: {
                 label: 'Confirm',
                 callback: () => {
-                    router.post(route('user.trade.copy.pause', copyTrade.id), {}, {
+                    router.patch(route('user.trade.copy.pause', copyTrade.id), {}, {
                         preserveScroll: true,
                         only: ['copyTrades', 'stats'],
                         onSuccess: () => {
@@ -308,7 +307,7 @@
             action: {
                 label: 'Confirm',
                 callback: () => {
-                    router.post(route('user.trade.copy.resume', copyTrade.id), {}, {
+                    router.patch(route('user.trade.copy.resume', copyTrade.id), {}, {
                         preserveScroll: true,
                         only: ['copyTrades', 'stats'],
                         onSuccess: () => {
@@ -376,92 +375,55 @@
                 @open-notifications="isNotificationsModalOpen = true"
             />
 
-            <!-- Balance Card -->
-            <div class="grid grid-cols-1 gap-6 mt-6">
-                <div class="bg-card border border-border rounded-2xl p-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
-                    <div>
-                        <h2 class="text-xl font-semibold text-muted-foreground mb-1">Wallet Balance</h2>
+            <WalletBalanceCard
+                :current-balance="currentBalance"
+                v-model:is-live-mode="isLiveMode"
+                :live-balance="liveBalance"
+                :demo-balance="demoBalance"
+                warning-message="Switch to Live Mode to start copy trading with real funds."
+                @deposit="handleFundingClick"
+                @withdraw="handleWithdrawalClick"
+            />
 
-                        <div class="flex items-end gap-3">
-                            <span class="text-2xl sm:text-4xl font-extrabold text-card-foreground">
-                                ${{ currentBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}
-                            </span>
-                        </div>
-
-                        <div class="text-sm font-medium text-muted-foreground mt-1">
-                            Mode: <span class="font-bold" :class="isLiveMode ? 'text-primary' : 'text-card-foreground'">{{ isLiveMode ? 'Live' : 'Demo' }}</span>
-                        </div>
-                    </div>
-
-                    <div class="flex flex-col sm:flex-row md:items-end gap-4 md:gap-3 w-full md:w-auto">
-                        <div class="flex gap-3 w-full sm:w-auto">
-                            <button
-                                v-if="isLiveMode"
-                                @click="handleFundingClick"
-                                class="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-background border border-border text-card-foreground rounded-xl text-sm font-semibold hover:bg-muted cursor-pointer">
-                                <WalletIcon class="w-4 h-4" />
-                                Deposit
-                            </button>
-
-                            <button
-                                v-if="isLiveMode"
-                                @click="handleWithdrawalClick"
-                                class="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-background border border-border text-card-foreground rounded-xl text-sm font-semibold hover:bg-muted cursor-pointer">
-                                <DollarSignIcon class="w-4 h-4" />
-                                Withdraw
-                            </button>
-                        </div>
-
-                        <TradingModeSwitcher
-                            :is-live-mode="isLiveMode"
-                            :live-balance="liveBalance"
-                            :demo-balance="demoBalance"
-                            @update:is-live-mode="isLiveMode = $event"
-                        />
-                    </div>
-                </div>
-            </div>
-
-            <!-- Stats Overview -->
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 mt-6 mb-6">
+            <div class="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3 sm:gap-4 mt-6 mb-6">
                 <div class="bg-card border border-border rounded-xl p-4">
                     <div class="flex items-center gap-2 mb-2">
                         <Activity class="w-4 h-4 text-primary" />
-                        <p class="text-xs text-muted-foreground font-semibold">Active Trades</p>
+                        <p class="text-xs text-muted-foreground font-bold uppercase">Active</p>
                     </div>
-                    <p class="text-2xl font-bold text-card-foreground">{{ props.stats.total_active }}</p>
+                    <p class="text-xl sm:text-2xl font-bold text-card-foreground">{{ props.stats.total_active }}</p>
                 </div>
 
                 <div class="bg-card border border-border rounded-xl p-4">
                     <div class="flex items-center gap-2 mb-2">
                         <UsersIcon class="w-4 h-4 text-cyan-600" />
-                        <p class="text-xs text-muted-foreground font-semibold">Traders Copied</p>
+                        <p class="text-xs text-muted-foreground font-bold uppercase">Traders</p>
                     </div>
-                    <p class="text-2xl font-bold text-card-foreground">{{ props.stats.active_traders }}</p>
+                    <p class="text-xl sm:text-2xl font-bold text-card-foreground">{{ props.stats.active_traders }}</p>
                 </div>
 
                 <div class="bg-card border border-border rounded-xl p-4">
                     <div class="flex items-center gap-2 mb-2">
                         <TrendingUp class="w-4 h-4 text-green-600" />
-                        <p class="text-xs text-muted-foreground font-semibold">Total Profit</p>
+                        <p class="text-xs text-muted-foreground font-bold uppercase">Profit</p>
                     </div>
-                    <p class="text-2xl font-bold text-green-600">+${{ props.stats.total_profit.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}</p>
+                    <p class="text-lg sm:text-2xl font-bold text-green-600 truncate">+${{ props.stats.total_profit.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}</p>
                 </div>
 
                 <div class="bg-card border border-border rounded-xl p-4">
                     <div class="flex items-center gap-2 mb-2">
                         <TrendingDown class="w-4 h-4 text-red-600" />
-                        <p class="text-xs text-muted-foreground font-semibold">Total Loss</p>
+                        <p class="text-xs text-muted-foreground font-bold uppercase">Loss</p>
                     </div>
-                    <p class="text-2xl font-bold text-red-600">-${{ props.stats.total_loss.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}</p>
+                    <p class="text-lg sm:text-2xl font-bold text-red-600 truncate">-${{ props.stats.total_loss.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}</p>
                 </div>
 
                 <div class="bg-card border border-border rounded-xl p-4">
                     <div class="flex items-center gap-2 mb-2">
                         <BarChart3 class="w-4 h-4" :class="props.stats.net_profit >= 0 ? 'text-green-600' : 'text-red-600'" />
-                        <p class="text-xs text-muted-foreground font-semibold">Net P/L</p>
+                        <p class="text-xs text-muted-foreground font-bold uppercase">Net P/L</p>
                     </div>
-                    <p class="text-2xl font-bold" :class="props.stats.net_profit >= 0 ? 'text-green-600' : 'text-red-600'">
+                    <p class="text-lg sm:text-2xl font-bold truncate" :class="props.stats.net_profit >= 0 ? 'text-green-600' : 'text-red-600'">
                         {{ props.stats.net_profit >= 0 ? '+' : '' }}${{ Math.abs(props.stats.net_profit).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}
                     </p>
                 </div>
@@ -469,9 +431,9 @@
                 <div class="bg-card border border-border rounded-xl p-4">
                     <div class="flex items-center gap-2 mb-2">
                         <DollarSignIcon class="w-4 h-4 text-orange-600" />
-                        <p class="text-xs text-muted-foreground font-semibold">Commission Paid</p>
+                        <p class="text-xs text-muted-foreground font-bold uppercase">Fees Paid</p>
                     </div>
-                    <p class="text-2xl font-bold text-card-foreground">${{ props.stats.total_commission.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}</p>
+                    <p class="text-lg sm:text-2xl font-bold text-card-foreground truncate">${{ props.stats.total_commission.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}</p>
                 </div>
             </div>
 
@@ -481,17 +443,14 @@
                         Copy Trading History
                     </h2>
 
-                    <TextLink :href="route('user.trade.network')" class="inline-flex items-center gap-1.5 sm:gap-2 px-3 py-1.5 sm:px-4 sm:py-2 bg-background border border-border text-card-foreground rounded-lg text-xs sm:text-sm font-semibold hover:bg-muted transition-colors shrink-0">
+                    <TextLink :href="route('user.trade.network')" class="inline-flex items-center gap-1.5 sm:gap-2 px-3 py-2 bg-background border border-border text-card-foreground rounded-lg text-xs sm:text-sm font-semibold hover:bg-muted transition-colors touch-manipulation">
                         <UsersIcon class="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                        <span class="hidden xs:inline">Copy Trading</span>
-                        <span class="xs:hidden">Copy Trading</span>
+                        <span>Traders</span>
                     </TextLink>
                 </div>
 
-                <!-- Copy Trades Content -->
                 <div class="bg-card border border-border rounded-xl overflow-hidden">
                     <div v-if="filteredCopyTrades.length > 0">
-                        <!-- Desktop Table -->
                         <div class="hidden lg:block overflow-x-auto">
                             <table class="w-full">
                                 <thead class="bg-muted/50 border-b border-border">
@@ -513,38 +472,43 @@
                                                 </div>
                                                 <div>
                                                     <p class="font-semibold text-card-foreground">{{ getTraderName(trade.master_trader!) }}</p>
-                                                    <span :class="['text-[10px] px-2 py-0.5 rounded-full border font-medium uppercase tracking-wider inline-block mt-1', getExpertiseColor(trade.master_trader?.expertise || 'Newcomer')]">
-                                                            {{ trade.master_trader?.expertise || 'Unknown' }}
-                                                        </span>
+                                                    <span :class="['text-[10px] px-2 py-0.5 rounded-full border font-bold uppercase tracking-wide inline-block mt-1', getExpertiseColor(trade.master_trader?.expertise || 'Newcomer')]">
+                                                        {{ trade.master_trader?.expertise || 'Unknown' }}
+                                                    </span>
                                                 </div>
                                             </div>
                                         </td>
+
                                         <td class="px-4 py-4">
-                                            <span :class="['inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-full border', getStatusBadgeClass(trade.status)]">
+                                            <span :class="['inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-bold uppercase tracking-wide rounded-full border', getStatusBadgeClass(trade.status)]">
                                                 <component :is="getStatusIcon(trade.status)" class="w-3.5 h-3.5" />
-                                                {{ trade.status.charAt(0).toUpperCase() + trade.status.slice(1) }}
+                                                {{ trade.status }}
                                             </span>
                                         </td>
+
                                         <td class="px-4 py-4">
-                                            <div class="flex flex-col gap-1">
-                                                <span class="text-sm font-semibold text-green-600">+${{ parseFloat(trade.current_profit as string).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}</span>
-                                                <span class="text-sm font-semibold text-red-600">-${{ parseFloat(trade.current_loss as string).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}</span>
+                                            <div class="flex flex-col gap-0.5">
+                                                <span class="text-xs font-medium text-green-600">+${{ parseFloat(trade.current_profit as string).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}</span>
+                                                <span class="text-xs font-medium text-red-600">-${{ parseFloat(trade.current_loss as string).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}</span>
                                                 <span class="text-sm font-bold mt-1" :class="getNetProfit(trade) >= 0 ? 'text-green-600' : 'text-red-600'">
                                                     Net: {{ getNetProfit(trade) >= 0 ? '+' : '' }}${{ Math.abs(getNetProfit(trade)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}
                                                 </span>
                                             </div>
                                         </td>
+
                                         <td class="px-4 py-4 text-sm font-semibold text-card-foreground">${{ parseFloat(trade.total_commission_paid as string).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}</td>
+
                                         <td class="px-4 py-4">
                                             <div class="flex items-center gap-2 text-sm text-muted-foreground">
                                                 <Calendar class="w-4 h-4" />
                                                 <span>{{ new Date(trade.started_at).toLocaleDateString() }}</span>
                                             </div>
                                         </td>
+
                                         <td class="px-4 py-4">
                                             <button
                                                 @click="viewTransactions(trade)"
-                                                class="inline-flex items-center gap-1.5 px-4 py-2 bg-primary text-primary-foreground rounded-lg text-xs font-semibold hover:bg-primary/90 cursor-pointer transition-colors">
+                                                class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-primary text-primary-foreground rounded-lg text-xs font-semibold hover:bg-primary/90 cursor-pointer transition-colors">
                                                 <EyeIcon class="w-3.5 h-3.5" />
                                                 View Trades
                                             </button>
@@ -554,123 +518,96 @@
                             </table>
                         </div>
 
-                        <!-- Mobile/Tablet Cards -->
                         <div class="lg:hidden p-4 space-y-4">
                             <div v-for="trade in filteredCopyTrades"
                                  :key="trade.id"
-                                 class="group relative bg-background border border-border rounded-2xl overflow-hidden flex flex-col">
+                                 class="group bg-background border border-border rounded-xl p-4 hover:border-primary/40 transition-colors">
 
-                                <div class="p-5 flex-1 flex flex-col">
-                                    <div class="flex items-center justify-between mb-5">
-                                        <div class="flex items-center gap-3">
-                                            <div class="relative">
-                                                <div class="w-12 h-12 rounded-full bg-secondary flex items-center justify-center text-lg font-extrabold text-primary">
-                                                    {{ getTraderInitials(trade.master_trader!) }}
-                                                </div>
-                                            </div>
-
-                                            <div class="min-w-0">
-                                                <h3 class="font-bold text-card-foreground text-base truncate leading-tight">
-                                                    {{ getTraderName(trade.master_trader!) }}
-                                                </h3>
-
-                                                <div class="flex items-center gap-1.5 mt-1">
-                                                <span :class="['text-[10px] px-2 py-0.5 rounded-full border font-medium uppercase tracking-wider', getExpertiseColor(trade.master_trader?.expertise || 'Newcomer')]">
-                                                    {{ trade.master_trader?.expertise || 'Unknown' }}
-                                                </span>
-                                                </div>
-                                            </div>
+                                <div class="flex items-start justify-between mb-4">
+                                    <div class="flex items-center gap-3">
+                                        <div class="w-10 h-10 rounded-full bg-secondary flex items-center justify-center text-sm font-bold text-primary">
+                                            {{ getTraderInitials(trade.master_trader!) }}
                                         </div>
-
                                         <div>
-                                        <span :class="['inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-semibold rounded-full border uppercase tracking-wider', getStatusBadgeClass(trade.status)]">
-                                            <component :is="getStatusIcon(trade.status)" class="w-3 h-3" />
-                                            {{ trade.status }}
-                                        </span>
+                                            <h3 class="font-bold text-card-foreground text-sm">
+                                                {{ getTraderName(trade.master_trader!) }}
+                                            </h3>
+                                            <span :class="['text-[10px] px-2 py-0.5 rounded-full border font-bold uppercase tracking-wide inline-block mt-1', getExpertiseColor(trade.master_trader?.expertise || 'Newcomer')]">
+                                                {{ trade.master_trader?.expertise || 'Unknown' }}
+                                            </span>
                                         </div>
                                     </div>
 
-                                    <div class="bg-muted/40 rounded-xl p-3 grid grid-cols-3 gap-2 mb-5 border border-border/50">
-                                        <div class="flex flex-col items-center justify-center border-r border-border/50 last:border-0">
-                                            <span class="text-[10px] text-muted-foreground font-medium mb-1">Net P/L</span>
-                                            <span :class="['text-sm font-bold', getNetProfit(trade) >= 0 ? 'text-green-600' : 'text-red-600']">
+                                    <span :class="['inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide rounded-full border', getStatusBadgeClass(trade.status)]">
+                                        <component :is="getStatusIcon(trade.status)" class="w-3 h-3" />
+                                        {{ trade.status }}
+                                    </span>
+                                </div>
+
+                                <div class="bg-muted/30 rounded-lg p-3 grid grid-cols-3 gap-2 mb-4 border border-border/50">
+                                    <div class="flex flex-col items-center justify-center text-center border-r border-border/50">
+                                        <span class="text-[10px] text-muted-foreground font-semibold mb-1">Net P/L</span>
+                                        <span :class="['text-sm font-bold', getNetProfit(trade) >= 0 ? 'text-green-600' : 'text-red-600']">
                                             {{ getNetProfit(trade) >= 0 ? '+' : '' }}${{ Math.abs(getNetProfit(trade)).toLocaleString('en-US', { maximumFractionDigits: 0 }) }}
                                         </span>
-                                        </div>
+                                    </div>
 
-                                        <div class="flex flex-col items-center justify-center border-r border-border/50 last:border-0">
-                                            <span class="text-[10px] text-muted-foreground font-medium mb-1">Fee</span>
-                                            <span class="text-sm font-bold text-card-foreground">
+                                    <div class="flex flex-col items-center justify-center text-center border-r border-border/50">
+                                        <span class="text-[10px] text-muted-foreground font-semibold mb-1">Fees</span>
+                                        <span class="text-sm font-bold text-card-foreground">
                                             ${{ parseFloat(trade.total_commission_paid as string).toLocaleString('en-US', { maximumFractionDigits: 0 }) }}
                                         </span>
-                                        </div>
+                                    </div>
 
-                                        <div class="flex flex-col items-center justify-center">
-                                            <span class="text-[10px] text-muted-foreground font-medium mb-1">Started</span>
-                                            <span class="text-xs font-bold text-card-foreground">
+                                    <div class="flex flex-col items-center justify-center text-center">
+                                        <span class="text-[10px] text-muted-foreground font-semibold mb-1">Started</span>
+                                        <span class="text-xs font-bold text-card-foreground">
                                             {{ new Date(trade.started_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) }}
                                         </span>
-                                        </div>
-                                    </div>
-
-                                    <div class="mt-auto">
-                                        <div class="flex items-end justify-between text-xs mb-2">
-                                            <div class="flex flex-col">
-                                                <span class="text-[10px] text-muted-foreground font-medium">Profit</span>
-                                                <span class="font-bold text-green-600">+${{ parseFloat(trade.current_profit as string).toLocaleString('en-US', { maximumFractionDigits: 0 }) }}</span>
-                                            </div>
-                                            <div class="flex flex-col items-end">
-                                                <span class="text-[10px] text-muted-foreground font-medium">Loss</span>
-                                                <span class="font-bold text-red-600">-${{ parseFloat(trade.current_loss as string).toLocaleString('en-US', { maximumFractionDigits: 0 }) }}</span>
-                                            </div>
-                                        </div>
-
-                                        <div class="w-full h-1 bg-muted rounded-full overflow-hidden flex">
-                                            <div
-                                                class="h-full bg-green-500"
-                                                :style="{ width: `${Math.round((parseFloat(trade.current_profit as string) / (parseFloat(trade.current_profit as string) + parseFloat(trade.current_loss as string)) * 100) || 50 )}%` }">
-                                            </div>
-                                            <div class="h-full w-px bg-background"></div>
-                                            <div class="h-full bg-red-500"
-                                                 :style="{ width: `${Math.round((parseFloat(trade.current_loss as string) / (parseFloat(trade.current_profit as string) + parseFloat(trade.current_loss as string)) * 100) || 50 )}%` }">
-                                            </div>
-                                        </div>
                                     </div>
                                 </div>
 
-                                <div class="p-4 pt-0 mt-2">
-                                    <button
-                                        @click="viewTransactions(trade)"
-                                        class="w-full flex items-center justify-center gap-2 py-3 rounded-xl font-bold text-sm bg-primary text-primary-foreground hover:bg-primary/90 cursor-pointer">
-                                        <EyeIcon class="w-4 h-4" />
-                                        View Trades
-                                    </button>
+                                <div class="flex items-end justify-between text-xs mb-4 px-1">
+                                    <div class="flex flex-col">
+                                        <span class="text-[10px] text-muted-foreground font-semibold">Profit</span>
+                                        <span class="font-bold text-green-600">+${{ parseFloat(trade.current_profit as string).toLocaleString('en-US', { maximumFractionDigits: 0 }) }}</span>
+                                    </div>
+                                    <div class="flex flex-col items-end">
+                                        <span class="text-[10px] text-muted-foreground font-semibold">Loss</span>
+                                        <span class="font-bold text-red-600">-${{ parseFloat(trade.current_loss as string).toLocaleString('en-US', { maximumFractionDigits: 0 }) }}</span>
+                                    </div>
                                 </div>
+
+                                <button
+                                    @click="viewTransactions(trade)"
+                                    class="w-full flex items-center justify-center gap-2 py-3 rounded-xl font-bold text-sm bg-primary text-primary-foreground hover:bg-primary/90 cursor-pointer active:scale-[0.98] transition-transform touch-manipulation">
+                                    <EyeIcon class="w-4 h-4" />
+                                    View Trades
+                                </button>
                             </div>
                         </div>
                     </div>
 
                     <div v-else class="flex flex-col items-center justify-center text-center py-16 px-4">
-                        <div class="w-20 h-20 rounded-full bg-muted/50 flex items-center justify-center mb-4">
-                            <UsersIcon class="w-10 h-10 text-muted-foreground/50" />
+                        <div class="w-16 h-16 rounded-full bg-muted/50 flex items-center justify-center mb-4">
+                            <UsersIcon class="w-8 h-8 text-muted-foreground/50" />
                         </div>
 
-                        <h3 class="text-xl font-bold text-card-foreground mb-2">No Copy Trades Found</h3>
+                        <h3 class="text-lg font-bold text-card-foreground mb-2">No Active Trades</h3>
 
-                        <p class="text-sm text-muted-foreground mb-6 max-w-md">
+                        <p class="text-sm text-muted-foreground mb-6 max-w-xs mx-auto">
                             {{ statusFilter === 'all' && !searchQuery
-                            ? "You haven't started copying any traders yet. Browse the network to find traders to copy!"
-                            : 'No copy trades match your current filters. Try adjusting your search or filters.'
+                            ? "You haven't started copying any traders yet."
+                            : 'No copy trades match your current filters.'
                             }}
                         </p>
 
-                        <TextLink :href="route('user.trade.network')" class="inline-flex items-center gap-2 px-6 py-3 bg-primary text-primary-foreground rounded-xl font-semibold hover:bg-primary/90 transition-colors">
-                            <UsersIcon class="w-5 h-5" />
-                            Browse Master Traders
+                        <TextLink :href="route('user.trade.network')" class="inline-flex items-center gap-2 px-6 py-3 bg-primary text-primary-foreground rounded-xl font-semibold hover:bg-primary/90 transition-colors touch-manipulation">
+                            <UsersIcon class="w-4 h-4" />
+                            Find Traders
                         </TextLink>
                     </div>
 
-                    <!-- Pagination -->
                     <PaginationControls
                         v-if="props.copyTrades.last_page > 1"
                         :links="props.copyTrades.links"
@@ -684,7 +621,6 @@
             </div>
         </div>
 
-        <!-- Modals -->
         <FundingModal
             :is-open="isFundingModalOpen"
             :live-balance="liveBalance"
@@ -723,11 +659,5 @@
     select:focus-visible {
         outline: 2px solid hsl(var(--primary));
         outline-offset: 2px;
-    }
-
-    @media (max-width: 640px) {
-        .margin-bottom {
-            margin-bottom: 50px;
-        }
     }
 </style>

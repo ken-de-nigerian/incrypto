@@ -148,14 +148,6 @@ class User extends Authenticatable
     }
 
     /**
-     * Get active copy trades for this user.
-     */
-    public function activeCopyTrades(): HasMany
-    {
-        return $this->hasMany(CopyTrade::class)->where('status', 'active');
-    }
-
-    /**
      * Get the master trader profile for this user.
      */
     public function masterTrader()
@@ -169,15 +161,5 @@ class User extends Authenticatable
     public function isMasterTrader(): bool
     {
         return $this->masterTrader()->exists();
-    }
-
-    /**
-     * Get total profit from all copy trades.
-     */
-    public function getTotalCopyTradeProfitAttribute(): float
-    {
-        return $this->copyTrades()
-                ->sum('current_profit') - $this->copyTrades()
-                ->sum('current_loss');
     }
 }

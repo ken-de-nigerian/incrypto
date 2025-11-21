@@ -981,7 +981,6 @@
         border-radius: 1rem;
         padding: 1.5rem;
         backdrop-filter: blur(4px);
-        box-shadow: var(--shadow-card);
     }
 
     .auth-card {
@@ -1002,7 +1001,6 @@
         border-radius: 1rem;
         padding: 1.5rem;
         backdrop-filter: blur(4px);
-        box-shadow: var(--shadow-glow);
     }
 
     .input-crypto {

@@ -3,6 +3,8 @@
 namespace App\Providers;
 
 use App\Events\AccountDeleted;
+use App\Events\CopyTradeClosed;
+use App\Events\CopyTradeExecuted;
 use App\Events\CopyTradeStarted;
 use App\Events\InvestmentExecuted;
 use App\Events\InvestmentPayout;
@@ -28,6 +30,8 @@ use App\Listeners\NotifyAdminOfKycSubmission;
 use App\Listeners\SendAccountDeletionNotification;
 use App\Listeners\SendAdminWalletNotification;
 use App\Listeners\SendBalanceAdjustedNotification;
+use App\Listeners\SendCopyTradeClosedNotification;
+use App\Listeners\SendCopyTradeExecutedNotification;
 use App\Listeners\SendCopyTradeStartedNotification;
 use App\Listeners\SendCryptoReceivedNotifications;
 use App\Listeners\SendCryptoSentNotifications;
@@ -103,6 +107,12 @@ class EventServiceProvider extends ServiceProvider
         ],
         CopyTradeStarted::class => [
             SendCopyTradeStartedNotification::class
+        ],
+        CopyTradeExecuted::class => [
+            SendCopyTradeExecutedNotification::class
+        ],
+        CopyTradeClosed::class => [
+            SendCopyTradeClosedNotification::class
         ],
         DatabaseAndEmailNotificationDispatchedEvent::class => [
             DatabaseAndEmailNotificationListener::class,

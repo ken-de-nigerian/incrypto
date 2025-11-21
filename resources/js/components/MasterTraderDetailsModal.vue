@@ -82,10 +82,13 @@
 
     const handleClose = () => {
         emit('close');
-        activeTab.value = 'details';
-        agreeToTerms.value = false;
-        isSubmitting.value = false;
-        errors.value = { terms: '', balance: '', general: '' };
+        // Small timeout to reset state after animation
+        setTimeout(() => {
+            activeTab.value = 'details';
+            agreeToTerms.value = false;
+            isSubmitting.value = false;
+            errors.value = { terms: '', balance: '', general: '' };
+        }, 300);
     };
 
     const submitCopyTrade = async () => {
@@ -168,52 +171,50 @@
         >
             <div
                 v-if="isOpen"
-                class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
+                class="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 backdrop-blur-sm sm:p-4"
                 @click.self="handleClose"
             >
                 <Transition
                     enter-active-class="transition-all duration-300"
-                    enter-from-class="opacity-0 scale-95 lg:scale-100 lg:opacity-100"
-                    enter-to-class="opacity-100 scale-100"
+                    enter-from-class="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+                    enter-to-class="opacity-100 translate-y-0 sm:scale-100"
                     leave-active-class="transition-all duration-300"
-                    leave-from-class="opacity-100 scale-100"
-                    leave-to-class="opacity-0 scale-95 lg:scale-100 lg:opacity-100"
+                    leave-from-class="opacity-100 translate-y-0 sm:scale-100"
+                    leave-to-class="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
                 >
                     <div
                         v-if="isOpen && masterTrader"
-                        class="bg-card w-full h-full max-h-full lg:w-full lg:max-w-4xl lg:h-auto lg:max-h-[90vh] flex flex-col rounded-none lg:rounded-2xl shadow-2xl overflow-hidden border-border relative lg:border"
+                        class="bg-card w-full h-[100dvh] sm:h-auto sm:max-h-[90vh] sm:max-w-4xl flex flex-col rounded-none sm:rounded-2xl overflow-hidden border-border sm:border relative"
                     >
-                        <!-- Header -->
-                        <div class="px-4 md:px-6 lg:px-6 py-4 border-b border-border bg-muted/30">
+                        <div class="px-4 sm:px-6 py-4 border-b border-border bg-muted/30 shrink-0">
                             <div class="flex items-center justify-between mb-4">
-                                <div class="flex items-center gap-4">
-                                    <div class="w-12 h-12 lg:w-16 lg:h-16 rounded-full bg-primary/20 flex items-center justify-center text-lg lg:text-xl font-bold text-primary">
+                                <div class="flex items-center gap-3 sm:gap-4 overflow-hidden">
+                                    <div class="w-10 h-10 sm:w-16 sm:h-16 rounded-full bg-primary/20 flex-shrink-0 flex items-center justify-center text-base sm:text-xl font-bold text-primary">
                                         {{ getTraderInitials }}
                                     </div>
-                                    <div>
-                                        <h2 class="text-xl lg:text-2xl font-bold text-card-foreground">{{ getTraderName }}</h2>
-                                        <span :class="['inline-flex items-center px-2.5 py-1 text-xs font-semibold rounded-full border mt-1', getExpertiseColor(masterTrader.expertise)]">
+                                    <div class="min-w-0">
+                                        <h2 class="text-lg sm:text-2xl font-bold text-card-foreground truncate">{{ getTraderName }}</h2>
+                                        <span :class="['inline-flex items-center px-2.5 py-1 text-xs font-semibold rounded-full border mt-1 whitespace-nowrap', getExpertiseColor(masterTrader.expertise)]">
                                             {{ masterTrader.expertise }}
                                         </span>
                                     </div>
                                 </div>
                                 <button
                                     @click="handleClose"
-                                    class="p-2 hover:bg-muted rounded-lg cursor-pointer"
+                                    class="p-2 -mr-2 hover:bg-muted rounded-lg cursor-pointer transition-colors"
                                 >
                                     <X class="w-5 h-5 text-muted-foreground" />
                                 </button>
                             </div>
 
-                            <!-- Tabs -->
-                            <div class="flex gap-2 border-b border-border/50 -mb-4 pb-0 overflow-x-auto">
+                            <div class="flex gap-2 border-b border-border/50 -mb-4 pb-0 overflow-x-auto no-scrollbar">
                                 <button
                                     @click="activeTab = 'details'"
                                     :class="[
-                                        'px-4 py-2 text-sm font-semibold transition-all whitespace-nowrap cursor-pointer',
+                                        'px-4 py-2 text-sm font-semibold transition-all whitespace-nowrap cursor-pointer border-b-2',
                                         activeTab === 'details'
-                                            ? 'text-primary border-b-2 border-primary'
-                                            : 'text-muted-foreground hover:text-card-foreground'
+                                            ? 'text-primary border-primary'
+                                            : 'text-muted-foreground border-transparent hover:text-card-foreground'
                                     ]"
                                 >
                                     Details
@@ -221,10 +222,10 @@
                                 <button
                                     @click="activeTab = 'terms'"
                                     :class="[
-                                        'px-4 py-2 text-sm font-semibold transition-all whitespace-nowrap cursor-pointer',
+                                        'px-4 py-2 text-sm font-semibold transition-all whitespace-nowrap cursor-pointer border-b-2',
                                         activeTab === 'terms'
-                                            ? 'text-primary border-b-2 border-primary'
-                                            : 'text-muted-foreground hover:text-card-foreground'
+                                            ? 'text-primary border-primary'
+                                            : 'text-muted-foreground border-transparent hover:text-card-foreground'
                                     ]"
                                 >
                                     Terms & Conditions
@@ -232,10 +233,10 @@
                                 <button
                                     @click="activeTab = 'form'"
                                     :class="[
-                                        'px-4 py-2 text-sm font-semibold transition-all whitespace-nowrap cursor-pointer',
+                                        'px-4 py-2 text-sm font-semibold transition-all whitespace-nowrap cursor-pointer border-b-2',
                                         activeTab === 'form'
-                                            ? 'text-primary border-b-2 border-primary'
-                                            : 'text-muted-foreground hover:text-card-foreground'
+                                            ? 'text-primary border-primary'
+                                            : 'text-muted-foreground border-transparent hover:text-card-foreground'
                                     ]"
                                 >
                                     Start Copying
@@ -243,86 +244,81 @@
                             </div>
                         </div>
 
-                        <!-- Modal Content -->
-                        <div class="flex-1 overflow-y-auto no-scrollbar px-4 md:px-6 lg:px-6 py-4">
-                            <!-- Details Tab -->
-                            <div v-if="activeTab === 'details'" class="space-y-6">
-                                <!-- Bio Section -->
+                        <div class="flex-1 overflow-y-auto overscroll-contain px-4 sm:px-6 py-4 bg-background">
+                            <div v-if="activeTab === 'details'" class="space-y-6 pb-6">
                                 <div v-if="masterTrader.bio" class="bg-muted/50 rounded-lg p-4">
                                     <h3 class="text-sm font-semibold text-card-foreground mb-2">About</h3>
                                     <p class="text-sm text-muted-foreground">{{ masterTrader.bio }}</p>
                                 </div>
 
-                                <!-- Performance Stats -->
-                                <div class="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
-                                    <div class="bg-background border border-border rounded-lg p-3 md:p-4">
+                                <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
+                                    <div class="bg-background border border-border rounded-lg p-3 sm:p-4">
                                         <div class="flex items-center gap-2 mb-2">
                                             <TrendingUp class="w-4 h-4 text-green-600" />
                                             <p class="text-xs text-muted-foreground">Gain %</p>
                                         </div>
-                                        <p class="text-xl md:text-2xl font-bold text-green-600">+{{ parseFloat(masterTrader.gain_percentage as string).toFixed(2) }}%</p>
+                                        <p class="text-lg sm:text-2xl font-bold text-green-600">+{{ parseFloat(masterTrader.gain_percentage as string).toFixed(2) }}%</p>
                                     </div>
 
-                                    <div class="bg-background border border-border rounded-lg p-3 md:p-4">
+                                    <div class="bg-background border border-border rounded-lg p-3 sm:p-4">
                                         <div class="flex items-center gap-2 mb-2">
                                             <AlertTriangleIcon class="w-4 h-4 text-orange-600" />
                                             <p class="text-xs text-muted-foreground">Risk Score</p>
                                         </div>
-                                        <p class="text-xl md:text-2xl font-bold text-card-foreground">{{ masterTrader.risk_score }}/10</p>
+                                        <p class="text-lg sm:text-2xl font-bold text-card-foreground">{{ masterTrader.risk_score }}/10</p>
                                     </div>
 
-                                    <div class="bg-background border border-border rounded-lg p-3 md:p-4">
+                                    <div class="bg-background border border-border rounded-lg p-3 sm:p-4">
                                         <div class="flex items-center gap-2 mb-2">
                                             <UsersIcon class="w-4 h-4 text-primary" />
                                             <p class="text-xs text-muted-foreground">Copiers</p>
                                         </div>
-                                        <p class="text-xl md:text-2xl font-bold text-card-foreground">{{ masterTrader.copiers_count }}</p>
+                                        <p class="text-lg sm:text-2xl font-bold text-card-foreground">{{ masterTrader.copiers_count }}</p>
                                     </div>
 
-                                    <div class="bg-background border border-border rounded-lg p-3 md:p-4">
+                                    <div class="bg-background border border-border rounded-lg p-3 sm:p-4">
                                         <div class="flex items-center gap-2 mb-2">
                                             <DollarSignIcon class="w-4 h-4 text-green-600" />
                                             <p class="text-xs text-muted-foreground">Total Profit</p>
                                         </div>
-                                        <p class="text-base md:text-lg font-bold text-green-600">${{ parseFloat(masterTrader.total_profit as string).toLocaleString('en-US', { minimumFractionDigits: 2 }) }}</p>
+                                        <p class="text-base sm:text-lg font-bold text-green-600 truncate">${{ parseFloat(masterTrader.total_profit as string).toLocaleString('en-US', { minimumFractionDigits: 2 }) }}</p>
                                     </div>
 
-                                    <div class="bg-background border border-border rounded-lg p-3 md:p-4">
+                                    <div class="bg-background border border-border rounded-lg p-3 sm:p-4">
                                         <div class="flex items-center gap-2 mb-2">
                                             <DollarSignIcon class="w-4 h-4 text-red-600" />
                                             <p class="text-xs text-muted-foreground">Total Loss</p>
                                         </div>
-                                        <p class="text-base md:text-lg font-bold text-red-600">${{ parseFloat(masterTrader.total_loss as string).toLocaleString('en-US', { minimumFractionDigits: 2 }) }}</p>
+                                        <p class="text-base sm:text-lg font-bold text-red-600 truncate">${{ parseFloat(masterTrader.total_loss as string).toLocaleString('en-US', { minimumFractionDigits: 2 }) }}</p>
                                     </div>
 
-                                    <div class="bg-background border border-border rounded-lg p-3 md:p-4">
+                                    <div class="bg-background border border-border rounded-lg p-3 sm:p-4">
                                         <div class="flex items-center gap-2 mb-2">
                                             <BarChart3 class="w-4 h-4 text-primary" />
                                             <p class="text-xs text-muted-foreground">Win Rate</p>
                                         </div>
-                                        <p class="text-xl md:text-2xl font-bold text-card-foreground">{{ parseFloat(masterTrader.win_rate as string).toFixed(1) }}%</p>
+                                        <p class="text-lg sm:text-2xl font-bold text-card-foreground">{{ parseFloat(masterTrader.win_rate as string).toFixed(1) }}%</p>
                                     </div>
 
-                                    <div class="bg-background border border-border rounded-lg p-3 md:p-4">
+                                    <div class="bg-background border border-border rounded-lg p-3 sm:p-4">
                                         <div class="flex items-center gap-2 mb-2">
                                             <Activity class="w-4 h-4 text-muted-foreground" />
                                             <p class="text-xs text-muted-foreground">Total Trades</p>
                                         </div>
-                                        <p class="text-xl md:text-2xl font-bold text-card-foreground">{{ masterTrader.total_trades }}</p>
+                                        <p class="text-lg sm:text-2xl font-bold text-card-foreground">{{ masterTrader.total_trades }}</p>
                                     </div>
 
-                                    <div class="bg-background border border-border rounded-lg p-3 md:p-4">
+                                    <div class="bg-background border border-border rounded-lg p-3 sm:p-4">
                                         <div class="flex items-center gap-2 mb-2">
                                             <DollarSignIcon class="w-4 h-4 text-primary" />
                                             <p class="text-xs text-muted-foreground">Copy Amount</p>
                                         </div>
-                                        <p class="text-xl md:text-2xl font-bold text-primary">${{ masterTrader.commission_rate ? parseFloat(masterTrader.commission_rate as string).toFixed(2) : '0.00' }}</p>
+                                        <p class="text-lg sm:text-2xl font-bold text-primary">${{ masterTrader.commission_rate ? parseFloat(masterTrader.commission_rate as string).toFixed(2) : '0.00' }}</p>
                                     </div>
                                 </div>
                             </div>
 
-                            <!-- Terms Tab -->
-                            <div v-if="activeTab === 'terms'" class="space-y-4">
+                            <div v-if="activeTab === 'terms'" class="space-y-4 pb-6">
                                 <div class="bg-muted/50 rounded-lg p-4">
                                     <h3 class="text-lg font-bold text-card-foreground mb-4">Copy Trading Terms & Conditions</h3>
 
@@ -365,9 +361,7 @@
                                 </div>
                             </div>
 
-                            <!-- Copy Trade Form Tab -->
-                            <div v-if="activeTab === 'form'" class="space-y-6">
-                                <!-- Risk Warning -->
+                            <div v-if="activeTab === 'form'" class="space-y-6 pb-6">
                                 <div :class="[
                                     'rounded-lg p-4 border',
                                     parseInt(masterTrader.risk_score as string) <= 3
@@ -418,7 +412,6 @@
                                     </div>
                                 </div>
 
-                                <!-- Copy Amount (Fixed) -->
                                 <div>
                                     <label class="block text-sm font-semibold text-card-foreground mb-2">
                                         Copy Trade Amount (Fixed)
@@ -444,7 +437,6 @@
                                     </p>
                                 </div>
 
-                                <!-- General Error Message -->
                                 <div v-if="errors.general" class="bg-red-50 border border-red-200 rounded-lg p-4">
                                     <div class="flex gap-3">
                                         <AlertTriangleIcon class="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
@@ -455,7 +447,6 @@
                                     </div>
                                 </div>
 
-                                <!-- Summary -->
                                 <div class="bg-muted/50 rounded-lg p-4">
                                     <h4 class="font-semibold text-card-foreground mb-3">Summary</h4>
                                     <div class="space-y-2 text-sm">
@@ -476,7 +467,6 @@
                                     </div>
                                 </div>
 
-                                <!-- Terms Agreement -->
                                 <div>
                                     <div :class="[
                                         'flex items-start gap-3 bg-background rounded-lg p-4 border-2',
@@ -487,11 +477,11 @@
                                             type="checkbox"
                                             id="agreeTerms"
                                             :class="[
-                                                'mt-1 w-4 h-4 rounded cursor-pointer',
+                                                'mt-1 w-5 h-5 sm:w-4 sm:h-4 rounded cursor-pointer flex-shrink-0',
                                                 errors.terms ? 'border-red-300 text-red-600' : 'border-border text-primary'
                                             ]"
                                         />
-                                        <label for="agreeTerms" class="text-sm text-muted-foreground cursor-pointer">
+                                        <label for="agreeTerms" class="text-sm text-muted-foreground cursor-pointer select-none">
                                             I have read and agree to the <button @click.prevent="activeTab = 'terms'" class="text-primary hover:underline font-semibold">Terms & Conditions</button>. I understand the risks involved in copy trading and accept full responsibility for my investment decisions.
                                         </label>
                                     </div>
@@ -503,31 +493,30 @@
                             </div>
                         </div>
 
-                        <!-- Footer -->
-                        <div class="px-4 md:px-6 lg:px-6 py-4 border-t border-border bg-muted/10">
-                            <div class="flex gap-3 justify-end">
+                        <div class="px-4 sm:px-6 py-4 border-t border-border bg-muted/10 shrink-0 safe-area-pb">
+                            <div class="flex flex-col sm:flex-row gap-3 sm:justify-end">
                                 <button @click="handleClose"
-                                    class="px-4 md:px-6 py-2.5 bg-background border border-border text-card-foreground rounded-lg font-semibold hover:bg-muted transition-colors cursor-pointer">
+                                        class="w-full sm:w-auto px-4 md:px-6 py-3 sm:py-2.5 bg-background border border-border text-card-foreground rounded-lg font-semibold hover:bg-muted transition-colors cursor-pointer">
                                     Cancel
                                 </button>
 
                                 <button v-if="activeTab === 'details'"
-                                    @click="activeTab = 'form'"
-                                    class="px-4 md:px-6 py-2.5 bg-primary text-primary-foreground rounded-lg font-semibold hover:bg-primary/90 transition-colors cursor-pointer">
+                                        @click="activeTab = 'form'"
+                                        class="w-full sm:w-auto px-4 md:px-6 py-3 sm:py-2.5 bg-primary text-primary-foreground rounded-lg font-semibold hover:bg-primary/90 transition-colors cursor-pointer">
                                     Continue
                                 </button>
 
                                 <button v-if="activeTab === 'terms'"
-                                    @click="activeTab = 'form'"
-                                    class="px-4 md:px-6 py-2.5 bg-primary text-primary-foreground rounded-lg font-semibold hover:bg-primary/90 transition-colors cursor-pointer">
+                                        @click="activeTab = 'form'"
+                                        class="w-full sm:w-auto px-4 md:px-6 py-3 sm:py-2.5 bg-primary text-primary-foreground rounded-lg font-semibold hover:bg-primary/90 transition-colors cursor-pointer">
                                     Proceed to Form
                                 </button>
 
                                 <button v-if="activeTab === 'form'"
-                                    @click="submitCopyTrade"
-                                    :disabled="!agreeToTerms || copyAmount <= 0 || copyAmount > currentBalance || isSubmitting"
-                                    :class="[
-                                        'px-4 md:px-6 py-2.5 rounded-lg font-semibold transition-colors inline-flex items-center gap-2',
+                                        @click="submitCopyTrade"
+                                        :disabled="!agreeToTerms || copyAmount <= 0 || copyAmount > currentBalance || isSubmitting"
+                                        :class="[
+                                        'w-full sm:w-auto px-4 md:px-6 py-3 sm:py-2.5 rounded-lg font-semibold transition-colors inline-flex justify-center items-center gap-2',
                                         !agreeToTerms || copyAmount <= 0 || copyAmount > currentBalance || isSubmitting
                                             ? 'bg-muted text-muted-foreground cursor-not-allowed'
                                             : 'bg-primary text-primary-foreground hover:bg-primary/90 cursor-pointer'
@@ -555,5 +544,31 @@
     .no-scrollbar {
         -ms-overflow-style: none;
         scrollbar-width: none;
+    }
+    /* Ensures the modal doesn't overlap with iPhone home bar */
+    .safe-area-pb {
+        padding-bottom: max(1rem, env(safe-area-inset-bottom));
+    }
+
+    ::-webkit-scrollbar {
+        width: 4px;
+        height: 4px;
+    }
+    @media (min-width: 1024px) {
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+    }
+    ::-webkit-scrollbar-track {
+        background: hsl(var(--muted));
+        border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb {
+        background: hsl(var(--muted-foreground) / 0.3);
+        border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+        background: hsl(var(--muted-foreground) / 0.5);
     }
 </style>

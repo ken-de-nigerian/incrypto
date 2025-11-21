@@ -3,7 +3,6 @@
     import { Head, usePage } from '@inertiajs/vue3';
     import {
         ChevronDownIcon,
-        DollarSignIcon,
         UsersIcon,
         WalletIcon,
         PiggyBankIcon,
@@ -15,9 +14,9 @@
     import AppLayout from '@/components/layout/user/dashboard/AppLayout.vue';
     import NotificationsModal from '@/components/utilities/NotificationsModal.vue';
     import TextLink from '@/components/TextLink.vue';
-    import TradingModeSwitcher from '@/components/TradingModeSwitcher.vue';
     import FundingModal from '@/components/FundingModal.vue';
     import WithdrawalModal from '@/components/WithdrawalModal.vue';
+    import WalletBalanceCard from '@/components/WalletBalanceCard.vue';
 
     interface Token {
         symbol: string;
@@ -63,6 +62,8 @@
     });
 
     const notificationCount = computed(() => page.props.auth?.notification_count || 0);
+    const currentBalance = computed(() => isLiveMode.value ? liveBalance.value : demoBalance.value);
+
     const initials = computed(() => {
         if (user.value) {
             const first = user.value.first_name?.charAt(0) || '';
@@ -139,66 +140,31 @@
                 @open-notifications="isNotificationsModalOpen = true"
             />
 
-            <div class="grid grid-cols-1 gap-6 mt-6">
-                <!-- Balance Card -->
-                <div class="bg-card border border-border rounded-2xl p-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
-                    <div>
-                        <h2 class="text-xl font-semibold text-muted-foreground mb-1">Balance</h2>
-                        <div class="flex items-end gap-3">
-                            <span class="text-2xl sm:text-4xl font-extrabold text-card-foreground">
-                                ${{ (isLiveMode ? liveBalance : demoBalance).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}
-                            </span>
-                        </div>
-                        <div class="text-sm font-medium text-muted-foreground mt-1">
-                            Mode: <span class="font-bold" :class="isLiveMode ? 'text-primary' : 'text-card-foreground'">{{ isLiveMode ? 'Live' : 'Demo' }}</span>
-                        </div>
-                    </div>
+            <WalletBalanceCard
+                :current-balance="currentBalance"
+                v-model:is-live-mode="isLiveMode"
+                :live-balance="liveBalance"
+                :demo-balance="demoBalance"
+                @deposit="handleFundingClick"
+                @withdraw="handleWithdrawalClick"
+            />
 
-                    <div class="flex flex-col sm:flex-row md:items-end gap-4 md:gap-3 w-full md:w-auto">
-                        <div class="flex gap-3 w-full sm:w-auto">
-                            <button
-                                v-if="isLiveMode"
-                                @click="handleFundingClick"
-                                class="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-background border border-border text-card-foreground rounded-xl text-sm font-semibold transition-colors hover:bg-muted cursor-pointer">
-                                <WalletIcon class="w-4 h-4" />
-                                Deposit
-                            </button>
-
-                            <button
-                                v-if="isLiveMode"
-                                @click="handleWithdrawalClick"
-                                class="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-background border border-border text-card-foreground rounded-xl text-sm font-semibold transition-colors hover:bg-muted cursor-pointer">
-                                <DollarSignIcon class="w-4 h-4" />
-                                Withdraw
-                            </button>
-                        </div>
-
-                        <TradingModeSwitcher
-                            :is-live-mode="isLiveMode"
-                            :live-balance="liveBalance"
-                            :demo-balance="demoBalance"
-                            @update:is-live-mode="isLiveMode = $event"
-                        />
-                    </div>
-                </div>
-
-                <!-- Quick Trade Navigation -->
-                <div class="margin-bottom">
-                    <h2 class="text-xl sm:text-2xl font-bold text-card-foreground mb-4">Quick Trade Navigation</h2>
-                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-                        <TextLink
-                            v-for="link in quickLinks"
-                            :key="link.title"
-                            :href="link.route"
-                            class="bg-card border border-border rounded-2xl p-4 sm:p-5 hover:border-primary/50 transition-all duration-200 block group">
-                            <component :is="link.icon" class="w-6 h-6 sm:w-7 sm:h-7 text-primary mb-2 sm:mb-3 group-hover:scale-110 transition-transform" />
-                            <h4 class="text-base sm:text-lg font-bold text-card-foreground mb-1">{{ link.title }}</h4>
-                            <p class="text-xs sm:text-sm text-muted-foreground mb-3">{{ link.description }}</p>
-                            <span class="flex items-center text-sm font-semibold text-primary group-hover:underline">
+            <!-- Quick Trade Navigation -->
+            <div class="mt-6 mb-8 sm:mb-0">
+                <h2 class="text-xl sm:text-2xl font-bold text-card-foreground mb-4">Quick Trade Navigation</h2>
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+                    <TextLink
+                        v-for="link in quickLinks"
+                        :key="link.title"
+                        :href="link.route"
+                        class="bg-card border border-border rounded-2xl p-4 sm:p-5 hover:border-primary/50 transition-all duration-200 block group">
+                        <component :is="link.icon" class="w-6 h-6 sm:w-7 sm:h-7 text-primary mb-2 sm:mb-3 group-hover:scale-110 transition-transform" />
+                        <h4 class="text-base sm:text-lg font-bold text-card-foreground mb-1">{{ link.title }}</h4>
+                        <p class="text-xs sm:text-sm text-muted-foreground mb-3">{{ link.description }}</p>
+                        <span class="flex items-center text-sm font-semibold text-primary group-hover:underline">
                                 Go <ChevronDownIcon class="w-4 h-4 ml-1 rotate-[-90deg] group-hover:rotate-0 transition-transform" />
                             </span>
-                        </TextLink>
-                    </div>
+                    </TextLink>
                 </div>
             </div>
         </div>
@@ -226,25 +192,3 @@
         />
     </AppLayout>
 </template>
-
-<style scoped>
-    .fade-enter-active, .fade-leave-active {
-        transition: opacity 0.3s ease;
-    }
-    .fade-enter-from, .fade-leave-to {
-        opacity: 0;
-    }
-
-    button:focus-visible,
-    input:focus-visible,
-    select:focus-visible {
-        outline: 2px solid hsl(var(--primary));
-        outline-offset: 2px;
-    }
-
-    @media (max-width: 640px) {
-        .margin-bottom {
-            margin-bottom: 50px;
-        }
-    }
-</style>

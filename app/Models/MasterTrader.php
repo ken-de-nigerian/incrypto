@@ -74,64 +74,11 @@ class MasterTrader extends Model
     }
 
     /**
-     * Scope a query to only include active master traders.
-     */
-    public function scopeActive($query)
-    {
-        return $query->where('is_active', true);
-    }
-
-    /**
-     * Scope a query to filter by expertise level.
-     */
-    public function scopeByExpertise($query, string $expertise)
-    {
-        return $query->where('expertise', $expertise);
-    }
-
-    /**
-     * Scope a query to order by gain percentage.
-     */
-    public function scopeTopPerformers($query)
-    {
-        return $query->orderBy('gain_percentage', 'desc');
-    }
-
-    /**
-     * Scope a query to order by copiers count.
-     */
-    public function scopeMostCopied($query)
-    {
-        return $query->orderBy('copiers_count', 'desc');
-    }
-
-    /**
-     * Get the net profit/loss.
-     */
-    public function getNetProfitAttribute(): float
-    {
-        return $this->total_profit - $this->total_loss;
-    }
-
-    /**
      * Update copiers count based on active copy trades.
      */
     public function updateCopiersCount(): void
     {
         $this->copiers_count = $this->activeCopyTrades()->count();
         $this->save();
-    }
-
-    /**
-     * Calculate and update win rate.
-     */
-    public function updateWinRate(): void
-    {
-        if ($this->total_trades > 0) {
-            // You'll need to implement logic to track winning trades
-            // This is a placeholder
-            $this->win_rate = 0; // Calculate based on your business logic
-            $this->save();
-        }
     }
 }

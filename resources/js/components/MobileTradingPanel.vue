@@ -227,7 +227,7 @@
 
     @media (max-width: 640px) {
         .margin-bottom {
-            margin-bottom: 150px;
+            margin-bottom: 50px;
         }
     }
 </style>

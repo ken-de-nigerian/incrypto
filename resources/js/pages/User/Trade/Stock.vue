@@ -2,11 +2,10 @@
     import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
     import { Head, router, usePage } from '@inertiajs/vue3';
     import axios from 'axios';
-    import { ArrowUpDown, DollarSignIcon, Gift, HelpCircle, Settings, TrendingUp, WalletIcon } from 'lucide-vue-next';
+    import { ArrowUpDown, Gift, HelpCircle, Settings, TrendingUp } from 'lucide-vue-next';
     import Breadcrumb from '@/components/Breadcrumb.vue';
     import AppLayout from '@/components/layout/user/dashboard/AppLayout.vue';
     import NotificationsModal from '@/components/utilities/NotificationsModal.vue';
-    import TradingModeSwitcher from '@/components/TradingModeSwitcher.vue';
     import FundingModal from '@/components/FundingModal.vue';
     import WithdrawalModal from '@/components/WithdrawalModal.vue';
     import TradingChart from '@/components/TradingChart.vue';
@@ -16,6 +15,7 @@
     import PairDrawer from '@/components/PairDrawer.vue';
     import TradesDrawer from '@/components/TradesDrawer.vue';
     import { useChartStore } from '@/stores/chartStore';
+    import WalletBalanceCard from '@/components/WalletBalanceCard.vue';
 
     interface Token {
         symbol: string;
@@ -515,7 +515,7 @@
     <Head title="Stock Trading" />
 
     <AppLayout>
-        <div class="lg:ml-64 pt-5 lg:pt-10 p-4 sm:p-6 lg:p-8 pb-20 sm:pb-8 h-screen flex flex-col">
+        <div class="lg:ml-64 pt-5 lg:pt-10 p-4 sm:p-6 lg:p-8 pb-24 lg:pb-8">
 
             <Breadcrumb
                 :items="breadcrumbItems"
@@ -525,40 +525,14 @@
                 @open-notifications="isNotificationsModalOpen = true"
             />
 
-            <div class="bg-card border border-border rounded-2xl p-4 sm:p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mt-6 flex-shrink-0">
-                <div>
-                    <h2 class="text-lg sm:text-xl font-semibold text-muted-foreground mb-1">Balance</h2>
-                    <div class="flex items-end gap-3">
-                        <span class="text-2xl sm:text-4xl font-extrabold text-card-foreground">
-                            ${{ currentBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}
-                        </span>
-                    </div>
-                    <div class="text-xs sm:text-sm font-medium text-muted-foreground mt-1">
-                        Mode: <span class="font-bold" :class="isLiveMode ? 'text-primary' : 'text-card-foreground'">
-                            {{ isLiveMode ? 'Live' : 'Demo' }}
-                        </span>
-                    </div>
-                </div>
-
-                <div class="flex flex-col sm:flex-row items-start sm:items-end gap-3 w-full sm:w-auto">
-                    <div class="flex gap-2 w-full sm:w-auto">
-                        <button v-if="isLiveMode" @click="handleFundingClick" class="flex-1 sm:flex-none flex items-center justify-center gap-2 px-3 sm:px-4 py-2 bg-background border border-border text-card-foreground rounded-xl text-xs sm:text-sm font-semibold hover:bg-muted cursor-pointer">
-                            <WalletIcon class="w-4 h-4" /> <span>Deposit</span>
-                        </button>
-
-                        <button v-if="isLiveMode" @click="handleWithdrawalClick" class="flex-1 sm:flex-none flex items-center justify-center gap-2 px-3 sm:px-4 py-2 bg-background border border-border text-card-foreground rounded-xl text-xs sm:text-sm font-semibold hover:bg-muted cursor-pointer">
-                            <DollarSignIcon class="w-4 h-4" /> <span>Withdraw</span>
-                        </button>
-                    </div>
-
-                    <TradingModeSwitcher
-                        :is-live-mode="isLiveMode"
-                        :live-balance="liveBalance"
-                        :demo-balance="demoBalance"
-                        @update:is-live-mode="isLiveMode = $event"
-                    />
-                </div>
-            </div>
+            <WalletBalanceCard
+                :current-balance="currentBalance"
+                v-model:is-live-mode="isLiveMode"
+                :live-balance="liveBalance"
+                :demo-balance="demoBalance"
+                @deposit="handleFundingClick"
+                @withdraw="handleWithdrawalClick"
+            />
 
             <div class="mt-4 flex-1 flex flex-col lg:flex-row lg:min-h-0">
                 <div class="flex-1 bg-card border border-border rounded-t-2xl lg:rounded-2xl flex flex-col lg:flex-row lg:min-h-0 lg:overflow-hidden" :class="{ 'padding-bottom': !selectedPair }">

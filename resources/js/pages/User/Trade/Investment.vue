@@ -2,26 +2,24 @@
     import { computed, ref, watch } from 'vue';
     import { Head, router, usePage } from '@inertiajs/vue3';
     import {
-        AlertTriangleIcon,
         CalculatorIcon,
         CalendarIcon,
         ClockIcon,
         DollarSignIcon,
         HistoryIcon,
         PercentIcon,
-        PiggyBankIcon,
-        WalletIcon
+        PiggyBankIcon
     } from 'lucide-vue-next';
     import Breadcrumb from '@/components/Breadcrumb.vue';
     import AppLayout from '@/components/layout/user/dashboard/AppLayout.vue';
     import NotificationsModal from '@/components/utilities/NotificationsModal.vue';
-    import TradingModeSwitcher from '@/components/TradingModeSwitcher.vue';
     import FundingModal from '@/components/FundingModal.vue';
     import WithdrawalModal from '@/components/WithdrawalModal.vue';
     import PaginationControls from '@/components/PaginationControls.vue';
     import InvestmentModal from '@/components/InvestmentModal.vue';
     import CalculatorModal from '@/components/CalculatorModal.vue';
     import TextLink from '@/components/TextLink.vue';
+    import WalletBalanceCard from '@/components/WalletBalanceCard.vue';
 
     interface Token {
         symbol: string;
@@ -210,11 +208,7 @@
     };
 
     watch([isFundingModalOpen, isWithdrawalModalOpen, isInvestmentModalOpen, isCalculatorModalOpen], ([funding, withdrawal, investment, calculator]) => {
-        if (funding || withdrawal || investment || calculator) {
-            document.body.style.overflow = 'hidden';
-        } else {
-            document.body.style.overflow = '';
-        }
+        document.body.style.overflow = (funding || withdrawal || investment || calculator) ? 'hidden' : '';
     });
 </script>
 
@@ -232,129 +226,93 @@
                 @open-notifications="isNotificationsModalOpen = true"
             />
 
-            <!-- Balance Card -->
-            <div class="grid grid-cols-1 gap-6 mt-6">
-                <div class="bg-card border border-border rounded-2xl p-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
-                    <div>
-                        <h2 class="text-xl font-semibold text-muted-foreground mb-1">Wallet Balance</h2>
+            <WalletBalanceCard
+                :current-balance="currentBalance"
+                v-model:is-live-mode="isLiveMode"
+                :live-balance="liveBalance"
+                :demo-balance="demoBalance"
+                warning-message="Switch to Live Mode to make investments."
+                @deposit="handleFundingClick"
+                @withdraw="handleWithdrawalClick"
+            />
 
-                        <div class="flex items-end gap-3">
-                            <span class="text-2xl sm:text-4xl font-extrabold text-card-foreground">
-                                ${{ currentBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}
-                            </span>
-                        </div>
-
-                        <div class="text-sm font-medium text-muted-foreground mt-1">
-                            Mode: <span class="font-bold" :class="isLiveMode ? 'text-primary' : 'text-card-foreground'">{{ isLiveMode ? 'Live' : 'Demo' }}</span>
-                        </div>
-
-                        <div v-if="!isLiveMode" class="flex items-center gap-2 mt-2 text-xs border rounded-lg px-3 py-2">
-                            <AlertTriangleIcon class="w-3 h-3" />
-                            <span>Switch to Live Mode to make investments</span>
-                        </div>
-                    </div>
-
-                    <div class="flex flex-col sm:flex-row md:items-end gap-4 md:gap-3 w-full md:w-auto">
-                        <div class="flex gap-3 w-full sm:w-auto">
-                            <button
-                                v-if="isLiveMode"
-                                @click="handleFundingClick"
-                                class="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-background border border-border text-card-foreground rounded-xl text-sm font-semibold transition-colors hover:bg-muted cursor-pointer">
-                                <WalletIcon class="w-4 h-4" />
-                                Deposit
-                            </button>
-
-                            <button
-                                v-if="isLiveMode"
-                                @click="handleWithdrawalClick"
-                                class="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-background border border-border text-card-foreground rounded-xl text-sm font-semibold transition-colors hover:bg-muted cursor-pointer">
-                                <DollarSignIcon class="w-4 h-4" />
-                                Withdraw
-                            </button>
-                        </div>
-
-                        <TradingModeSwitcher
-                            :is-live-mode="isLiveMode"
-                            :live-balance="liveBalance"
-                            :demo-balance="demoBalance"
-                            @update:is-live-mode="isLiveMode = $event"
-                        />
-                    </div>
-                </div>
-            </div>
-
-            <div class="mt-6" :class="{ 'margin-bottom': !formattedPlans.length > 0 }" id="plans-section">
-                <div class="flex items-center justify-between gap-3 mb-4">
+            <div class="mt-6 mb-8 sm:mb-0" id="plans-section">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-5">
                     <h2 class="text-xl sm:text-2xl font-bold text-card-foreground">
                         Investment Plans
                     </h2>
 
-                    <TextLink :href="route('user.trade.investment.history')" class="inline-flex items-center gap-1.5 sm:gap-2 px-3 py-1.5 sm:px-4 sm:py-2 bg-background border border-border text-card-foreground rounded-lg text-xs sm:text-sm font-semibold hover:bg-muted transition-colors shrink-0">
-                        <HistoryIcon class="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                        <span class="hidden xs:inline">My Investments</span>
-                        <span class="xs:hidden">History</span>
+                    <TextLink :href="route('user.trade.investment.history')" class="w-full sm:w-auto inline-flex justify-center items-center gap-2 px-4 py-3 sm:py-2 bg-background border border-border text-card-foreground rounded-xl text-sm font-semibold hover:bg-muted transition-colors touch-manipulation">
+                        <HistoryIcon class="w-4 h-4" />
+                        <span>My Investments</span>
                     </TextLink>
                 </div>
 
-                <div v-if="formattedPlans.length > 0" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div v-if="formattedPlans.length > 0" class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
                     <div
                         v-for="plan in formattedPlans"
                         :key="plan.id"
-                        class="bg-card border border-border rounded-xl p-5 hover:border-primary/50 transition-all duration-200 group">
-                        <div class="flex items-start justify-between mb-3">
-                            <h3 class="text-lg font-bold text-card-foreground">{{ plan.name }}</h3>
+                        class="bg-card border border-border rounded-2xl p-5 hover:border-primary/50 transition-all duration-200 group flex flex-col">
+
+                        <div class="flex items-start justify-between mb-4 pb-4 border-b border-border/50">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+                                    <PiggyBankIcon class="w-5 h-5" />
+                                </div>
+                                <h3 class="text-lg font-bold text-card-foreground">{{ plan.name }}</h3>
+                            </div>
                             <span
-                                class="px-3 py-1 text-xs font-semibold rounded-full border"
+                                class="px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide rounded-full border"
                                 :class="plan.capitalBack ? 'bg-green-100 text-green-800 border-green-200' : 'bg-red-100 text-red-800 border-red-200'">
-                                {{ plan.capitalBack ? 'Capital Back' : 'No Capital Back' }}
+                                {{ plan.capitalBack ? 'Capital Back' : 'No Return' }}
                             </span>
                         </div>
 
-                        <div class="grid grid-cols-2 gap-3 mb-4">
-                            <div class="flex items-center gap-2">
-                                <DollarSignIcon class="w-4 h-4 text-muted-foreground" />
-                                <div>
-                                    <p class="text-xs text-muted-foreground">Min - Max</p>
-                                    <p class="text-sm font-semibold text-card-foreground">
-                                        ${{ plan.minimum.toLocaleString() }} - ${{ plan.maximum.toLocaleString() }}
-                                    </p>
-                                </div>
+                        <div class="grid grid-cols-2 gap-x-4 gap-y-5 mb-6">
+                            <div>
+                                <p class="text-xs text-muted-foreground flex items-center gap-1.5 mb-1">
+                                    <DollarSignIcon class="w-3.5 h-3.5" />
+                                    Range (Min - Max)
+                                </p>
+                                <p class="text-sm font-bold text-card-foreground truncate">
+                                    ${{ plan.minimum.toLocaleString() }} - ${{ plan.maximum.toLocaleString() }}
+                                </p>
                             </div>
 
-                            <div class="flex items-center gap-2">
-                                <PercentIcon class="w-4 h-4 text-muted-foreground" />
-                                <div>
-                                    <p class="text-xs text-muted-foreground">Interest</p>
-                                    <p class="text-sm font-semibold text-primary">{{ plan.interest }}% ROI</p>
-                                </div>
+                            <div>
+                                <p class="text-xs text-muted-foreground flex items-center gap-1.5 mb-1">
+                                    <PercentIcon class="w-3.5 h-3.5" />
+                                    Interest ROI
+                                </p>
+                                <p class="text-sm font-extrabold text-green-600">{{ plan.interest }}%</p>
                             </div>
 
-                            <div class="flex items-center gap-2">
-                                <CalendarIcon class="w-4 h-4 text-muted-foreground" />
-                                <div>
-                                    <p class="text-xs text-muted-foreground">Period</p>
-                                    <p class="text-sm font-semibold text-card-foreground">{{ plan.periodName }}</p>
-                                </div>
+                            <div>
+                                <p class="text-xs text-muted-foreground flex items-center gap-1.5 mb-1">
+                                    <CalendarIcon class="w-3.5 h-3.5" />
+                                    Duration
+                                </p>
+                                <p class="text-sm font-semibold text-card-foreground">{{ plan.periodName }}</p>
                             </div>
 
-                            <div class="flex items-center gap-2">
-                                <ClockIcon class="w-4 h-4 text-muted-foreground" />
-                                <div>
-                                    <p class="text-xs text-muted-foreground">Repeat Time</p>
-                                    <p class="text-sm font-semibold text-card-foreground">{{ plan.repeatTime }}x</p>
-                                </div>
+                            <div>
+                                <p class="text-xs text-muted-foreground flex items-center gap-1.5 mb-1">
+                                    <ClockIcon class="w-3.5 h-3.5" />
+                                    Repeat Time
+                                </p>
+                                <p class="text-sm font-semibold text-card-foreground">{{ plan.repeatTime }}x</p>
                             </div>
                         </div>
 
-                        <div class="grid grid-cols-2 gap-2">
+                        <div class="mt-auto grid grid-cols-2 gap-3">
                             <button
                                 @click="openInvestmentModal(plan)"
                                 :disabled="!isLiveMode"
                                 :class="[
-                                    'flex items-center justify-center gap-2 py-2.5 rounded-lg font-semibold transition-colors cursor-pointer',
+                                    'flex items-center justify-center gap-2 py-3 rounded-xl font-semibold transition-all active:scale-[0.98] touch-manipulation',
                                     isLiveMode
                                         ? 'bg-primary text-primary-foreground hover:bg-primary/90'
-                                        : 'bg-muted text-muted-foreground cursor-not-allowed'
+                                        : 'bg-muted text-muted-foreground cursor-not-allowed border border-border'
                                 ]">
                                 <PiggyBankIcon class="w-4 h-4" />
                                 Invest
@@ -362,7 +320,7 @@
 
                             <button
                                 @click="openCalculatorModal(plan)"
-                                class="flex items-center justify-center gap-2 py-2.5 bg-background border border-border text-card-foreground rounded-lg font-semibold hover:bg-muted transition-colors cursor-pointer">
+                                class="flex items-center justify-center gap-2 py-3 bg-background border border-border text-card-foreground rounded-xl font-semibold hover:bg-muted transition-all active:scale-[0.98] cursor-pointer touch-manipulation">
                                 <CalculatorIcon class="w-4 h-4" />
                                 Calculate
                             </button>
@@ -370,8 +328,8 @@
                     </div>
                 </div>
 
-                <div v-else class="flex flex-col items-center justify-center text-center py-12 bg-card border border-border rounded-2xl">
-                    <PiggyBankIcon class="w-16 h-16 text-muted-foreground/50 mb-4" />
+                <div v-else class="flex flex-col items-center justify-center text-center py-16 bg-card border border-border rounded-2xl">
+                    <PiggyBankIcon class="w-16 h-16 text-muted-foreground/30 mb-4" />
                     <h3 class="text-lg font-semibold text-card-foreground mb-2">No Plans Available</h3>
                     <p class="text-sm text-muted-foreground">Check back later for investment opportunities.</p>
                 </div>
@@ -383,11 +341,11 @@
                     :to="plans.to"
                     :total="plans.total"
                     @go-to-page="goToPlansPage"
+                    class="mt-8 pt-6 border-t border-border"
                 />
             </div>
         </div>
 
-        <!-- Modals -->
         <InvestmentModal
             :is-open="isInvestmentModalOpen"
             :plan="selectedPlan"
@@ -426,16 +384,10 @@
 </template>
 
 <style scoped>
-button:focus-visible,
-input:focus-visible,
-select:focus-visible {
-    outline: 2px solid hsl(var(--primary));
-    outline-offset: 2px;
-}
-
-@media (max-width: 640px) {
-    .margin-bottom {
-        margin-bottom: 50px;
+    button:focus-visible,
+    input:focus-visible,
+    select:focus-visible {
+        outline: 2px solid hsl(var(--primary));
+        outline-offset: 2px;
     }
-}
 </style>

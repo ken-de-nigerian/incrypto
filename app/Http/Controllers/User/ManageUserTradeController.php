@@ -9,6 +9,7 @@ use App\Http\Requests\ExecuteTradeRequest;
 use App\Http\Requests\FundAccountRequest;
 use App\Http\Requests\StartCopyRequest;
 use App\Http\Requests\WithdrawAccountRequest;
+use App\Models\CopyTrade;
 use App\Models\MasterTrader;
 use App\Models\Plan;
 use App\Models\Trade;
@@ -95,6 +96,9 @@ class ManageUserTradeController extends Controller
         return Inertia::render('User/Trade/Crypto', $pageData);
     }
 
+    /**
+     * Display the investment plans page
+     */
     public function investment(): Response
     {
         $user = Auth::user();
@@ -108,19 +112,74 @@ class ManageUserTradeController extends Controller
         return Inertia::render('User/Trade/Investment', $pageData);
     }
 
-    public function investmentHistory()
+    /**
+     * Display the investment history page
+     */
+    public function investmentHistory(Request $request)
     {
         $user = Auth::user();
         $pageData = $this->tradeCrypto->getData($user);
 
-        // Get paginated history
-        $pageData['investment_histories'] = $user->investmentHistories()
-            ->with('plan.plan_time_settings')
-            ->latest()
-            ->paginate(20)
-            ->toArray();
+        // Build investment history query
+        $query = $user->investmentHistories()
+            ->with('plan.plan_time_settings');
 
-        // Fetch all records once to calculate stats efficiently
+        // Apply status filter
+        if ($request->filled('status') && $request->status !== 'all') {
+            $query->where('status', $request->status);
+        }
+
+        // Apply search filter
+        if ($request->filled('search')) {
+            $searchTerm = $request->search;
+            $query->where(function ($q) use ($searchTerm) {
+                $q->where('id', 'like', "%$searchTerm%")
+                    ->orWhereHas('plan', function ($planQuery) use ($searchTerm) {
+                        $planQuery->where('name', 'like', "%$searchTerm%");
+                    });
+            });
+        }
+
+        // Apply date filter
+        if ($request->filled('date') && $request->date !== 'all') {
+            $now = now();
+            switch ($request->date) {
+                case 'today':
+                    $query->whereDate('created_at', $now->toDateString());
+                    break;
+                case 'week':
+                    $query->where('created_at', '>=', $now->subDays(7));
+                    break;
+                case 'month':
+                    $query->where('created_at', '>=', $now->subDays(30));
+                    break;
+            }
+        }
+
+        // Apply sorting
+        $sortBy = $request->input('sort', 'newest');
+        switch ($sortBy) {
+            case 'oldest':
+                $query->oldest();
+                break;
+            case 'amount_high':
+                $query->orderBy('amount', 'desc');
+                break;
+            case 'amount_low':
+                $query->orderBy('amount');
+                break;
+            case 'profit_high':
+                $query->orderByRaw('(interest * repeat_time_count) DESC');
+                break;
+            case 'newest':
+            default:
+                $query->latest();
+                break;
+        }
+
+        $pageData['investment_histories'] = $query->paginate(20)
+            ->withQueryString();
+
         $allInvestments = $user->investmentHistories()->get();
         $totalEarned = $allInvestments->reduce(function ($carry, $item) {
             return $carry + ($item->interest * $item->repeat_time_count);
@@ -140,13 +199,19 @@ class ManageUserTradeController extends Controller
     /**
      * Display the copy trading network page.
      */
-    public function network()
+    public function network(Request $request)
     {
         $user = Auth::user();
         $pageData = $this->tradeCrypto->getData($user);
 
-        // Get active master traders with relationships
-        $pageData['masterTraders'] = MasterTrader::where('is_active', true)
+        // Get user's active copied trader IDs
+        $activeCopiedTraderIds = $user->copyTrades()
+            ->where('status', 'active')
+            ->pluck('master_trader_id')
+            ->toArray();
+
+        // Build master traders query
+        $query = MasterTrader::where('is_active', true)
             ->where('user_id', '!=', $user->id)
             ->with([
                 'user.profile',
@@ -155,20 +220,55 @@ class ManageUserTradeController extends Controller
                 },
                 'activeCopyTrades'
             ])
-            ->withCount('activeCopyTrades as copiers_count')
-            ->orderBy('gain_percentage', 'desc')
-            ->paginate(8);
+            ->withCount('activeCopyTrades as copiers_count');
 
-        // Get user's copy trades with all related data
-        $pageData['copyTrades'] = $user->copyTrades()
-            ->with([
-                'masterTrader.user.profile',
-                'transactions' => function ($query) {
-                    $query->orderBy('created_at', 'desc');
-                }
-            ])
-            ->latest()
-            ->paginate(20);
+        // Apply expertise filter
+        if ($request->filled('expertise') && $request->expertise !== 'all') {
+            $query->where('expertise', $request->expertise);
+        }
+
+        // Apply free trial filter
+        if ($request->filled('free_trial') && $request->boolean('free_trial')) {
+            $query->where(function ($q) {
+                $q->whereNull('commission_rate')
+                    ->orWhere('commission_rate', 0);
+            });
+        }
+
+        // Apply search filter
+        if ($request->filled('search')) {
+            $searchTerm = $request->search;
+            $query->whereHas('user', function ($q) use ($searchTerm) {
+                $q->where('first_name', 'like', "%$searchTerm%")
+                    ->orWhere('last_name', 'like', "%$searchTerm%")
+                    ->orWhere('email', 'like', "%$searchTerm%");
+            });
+        }
+
+        // Apply sorting
+        $sortBy = $request->input('sort', 'risk');
+        switch ($sortBy) {
+            case 'gain':
+                $query->orderBy('gain_percentage', 'desc');
+                break;
+            case 'copiers':
+                $query->orderBy('copiers_count', 'desc');
+                break;
+            case 'risk':
+            default:
+                $query->orderBy('risk_score', 'asc');
+                break;
+        }
+
+        $pageData['masterTraders'] = $query->paginate(8)
+            ->withQueryString()
+            ->through(function ($trader) use ($activeCopiedTraderIds) {
+                $trader->is_copied = in_array($trader->id, $activeCopiedTraderIds);
+                return $trader;
+            });
+
+        // Pass active copied trader IDs to frontend
+        $pageData['activeCopiedTraderIds'] = $activeCopiedTraderIds;
 
         return Inertia::render('User/Trade/Network', $pageData);
     }
@@ -228,6 +328,66 @@ class ManageUserTradeController extends Controller
 
             return $this->notify('success', 'Successfully started copying ' . $masterTrader->user->first_name)
                 ->toRoute('user.trade.network.copied');
+        } catch (Exception $e) {
+            return $this->notify('error', __($e->getMessage()))->toBack();
+        }
+    }
+
+    /**
+     * Pause a copy trade.
+     */
+    public function pauseCopy(CopyTrade $copyTrade)
+    {
+        $user = Auth::user();
+
+        // Ensure the copy trade belongs to the user
+        if ($copyTrade->user_id !== $user->id) {
+            abort(403);
+        }
+
+        try {
+            $copyTrade->pause();
+            return $this->notify('success', 'Copy trade paused successfully.')->toBack();
+        } catch (Exception $e) {
+            return $this->notify('error', __($e->getMessage()))->toBack();
+        }
+    }
+
+    /**
+     * Resume a copy trade.
+     */
+    public function resumeCopy(CopyTrade $copyTrade)
+    {
+        $user = Auth::user();
+
+        // Ensure the copy trade belongs to the user
+        if ($copyTrade->user_id !== $user->id) {
+            abort(403);
+        }
+
+        try {
+            $copyTrade->resume();
+            return $this->notify('success', 'Copy trade resumed successfully.')->toBack();
+        } catch (Exception $e) {
+            return $this->notify('error', __($e->getMessage()))->toBack();
+        }
+    }
+
+    /**
+     * Stop a copy trade.
+     */
+    public function stopCopy(CopyTrade $copyTrade)
+    {
+        $user = Auth::user();
+
+        // Ensure the copy trade belongs to the user
+        if ($copyTrade->user_id !== $user->id) {
+            abort(403);
+        }
+
+        try {
+            $copyTrade->stop();
+            return $this->notify('success', 'Copy trade stopped successfully.')->toBack();
         } catch (Exception $e) {
             return $this->notify('error', __($e->getMessage()))->toBack();
         }

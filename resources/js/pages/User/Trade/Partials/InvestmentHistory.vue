@@ -1,26 +1,25 @@
 <script setup lang="ts">
-    import { computed, onMounted, onUnmounted, ref } from 'vue';
+    import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
     import { Head, router, usePage } from '@inertiajs/vue3';
     import {
-        CalendarIcon,
         CheckCircleIcon,
         ClockIcon,
         DollarSignIcon,
         HistoryIcon,
         Search,
         TrendingUpIcon,
-        WalletIcon,
-        XCircleIcon
+        XCircleIcon,
+        XIcon
     } from 'lucide-vue-next';
     import Breadcrumb from '@/components/Breadcrumb.vue';
     import AppLayout from '@/components/layout/user/dashboard/AppLayout.vue';
     import NotificationsModal from '@/components/utilities/NotificationsModal.vue';
-    import TradingModeSwitcher from '@/components/TradingModeSwitcher.vue';
     import FundingModal from '@/components/FundingModal.vue';
     import WithdrawalModal from '@/components/WithdrawalModal.vue';
     import PaginationControls from '@/components/PaginationControls.vue';
     import CustomSelectDropdown from '@/components/CustomSelectDropdown.vue';
     import TextLink from '@/components/TextLink.vue';
+    import WalletBalanceCard from '@/components/WalletBalanceCard.vue';
 
     interface Token {
         symbol: string;
@@ -123,10 +122,13 @@
     const isNotificationsModalOpen = ref(false);
     const isFundingModalOpen = ref(false);
     const isWithdrawalModalOpen = ref(false);
-    const statusFilter = ref<string>('all');
-    const searchQuery = ref('');
-    const sortBy = ref<string>('newest');
-    const dateFilter = ref<string>('all');
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const statusFilter = ref<string>(urlParams.get('status') || 'all');
+    const searchQuery = ref(urlParams.get('search') || '');
+    const sortBy = ref<string>(urlParams.get('sort') || 'newest');
+    const dateFilter = ref<string>(urlParams.get('date') || 'all');
+
     const currentTime = ref(Date.now());
     let intervalId: number | null = null;
 
@@ -184,6 +186,13 @@
         { label: 'Investments', href: route('user.trade.investment') },
         { label: 'History' }
     ];
+
+    const hasActiveFilters = computed(() => {
+        return statusFilter.value !== 'all' ||
+            searchQuery.value !== '' ||
+            sortBy.value !== 'newest' ||
+            dateFilter.value !== 'all';
+    });
 
     const calculateInvestmentProgress = (history: any): InvestmentProgress => {
         const now = currentTime.value;
@@ -248,60 +257,8 @@
         };
     };
 
-    const filteredHistories = computed(() => {
-        let filtered = props.investment_histories.data;
-
-        // Status filter
-        if (statusFilter.value !== 'all') {
-            filtered = filtered.filter(h => h.status === statusFilter.value);
-        }
-
-        // Search filter
-        if (searchQuery.value) {
-            const query = searchQuery.value.toLowerCase();
-            filtered = filtered.filter(h =>
-                h.plan?.name?.toLowerCase().includes(query) ||
-                h.id.toString().includes(query)
-            );
-        }
-
-        // Date filter
-        if (dateFilter.value !== 'all') {
-            const now = new Date();
-            filtered = filtered.filter(h => {
-                const createdDate = new Date(h.created_at);
-                if (dateFilter.value === 'today') {
-                    return createdDate.toDateString() === now.toDateString();
-                } else if (dateFilter.value === 'week') {
-                    const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-                    return createdDate >= weekAgo;
-                } else if (dateFilter.value === 'month') {
-                    const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-                    return createdDate >= monthAgo;
-                }
-                return true;
-            });
-        }
-
-        // Sort
-        const sorted = [...filtered];
-        if (sortBy.value === 'newest') {
-            sorted.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-        } else if (sortBy.value === 'oldest') {
-            sorted.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
-        } else if (sortBy.value === 'amount_high') {
-            sorted.sort((a, b) => parseFloat(b.amount as string) - parseFloat(a.amount as string));
-        } else if (sortBy.value === 'amount_low') {
-            sorted.sort((a, b) => parseFloat(a.amount as string) - parseFloat(b.amount as string));
-        } else if (sortBy.value === 'profit_high') {
-            sorted.sort((a, b) => {
-                const aEarned = parseFloat(a.interest as string) * (a.repeat_time_count || 0);
-                const bEarned = parseFloat(b.interest as string) * (b.repeat_time_count || 0);
-                return bEarned - aEarned;
-            });
-        }
-
-        return sorted.map(history => {
+    const processedHistories = computed(() => {
+        return props.investment_histories.data.map(history => {
             const amount = typeof history.amount === 'string' ? parseFloat(history.amount) : history.amount;
             const interest = typeof history.interest === 'string' ? parseFloat(history.interest) : history.interest;
             const progress = calculateInvestmentProgress(history);
@@ -333,10 +290,36 @@
         isWithdrawalModalOpen.value = true;
     };
 
+    const applyFilters = () => {
+        router.get(route('user.trade.investment.history'), {
+            status: statusFilter.value,
+            search: searchQuery.value,
+            sort: sortBy.value,
+            date: dateFilter.value
+        }, {
+            preserveState: true,
+            preserveScroll: true,
+            only: ['investment_histories'],
+        });
+    };
+
+    const clearAllFilters = () => {
+        statusFilter.value = 'all';
+        searchQuery.value = '';
+        sortBy.value = 'newest';
+        dateFilter.value = 'all';
+
+        router.get(route('user.trade.investment.history'), {}, {
+            preserveState: true,
+            preserveScroll: false,
+            only: ['investment_histories'],
+        });
+    };
+
     const getStatusBadgeClass = (status: string) => {
         const classes = {
-            running: 'bg-green-100 text-green-800 border-green-200',
-            completed: 'bg-blue-100 text-blue-800 border-blue-200',
+            running: 'bg-yellow-100 text-yellow-800 border-yellow-200',
+            completed: 'bg-green-100 text-green-800 border-green-200',
             cancelled: 'bg-red-100 text-red-800 border-red-200'
         };
         return classes[status as keyof typeof classes] || 'bg-gray-100 text-gray-800 border-gray-200';
@@ -355,7 +338,7 @@
         router.get(url, {}, {
             preserveState: true,
             preserveScroll: true,
-            only: ['investment_histories', 'stats'],
+            only: ['investment_histories'],
         });
     };
 
@@ -380,6 +363,18 @@
         { value: 'week', label: 'Last 7 Days' },
         { value: 'month', label: 'Last 30 Days' },
     ];
+
+    let searchTimeout: NodeJS.Timeout;
+    watch(searchQuery, () => {
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(() => {
+            applyFilters();
+        }, 500);
+    });
+
+    watch([statusFilter, sortBy, dateFilter], () => {
+        applyFilters();
+    });
 
     onMounted(() => {
         intervalId = window.setInterval(() => {
@@ -407,146 +402,136 @@
                 @open-notifications="isNotificationsModalOpen = true"
             />
 
-            <!-- Balance Card -->
-            <div class="grid grid-cols-1 gap-6 mt-6">
-                <div class="bg-card border border-border rounded-2xl p-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
-                    <div>
-                        <h2 class="text-xl font-semibold text-muted-foreground mb-1">Wallet Balance</h2>
+            <WalletBalanceCard
+                :current-balance="currentBalance"
+                v-model:is-live-mode="isLiveMode"
+                :live-balance="liveBalance"
+                :demo-balance="demoBalance"
+                warning-message="Switch to Live Mode to make investments."
+                @deposit="handleFundingClick"
+                @withdraw="handleWithdrawalClick"
+            />
 
-                        <div class="flex items-end gap-3">
-                            <span class="text-2xl sm:text-4xl font-extrabold text-card-foreground">
-                                ${{ currentBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}
-                            </span>
-                        </div>
-
-                        <div class="text-sm font-medium text-muted-foreground mt-1">
-                            Mode: <span class="font-bold" :class="isLiveMode ? 'text-primary' : 'text-card-foreground'">{{ isLiveMode ? 'Live' : 'Demo' }}</span>
-                        </div>
-                    </div>
-
-                    <div class="flex flex-col sm:flex-row md:items-end gap-4 md:gap-3 w-full md:w-auto">
-                        <div class="flex gap-3 w-full sm:w-auto">
-                            <button
-                                v-if="isLiveMode"
-                                @click="handleFundingClick"
-                                class="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-background border border-border text-card-foreground rounded-xl text-sm font-semibold hover:bg-muted cursor-pointer">
-                                <WalletIcon class="w-4 h-4" />
-                                Deposit
-                            </button>
-
-                            <button
-                                v-if="isLiveMode"
-                                @click="handleWithdrawalClick"
-                                class="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-background border border-border text-card-foreground rounded-xl text-sm font-semibold hover:bg-muted cursor-pointer">
-                                <DollarSignIcon class="w-4 h-4" />
-                                Withdraw
-                            </button>
-                        </div>
-
-                        <TradingModeSwitcher
-                            :is-live-mode="isLiveMode"
-                            :live-balance="liveBalance"
-                            :demo-balance="demoBalance"
-                            @update:is-live-mode="isLiveMode = $event"
-                        />
-                    </div>
-                </div>
-            </div>
-
-            <!-- Stats Overview -->
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mt-6">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4 mt-6">
                 <div class="bg-card border border-border rounded-xl p-4">
                     <div class="flex items-center gap-2 mb-2">
                         <DollarSignIcon class="w-4 h-4 text-primary" />
-                        <p class="text-xs text-muted-foreground font-semibold">Total Invested</p>
+                        <p class="text-xs text-muted-foreground font-bold uppercase">Invested</p>
                     </div>
-                    <p class="text-2xl font-bold text-card-foreground">${{ props.stats.total_invested.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}</p>
+                    <p class="text-xl sm:text-2xl font-bold text-card-foreground truncate">${{ props.stats.total_invested.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}</p>
                 </div>
 
                 <div class="bg-card border border-border rounded-xl p-4">
                     <div class="flex items-center gap-2 mb-2">
                         <TrendingUpIcon class="w-4 h-4 text-green-600" />
-                        <p class="text-xs text-muted-foreground font-semibold">Total Earned</p>
+                        <p class="text-xs text-muted-foreground font-bold uppercase">Earned</p>
                     </div>
-                    <p class="text-2xl font-bold text-green-600">${{ props.stats.total_earned.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}</p>
+                    <p class="text-xl sm:text-2xl font-bold text-green-600 truncate">${{ props.stats.total_earned.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}</p>
                 </div>
 
                 <div class="bg-card border border-border rounded-xl p-4">
                     <div class="flex items-center gap-2 mb-2">
                         <CheckCircleIcon class="w-4 h-4 text-blue-600" />
-                        <p class="text-xs text-muted-foreground font-semibold">Active</p>
+                        <p class="text-xs text-muted-foreground font-bold uppercase">Active</p>
                     </div>
-                    <p class="text-2xl font-bold text-card-foreground">{{ props.stats.active_investments }}</p>
+                    <p class="text-xl sm:text-2xl font-bold text-card-foreground">{{ props.stats.active_investments }}</p>
                 </div>
 
                 <div class="bg-card border border-border rounded-xl p-4">
                     <div class="flex items-center gap-2 mb-2">
                         <CheckCircleIcon class="w-4 h-4 text-cyan-600" />
-                        <p class="text-xs text-muted-foreground font-semibold">Completed</p>
+                        <p class="text-xs text-muted-foreground font-bold uppercase">Completed</p>
                     </div>
-                    <p class="text-2xl font-bold text-card-foreground">{{ props.stats.completed_investments }}</p>
+                    <p class="text-xl sm:text-2xl font-bold text-card-foreground">{{ props.stats.completed_investments }}</p>
                 </div>
 
                 <div class="bg-card border border-border rounded-xl p-4">
                     <div class="flex items-center gap-2 mb-2">
                         <TrendingUpIcon class="w-4 h-4" :class="props.stats.total_profit >= 0 ? 'text-green-600' : 'text-red-600'" />
-                        <p class="text-xs text-muted-foreground font-semibold">Net Profit</p>
+                        <p class="text-xs text-muted-foreground font-bold uppercase">Net Profit</p>
                     </div>
-                    <p class="text-2xl font-bold" :class="props.stats.total_profit >= 0 ? 'text-green-600' : 'text-red-600'">
+                    <p class="text-xl sm:text-2xl font-bold truncate" :class="props.stats.total_profit >= 0 ? 'text-green-600' : 'text-red-600'">
                         {{ props.stats.total_profit >= 0 ? '+' : '' }}${{ Math.abs(props.stats.total_profit).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}
                     </p>
                 </div>
             </div>
 
-            <!-- Investment History Section -->
-            <div class="mt-6 margin-bottom">
+            <div class="mt-6 mb-8 sm:mb-0">
                 <div class="flex items-center justify-between gap-3 mb-4">
                     <h2 class="text-xl sm:text-2xl font-bold text-card-foreground">
                         Investment History
                     </h2>
 
-                    <TextLink :href="route('user.trade.investment')" class="inline-flex items-center gap-1.5 sm:gap-2 px-3 py-1.5 sm:px-4 sm:py-2 bg-background border border-border text-card-foreground rounded-lg text-xs sm:text-sm font-semibold hover:bg-muted transition-colors shrink-0">
+                    <TextLink :href="route('user.trade.investment')" class="inline-flex items-center gap-1.5 sm:gap-2 px-3 py-2 bg-background border border-border text-card-foreground rounded-lg text-xs sm:text-sm font-semibold hover:bg-muted transition-colors touch-manipulation">
                         <DollarSignIcon class="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                        <span class="hidden xs:inline">Investment Plans</span>
-                        <span class="xs:hidden">Investment Plans</span>
+                        <span>Plans</span>
                     </TextLink>
                 </div>
 
-                <div class="bg-card border border-border rounded-xl p-6">
-                    <!-- Filters -->
-                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
-                        <div class="relative">
-                            <Search class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                            <input
-                                v-model="searchQuery"
-                                type="text"
-                                placeholder="Search by plan or ID..."
-                                class="w-full pl-10 pr-4 py-2.5 bg-background border border-border rounded-lg text-sm text-card-foreground placeholder:text-muted-foreground"
+                <div class="bg-card border border-border rounded-xl p-4 sm:p-6">
+                    <div class="space-y-4 mb-6">
+                        <div class="flex flex-col sm:flex-row gap-3">
+                            <div class="flex-1 relative">
+                                <Search class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                                <input
+                                    v-model="searchQuery"
+                                    type="text"
+                                    placeholder="Search by plan..."
+                                    class="w-full pl-10 pr-4 py-2.5 bg-background border border-border rounded-lg text-sm text-card-foreground placeholder:text-muted-foreground transition-all"
+                                />
+                            </div>
+
+                            <button
+                                v-if="hasActiveFilters"
+                                @click="clearAllFilters"
+                                class="flex items-center justify-center gap-2 px-4 py-2.5 bg-background border border-border text-card-foreground rounded-lg text-sm font-semibold hover:bg-destructive hover:text-destructive-foreground hover:border-destructive transition-colors whitespace-nowrap cursor-pointer touch-manipulation">
+                                <XIcon class="w-4 h-4" />
+                                Clear Filters
+                            </button>
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                            <CustomSelectDropdown
+                                v-model="statusFilter"
+                                :options="statusOptions"
+                                placeholder="Status"
+                            />
+
+                            <CustomSelectDropdown
+                                v-model="sortBy"
+                                :options="sortOptions"
+                                placeholder="Sort by"
+                            />
+
+                            <CustomSelectDropdown
+                                v-model="dateFilter"
+                                :options="dateOptions"
+                                placeholder="Date Range"
                             />
                         </div>
 
-                        <CustomSelectDropdown
-                            v-model="statusFilter"
-                            :options="statusOptions"
-                            placeholder="Status"
-                        />
+                        <div v-if="hasActiveFilters" class="flex flex-wrap items-center gap-2 pt-3 border-t border-border/60">
+                            <span class="text-xs font-medium text-muted-foreground uppercase tracking-wider">Active:</span>
 
-                        <CustomSelectDropdown
-                            v-model="sortBy"
-                            :options="sortOptions"
-                            placeholder="Sort by"
-                        />
+                            <span v-if="statusFilter !== 'all'" class="inline-flex items-center gap-1 px-2.5 py-1 bg-primary/10 text-primary rounded-full text-xs font-medium border border-primary/10">
+                                {{ statusOptions.find(o => o.value === statusFilter)?.label }}
+                            </span>
 
-                        <CustomSelectDropdown
-                            v-model="dateFilter"
-                            :options="dateOptions"
-                            placeholder="Date Range"
-                        />
+                            <span v-if="sortBy !== 'newest'" class="inline-flex items-center gap-1 px-2.5 py-1 bg-primary/10 text-primary rounded-full text-xs font-medium border border-primary/10">
+                                {{ sortOptions.find(o => o.value === sortBy)?.label }}
+                            </span>
+
+                            <span v-if="dateFilter !== 'all'" class="inline-flex items-center gap-1 px-2.5 py-1 bg-primary/10 text-primary rounded-full text-xs font-medium border border-primary/10">
+                                {{ dateOptions.find(o => o.value === dateFilter)?.label }}
+                            </span>
+
+                            <span v-if="searchQuery" class="inline-flex items-center gap-1 px-2.5 py-1 bg-primary/10 text-primary rounded-full text-xs font-medium border border-primary/10">
+                                "{{ searchQuery }}"
+                            </span>
+                        </div>
                     </div>
 
-                    <!-- History Content -->
-                    <div v-if="filteredHistories.length > 0">
-                        <!-- Desktop Table -->
+                    <div v-if="processedHistories.length > 0">
                         <div class="hidden lg:block overflow-x-auto">
                             <table class="w-full">
                                 <thead class="bg-muted/50 border-b border-border">
@@ -555,7 +540,7 @@
                                         <th class="text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider px-4 py-3">Amount</th>
                                         <th class="text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider px-4 py-3">Interest/Cycle</th>
                                         <th class="text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider px-4 py-3">Total Earned</th>
-                                        <th class="text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider px-4 py-3">Progress</th>
+                                        <th class="text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider px-4 py-3 w-48">Progress</th>
                                         <th class="text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider px-4 py-3">Countdown</th>
                                         <th class="text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider px-4 py-3">Cycles</th>
                                         <th class="text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider px-4 py-3">Status</th>
@@ -563,46 +548,49 @@
                                     </tr>
                                 </thead>
                                 <tbody class="divide-y divide-border">
-                                    <tr v-for="history in filteredHistories" :key="history.id" class="hover:bg-muted/20 transition-colors">
-                                        <td class="px-4 py-4 text-sm font-medium text-card-foreground">{{ history.planName }}</td>
+                                    <tr v-for="history in processedHistories" :key="history.id" class="hover:bg-muted/20 transition-colors">
+                                        <td class="px-4 py-4 text-sm font-bold text-card-foreground">{{ history.planName }}</td>
                                         <td class="px-4 py-4 text-sm font-semibold text-card-foreground">${{ history.amount.toLocaleString() }}</td>
                                         <td class="px-4 py-4 text-sm text-primary font-semibold">${{ history.interest.toLocaleString() }}</td>
                                         <td class="px-4 py-4 text-sm text-green-600 font-semibold">${{ history.totalInterestEarned.toLocaleString() }}</td>
                                         <td class="px-4 py-4">
-                                            <div class="space-y-1">
-                                                <div class="w-full bg-muted rounded-full h-1.5 overflow-hidden">
+                                            <div class="space-y-1.5">
+                                                <div class="w-full bg-muted rounded-full h-1 overflow-hidden">
                                                     <div
-                                                        class="h-full transition-all duration-300 rounded-full"
-                                                        :class="history.progress.isExpired ? 'bg-blue-500' : 'bg-green-500'"
+                                                        class="h-full transition-all duration-500 rounded-full"
+                                                        :class="history.progress.isExpired ? 'bg-green-500' : 'bg-yellow-500'"
                                                         :style="{ width: `${history.progress.percentage}%` }">
                                                     </div>
                                                 </div>
-                                                <p class="text-xs text-muted-foreground">{{ history.progress.percentage.toFixed(1) }}%</p>
+                                                <p class="text-xs font-medium text-muted-foreground text-right">{{ history.progress.percentage.toFixed(1) }}%</p>
                                             </div>
                                         </td>
+
                                         <td class="px-4 py-4">
-                                            <div class="flex items-center gap-2">
-                                                <ClockIcon class="w-4 h-4 text-muted-foreground" />
-                                                <span class="text-sm font-semibold"
-                                                  :class="history.progress.isExpired ? 'text-blue-600' : 'text-card-foreground'">
-                                                    {{ history.progress.countdown }}
+                                            <div class="flex items-center gap-1.5">
+                                                <ClockIcon class="w-3.5 h-3.5 text-muted-foreground" />
+                                                <span class="text-sm font-mono font-medium"
+                                                  :class="history.progress.isExpired ? 'text-green-600' : 'text-card-foreground'">
+                                                        {{ history.progress.countdown }}
                                                 </span>
                                             </div>
                                         </td>
+
                                         <td class="px-4 py-4">
                                             <span class="text-sm font-semibold text-card-foreground">
-                                                {{ history.progress.currentCycle }} / {{ history.progress.totalCycles }}
+                                                {{ history.progress.currentCycle }} <span class="text-muted-foreground font-normal">/ {{ history.progress.totalCycles }}</span>
                                             </span>
                                         </td>
+
                                         <td class="px-4 py-4">
-                                            <span :class="['inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-full border', getStatusBadgeClass(history.status)]">
-                                                <component :is="getStatusIcon(history.status)" class="w-3.5 h-3.5" />
-                                                {{ history.status.charAt(0).toUpperCase() + history.status.slice(1) }}
+                                            <span :class="['inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-bold uppercase tracking-wide rounded-full border', getStatusBadgeClass(history.status)]">
+                                                <component :is="getStatusIcon(history.status)" class="w-3 h-3" />
+                                                {{ history.status }}
                                             </span>
                                         </td>
+
                                         <td class="px-4 py-4">
                                             <div class="flex items-center gap-2 text-sm text-muted-foreground">
-                                                <CalendarIcon class="w-4 h-4" />
                                                 <span>{{ new Date(history.created_at).toLocaleDateString() }}</span>
                                             </div>
                                         </td>
@@ -611,99 +599,103 @@
                             </table>
                         </div>
 
-                        <!-- Mobile Cards -->
                         <div class="lg:hidden space-y-4">
-                            <div v-for="history in filteredHistories" :key="history.id" class="bg-background border border-border rounded-xl p-4">
-                                <div class="flex items-start justify-between mb-3">
+                            <div v-for="history in processedHistories" :key="history.id" class="bg-background border border-border rounded-xl p-4 hover:border-primary/30 transition-colors">
+                                <div class="flex items-start justify-between mb-3 pb-3 border-b border-border/50">
                                     <div>
-                                        <h4 class="font-semibold text-card-foreground">{{ history.planName }}</h4>
+                                        <h4 class="font-bold text-card-foreground">{{ history.planName }}</h4>
+                                        <span class="text-xs text-muted-foreground">{{ new Date(history.created_at).toLocaleDateString() }}</span>
                                     </div>
-                                    <span :class="['inline-flex items-center gap-1 px-2 py-0.5 text-xs font-semibold rounded-full border', getStatusBadgeClass(history.status)]">
+                                    <span :class="['inline-flex items-center gap-1 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide rounded-full border', getStatusBadgeClass(history.status)]">
                                         <component :is="getStatusIcon(history.status)" class="w-3 h-3" />
                                         {{ history.status }}
                                     </span>
                                 </div>
 
-                                <div class="space-y-3">
-                                    <div class="grid grid-cols-2 gap-2 text-sm">
+                                <div class="space-y-4">
+                                    <div class="grid grid-cols-2 gap-y-3 gap-x-4 text-sm">
                                         <div>
-                                            <p class="text-xs text-muted-foreground">Amount</p>
-                                            <p class="font-semibold text-card-foreground">${{ history.amount.toLocaleString() }}</p>
+                                            <p class="text-[10px] font-medium text-muted-foreground uppercase mb-0.5">Amount</p>
+                                            <p class="font-bold text-card-foreground">${{ history.amount.toLocaleString() }}</p>
+                                        </div>
+
+                                        <div class="text-right">
+                                            <p class="text-[10px] font-medium text-muted-foreground uppercase mb-0.5">Total Earned</p>
+                                            <p class="font-bold text-green-600">+${{ history.totalInterestEarned.toLocaleString() }}</p>
                                         </div>
 
                                         <div>
-                                            <p class="text-xs text-muted-foreground">Interest/Cycle</p>
+                                            <p class="text-[10px] font-medium text-muted-foreground uppercase mb-0.5">Interest/Cycle</p>
                                             <p class="font-semibold text-primary">${{ history.interest.toLocaleString() }}</p>
                                         </div>
 
-                                        <div>
-                                            <p class="text-xs text-muted-foreground">Total Earned</p>
-                                            <p class="font-semibold text-green-600">${{ history.totalInterestEarned.toLocaleString() }}</p>
-                                        </div>
-
-                                        <div>
-                                            <p class="text-xs text-muted-foreground">Cycles</p>
+                                        <div class="text-right">
+                                            <p class="text-[10px] font-medium text-muted-foreground uppercase mb-0.5">Cycles</p>
                                             <p class="font-semibold text-card-foreground">{{ history.progress.currentCycle }} / {{ history.progress.totalCycles }}</p>
                                         </div>
                                     </div>
 
-                                    <!-- Progress Bar -->
-                                    <div class="space-y-1">
+                                    <div class="space-y-1.5 pt-2">
                                         <div class="flex items-center justify-between text-xs">
-                                            <span class="text-muted-foreground">Progress</span>
-                                            <span class="font-semibold text-card-foreground">{{ history.progress.percentage.toFixed(1) }}%</span>
+                                            <span class="font-medium text-muted-foreground">Progress</span>
+                                            <span class="font-bold text-card-foreground">{{ history.progress.percentage.toFixed(1) }}%</span>
                                         </div>
 
-                                        <div class="w-full bg-muted rounded-full h-1.5 overflow-hidden">
+                                        <div class="w-full bg-muted rounded-full h-1 overflow-hidden">
                                             <div
-                                                class="h-full transition-all duration-300 rounded-full"
-                                                :class="history.progress.isExpired ? 'bg-blue-500' : 'bg-green-500'"
+                                                class="h-full transition-all duration-500 rounded-full"
+                                                :class="history.progress.isExpired ? 'bg-green-500' : 'bg-yellow-500'"
                                                 :style="{ width: `${history.progress.percentage}%` }">
                                             </div>
                                         </div>
                                     </div>
 
-                                    <!-- Countdown -->
-                                    <div class="flex items-center justify-between p-2 bg-muted/50 rounded-lg">
-                                        <div class="flex items-center gap-2">
-                                            <ClockIcon class="w-4 h-4 text-muted-foreground" />
-                                            <span class="text-xs text-muted-foreground">Time Remaining</span>
+                                    <div class="flex items-center justify-between p-2.5 bg-muted/30 rounded-lg border border-border/50">
+                                        <div class="flex items-center gap-1.5">
+                                            <ClockIcon class="w-3.5 h-3.5 text-muted-foreground" />
+                                            <span class="text-xs font-medium text-muted-foreground">Time Remaining</span>
                                         </div>
                                         <span
-                                            class="text-sm font-bold"
-                                            :class="history.progress.isExpired ? 'text-blue-600' : 'text-card-foreground'">
+                                            class="text-sm font-mono font-bold"
+                                            :class="history.progress.isExpired ? 'text-green-600' : 'text-card-foreground'">
                                             {{ history.progress.countdown }}
                                         </span>
-                                    </div>
-
-                                    <div class="flex items-center justify-between pt-2 border-t border-border text-xs">
-                                        <div class="flex items-center gap-1 text-muted-foreground">
-                                            <CalendarIcon class="w-3 h-3" />
-                                            <span>{{ new Date(history.created_at).toLocaleDateString() }}</span>
-                                        </div>
-                                        <span class="text-muted-foreground">{{ history.periodName }}</span>
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    <div v-else class="flex flex-col items-center justify-center text-center py-16">
-                        <HistoryIcon class="w-16 h-16 text-muted-foreground/50 mb-4" />
-                        <h3 class="text-lg font-semibold text-card-foreground mb-2">No Investment History</h3>
-                        <p class="text-sm text-muted-foreground mb-6 max-w-md">
-                            {{ statusFilter !== 'all' || searchQuery || dateFilter !== 'all'
-                            ? 'No investments match your current filters. Try adjusting your search criteria.'
+                    <div v-else class="flex flex-col items-center justify-center text-center py-16 px-4">
+                        <div class="w-16 h-16 rounded-full bg-muted/50 flex items-center justify-center mb-4">
+                            <HistoryIcon class="w-8 h-8 text-muted-foreground/50" />
+                        </div>
+
+                        <h3 class="text-lg font-bold text-card-foreground mb-2">No Investment History</h3>
+
+                        <p class="text-sm text-muted-foreground mb-6 max-w-xs mx-auto">
+                            {{ hasActiveFilters
+                            ? 'No investments match your current filters.'
                             : 'Start your first investment today and watch your portfolio grow!'
                             }}
                         </p>
-                        <TextLink :href="route('user.trade.investment')" class="inline-flex items-center gap-2 px-6 py-3 bg-primary text-primary-foreground rounded-xl font-semibold hover:bg-primary/90 transition-colors">
-                            <DollarSignIcon class="w-5 h-5" />
-                            Browse Investment Plans
-                        </TextLink>
+
+                        <div class="flex flex-wrap justify-center gap-3">
+                            <button
+                                v-if="hasActiveFilters"
+                                @click="clearAllFilters"
+                                class="inline-flex items-center gap-2 px-6 py-3 bg-background border border-border text-card-foreground rounded-xl font-semibold hover:bg-muted transition-colors cursor-pointer touch-manipulation cursor-pointer">
+                                <XIcon class="w-4 h-4" />
+                                Clear Filters
+                            </button>
+
+                            <TextLink :href="route('user.trade.investment')" class="inline-flex items-center gap-2 px-6 py-3 bg-primary text-primary-foreground rounded-xl font-semibold hover:bg-primary/90 transition-colors touch-manipulation">
+                                <DollarSignIcon class="w-4 h-4" />
+                                View Plans
+                            </TextLink>
+                        </div>
                     </div>
 
-                    <!-- Pagination -->
                     <PaginationControls
                         v-if="investment_histories.last_page > 1"
                         :links="investment_histories.links"
@@ -717,7 +709,6 @@
             </div>
         </div>
 
-        <!-- Modals -->
         <FundingModal
             :is-open="isFundingModalOpen"
             :live-balance="liveBalance"
@@ -747,11 +738,5 @@
     select:focus-visible {
         outline: 2px solid hsl(var(--primary));
         outline-offset: 2px;
-    }
-
-    @media (max-width: 640px) {
-        .margin-bottom {
-            margin-bottom: 50px;
-        }
     }
 </style>

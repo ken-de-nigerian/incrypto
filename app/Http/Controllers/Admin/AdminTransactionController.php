@@ -4,13 +4,16 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\CryptoSwap;
+use App\Models\InvestmentHistory;
 use App\Models\ReceivedCrypto;
 use App\Models\SendCrypto;
+use App\Models\Trade;
 use App\Services\ApproveReceivedCryptoService;
 use App\Services\ApproveSentCryptoService;
 use App\Services\RejectReceivedCryptoService;
 use App\Services\RejectSentCryptoService;
 use Exception;
+use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Random\RandomException;
 use Throwable;
@@ -34,12 +37,19 @@ class AdminTransactionController extends Controller
         $this->rejectSentCryptoService = $rejectSentCryptoService;
     }
 
-    public function index()
+    public function index(Request $request)
     {
+        $tab = $request->query('tab', 'all');
+
         return Inertia::render('Admin/Transaction', [
             'crypto_swaps' => $this->getCryptoSwaps(),
             'received_cryptos' => $this->getReceivedCryptos(),
-            'sent_cryptos' => $this->getSentCryptos()
+            'sent_cryptos' => $this->getSentCryptos(),
+            'forex_trades' => $this->getForexTrades(),
+            'stock_trades' => $this->getStockTrades(),
+            'crypto_trades' => $this->getCryptoTrades(),
+            'investment_histories' => $this->getInvestmentHistories(),
+            'tab' => $tab,
         ]);
     }
 
@@ -133,13 +143,205 @@ class AdminTransactionController extends Controller
             'user_name' => ($crypto->user?->first_name ?? 'Unknown') . ' ' . ($crypto->user?->last_name ?? 'User'),
             'user_email' => $crypto->user?->email ?? 'N/A',
             'token_symbol' => $crypto->token_symbol,
-            'wallet_address' => $crypto->recipient_address,
+            'recipient_address' => $crypto->recipient_address,
             'amount' => $crypto->amount,
             'transaction_hash' => $crypto->transaction_hash,
             'fee' => $crypto->fee,
             'status' => $crypto->status,
             'created_at' => $crypto->created_at,
         ])->toArray();
+    }
+
+    protected function getForexTrades()
+    {
+        return Trade::whereHas('user')
+            ->with('user')
+            ->where('category', 'forex')
+            ->select([
+                'id',
+                'user_id',
+                'pair',
+                'pair_name',
+                'type',
+                'amount',
+                'leverage',
+                'duration',
+                'entry_price',
+                'exit_price',
+                'status',
+                'pnl',
+                'trading_mode',
+                'opened_at',
+                'closed_at',
+                'expiry_time',
+                'created_at',
+            ])
+            ->latest()
+            ->get()
+            ->map(fn ($trade) => [
+                'id' => $trade->id,
+                'user_id' => $trade->user_id,
+                'user_name' => ($trade->user?->first_name ?? 'Unknown') . ' ' . ($trade->user?->last_name ?? 'User'),
+                'user_email' => $trade->user?->email ?? 'N/A',
+                'pair' => $trade->pair,
+                'pair_name' => $trade->pair_name,
+                'type' => $trade->type,
+                'amount' => $trade->amount,
+                'leverage' => $trade->leverage,
+                'duration' => $trade->duration,
+                'entry_price' => $trade->entry_price,
+                'exit_price' => $trade->exit_price,
+                'status' => $trade->status,
+                'pnl' => $trade->pnl,
+                'trading_mode' => $trade->trading_mode,
+                'opened_at' => $trade->opened_at,
+                'closed_at' => $trade->closed_at,
+                'expiry_time' => $trade->expiry_time,
+                'created_at' => $trade->created_at,
+            ])
+            ->toArray();
+    }
+
+    protected function getStockTrades()
+    {
+        return Trade::whereHas('user')
+            ->with('user')
+            ->where('category', 'stock')
+            ->select([
+                'id',
+                'user_id',
+                'pair',
+                'pair_name',
+                'type',
+                'amount',
+                'leverage',
+                'duration',
+                'entry_price',
+                'exit_price',
+                'status',
+                'pnl',
+                'trading_mode',
+                'opened_at',
+                'closed_at',
+                'expiry_time',
+                'created_at',
+            ])
+            ->latest()
+            ->get()
+            ->map(fn ($trade) => [
+                'id' => $trade->id,
+                'user_id' => $trade->user_id,
+                'user_name' => ($trade->user?->first_name ?? 'Unknown') . ' ' . ($trade->user?->last_name ?? 'User'),
+                'user_email' => $trade->user?->email ?? 'N/A',
+                'pair' => $trade->pair,
+                'pair_name' => $trade->pair_name,
+                'type' => $trade->type,
+                'amount' => $trade->amount,
+                'leverage' => $trade->leverage,
+                'duration' => $trade->duration,
+                'entry_price' => $trade->entry_price,
+                'exit_price' => $trade->exit_price,
+                'status' => $trade->status,
+                'pnl' => $trade->pnl,
+                'trading_mode' => $trade->trading_mode,
+                'opened_at' => $trade->opened_at,
+                'closed_at' => $trade->closed_at,
+                'expiry_time' => $trade->expiry_time,
+                'created_at' => $trade->created_at,
+            ])
+            ->toArray();
+    }
+
+    protected function getCryptoTrades()
+    {
+        return Trade::whereHas('user')
+            ->with('user')
+            ->where('category', 'crypto')
+            ->select([
+                'id',
+                'user_id',
+                'pair',
+                'pair_name',
+                'type',
+                'amount',
+                'leverage',
+                'duration',
+                'entry_price',
+                'exit_price',
+                'status',
+                'pnl',
+                'trading_mode',
+                'opened_at',
+                'closed_at',
+                'expiry_time',
+                'created_at',
+            ])
+            ->latest()
+            ->get()
+            ->map(fn ($trade) => [
+                'id' => $trade->id,
+                'user_id' => $trade->user_id,
+                'user_name' => ($trade->user?->first_name ?? 'Unknown') . ' ' . ($trade->user?->last_name ?? 'User'),
+                'user_email' => $trade->user?->email ?? 'N/A',
+                'pair' => $trade->pair,
+                'pair_name' => $trade->pair_name,
+                'type' => $trade->type,
+                'amount' => $trade->amount,
+                'leverage' => $trade->leverage,
+                'duration' => $trade->duration,
+                'entry_price' => $trade->entry_price,
+                'exit_price' => $trade->exit_price,
+                'status' => $trade->status,
+                'pnl' => $trade->pnl,
+                'trading_mode' => $trade->trading_mode,
+                'opened_at' => $trade->opened_at,
+                'closed_at' => $trade->closed_at,
+                'expiry_time' => $trade->expiry_time,
+                'created_at' => $trade->created_at,
+            ])
+            ->toArray();
+    }
+
+    protected function getInvestmentHistories()
+    {
+        return InvestmentHistory::whereHas('user')
+            ->with(['user', 'plan'])
+            ->select([
+                'id',
+                'user_id',
+                'plan_id',
+                'amount',
+                'interest',
+                'period',
+                'repeat_time',
+                'repeat_time_count',
+                'next_time',
+                'last_time',
+                'status',
+                'capital_back_status',
+                'created_at',
+            ])
+            ->latest()
+            ->get()
+            ->map(fn ($history) => [
+                'id' => $history->id,
+                'user_id' => $history->user_id,
+                'user_name' => ($history->user?->first_name ?? 'Unknown') . ' ' . ($history->user?->last_name ?? 'User'),
+                'user_email' => $history->user?->email ?? 'N/A',
+                'plan_id' => $history->plan_id,
+                'plan_name' => $history->plan->name ?? 'N/A',
+                'amount' => $history->amount,
+                'interest' => $history->interest,
+                'period' => $history->period,
+                'repeat_time' => $history->repeat_time,
+                'repeat_time_count' => $history->repeat_time_count,
+                'next_time' => $history->next_time,
+                'last_time' => $history->last_time,
+                'status' => $history->status,
+                'capital_back_status' => $history->capital_back_status,
+                'created_at' => $history->created_at,
+            ])
+            ->toArray();
     }
 
     /**

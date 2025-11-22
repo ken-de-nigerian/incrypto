@@ -37,7 +37,7 @@
     const amountInUSD = computed(() => (parseFloat(sendAmount.value) || 0) * selectedPrice.value);
 
     const networkFees = computed(() => {
-        const baseFee = 0.0005; // Base fee in ETH, simplified
+        const baseFee = 0.0009; // Base fee in ETH, simplified
         return {
             slow: { fee: baseFee * 0.8, time: '5-10 min' },
             average: { fee: baseFee, time: '2-5 min' },

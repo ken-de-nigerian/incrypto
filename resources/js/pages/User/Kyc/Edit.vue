@@ -16,6 +16,7 @@
     import Breadcrumb from '@/components/Breadcrumb.vue';
     import KycEditForm from '@/pages/User/Kyc/Partials/KycEditForm.vue';
     import TextLink from '@/components/TextLink.vue';
+    import { route } from 'ziggy-js';
 
     const page = usePage();
     const user = computed(() => page.props.auth.user);
@@ -68,6 +69,7 @@
 
     const breadcrumbItems = [
         { label: 'Dashboard', href: route('user.dashboard') },
+        { label: 'Kyc', href: route('user.kyc.index') },
         { label: 'Resubmit KYC Verification' }
     ];
 </script>

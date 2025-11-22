@@ -18,6 +18,26 @@
         sent_cryptos: {
             type: Array as () => Array<any>,
             default: () => []
+        },
+        forex_trades: {
+            type: Array as () => Array<any>,
+            default: () => []
+        },
+        stock_trades: {
+            type: Array as () => Array<any>,
+            default: () => []
+        },
+        crypto_trades: {
+            type: Array as () => Array<any>,
+            default: () => []
+        },
+        investment_histories: {
+            type: Array as () => Array<any>,
+            default: () => []
+        },
+        tab: {
+            type: String as () => 'all' | 'swaps' | 'received' | 'sent' | 'forex' | 'stocks' | 'crypto_trades' | 'investments',
+            default: 'all'
         }
     });
 
@@ -53,7 +73,11 @@
     const transactions = computed(() => ({
         swaps: props.crypto_swaps || [],
         received: props.received_cryptos || [],
-        sent: props.sent_cryptos || []
+        sent: props.sent_cryptos || [],
+        forex_trades: props.forex_trades || [],
+        stock_trades: props.stock_trades || [],
+        crypto_trades: props.crypto_trades || [],
+        investments: props.investment_histories || []
     }));
 
     // Calculate statistics
@@ -61,16 +85,34 @@
         const totalTransactions =
             (props.crypto_swaps?.length || 0) +
             (props.received_cryptos?.length || 0) +
-            (props.sent_cryptos?.length || 0);
+            (props.sent_cryptos?.length || 0) +
+            (props.forex_trades?.length || 0) +
+            (props.stock_trades?.length || 0) +
+            (props.crypto_trades?.length || 0) +
+            (props.investment_histories?.length || 0);
 
         const allTx = [
             ...(props.crypto_swaps || []),
             ...(props.received_cryptos || []),
-            ...(props.sent_cryptos || [])
+            ...(props.sent_cryptos || []),
+            ...(props.forex_trades || []),
+            ...(props.stock_trades || []),
+            ...(props.crypto_trades || []),
+            ...(props.investment_histories || [])
         ];
 
-        const completedTransactions = allTx.filter(tx => tx.status === 'completed' || tx.status === 'success').length;
-        const pendingTransactions = allTx.filter(tx => tx.status === 'pending' || tx.status === 'processing').length;
+        const completedTransactions = allTx.filter(tx =>
+            tx.status === 'completed' ||
+            tx.status === 'success' ||
+            tx.status === 'Closed'
+        ).length;
+
+        const pendingTransactions = allTx.filter(tx =>
+            tx.status === 'pending' ||
+            tx.status === 'processing' ||
+            tx.status === 'Open' ||
+            tx.status === 'running'
+        ).length;
 
         return {
             total: totalTransactions,
@@ -78,7 +120,11 @@
             pending: pendingTransactions,
             swaps: props.crypto_swaps?.length || 0,
             received: props.received_cryptos?.length || 0,
-            sent: props.sent_cryptos?.length || 0
+            sent: props.sent_cryptos?.length || 0,
+            forex_trades: props.forex_trades?.length || 0,
+            stock_trades: props.stock_trades?.length || 0,
+            crypto_trades: props.crypto_trades?.length || 0,
+            investments: props.investment_histories?.length || 0
         };
     });
 </script>
@@ -100,6 +146,7 @@
                 <TransactionsCard
                     :transactions="transactions"
                     :statistics="statistics"
+                    :current-tab="tab"
                 />
             </div>
         </div>

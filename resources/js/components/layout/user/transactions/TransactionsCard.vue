@@ -1,32 +1,70 @@
 <script setup lang="ts">
-    import { computed, ref, watch } from 'vue';
+    import { computed, ref, watch, onMounted, onUnmounted } from 'vue';
     import {
         ArrowRightLeftIcon, ArrowDownLeftIcon, ArrowUpRightIcon, HistoryIcon,
         SearchIcon, FilterIcon, XIcon, Loader2Icon, CheckCircleIcon,
         ClockIcon, AlertCircleIcon, ExternalLinkIcon, CopyIcon, CheckIcon,
         ActivityIcon, InfoIcon, ArrowUpDownIcon,
-        SortAscIcon, SortDescIcon, CalendarIcon,
-        ShieldCheckIcon, ZapIcon, TrophyIcon
+        SortAscIcon, SortDescIcon,
+        ShieldCheckIcon, ZapIcon, TrophyIcon, TrendingUpIcon, TrendingDownIcon,
+        DollarSignIcon, BarChart3Icon, CoinsIcon, WalletIcon
     } from 'lucide-vue-next';
     import TextLink from '@/components/TextLink.vue';
+
+    interface InvestmentProgress {
+        countdown: string;
+        percentage: number;
+        isExpired: boolean;
+        currentCycle: number;
+        totalCycles: number;
+    }
 
     interface Transaction {
         id: number;
         type?: string;
+        trade_direction?: string;
+        // Crypto swaps
         from_token?: string;
         to_token?: string;
-        token_symbol?: string;
         from_amount?: number;
         to_amount?: number;
+        chain?: string;
+        // Received/Sent crypto
+        token_symbol?: string;
         amount?: number;
         wallet_address?: string;
         recipient_address?: string;
         transaction_hash?: string;
-        chain?: string;
         fee?: number;
+        // Trades (forex, stocks, crypto)
+        pair?: string;
+        pair_name?: string;
+        entry_price?: number;
+        exit_price?: number;
+        leverage?: number;
+        duration?: string;
+        pnl?: number;
+        trading_mode?: string;
+        opened_at?: string;
+        closed_at?: string;
+        expiry_time?: string;
+        // Investments
+        plan_id?: number;
+        plan_name?: string;
+        interest?: number;
+        period?: number;
+        repeat_time?: number;
+        repeat_time_count?: number;
+        next_time?: string;
+        last_time?: string;
+        capital_back_status?: string;
+        // Common
         status: string;
         created_at: string;
         compositeId?: string;
+        // Computed investment properties
+        progress?: InvestmentProgress;
+        totalInterestEarned?: number;
     }
 
     const props = defineProps({
@@ -35,6 +73,10 @@
                 swaps: Transaction[];
                 received: Transaction[];
                 sent: Transaction[];
+                forex_trades: Transaction[];
+                stock_trades: Transaction[];
+                crypto_trades: Transaction[];
+                investments: Transaction[];
             },
             required: true
         },
@@ -46,12 +88,20 @@
                 swaps: number;
                 received: number;
                 sent: number;
+                forex_trades: number;
+                stock_trades: number;
+                crypto_trades: number;
+                investments: number;
             },
             required: true
+        },
+        currentTab: {
+            type: String as () => 'all' | 'swaps' | 'received' | 'sent' | 'forex' | 'stocks' | 'crypto_trades' | 'investments',
+            default: 'all'
         }
     });
 
-    const activeTab = ref<'all' | 'swaps' | 'received' | 'sent'>('all');
+    const activeTab = ref<'all' | 'swaps' | 'received' | 'sent' | 'forex' | 'stocks' | 'crypto_trades' | 'investments'>(props.currentTab);
     const searchQuery = ref('');
     const sortOrder = ref<'asc' | 'desc' | 'default'>('default');
     const filterByStatus = ref<string>('all');
@@ -62,6 +112,20 @@
     const copiedHash = ref<string | null>(null);
     const itemsPerLoad = 12;
     const loadBuffer = 300;
+    const currentTime = ref(new Date());
+    let countdownInterval: ReturnType<typeof setInterval> | null = null;
+
+    onMounted(() => {
+        countdownInterval = setInterval(() => {
+            currentTime.value = new Date();
+        }, 1000);
+    });
+
+    onUnmounted(() => {
+        if (countdownInterval) {
+            clearInterval(countdownInterval);
+        }
+    });
 
     const allTransactions = computed(() => {
         const swaps = (props.transactions.swaps || []).map(tx => ({
@@ -79,8 +143,33 @@
             type: 'sent' as const,
             compositeId: `sent-${tx.id}`
         }));
+        const forexTrades = (props.transactions.forex_trades || []).map(tx => ({
+            ...tx,
+            trade_direction: (tx as any).type,
+            type: 'forex_trade' as const,
+            compositeId: `forex-${tx.id}`
+        }));
+        const stockTrades = (props.transactions.stock_trades || []).map(tx => ({
+            ...tx,
+            trade_direction: (tx as any).type,
+            type: 'stock_trade' as const,
+            compositeId: `stock-${tx.id}`
+        }));
+        const cryptoTrades = (props.transactions.crypto_trades || []).map(tx => ({
+            ...tx,
+            trade_direction: (tx as any).type,
+            type: 'crypto_trade' as const,
+            compositeId: `crypto-trade-${tx.id}`
+        }));
+        const investments = (props.transactions.investments || []).map(tx => ({
+            ...tx,
+            type: 'investment' as const,
+            compositeId: `investment-${tx.id}`,
+            progress: calculateInvestmentProgress(tx),
+            totalInterestEarned: calculateTotalInterestEarned(tx)
+        }));
 
-        return [...swaps, ...received, ...sent].sort((a, b) =>
+        return [...swaps, ...received, ...sent, ...forexTrades, ...stockTrades, ...cryptoTrades, ...investments].sort((a, b) =>
             new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
         );
     });
@@ -93,12 +182,19 @@
                 return allTransactions.value.filter(tx => tx.type === 'received');
             case 'sent':
                 return allTransactions.value.filter(tx => tx.type === 'sent');
+            case 'forex':
+                return allTransactions.value.filter(tx => tx.type === 'forex_trade');
+            case 'stocks':
+                return allTransactions.value.filter(tx => tx.type === 'stock_trade');
+            case 'crypto_trades':
+                return allTransactions.value.filter(tx => tx.type === 'crypto_trade');
+            case 'investments':
+                return allTransactions.value.filter(tx => tx.type === 'investment');
             default:
                 return allTransactions.value;
         }
     });
 
-    // Apply search and filters
     const filteredTransactions = computed(() => {
         let filtered = [...tabFilteredTransactions.value];
 
@@ -110,12 +206,15 @@
                 tx.from_token?.toLowerCase().includes(query) ||
                 tx.to_token?.toLowerCase().includes(query) ||
                 tx.wallet_address?.toLowerCase().includes(query) ||
-                tx.recipient_address?.toLowerCase().includes(query)
+                tx.recipient_address?.toLowerCase().includes(query) ||
+                tx.pair?.toLowerCase().includes(query) ||
+                tx.pair_name?.toLowerCase().includes(query) ||
+                tx.plan_name?.toLowerCase().includes(query)
             );
         }
 
         if (filterByStatus.value !== 'all') {
-            filtered = filtered.filter(tx => tx.status === filterByStatus.value);
+            filtered = filtered.filter(tx => tx.status.toLowerCase() === filterByStatus.value.toLowerCase());
         }
 
         if (sortOrder.value === 'asc') {
@@ -149,6 +248,14 @@
                 return ArrowDownLeftIcon;
             case 'sent':
                 return ArrowUpRightIcon;
+            case 'forex_trade':
+                return DollarSignIcon;
+            case 'stock_trade':
+                return BarChart3Icon;
+            case 'crypto_trade':
+                return CoinsIcon;
+            case 'investment':
+                return WalletIcon;
             default:
                 return HistoryIcon;
         }
@@ -159,20 +266,42 @@
             'swap': 'text-primary bg-primary/10 border-primary/30',
             'received': 'text-success bg-success/10 border-success/30',
             'sent': 'text-accent bg-accent/10 border-accent/30',
+            'forex_trade': 'text-blue-500 bg-blue-500/10 border-blue-500/30',
+            'stock_trade': 'text-purple-500 bg-purple-500/10 border-purple-500/30',
+            'crypto_trade': 'text-orange-500 bg-orange-500/10 border-orange-500/30',
+            'investment': 'text-green-500 bg-green-500/10 border-green-500/30',
         };
         return colors[type] || 'text-muted-foreground bg-muted/20 border-border/50';
     };
 
+    const getTransactionLabel = (type: string) => {
+        const labels: Record<string, string> = {
+            'swap': 'Swap',
+            'received': 'Received',
+            'sent': 'Sent',
+            'forex_trade': 'Forex Trade',
+            'stock_trade': 'Stock Trade',
+            'crypto_trade': 'Crypto Trade',
+            'investment': 'Investment',
+        };
+        return labels[type] || type;
+    };
+
     const getStatusIcon = (status: string) => {
-        switch (status.toLowerCase()) {
+        const statusLower = status.toLowerCase();
+        switch (statusLower) {
             case 'completed':
             case 'success':
+            case 'closed':
                 return CheckCircleIcon;
             case 'pending':
             case 'processing':
+            case 'open':
+            case 'running':
                 return ClockIcon;
             case 'failed':
             case 'error':
+            case 'cancelled':
                 return AlertCircleIcon;
             default:
                 return ClockIcon;
@@ -183,10 +312,14 @@
         const colors: Record<string, string> = {
             'completed': 'text-success bg-success/10 border-success/30',
             'success': 'text-success bg-success/10 border-success/30',
+            'closed': 'text-success bg-success/10 border-success/30',
             'pending': 'text-warning bg-warning/10 border-warning/30',
             'processing': 'text-warning bg-warning/10 border-warning/30',
+            'open': 'text-warning bg-warning/10 border-warning/30',
+            'running': 'text-warning bg-warning/10 border-warning/30',
             'failed': 'text-destructive bg-destructive/10 border-destructive/30',
             'error': 'text-destructive bg-destructive/10 border-destructive/30',
+            'cancelled': 'text-destructive bg-destructive/10 border-destructive/30',
         };
         return colors[status.toLowerCase()] || 'text-muted-foreground bg-muted/20 border-border/50';
     };
@@ -220,7 +353,6 @@
 
     const copyToClipboard = (text: string, id: number) => {
         navigator.clipboard.writeText(text);
-        // Using tx.id is fine here as it's outside the v-for key context
         copiedHash.value = `${id}`;
         setTimeout(() => {
             copiedHash.value = null;
@@ -236,6 +368,75 @@
             optimism: 'https://optimistic.etherscan.io/tx/',
         };
         return `${explorers[chain.toLowerCase()] || explorers.ethereum}${hash}`;
+    };
+
+    const calculateInvestmentProgress = (history: any): InvestmentProgress => {
+        const now = currentTime.value.getTime();
+        const nextPayoutTime = new Date(history.next_time).getTime();
+
+        const cycleStartTime = history.last_time
+            ? new Date(history.last_time).getTime()
+            : new Date(history.created_at).getTime();
+
+        const currentCycle = history.repeat_time_count || 0;
+        const totalCycles = history.repeat_time || 1;
+
+        const cycleDuration = history.period * 60 * 60 * 1000;
+
+        const elapsed = now - cycleStartTime;
+        const remaining = nextPayoutTime - now;
+
+        if (currentCycle >= totalCycles || history.status !== 'running') {
+            return {
+                countdown: 'Completed',
+                percentage: 100,
+                isExpired: true,
+                currentCycle,
+                totalCycles
+            };
+        }
+
+        if (remaining <= 0) {
+            return {
+                countdown: 'Cycle Matured',
+                percentage: 100,
+                isExpired: true,
+                currentCycle,
+                totalCycles
+            };
+        }
+
+        const percentage = Math.min(100, Math.max(0, (elapsed / cycleDuration) * 100));
+
+        const days = Math.floor(remaining / (1000 * 60 * 60 * 24));
+        const hours = Math.floor((remaining % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        const minutes = Math.floor((remaining % (1000 * 60 * 60)) / (1000 * 60));
+        const seconds = Math.floor((remaining % (1000 * 60)) / 1000);
+
+        let countdown = '';
+        if (days > 0) {
+            countdown = `${days}d ${hours}h ${minutes}m`;
+        } else if (hours > 0) {
+            countdown = `${hours}h ${minutes}m ${seconds}s`;
+        } else if (minutes > 0) {
+            countdown = `${minutes}m ${seconds}s`;
+        } else {
+            countdown = `${seconds}s`;
+        }
+
+        return {
+            countdown,
+            percentage,
+            isExpired: false,
+            currentCycle,
+            totalCycles
+        };
+    };
+
+    const calculateTotalInterestEarned = (tx: Transaction): number => {
+        const currentCycle = tx.repeat_time_count || 0;
+        const interestPerCycle = tx.interest || 0;
+        return currentCycle * interestPerCycle;
     };
 
     const toggleSortOrder = () => {
@@ -285,12 +486,15 @@
         }
     };
 
-    // Modified tabs structure to include Inertia route parameters/logic
     const tabs = [
         { id: 'all', label: 'All Transactions', icon: HistoryIcon, params: {} },
         { id: 'swaps', label: 'Swaps', icon: ArrowRightLeftIcon, params: { tab: 'swaps' } },
         { id: 'received', label: 'Received', icon: ArrowDownLeftIcon, params: { tab: 'received' } },
-        { id: 'sent', label: 'Sent', icon: ArrowUpRightIcon, params: { tab: 'sent' } }
+        { id: 'sent', label: 'Sent', icon: ArrowUpRightIcon, params: { tab: 'sent' } },
+        { id: 'forex', label: 'Forex', icon: DollarSignIcon, params: { tab: 'forex' } },
+        { id: 'stocks', label: 'Stocks', icon: BarChart3Icon, params: { tab: 'stocks' } },
+        { id: 'crypto_trades', label: 'Crypto Trades', icon: CoinsIcon, params: { tab: 'crypto_trades' } },
+        { id: 'investments', label: 'Investments', icon: WalletIcon, params: { tab: 'investments' } }
     ];
 
     const securityFeatures = [
@@ -312,7 +516,7 @@
     <div class="w-full mx-auto">
         <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
             <div class="xl:col-span-2 space-y-6">
-                <div class="bg-gradient-to-br from-primary/10 via-primary/10 to-transparent rounded-2xl border border-primary/20 overflow-hidden">
+                <div class="rounded-2xl border border-primary/20 overflow-hidden">
                     <div class="p-6 sm:p-8">
                         <div class="flex items-start gap-4">
                             <div class="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center flex-shrink-0 border border-border">
@@ -321,14 +525,14 @@
                             <div class="flex-1">
                                 <h2 class="text-2xl sm:text-3xl font-bold text-card-foreground mb-2">Transaction History</h2>
                                 <p class="text-muted-foreground text-sm sm:text-base">
-                                    Track all your cryptocurrency transactions including swaps, received payments, and sent transfers. Monitor your transaction status and view detailed information for each operation.
+                                    Track all your transactions including crypto swaps, transfers, trades (forex, stocks, crypto), and investments. Monitor status and view detailed information.
                                 </p>
                             </div>
                         </div>
 
-                        <div class="mt-6 grid grid-cols-2 lg:grid-cols-3 gap-4">
+                        <div class="mt-6 grid grid-cols-2 lg:grid-cols-4 gap-4">
                             <div class="bg-card/70 backdrop-blur-sm rounded-xl p-4 border border-border">
-                                <p class="text-xs text-muted-foreground mb-1">Total Transactions</p>
+                                <p class="text-xs text-muted-foreground mb-1">Total</p>
                                 <p class="text-2xl font-bold text-primary">{{ statistics.total }}</p>
                             </div>
                             <div class="bg-card/70 backdrop-blur-sm rounded-xl p-4 border border-border">
@@ -344,12 +548,20 @@
                                 <p class="text-xl font-bold text-primary">{{ statistics.swaps }}</p>
                             </div>
                             <div class="bg-card/70 backdrop-blur-sm rounded-xl p-4 border border-border">
-                                <p class="text-xs text-muted-foreground mb-1">Received</p>
-                                <p class="text-xl font-bold text-success">{{ statistics.received }}</p>
+                                <p class="text-xs text-muted-foreground mb-1">Forex</p>
+                                <p class="text-xl font-bold text-blue-500">{{ statistics.forex_trades }}</p>
                             </div>
                             <div class="bg-card/70 backdrop-blur-sm rounded-xl p-4 border border-border">
-                                <p class="text-xs text-muted-foreground mb-1">Sent</p>
-                                <p class="text-xl font-bold text-accent">{{ statistics.sent }}</p>
+                                <p class="text-xs text-muted-foreground mb-1">Stocks</p>
+                                <p class="text-xl font-bold text-purple-500">{{ statistics.stock_trades }}</p>
+                            </div>
+                            <div class="bg-card/70 backdrop-blur-sm rounded-xl p-4 border border-border">
+                                <p class="text-xs text-muted-foreground mb-1">Crypto Trades</p>
+                                <p class="text-xl font-bold text-orange-500">{{ statistics.crypto_trades }}</p>
+                            </div>
+                            <div class="bg-card/70 backdrop-blur-sm rounded-xl p-4 border border-border">
+                                <p class="text-xs text-muted-foreground mb-1">Investments</p>
+                                <p class="text-xl font-bold text-green-500">{{ statistics.investments }}</p>
                             </div>
                         </div>
                     </div>
@@ -364,7 +576,7 @@
                                 :href="route('user.transactions.index', tab.params)"
                                 class="flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium text-sm transition-all duration-200 whitespace-nowrap cursor-pointer"
                                 :class="activeTab === tab.id
-                                    ? 'bg-primary text-primary-foreground shadow-sm scale-105'
+                                    ? 'bg-primary text-primary-foreground scale-105'
                                     : 'text-muted-foreground hover:bg-muted/70 hover:text-card-foreground'"
                                 preserve-scroll
                                 preserve-state
@@ -408,8 +620,8 @@
                                 <input
                                     v-model="searchQuery"
                                     type="text"
-                                    placeholder="Search by hash, token, or address..."
-                                    class="w-full pl-10 pr-10 py-2.5 bg-background border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                                    placeholder="Search by hash, token, pair, or plan..."
+                                    class="w-full pl-10 pr-10 py-2.5 bg-background border border-border rounded-lg text-sm input-crypto"
                                 />
                                 <button
                                     v-if="searchQuery"
@@ -445,9 +657,13 @@
                                         <option value="all">All Statuses</option>
                                         <option value="completed">Completed</option>
                                         <option value="success">Success</option>
+                                        <option value="closed">Closed</option>
                                         <option value="pending">Pending</option>
                                         <option value="processing">Processing</option>
+                                        <option value="open">Open</option>
+                                        <option value="running">Running</option>
                                         <option value="failed">Failed</option>
+                                        <option value="cancelled">Cancelled</option>
                                     </select>
                                 </div>
                             </div>
@@ -499,7 +715,7 @@
                                             <component :is="getTransactionIcon(tx.type)" class="w-6 h-6" />
                                         </div>
                                         <div>
-                                            <h4 class="text-base font-semibold text-card-foreground capitalize">{{ tx.type }}</h4>
+                                            <h4 class="text-base font-semibold text-card-foreground capitalize">{{ getTransactionLabel(tx.type) }}</h4>
                                             <p class="text-xs text-muted-foreground">{{ formatDate(tx.created_at) }}</p>
                                         </div>
                                     </div>
@@ -511,6 +727,7 @@
                                     </div>
                                 </div>
 
+                                <!-- Swap Transaction -->
                                 <div v-if="tx.type === 'swap'" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                     <div class="bg-muted/50 rounded-lg p-3">
                                         <p class="text-xs text-muted-foreground mb-1">From</p>
@@ -525,29 +742,21 @@
                                         <p class="text-sm font-semibold text-card-foreground capitalize">{{ tx.chain }}</p>
                                     </div>
                                     <div v-if="tx.transaction_hash" class="bg-muted/50 rounded-lg p-3">
-                                        <p class="text-xs text-muted-foreground mb-1 flex items-center gap-1">
-                                            Transaction Hash
-                                        </p>
+                                        <p class="text-xs text-muted-foreground mb-1 flex items-center gap-1">Transaction Hash</p>
                                         <div class="flex items-center gap-2">
                                             <p class="text-sm font-mono text-card-foreground">{{ truncateHash(tx.transaction_hash) }}</p>
-                                            <button
-                                                @click="copyToClipboard(tx.transaction_hash!, tx.id)"
-                                                class="p-1 hover:bg-muted/70 rounded cursor-pointer"
-                                            >
+                                            <button @click="copyToClipboard(tx.transaction_hash!, tx.id)" class="p-1 hover:bg-muted/70 rounded cursor-pointer">
                                                 <CheckIcon v-if="copiedHash === `${tx.id}`" class="w-3 h-3 text-primary" />
                                                 <CopyIcon v-else class="w-3 h-3 text-muted-foreground" />
                                             </button>
-                                            <a
-                                                :href="getExplorerUrl(tx.transaction_hash!, tx.chain)"
-                                                target="_blank"
-                                                class="p-1 hover:bg-muted/70 rounded cursor-pointer"
-                                            >
+                                            <a :href="getExplorerUrl(tx.transaction_hash!, tx.chain)" target="_blank" class="p-1 hover:bg-muted/70 rounded cursor-pointer">
                                                 <ExternalLinkIcon class="w-3 h-3 text-muted-foreground" />
                                             </a>
                                         </div>
                                     </div>
                                 </div>
 
+                                <!-- Received Transaction -->
                                 <div v-if="tx.type === 'received'" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                     <div class="bg-muted/50 rounded-lg p-3">
                                         <p class="text-xs text-muted-foreground mb-1">Amount Received</p>
@@ -557,10 +766,7 @@
                                         <p class="text-xs text-muted-foreground mb-1">Wallet Address</p>
                                         <div class="flex items-center gap-2">
                                             <p class="text-sm font-mono text-card-foreground">{{ truncateHash(tx.wallet_address) }}</p>
-                                            <button
-                                                @click="copyToClipboard(tx.wallet_address!, tx.id + 1000)"
-                                                class="p-1 hover:bg-muted/70 rounded cursor-pointer"
-                                            >
+                                            <button @click="copyToClipboard(tx.wallet_address!, tx.id + 1000)" class="p-1 hover:bg-muted/70 rounded cursor-pointer">
                                                 <CheckIcon v-if="copiedHash === `${tx.id + 1000}`" class="w-3 h-3 text-primary" />
                                                 <CopyIcon v-else class="w-3 h-3 text-muted-foreground" />
                                             </button>
@@ -570,24 +776,18 @@
                                         <p class="text-xs text-muted-foreground mb-1">Transaction Hash</p>
                                         <div class="flex items-center gap-2">
                                             <p class="text-sm font-mono text-card-foreground">{{ truncateHash(tx.transaction_hash) }}</p>
-                                            <button
-                                                @click="copyToClipboard(tx.transaction_hash!, tx.id + 1000)"
-                                                class="p-1 hover:bg-muted/70 rounded cursor-pointer"
-                                            >
+                                            <button @click="copyToClipboard(tx.transaction_hash!, tx.id + 1000)" class="p-1 hover:bg-muted/70 rounded cursor-pointer">
                                                 <CheckIcon v-if="copiedHash === `${tx.id + 1000}`" class="w-3 h-3 text-primary" />
                                                 <CopyIcon v-else class="w-3 h-3 text-muted-foreground" />
                                             </button>
-                                            <a
-                                                :href="getExplorerUrl(tx.transaction_hash!)"
-                                                target="_blank"
-                                                class="p-1 hover:bg-muted/70 rounded cursor-pointer"
-                                            >
+                                            <a :href="getExplorerUrl(tx.transaction_hash!)" target="_blank" class="p-1 hover:bg-muted/70 rounded cursor-pointer">
                                                 <ExternalLinkIcon class="w-3 h-3 text-muted-foreground" />
                                             </a>
                                         </div>
                                     </div>
                                 </div>
 
+                                <!-- Sent Transaction -->
                                 <div v-if="tx.type === 'sent'" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                     <div class="bg-muted/50 rounded-lg p-3">
                                         <p class="text-xs text-muted-foreground mb-1">Amount Sent</p>
@@ -601,10 +801,7 @@
                                         <p class="text-xs text-muted-foreground mb-1">Recipient Address</p>
                                         <div class="flex items-center gap-2">
                                             <p class="text-sm font-mono text-card-foreground">{{ truncateHash(tx.recipient_address) }}</p>
-                                            <button
-                                                @click="copyToClipboard(tx.recipient_address!, tx.id + 2000)"
-                                                class="p-1 hover:bg-muted/70 rounded cursor-pointer"
-                                            >
+                                            <button @click="copyToClipboard(tx.recipient_address!, tx.id + 2000)" class="p-1 hover:bg-muted/70 rounded cursor-pointer">
                                                 <CheckIcon v-if="copiedHash === `${tx.id + 2000}`" class="w-3 h-3 text-primary" />
                                                 <CopyIcon v-else class="w-3 h-3 text-muted-foreground" />
                                             </button>
@@ -614,20 +811,149 @@
                                         <p class="text-xs text-muted-foreground mb-1">Transaction Hash</p>
                                         <div class="flex items-center gap-2">
                                             <p class="text-sm font-mono text-card-foreground">{{ truncateHash(tx.transaction_hash) }}</p>
-                                            <button
-                                                @click="copyToClipboard(tx.transaction_hash!, tx.id + 3000)"
-                                                class="p-1 hover:bg-muted/70 rounded cursor-pointer"
-                                            >
+                                            <button @click="copyToClipboard(tx.transaction_hash!, tx.id + 3000)" class="p-1 hover:bg-muted/70 rounded cursor-pointer">
                                                 <CheckIcon v-if="copiedHash === `${tx.id + 3000}`" class="w-3 h-3 text-primary" />
                                                 <CopyIcon v-else class="w-3 h-3 text-muted-foreground" />
                                             </button>
-                                            <a
-                                                :href="getExplorerUrl(tx.transaction_hash!)"
-                                                target="_blank"
-                                                class="p-1 hover:bg-muted/70 rounded cursor-pointer"
-                                            >
+                                            <a :href="getExplorerUrl(tx.transaction_hash!)" target="_blank" class="p-1 hover:bg-muted/70 rounded cursor-pointer">
                                                 <ExternalLinkIcon class="w-3 h-3 text-muted-foreground" />
                                             </a>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Trade Transactions (Forex, Stock, Crypto) -->
+                                <div v-if="['forex_trade', 'stock_trade', 'crypto_trade'].includes(tx.type)" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    <div class="bg-muted/50 rounded-lg p-3">
+                                        <p class="text-xs text-muted-foreground mb-1">Trading Pair</p>
+                                        <p class="text-sm font-semibold text-card-foreground">{{ tx.pair_name || tx.pair }}</p>
+                                    </div>
+                                    <div class="bg-muted/50 rounded-lg p-3">
+                                        <p class="text-xs text-muted-foreground mb-1">Position Type</p>
+                                        <div class="flex items-center gap-1">
+                                            <component :is="tx.trade_direction === 'Up' ? TrendingUpIcon : TrendingDownIcon"
+                                                       class="w-3.5 h-3.5"
+                                                       :class="tx.trade_direction === 'Up' ? 'text-success' : 'text-destructive'" />
+                                            <p class="text-sm font-semibold" :class="tx.trade_direction === 'Up' ? 'text-success' : 'text-destructive'">
+                                                {{ tx.trade_direction }}
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <div class="bg-muted/50 rounded-lg p-3">
+                                        <p class="text-xs text-muted-foreground mb-1">Amount</p>
+                                        <p class="text-sm font-semibold text-card-foreground">${{ formatAmount(tx.amount) }}</p>
+                                    </div>
+                                    <div class="bg-muted/50 rounded-lg p-3">
+                                        <p class="text-xs text-muted-foreground mb-1">Leverage</p>
+                                        <p class="text-sm font-semibold text-card-foreground">{{ tx.leverage }}x</p>
+                                    </div>
+                                    <div class="bg-muted/50 rounded-lg p-3">
+                                        <p class="text-xs text-muted-foreground mb-1">Entry Price</p>
+                                        <p class="text-sm font-semibold text-card-foreground">${{ formatAmount(tx.entry_price) }}</p>
+                                    </div>
+                                    <div class="bg-muted/50 rounded-lg p-3">
+                                        <p class="text-xs text-muted-foreground mb-1">Exit Price</p>
+                                        <p class="text-sm font-semibold text-card-foreground">
+                                            {{ tx.exit_price ? `$${formatAmount(tx.exit_price)}` : 'N/A' }}
+                                        </p>
+                                    </div>
+                                    <div class="bg-muted/50 rounded-lg p-3">
+                                        <p class="text-xs text-muted-foreground mb-1">P&L</p>
+                                        <p class="text-sm font-semibold" :class="tx.pnl >= 0 ? 'text-success' : 'text-destructive'">
+                                            {{ tx.pnl >= 0 ? '+' : '' }}${{ formatAmount(tx.pnl) }}
+                                        </p>
+                                    </div>
+                                    <div class="bg-muted/50 rounded-lg p-3">
+                                        <p class="text-xs text-muted-foreground mb-1">Trading Mode</p>
+                                        <p class="text-sm font-semibold text-card-foreground capitalize">{{ tx.trading_mode }}</p>
+                                    </div>
+                                    <div v-if="tx.duration" class="bg-muted/50 rounded-lg p-3">
+                                        <p class="text-xs text-muted-foreground mb-1">Duration</p>
+                                        <p class="text-sm font-semibold text-card-foreground">{{ tx.duration }}</p>
+                                    </div>
+                                    <div v-if="tx.expiry_time" class="bg-muted/50 rounded-lg p-3">
+                                        <p class="text-xs text-muted-foreground mb-1">Expiry Time</p>
+                                        <p class="text-sm font-semibold text-card-foreground">{{ formatDate(tx.expiry_time) }}</p>
+                                    </div>
+                                </div>
+
+                                <!-- Investment Transaction -->
+                                <div v-if="tx.type === 'investment'" class="space-y-4">
+                                    <!-- Header Info -->
+                                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                        <div class="bg-muted/50 rounded-lg p-3">
+                                            <p class="text-xs text-muted-foreground mb-1">Investment Plan</p>
+                                            <p class="text-sm font-semibold text-card-foreground">{{ tx.plan_name }}</p>
+                                        </div>
+                                        <div class="bg-muted/50 rounded-lg p-3">
+                                            <p class="text-xs text-muted-foreground mb-1">Amount Invested</p>
+                                            <p class="text-sm font-semibold text-card-foreground">${{ formatAmount(tx.amount) }}</p>
+                                        </div>
+                                    </div>
+
+                                    <!-- Financial Details -->
+                                    <div class="grid grid-cols-2 gap-4">
+                                        <div class="bg-muted/50 rounded-lg p-3">
+                                            <p class="text-xs text-muted-foreground mb-1">Interest/Cycle</p>
+                                            <p class="text-sm font-semibold text-primary">${{ formatAmount(tx.interest) }}</p>
+                                        </div>
+                                        <div class="bg-muted/50 rounded-lg p-3">
+                                            <p class="text-xs text-muted-foreground mb-1">Total Earned</p>
+                                            <p class="text-sm font-semibold text-success">+${{ formatAmount(tx.totalInterestEarned) }}</p>
+                                        </div>
+                                        <div class="bg-muted/50 rounded-lg p-3">
+                                            <p class="text-xs text-muted-foreground mb-1">Period</p>
+                                            <p class="text-sm font-semibold text-card-foreground">{{ tx.period >= 24 ? `${tx.period / 24} ${tx.period / 24 === 1 ? 'day' : 'days'}` : `${tx.period} ${tx.period === 1 ? 'hour' : 'hours'}` }}</p>
+                                        </div>
+                                        <div class="bg-muted/50 rounded-lg p-3">
+                                            <p class="text-xs text-muted-foreground mb-1">Cycles</p>
+                                            <p class="text-sm font-semibold text-card-foreground">{{ tx.progress?.currentCycle }} / {{ tx.progress?.totalCycles }}</p>
+                                        </div>
+                                    </div>
+
+                                    <!-- Current Cycle Progress -->
+                                    <div class="bg-muted/50 rounded-lg p-3 space-y-2">
+                                        <div class="flex items-center justify-between text-xs">
+                                            <span class="font-medium text-muted-foreground">Progress</span>
+                                            <span class="font-bold text-card-foreground">{{ tx.progress?.percentage.toFixed(1) }}%</span>
+                                        </div>
+                                        <div class="w-full bg-muted rounded-full h-1 overflow-hidden">
+                                            <div
+                                                class="h-full transition-all duration-500 rounded-full"
+                                                :class="tx.progress?.isExpired ? 'bg-success' : 'bg-warning'"
+                                                :style="{ width: `${tx.progress?.percentage}%` }">
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Countdown Timer -->
+                                    <div class="rounded-lg p-3 border border-primary/20">
+                                        <div class="flex items-center justify-between">
+                                            <div class="flex items-center gap-2">
+                                                <ClockIcon class="w-4 h-4 text-primary" />
+                                                <span class="text-xs font-medium text-muted-foreground">
+                                                    {{ tx.progress?.isExpired ? 'Status' : 'Next Payout In' }}
+                                                </span>
+                                            </div>
+                                            <span
+                                                class="text-sm font-mono font-bold"
+                                                :class="tx.progress?.isExpired ? 'text-success' : 'text-primary'">
+                                                {{ tx.progress?.countdown }}
+                                            </span>
+                                        </div>
+                                    </div>
+
+                                    <!-- Additional Details -->
+                                    <div class="grid grid-cols-2 gap-4">
+                                        <div class="bg-muted/50 rounded-lg p-3">
+                                            <p class="text-xs text-muted-foreground mb-1">Capital Back</p>
+                                            <p class="text-sm font-semibold" :class="tx.capital_back_status === 'yes' ? 'text-success' : 'text-muted-foreground'">
+                                                {{ tx.capital_back_status === 'yes' ? 'Yes' : 'No' }}
+                                            </p>
+                                        </div>
+                                        <div v-if="tx.last_time" class="bg-muted/50 rounded-lg p-3">
+                                            <p class="text-xs text-muted-foreground mb-1">Last Payout</p>
+                                            <p class="text-sm font-semibold text-card-foreground">{{ formatDate(tx.last_time) }}</p>
                                         </div>
                                     </div>
                                 </div>
@@ -650,7 +976,7 @@
 
             <div class="hidden sm:block">
                 <div class="xl:col-span-1 space-y-6 sticky top-6">
-                    <div class="bg-gradient-to-br from-primary/10 to-transparent border border-primary/20 rounded-2xl p-6">
+                    <div class="border border-primary/20 rounded-2xl p-6">
                         <h5 class="text-sm font-semibold text-card-foreground mb-4 flex items-center gap-2">
                             <ShieldCheckIcon class="w-5 h-5 text-primary" />
                             Security & Features
@@ -668,10 +994,10 @@
                         </ul>
                     </div>
 
-                    <div class="bg-gradient-to-br from-card to-muted/20 border border-border rounded-2xl p-6">
+                    <div class="border border-border rounded-2xl p-6">
                         <h5 class="text-sm font-semibold text-card-foreground mb-4 flex items-center gap-2">
                             <InfoIcon class="w-5 h-5 text-primary" />
-                            Understanding Transactions
+                            Transaction Types
                         </h5>
                         <div class="space-y-4 text-xs text-muted-foreground">
                             <div>
@@ -679,62 +1005,32 @@
                                     <ArrowRightLeftIcon class="w-3.5 h-3.5 text-primary" />
                                     Swaps
                                 </h6>
-                                <p>Exchange one cryptocurrency for another instantly at the best available rates.</p>
+                                <p>Exchange one cryptocurrency for another instantly.</p>
                             </div>
                             <div>
                                 <h6 class="font-semibold text-card-foreground mb-1 flex items-center gap-2">
-                                    <ArrowDownLeftIcon class="w-3.5 h-3.5 text-success" />
-                                    Received
+                                    <DollarSignIcon class="w-3.5 h-3.5 text-blue-500" />
+                                    Trades
                                 </h6>
-                                <p>Crypto deposits that have been sent to your wallet addresses.</p>
+                                <p>Forex, stocks, and crypto trading with leverage.</p>
                             </div>
                             <div>
                                 <h6 class="font-semibold text-card-foreground mb-1 flex items-center gap-2">
-                                    <ArrowUpRightIcon class="w-3.5 h-3.5 text-accent" />
-                                    Sent
+                                    <WalletIcon class="w-3.5 h-3.5 text-green-500" />
+                                    Investments
                                 </h6>
-                                <p>Crypto transfers you've initiated to external wallet addresses.</p>
+                                <p>Long-term investment plans with regular payouts.</p>
                             </div>
                         </div>
                     </div>
 
-                    <div class="bg-warning/10 border border-warning/20 rounded-2xl p-6">
-                        <h5 class="text-sm font-semibold text-warning mb-3 flex items-center gap-2">
-                            <CalendarIcon class="w-5 h-5" />
-                            Transaction Status Guide
-                        </h5>
-                        <ul class="space-y-3 text-xs text-muted-foreground">
-                            <li class="flex items-start gap-2">
-                                <CheckCircleIcon class="w-4 h-4 text-success mt-0.5 flex-shrink-0" />
-                                <div>
-                                    <span class="font-semibold text-card-foreground">Completed:</span>
-                                    <span class="block">Transaction successfully confirmed on blockchain</span>
-                                </div>
-                            </li>
-                            <li class="flex items-start gap-2">
-                                <ClockIcon class="w-4 h-4 text-warning mt-0.5 flex-shrink-0" />
-                                <div>
-                                    <span class="font-semibold text-card-foreground">Pending:</span>
-                                    <span class="block">Awaiting blockchain confirmation (usually 5-30 minutes)</span>
-                                </div>
-                            </li>
-                            <li class="flex items-start gap-2">
-                                <AlertCircleIcon class="w-4 h-4 text-destructive mt-0.5 flex-shrink-0" />
-                                <div>
-                                    <span class="font-semibold text-card-foreground">Failed:</span>
-                                    <span class="block">Transaction unsuccessful, funds returned to source</span>
-                                </div>
-                            </li>
-                        </ul>
-                    </div>
-
-                    <div class="text-center p-6 bg-gradient-to-br from-card to-muted/20 border border-border rounded-2xl">
+                    <div class="text-center p-6 border border-border rounded-2xl">
                         <div class="w-12 h-12 rounded-full bg-primary/10 mx-auto mb-3 flex items-center justify-center">
                             <InfoIcon class="w-6 h-6 text-primary" />
                         </div>
-                        <h5 class="text-sm font-semibold text-card-foreground mb-2">Need Transaction Help?</h5>
+                        <h5 class="text-sm font-semibold text-card-foreground mb-2">Need Help?</h5>
                         <p class="text-xs text-muted-foreground mb-4">
-                            Having issues with a transaction or need clarification? Our support team is ready to assist you.
+                            Having issues with a transaction? Our support team is ready to assist you.
                         </p>
                         <TextLink :href="route('user.support.index')" class="inline-flex items-center gap-2 text-sm font-medium text-primary hover:underline">
                             Contact Support

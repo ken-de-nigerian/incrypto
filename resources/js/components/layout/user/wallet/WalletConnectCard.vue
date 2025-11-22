@@ -92,10 +92,10 @@
     const totalWalletsCount = computed(() => availableToConnect.value.length);
 
     const walletBenefits = [
-        { icon: ShieldCheckIcon, text: 'Secure and encrypted wallet connections' },
-        { icon: TrendingUpIcon, text: 'Real-time activity tracking and updates' },
-        { icon: ZapIcon, text: 'Instant deposits and withdrawals' },
-        { icon: LockIcon, text: 'Non-custodial - you control your assets' }
+        { icon: ShieldCheckIcon, text: 'End-to-end encrypted connections for your decentralized identity' },
+        { icon: TrendingUpIcon, text: 'Real-time blockchain transaction monitoring and on-chain updates' },
+        { icon: ZapIcon, text: 'Seamless cross-chain transfers and instant liquidity access' },
+        { icon: LockIcon, text: 'Full self-custody: Your keys, your crypto - always in your control' }
     ];
 
     const copyAddress = (id: string) => {
@@ -219,9 +219,9 @@
                                 <WalletIcon class="w-7 h-7 text-primary" />
                             </div>
                             <div class="flex-1">
-                                <h2 class="text-2xl sm:text-3xl font-bold text-card-foreground mb-2">Wallet Connect</h2>
+                                <h2 class="text-2xl sm:text-3xl font-bold text-card-foreground mb-2">Web3 Wallet Connect</h2>
                                 <p class="text-muted-foreground text-sm sm:text-base">
-                                    Connect your crypto wallets to seamlessly manage deposits, withdrawals, and track your portfolio across multiple chains.
+                                    Connect your decentralized wallets to unlock seamless interactions with DeFi protocols, NFTs, and dApps across EVM-compatible and multi-chain ecosystems.
                                 </p>
                             </div>
                         </div>
@@ -239,14 +239,14 @@
                                 <p class="text-xs text-muted-foreground mb-1">Status</p>
                                 <p class="text-sm font-semibold text-primary flex items-center gap-1">
                                     <span class="w-2 h-2 rounded-full bg-primary animate-pulse"></span>
-                                    Active
+                                    On-Chain
                                 </p>
                             </div>
                             <div class="bg-card/70 backdrop-blur-sm rounded-xl p-4 border border-border">
                                 <p class="text-xs text-muted-foreground mb-1">Security</p>
                                 <p class="text-sm font-semibold text-primary flex items-center gap-1">
                                     <ShieldCheckIcon class="w-4 h-4" />
-                                    Verified
+                                    Self-Custodial
                                 </p>
                             </div>
                         </div>
@@ -257,7 +257,7 @@
                     <div class="bg-muted/30 px-6 py-4 border-b border-border flex items-center justify-between">
                         <div class="flex items-center gap-3">
                             <CheckCircleIcon class="w-5 h-5 text-primary" />
-                            <h3 class="text-lg font-semibold text-card-foreground">Connected Wallets</h3>
+                            <h3 class="text-lg font-semibold text-card-foreground">Connected Web3 Wallets</h3>
                         </div>
                         <span class="px-3 py-1 rounded-full text-xs font-medium bg-primary/10 text-primary border border-primary/30">
                             {{ connectedWallets.length }} Active
@@ -270,7 +270,7 @@
                                 <WalletIcon class="w-8 h-8 text-muted-foreground" />
                             </div>
                             <h4 class="text-lg font-semibold text-card-foreground mb-2">No Wallets Connected</h4>
-                            <p class="text-sm text-muted-foreground mb-6">Connect your first wallet to start trading and managing your assets.</p>
+                            <p class="text-sm text-muted-foreground mb-6">Connect your first Web3 wallet to dive into decentralized trading, DeFi yields, and on-chain asset management.</p>
                         </div>
 
                         <div v-else class="grid gap-4">
@@ -299,7 +299,7 @@
                                                 <button
                                                     @click="copyAddress(wallet.wallet_id)"
                                                     class="p-1 hover:bg-muted/70 rounded cursor-pointer flex-shrink-0"
-                                                    :title="copiedAddress === wallet.wallet_id ? 'Copied!' : 'Copy ID'">
+                                                    :title="copiedAddress === wallet.wallet_id ? 'Copied!' : 'Copy Address'">
                                                     <CheckIcon v-if="copiedAddress === wallet.wallet_id" class="w-3.5 h-3.5 text-primary" />
                                                     <CopyIcon v-else class="w-3.5 h-3.5 text-muted-foreground" />
                                                 </button>
@@ -325,7 +325,7 @@
                         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                             <div class="flex items-center gap-3">
                                 <PlusCircleIcon class="w-5 h-5 text-muted-foreground" />
-                                <h3 class="text-lg font-semibold text-card-foreground">Available Wallets</h3>
+                                <h3 class="text-lg font-semibold text-card-foreground">Available Web3 Wallets</h3>
                             </div>
 
                             <div class="flex items-center gap-2">
@@ -359,10 +359,10 @@
 
                             <div class="flex flex-col sm:flex-row gap-3">
                                 <div class="flex-1">
-                                    <label class="block text-xs font-medium text-muted-foreground mb-1.5">Wallet Type</label>
+                                    <label class="block text-xs font-medium text-muted-foreground mb-1.5">Chain Type</label>
                                     <select v-model="filterByType" class="w-full px-3 py-2 bg-background border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all hover:bg-muted/50 cursor-pointer">
                                         <option v-for="type in walletTypes" :key="type" :value="type">
-                                            {{ type === 'all' ? 'All Types' : type }}
+                                            {{ type === 'all' ? 'All Chains' : type }}
                                         </option>
                                     </select>
                                 </div>
@@ -392,8 +392,8 @@
                             <div class="w-16 h-16 rounded-full bg-primary/10 mx-auto mb-4 flex items-center justify-center">
                                 <CheckCircleIcon class="w-8 h-8 text-primary" />
                             </div>
-                            <h4 class="text-lg font-semibold text-card-foreground mb-2">All Wallets Connected!</h4>
-                            <p class="text-sm text-muted-foreground">You've connected all available wallet types. Great job!</p>
+                            <h4 class="text-lg font-semibold text-card-foreground mb-2">All Web3 Wallets Connected!</h4>
+                            <p class="text-sm text-muted-foreground">You've integrated all available wallet types. You're fully equipped for the decentralized future!</p>
                         </div>
 
                         <div v-else-if="displayedWallets.length === 0" class="text-center py-12">
@@ -401,7 +401,7 @@
                                 <SearchIcon class="w-8 h-8 text-muted-foreground" />
                             </div>
                             <h4 class="text-lg font-semibold text-card-foreground mb-2">No Wallets Found</h4>
-                            <p class="text-sm text-muted-foreground mb-4">Try adjusting your search or filter criteria.</p>
+                            <p class="text-sm text-muted-foreground mb-4">Try adjusting your search or chain filter criteria.</p>
                             <button @click="clearFilters" class="px-4 py-2 bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg text-sm font-medium">
                                 Clear Filters
                             </button>
@@ -452,7 +452,7 @@
                     <div class="bg-gradient-to-br from-primary/10 to-primary/10 border border-primary/20 rounded-2xl p-6">
                         <h5 class="text-sm font-semibold text-card-foreground mb-4 flex items-center gap-2">
                             <ShieldCheckIcon class="w-5 h-5 text-primary" />
-                            Why Connect Your Wallet?
+                            Why Connect Your Web3 Wallet?
                         </h5>
                         <ul class="space-y-3">
                             <li v-for="(benefit, index) in walletBenefits" :key="index" class="flex items-start gap-3 text-sm text-muted-foreground">
@@ -465,20 +465,20 @@
                     <div class="bg-card border border-border rounded-2xl p-6">
                         <h5 class="text-sm font-semibold text-card-foreground mb-4 flex items-center gap-2">
                             <InfoIcon class="w-5 h-5 text-primary" />
-                            Security Best Practices
+                            Web3 Security Best Practices
                         </h5>
                         <ul class="space-y-3">
                             <li class="flex items-start gap-2 text-sm text-muted-foreground">
                                 <span class="text-primary mt-0.5 font-bold">1.</span>
-                                <span>Never share your private keys or seed phrase.</span>
+                                <span>Never share your private keys or seed phrase with anyone.</span>
                             </li>
                             <li class="flex items-start gap-2 text-sm text-muted-foreground">
                                 <span class="text-primary mt-0.5 font-bold">2.</span>
-                                <span>Always verify wallet IDs before transactions.</span>
+                                <span>Always verify wallet addresses and smart contract interactions before signing.</span>
                             </li>
                             <li class="flex items-start gap-2 text-sm text-muted-foreground">
                                 <span class="text-primary mt-0.5 font-bold">3.</span>
-                                <span>Enable two-factor authentication for added security.</span>
+                                <span>Enable hardware wallet integration and multi-sig setups for enhanced on-chain security.</span>
                             </li>
                         </ul>
                     </div>
@@ -486,10 +486,10 @@
                     <div class="bg-warning/10 border border-warning/20 rounded-2xl p-6">
                         <h5 class="text-sm font-semibold text-warning mb-3 flex items-center gap-2">
                             <ZapIcon class="w-5 h-5" />
-                            Important Notice
+                            Decentralized Notice
                         </h5>
                         <p class="text-xs text-muted-foreground leading-relaxed">
-                            We never store your private keys. All wallet connections are secure and encrypted. You maintain full control of your assets at all times.
+                            We never custody your private keys. All connections are non-custodial, encrypted, and respect your self-sovereignty. You hold the keys to your digital assets forever.
                         </p>
                     </div>
 
@@ -498,13 +498,13 @@
                             <InfoIcon class="w-6 h-6 text-primary" />
                         </div>
 
-                        <h5 class="text-sm font-semibold text-card-foreground mb-2">Need Help?</h5>
+                        <h5 class="text-sm font-semibold text-card-foreground mb-2">Need Web3 Help?</h5>
                         <p class="text-xs text-muted-foreground mb-4">
-                            Our support team is here to assist you with wallet connections and troubleshooting.
+                            Our decentralized support community and experts are ready to guide you through wallet integrations, chain migrations, and troubleshooting.
                         </p>
 
                         <TextLink :href="route('user.support.index')" class="inline-flex items-center gap-2 text-sm font-medium text-primary hover:underline">
-                            Contact Support
+                            Join Community Support
                             <ExternalLinkIcon class="w-4 h-4" />
                         </TextLink>
                     </div>

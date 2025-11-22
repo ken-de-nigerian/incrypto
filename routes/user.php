@@ -106,9 +106,6 @@ Route::prefix('user')
                 Route::patch('/network/copy/{copyTrade}/resume', 'resumeCopy')->name('copy.resume');
                 Route::delete('/network/copy/{copyTrade}', 'stopCopy')->name('copy.stop');
 
-                Route::get('/history', 'history')->name('history');
-                Route::post('/history/execute', 'executeHistory')->name('history.execute');
-
                 Route::post('/fund', 'fundAccount')->name('fund.account');
                 Route::post('/withdraw', 'withdrawAccount')->name('withdraw.account');
             });

@@ -83,7 +83,7 @@ class ManageUserKycController extends Controller
         $finalKycData = array_merge($currentStatusData, $dynamicData);
 
         // Pass the single, complete 'kycData' object to the view
-        return Inertia::render('User/Kyc', [
+        return Inertia::render('User/Kyc/Index', [
             'kycData' => $finalKycData
         ]);
     }

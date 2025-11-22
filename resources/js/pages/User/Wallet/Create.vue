@@ -36,7 +36,8 @@
 
     const breadcrumbItems = [
         { label: 'Dashboard', href: route('user.dashboard') },
-        { label: `Connect ${props.wallet.Name}`, href: route('user.wallet.index') },
+        { label: 'Wallet Connect', href: route('user.wallet.index') },
+        { label: `Connect ${props.wallet.Name}` },
     ];
 </script>
 

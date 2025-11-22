@@ -18,7 +18,7 @@
         { name: "Swap", href: "user.swap.index", icon: Repeat },
         { name: "Wallets", href: "user.wallet.index", icon: Wallet },
         { name: "Referrals", href: "user.rewards.index", icon: Users },
-        { name: "Payments", href: "user.transactions.index", icon: CreditCard },
+        { name: "Transactions", href: "user.transactions.index", icon: CreditCard },
         { name: "KYC", href: "user.kyc.index", icon: ShieldCheck },
     ];
 </script>
@@ -39,7 +39,7 @@
                     ]">
                     <component :is="item.icon" class="w-4 h-4 sm:w-5 sm:h-5 text-muted-foreground group-hover:text-primary" />
                 </div>
-                <span class="text-card-foreground text-[10px] sm:text-xs text-center leading-tight">{{ item.name }}</span>
+                <span class="text-card-foreground text-[10px] text-center leading-tight">{{ item.name }}</span>
             </TextLink>
         </div>
     </div>

@@ -51,18 +51,14 @@
     }
 
     const props = defineProps({
-        crypto_swaps: {
-            type: Array as () => Transaction[],
-            default: () => []
-        },
-        received_cryptos: {
-            type: Array as () => Transaction[],
-            default: () => []
-        },
-        sent_cryptos: {
-            type: Array as () => Transaction[],
-            default: () => []
-        }
+        crypto_swaps: { type: Array as () => Transaction[], default: () => [] },
+        received_cryptos: { type: Array as () => Transaction[], default: () => [] },
+        sent_cryptos: { type: Array as () => Transaction[], default: () => [] },
+        forex_trades: { type: Array as () => Transaction[], default: () => [] },      // NEW
+        stock_trades: { type: Array as () => Transaction[], default: () => [] },      // NEW
+        crypto_trades: { type: Array as () => Transaction[], default: () => [] },     // NEW
+        investment_histories: { type: Array as () => Transaction[], default: () => [] }, // NEW
+        tab: { type: String, default: 'all' }  // NEW - for tab persistence
     });
 
     const page = usePage();

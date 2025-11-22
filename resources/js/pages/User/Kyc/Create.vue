@@ -65,6 +65,7 @@
 
     const breadcrumbItems = [
         { label: 'Dashboard', href: route('user.dashboard') },
+        { label: 'Kyc', href: route('user.kyc.index') },
         { label: 'Start KYC Verification' }
     ];
 </script>

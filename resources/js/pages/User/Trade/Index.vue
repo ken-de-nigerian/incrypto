@@ -7,8 +7,7 @@
         WalletIcon,
         PiggyBankIcon,
         BarChartIcon,
-        GlobeIcon,
-        ClockIcon
+        GlobeIcon, ReceiptIcon
     } from 'lucide-vue-next';
     import Breadcrumb from '@/components/Breadcrumb.vue';
     import AppLayout from '@/components/layout/user/dashboard/AppLayout.vue';
@@ -105,7 +104,7 @@
         { title: 'Crypto Trading', icon: WalletIcon, description: 'Trade popular cryptocurrencies.', route: route('user.trade.crypto') },
         { title: 'Investments & Staking', icon: PiggyBankIcon, description: 'Explore fixed-term investment plans and earn APY.', route: route('user.trade.investment') },
         { title: 'Copy Trading Network', icon: UsersIcon, description: 'Automatically copy top-performing traders.', route: route('user.trade.network') },
-        { title: 'Trade History', icon: ClockIcon, description: 'Review all past trades and orders.', route: route('user.trade.history') },
+        { title: 'Transaction History', icon: ReceiptIcon, description: 'View your trading history and past transactions.', route: route('user.transactions.index') },
     ];
 
     const handleFundingClick = () => {

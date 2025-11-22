@@ -28,7 +28,7 @@
         { name: "Send", href: "user.send.index", icon: Send, group: 'user.send.' },
         { name: "Receive", href: "user.receive.index", icon: Download, group: 'user.receive.' },
         { name: "Swap", href: "user.swap.index", icon: Repeat, group: 'user.swap.' },
-        { name: "Trading", href: "user.trade.index", icon: TrendingUp, group: 'user.trade.' },
+        { name: "Trading", href: "user.trade.index", icon: TrendingUp, group: 'user.trade.', additionalGroups: ['user.transactions.'] },
         { name: "Referrals", href: "user.rewards.index", icon: Users, group: 'user.rewards.' },
     ];
 
@@ -41,7 +41,12 @@
         return navigation.some(item => {
             if (item.isDefault) return false;
             if (item.group) {
-                return route().current(item.group + '*');
+                const mainGroupActive = route().current(item.group + '*');
+                if (mainGroupActive) return true;
+
+                if (item.additionalGroups) {
+                    return item.additionalGroups.some(group => route().current(group + '*'));
+                }
             }
             return route().current(item.href);
         });
@@ -52,6 +57,10 @@
 
         if (item.group) {
             active = route().current(item.group + '*');
+
+            if (!active && item.additionalGroups) {
+                active = item.additionalGroups.some(group => route().current(group + '*'));
+            }
         } else {
             active = route().current(item.href);
         }

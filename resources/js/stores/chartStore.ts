@@ -19,7 +19,11 @@ interface PairData {
     initialized: boolean
     nextUrl: string | null
     isLoadingHistorical: boolean
-    hasMoreHistoricalData: boolean
+    hasMoreHistoricalData: true
+    simulationPhase: number
+    lastSimulationUpdate: number
+    activeSimulatedCandle: Candle | null
+    currentCandleTick: number
 }
 
 interface ForexOHLCData {
@@ -56,11 +60,6 @@ const MIN_ZOOM = 0.1
 const MAX_ZOOM = 10
 const MAX_PAN_THRESHOLD = 100000
 const DEFAULT_CANDLE_INTERVAL_MS = 60000
-let broadcastChannel: BroadcastChannel | null = null
-
-if (typeof window !== 'undefined' && 'BroadcastChannel' in window) {
-    broadcastChannel = new BroadcastChannel('forex-chart-sync')
-}
 
 export const useChartStore = defineStore('chart', () => {
     const selectedPair = ref<string>('EUR/USD')
@@ -69,7 +68,6 @@ export const useChartStore = defineStore('chart', () => {
     const panX = ref(0)
     const openTrades = ref<OpenTrade[]>([])
     const chartError = ref<string | null>(null)
-    const isProcessingBroadcast = ref(false)
 
     const currentPairData = computed(() => pairDataMap.value[selectedPair.value])
     const hasPairData = computed(() =>
@@ -118,100 +116,6 @@ export const useChartStore = defineStore('chart', () => {
         )
     }
 
-    function broadcastStateChange(type: string, payload: any) {
-        if (broadcastChannel && !isProcessingBroadcast.value) {
-            try {
-                const serializablePayload = JSON.parse(JSON.stringify(payload))
-                broadcastChannel.postMessage({ type, payload: serializablePayload, timestamp: Date.now() })
-            } catch (error) {
-                console.warn('Failed to broadcast state change:', error)
-            }
-        }
-    }
-
-    if (broadcastChannel) {
-        broadcastChannel.onmessage = (event) => {
-            isProcessingBroadcast.value = true
-            try {
-                const { type, payload } = event.data
-
-                switch (type) {
-                    case 'PAIR_DATA_UPDATE':
-                        if (pairDataMap.value[payload.pair]) {
-                            Object.assign(pairDataMap.value[payload.pair], payload.data)
-                        }
-                        break
-                    case 'CANDLES_INITIALIZED':
-                        if (pairDataMap.value[payload.pair]) {
-                            Object.assign(pairDataMap.value[payload.pair], {
-                                currentPrice: payload.data.currentPrice,
-                                lastCandleTime: payload.data.lastCandleTime,
-                                basePrice: payload.data.basePrice,
-                                candleInterval: payload.data.candleInterval,
-                                initialized: payload.data.initialized,
-                                nextUrl: payload.data.nextUrl,
-                                hasMoreHistoricalData: payload.data.hasMoreHistoricalData
-                            })
-                        }
-                        break
-                    case 'CANDLE_ADDED':
-                        if (pairDataMap.value[payload.pair]?.initialized) {
-                            const pairData = pairDataMap.value[payload.pair]
-                            const exists = pairData.candles.some(c => c.time === payload.candle.time)
-                            if (!exists && isValidCandle(payload.candle)) {
-                                pairData.candles.push(payload.candle)
-                                pairData.candles = sortCandles(pairData.candles)
-                                if (pairData.candles.length > MAX_CANDLES) {
-                                    pairData.candles.shift()
-                                }
-                                pairData.lastCandleTime = Math.max(
-                                    pairData.lastCandleTime,
-                                    payload.candle.time
-                                )
-                            }
-                        }
-                        break
-                    case 'HISTORICAL_CANDLES_PREPENDED':
-                        if (pairDataMap.value[payload.pair]?.initialized) {
-                            const pairData = pairDataMap.value[payload.pair]
-                            pairData.candles = [...payload.candles, ...pairData.candles]
-                            pairData.candles = deduplicateCandles(sortCandles(pairData.candles))
-                            pairData.nextUrl = payload.nextUrl
-                            pairData.hasMoreHistoricalData = payload.hasMoreHistoricalData
-                            pairData.isLoadingHistorical = false
-                        }
-                        break
-                    case 'LAST_CANDLE_UPDATE':
-                        if (pairDataMap.value[payload.pair]?.initialized) {
-                            const pairData = pairDataMap.value[payload.pair]
-                            if (pairData.candles.length > 0) {
-                                Object.assign(pairData.candles[pairData.candles.length - 1], payload.updates)
-                            }
-                        }
-                        break
-                    case 'CURRENT_PRICE_UPDATE':
-                        if (pairDataMap.value[payload.pair]) {
-                            const price = payload.price
-                            if (isFinite(price) && price > 0) {
-                                pairDataMap.value[payload.pair].currentPrice = price
-                            }
-                        }
-                        break
-                    case 'OPEN_TRADES_UPDATE':
-                        openTrades.value = payload.trades
-                        break
-                    case 'SELECTED_PAIR_CHANGE':
-                        selectedPair.value = payload.pair
-                        break
-                }
-            } catch (error) {
-                console.error('Error processing broadcast message:', error)
-            } finally {
-                isProcessingBroadcast.value = false
-            }
-        }
-    }
-
     function setPair(pair: string) {
         if (!pair) {
             console.error('Invalid pair provided to setPair')
@@ -220,11 +124,7 @@ export const useChartStore = defineStore('chart', () => {
 
         selectedPair.value = pair
         chartError.value = null
-        try {
-            broadcastStateChange('SELECTED_PAIR_CHANGE', { pair })
-        } catch (error) {
-            console.warn('Failed to broadcast pair change:', error)
-        }
+
         if (!pairDataMap.value[pair]) {
             initializePairData(pair)
         }
@@ -246,7 +146,11 @@ export const useChartStore = defineStore('chart', () => {
                 initialized: false,
                 nextUrl: null,
                 isLoadingHistorical: false,
-                hasMoreHistoricalData: true
+                hasMoreHistoricalData: true,
+                simulationPhase: 0,
+                lastSimulationUpdate: Date.now(),
+                activeSimulatedCandle: null,
+                currentCandleTick: 0
             }
         }
     }
@@ -281,18 +185,6 @@ export const useChartStore = defineStore('chart', () => {
             pairData.basePrice = initialPrice
             pairData.nextUrl = nextUrl
             pairData.hasMoreHistoricalData = !!nextUrl
-            broadcastStateChange('CANDLES_INITIALIZED', {
-                pair,
-                data: {
-                    currentPrice: initialPrice,
-                    lastCandleTime: pairData.lastCandleTime,
-                    basePrice: initialPrice,
-                    candleInterval: pairData.candleInterval,
-                    initialized: true,
-                    nextUrl: nextUrl,
-                    hasMoreHistoricalData: !!nextUrl
-                }
-            })
             return
         }
 
@@ -332,19 +224,6 @@ export const useChartStore = defineStore('chart', () => {
         if (pairData.candles.length > 0) {
             pairData.lastCandleTime = pairData.candles[pairData.candles.length - 1].time * 1000
         }
-
-        broadcastStateChange('CANDLES_INITIALIZED', {
-            pair,
-            data: {
-                currentPrice: initialPrice,
-                lastCandleTime: pairData.lastCandleTime,
-                basePrice: initialPrice,
-                candleInterval: pairData.candleInterval,
-                initialized: true,
-                nextUrl: nextUrl,
-                hasMoreHistoricalData: !!nextUrl
-            }
-        })
     }
 
     function initializeCandlesFromForexData(
@@ -369,18 +248,6 @@ export const useChartStore = defineStore('chart', () => {
             pairData.basePrice = initialPrice
             pairData.nextUrl = nextUrl
             pairData.hasMoreHistoricalData = !!nextUrl
-            broadcastStateChange('CANDLES_INITIALIZED', {
-                pair,
-                data: {
-                    currentPrice: initialPrice,
-                    lastCandleTime: pairData.lastCandleTime,
-                    basePrice: initialPrice,
-                    candleInterval: pairData.candleInterval,
-                    initialized: true,
-                    nextUrl: nextUrl,
-                    hasMoreHistoricalData: !!nextUrl
-                }
-            })
             return
         }
 
@@ -399,19 +266,6 @@ export const useChartStore = defineStore('chart', () => {
         if (pairData.candles.length > 0) {
             pairData.lastCandleTime = pairData.candles[pairData.candles.length - 1].time * 1000
         }
-
-        broadcastStateChange('CANDLES_INITIALIZED', {
-            pair,
-            data: {
-                currentPrice: initialPrice,
-                lastCandleTime: pairData.lastCandleTime,
-                basePrice: initialPrice,
-                candleInterval: pairData.candleInterval,
-                initialized: true,
-                nextUrl: nextUrl,
-                hasMoreHistoricalData: !!nextUrl
-            }
-        })
     }
 
     function prependHistoricalCandles(
@@ -446,20 +300,12 @@ export const useChartStore = defineStore('chart', () => {
         pairData.nextUrl = nextUrl
         pairData.hasMoreHistoricalData = !!nextUrl
         pairData.isLoadingHistorical = false
-
-        broadcastStateChange('HISTORICAL_CANDLES_PREPENDED', {
-            pair,
-            candles: validHistoricalCandles,
-            nextUrl: nextUrl,
-            hasMoreHistoricalData: !!nextUrl
-        })
     }
 
     function setHistoricalLoadingState(pair: string, isLoading: boolean) {
-        if (!pair || !pairDataMap.value[pair]) {
-            return
+        if (pairDataMap.value[pair]) {
+            pairDataMap.value[pair].isLoadingHistorical = isLoading
         }
-        pairDataMap.value[pair].isLoadingHistorical = isLoading
     }
 
     function updatePairData(pair: string, updates: Partial<PairData>) {
@@ -468,22 +314,7 @@ export const useChartStore = defineStore('chart', () => {
             return
         }
 
-        const validUpdates: Record<string, any> = {}
-        for (const key in updates) {
-            const value = (updates as any)[key]
-            if (value !== undefined && value !== null) {
-                validUpdates[key] = value
-            }
-        }
-
-        if (Object.keys(validUpdates).length > 0) {
-            Object.assign(pairDataMap.value[pair], validUpdates)
-            try {
-                broadcastStateChange('PAIR_DATA_UPDATE', { pair, data: validUpdates })
-            } catch (error) {
-                console.warn('Failed to broadcast pair data update:', error)
-            }
-        }
+        Object.assign(pairDataMap.value[pair], updates)
     }
 
     function addCandle(pair: string, candle: Candle) {
@@ -492,12 +323,12 @@ export const useChartStore = defineStore('chart', () => {
             return
         }
 
-        const pairData = pairDataMap.value[pair]
-
         if (!isValidCandle(candle)) {
-            console.warn('Invalid candle, skipping:', candle)
+            console.warn('Invalid candle data, skipping')
             return
         }
+
+        const pairData = pairDataMap.value[pair]
 
         const exists = pairData.candles.some(c => c.time === candle.time)
         if (exists) {
@@ -512,49 +343,26 @@ export const useChartStore = defineStore('chart', () => {
         }
 
         pairData.lastCandleTime = Math.max(pairData.lastCandleTime, candle.time * 1000)
-
-        try {
-            broadcastStateChange('CANDLE_ADDED', { pair, candle })
-        } catch (error) {
-            console.warn('Failed to broadcast candle addition:', error)
-        }
     }
 
     function updateLastCandle(pair: string, updates: Partial<Candle>) {
-        if (!pairDataMap.value[pair]?.initialized) {
+        if (!pairDataMap.value[pair]) {
+            console.warn(`Pair ${pair} not found`)
             return
         }
 
         const pairData = pairDataMap.value[pair]
         if (pairData.candles.length === 0) {
+            console.warn(`No candles available for pair ${pair}`)
             return
         }
 
-        const lastCandle = pairData.candles[pairData.candles.length - 1]
-
-        for (const key in updates) {
-            const value = (updates as any)[key]
-            if (value !== undefined && value !== null && isFinite(value) && value > 0) {
-                (lastCandle as any)[key] = value
-            }
-        }
-
-        if (!isValidCandle(lastCandle)) {
-            console.warn('Updated candle is invalid, skipping broadcast')
-            return
-        }
-
-        try {
-            broadcastStateChange('LAST_CANDLE_UPDATE', { pair, updates })
-        } catch (error) {
-            console.warn('Failed to broadcast last candle update:', error)
-        }
+        Object.assign(pairData.candles[pairData.candles.length - 1], updates)
     }
 
     function updateCurrentPrice(pair: string, price: number) {
         if (!pairDataMap.value[pair]) {
-            console.warn(`Pair ${pair} not found`)
-            return
+            initializePairData(pair, price)
         }
 
         if (!isFinite(price) || price <= 0) {
@@ -562,11 +370,11 @@ export const useChartStore = defineStore('chart', () => {
             return
         }
 
-        pairDataMap.value[pair].currentPrice = price
-        try {
-            broadcastStateChange('CURRENT_PRICE_UPDATE', { pair, price })
-        } catch (error) {
-            console.warn('Failed to broadcast current price update:', error)
+        const pairData = pairDataMap.value[pair]
+        pairData.currentPrice = price
+
+        if (pairData.basePrice === 0) {
+            pairData.basePrice = price
         }
     }
 
@@ -582,6 +390,54 @@ export const useChartStore = defineStore('chart', () => {
         }
 
         pairDataMap.value[pair].lastCandleTime = time
+    }
+
+    function updateSimulationPhase(pair: string, phase: number) {
+        if (!pairDataMap.value[pair]) {
+            console.warn(`Pair ${pair} not found`)
+            return
+        }
+
+        pairDataMap.value[pair].simulationPhase = phase
+        pairDataMap.value[pair].lastSimulationUpdate = Date.now()
+    }
+
+    function updateActiveSimulatedCandle(pair: string, candle: Candle | null) {
+        if (!pairDataMap.value[pair]) {
+            console.warn(`Pair ${pair} not found`)
+            return
+        }
+
+        pairDataMap.value[pair].activeSimulatedCandle = candle
+    }
+
+    function getActiveSimulatedCandle(pair: string): Candle | null {
+        if (!pairDataMap.value[pair]) {
+            return null
+        }
+        return pairDataMap.value[pair].activeSimulatedCandle
+    }
+
+    function updateCurrentCandleTick(pair: string, tick: number) {
+        if (!pairDataMap.value[pair]) {
+            console.warn(`Pair ${pair} not found`)
+            return
+        }
+        pairDataMap.value[pair].currentCandleTick = tick
+    }
+
+    function getCurrentCandleTick(pair: string): number {
+        if (!pairDataMap.value[pair]) {
+            return 0
+        }
+        return pairDataMap.value[pair].currentCandleTick || 0
+    }
+
+    function getSimulationPhase(pair: string): number {
+        if (!pairDataMap.value[pair]) {
+            return 0
+        }
+        return pairDataMap.value[pair].simulationPhase || 0
     }
 
     function setZoom(val: number) {
@@ -608,17 +464,23 @@ export const useChartStore = defineStore('chart', () => {
             return
         }
 
-        openTrades.value = trades
-        try {
-            broadcastStateChange('OPEN_TRADES_UPDATE', { trades })
-        } catch (error) {
-            console.warn('Failed to broadcast open trades update:', error)
-        }
+        const existingTradesMap = new Map(
+            openTrades.value.map(t => [t.id, { pnl: t.pnl, pnlPct: t.pnlPct }])
+        )
+
+        openTrades.value = trades.map(trade => {
+            const existing = existingTradesMap.get(trade.id)
+            if (existing && isFinite(existing.pnl)) {
+                return {
+                    ...trade,
+                    pnl: existing.pnl,
+                    pnlPct: existing.pnlPct
+                }
+            }
+            return trade
+        })
     }
 
-    /**
-     * OPTIMIZED: Client-side PnL calculation with proper rounding
-     */
     function getPricePrecision(pair: string): number {
         const symbol = pair.toUpperCase();
         if (symbol.includes('JPY') || symbol.includes('RUB')) {
@@ -686,7 +548,7 @@ export const useChartStore = defineStore('chart', () => {
                 issuesFound = true
             }
 
-            if (!isFinite(data.currentPrice) || data.currentPrice <= 0) {
+            if (!isFinite(data.currentPrice) || data.currentPrice < 0) {
                 console.warn(`Invalid currentPrice for ${pair}:`, data.currentPrice)
                 issuesFound = true
             }
@@ -751,7 +613,6 @@ export const useChartStore = defineStore('chart', () => {
                 const isValid = validateDataIntegrity()
                 if (!isValid) {
                     console.warn('Data integrity issues found during initialization')
-                    clearCorruptedData()
                 }
             } catch (error) {
                 console.error('Error during data validation:', error)
@@ -783,6 +644,12 @@ export const useChartStore = defineStore('chart', () => {
         updateLastCandle,
         updateCurrentPrice,
         updateLastCandleTime,
+        updateSimulationPhase,
+        updateActiveSimulatedCandle,
+        getActiveSimulatedCandle,
+        updateCurrentCandleTick,
+        getCurrentCandleTick,
+        getSimulationPhase,
         setZoom,
         setPanX,
         setOpenTrades,
@@ -798,6 +665,6 @@ export const useChartStore = defineStore('chart', () => {
     persist: {
         key: 'forex-chart-store',
         storage: localStorage,
-        paths: ['selectedPair', 'zoom', 'panX', 'pairDataMap']
+        paths: ['selectedPair', 'zoom', 'panX', 'pairDataMap', 'openTrades']
     }
 })

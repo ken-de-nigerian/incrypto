@@ -76,7 +76,6 @@
 
     const serverTimeOffset = ref(0)
     const isServerTimeSynced = ref(false)
-    const simulationPhase = ref(0)
 
     const upColorLW = computed(() => isDark.value ? '#26a69a' : '#10b981')
     const downColorLW = computed(() => isDark.value ? '#ef5350' : '#ef4444')
@@ -310,7 +309,9 @@
 
         chartStore.openTrades.forEach(t => {
             if (t.pair === props.pair) {
-                chartStore.updateTradePnL(t.id, currentPrice.value)
+                if (!isFinite(t.pnl) || t.pnl === 0) {
+                    chartStore.updateTradePnL(t.id, currentPrice.value)
+                }
             }
         })
     }
@@ -402,11 +403,16 @@
         let avgVolatility: number;
 
         const storedCurrentPrice = chartStore.currentPairData?.currentPrice || 0
+        const storedSimulationPhase = chartStore.getSimulationPhase(props.pair)
+        const storedActiveCandle = chartStore.getActiveSimulatedCandle(props.pair)
 
         if (historicalCandles.length > 0) {
             initialCandle = historicalCandles[historicalCandles.length - 1];
 
-            if (storedCurrentPrice > 0) {
+            if (storedActiveCandle && storedSimulationPhase > 0) {
+                initialCandle = storedActiveCandle
+                console.log(`[${props.pair}] Restoring active simulated candle:`, initialCandle)
+            } else if (storedCurrentPrice > 0 && storedSimulationPhase > 0) {
                 initialCandle = {
                     ...initialCandle,
                     close: storedCurrentPrice,
@@ -436,12 +442,15 @@
 
         let lastClose = initialCandle.close
         let lastTime = Math.floor(initialCandle.time / 1000)
+        let simulationPhase = storedSimulationPhase
 
-        const nowInSeconds = Math.floor(getSynchronizedTime() / 1000)
-        const lastTimeInSeconds = Math.floor(initialCandle.time / 1000)
-        const totalTicksElapsed = Math.floor((nowInSeconds - lastTimeInSeconds) / (TICK_MS / 1000))
-
-        simulationPhase.value = Math.max(0, Math.floor(totalTicksElapsed / UPDATES_PER_CANDLE))
+        if (simulationPhase === 0) {
+            const nowInSeconds = Math.floor(getSynchronizedTime() / 1000)
+            const lastTimeInSeconds = Math.floor(initialCandle.time / 1000)
+            const totalTicksElapsed = Math.floor((nowInSeconds - lastTimeInSeconds) / (TICK_MS / 1000))
+            simulationPhase = Math.max(0, Math.floor(totalTicksElapsed / UPDATES_PER_CANDLE))
+            chartStore.updateSimulationPhase(props.pair, simulationPhase)
+        }
 
         while (true) {
             const newCandleTime = lastTime + (CANDLE_INTERVAL_MS / 1000)
@@ -461,7 +470,7 @@
                 currentTrendBias = forcedDirection * 0.9;
                 currentVolatilityMultiplier = 0.3;
             } else {
-                const phaseProgress = (simulationPhase.value % 100) / 100
+                const phaseProgress = (simulationPhase % 100) / 100
                 currentTrendBias = Math.sin(phaseProgress * Math.PI * 2) * 0.3
                 currentVolatilityMultiplier = 1.0
             }
@@ -472,15 +481,33 @@
                 ? (thisCandleTargetRange / (UPDATES_PER_CANDLE / 2))
                 : (lastClose * 0.0001)
 
-            let currentCandle: CandlestickData<number> = {
-                time: newCandleTime,
-                open: lastClose,
-                high: lastClose,
-                low: lastClose,
-                close: lastClose,
+            let currentCandle: CandlestickData<number>;
+            let startingTick = 0;
+            const storedTick = chartStore.getCurrentCandleTick(props.pair);
+
+            if (storedActiveCandle && storedActiveCandle.time === newCandleTime * 1000 && storedTick > 0) {
+                currentCandle = {
+                    time: newCandleTime,
+                    open: storedActiveCandle.open,
+                    high: storedActiveCandle.high,
+                    low: storedActiveCandle.low,
+                    close: storedActiveCandle.close,
+                }
+                startingTick = storedTick;
+                console.log(`[${props.pair}] Resuming candle from tick ${startingTick}/${UPDATES_PER_CANDLE}`)
+            } else {
+                currentCandle = {
+                    time: newCandleTime,
+                    open: lastClose,
+                    high: lastClose,
+                    low: lastClose,
+                    close: lastClose,
+                }
+                startingTick = 0;
+                chartStore.updateCurrentCandleTick(props.pair, 0);
             }
 
-            for (let i = 0; i < UPDATES_PER_CANDLE; i++) {
+            for (let i = startingTick; i < UPDATES_PER_CANDLE; i++) {
 
                 const u1 = random()
                 const u2 = random()
@@ -507,12 +534,27 @@
                     currentCandle.low = newClose
                 }
 
+                chartStore.updateCurrentCandleTick(props.pair, i + 1);
+
+                const inProgressCandle: Candle = {
+                    time: currentCandle.time * 1000,
+                    open: currentCandle.open,
+                    high: currentCandle.high,
+                    low: currentCandle.low,
+                    close: currentCandle.close,
+                    volume: Math.floor(Math.random() * 500) + 100
+                }
+                chartStore.updateActiveSimulatedCandle(props.pair, inProgressCandle);
+
                 yield { ...currentCandle }
             }
 
+            chartStore.updateCurrentCandleTick(props.pair, 0);
+
             lastClose = currentCandle.close
             lastTime = currentCandle.time
-            simulationPhase.value++
+            simulationPhase++
+            chartStore.updateSimulationPhase(props.pair, simulationPhase)
         }
     }
 
@@ -597,6 +639,14 @@
 
         try {
             tickInterval = setInterval(() => {
+                if (!isComponentMounted.value) {
+                    if (tickInterval) {
+                        clearInterval(tickInterval);
+                        tickInterval = null;
+                    }
+                    return;
+                }
+
                 if (!validateChartState() || !candlestickSeries || !streamingDataProvider) {
                     return;
                 }
@@ -1011,6 +1061,7 @@
         checkExpiredTrades()
 
         requestAnimationFrame(() => {
+            console.log(`[${props.pair}] Initializing chart - Stored price: ${chartStore.currentPairData?.currentPrice}, Phase: ${chartStore.getSimulationPhase(props.pair)}`);
             initializeChart()
             prepareSimulationFromBackend()
             setTimeout(() => {

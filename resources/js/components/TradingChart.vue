@@ -894,29 +894,35 @@
             const containerHeight = chartContainer.value.clientHeight
             if (containerWidth > 0 && containerHeight > 0) {
                 chart.resize(containerWidth, containerHeight)
+                applyChartTheme();
+                if (dataSet.value) fitToScreen();
             }
         }
     }
 
-    const initializeChart = () => {
+    const initializeChart = async () => {
         if (isChartInitialized) {
             return;
         }
 
         if (!chartContainer.value) {
-            return;
+            await nextTick();
+            if (!chartContainer.value) return;
         }
 
         try {
-
             isChartInitialized = true;
 
-            handleResize()
+            handleResize();
 
-            const width = chartContainer.value.clientWidth
-            const height = chartContainer.value.clientHeight
-            const lwBgColor = isDark.value ? '#000000' : '#ffffff'
-            const lwTextColor = isDark.value ? '#e5e5e5' : '#1f2937'
+            let width = chartContainer.value.clientWidth;
+            let height = chartContainer.value.clientHeight;
+
+            if (width <= 0) width = 320;
+            if (height <= 0) height = 250;
+
+            const lwBgColor = isDark.value ? '#000000' : '#ffffff';
+            const lwTextColor = isDark.value ? '#e5e5e5' : '#1f2937';
 
             chart = createChart(chartContainer.value, {
                 width,
@@ -957,7 +963,7 @@
                     horzTouchDrag: true,
                     vertTouchDrag: true,
                 },
-            })
+            });
 
             candlestickSeries = chart.addCandlestickSeries({
                 upColor: upColorLW.value,
@@ -965,21 +971,30 @@
                 borderVisible: false,
                 wickUpColor: upColorLW.value,
                 wickDownColor: downColorLW.value,
-            })
+            });
 
-            chart.subscribeCrosshairMove(handleCrosshairMove)
+            chart.subscribeCrosshairMove(handleCrosshairMove);
 
-            setupInfiniteScroll()
+            setupInfiniteScroll();
 
-            nextTick(() => {
-                if (candles.value.length > 0 && candlestickSeries) {
-                    const lwData = candles.value.map(mapToLWData)
-                    candlestickSeries.setData(lwData)
-                    dataSet.value = true
-                    fitToScreen()
+            await nextTick();
+            if (chart && chartContainer.value) {
+                const finalWidth = chartContainer.value.clientWidth;
+                const finalHeight = chartContainer.value.clientHeight;
+                if (finalWidth > 0 && finalHeight > 0 && (finalWidth !== width || finalHeight !== height)) {
+                    chart.resize(finalWidth, finalHeight);
                 }
-                drawTradeLines()
-            })
+            }
+
+            await nextTick(() => {
+                if (candles.value.length > 0 && candlestickSeries) {
+                    const lwData = candles.value.map(mapToLWData);
+                    candlestickSeries.setData(lwData);
+                    dataSet.value = true;
+                    fitToScreen();
+                }
+                drawTradeLines();
+            });
 
             applyChartTheme();
         } catch (error) {
@@ -1060,8 +1075,8 @@
 
         checkExpiredTrades()
 
-        requestAnimationFrame(() => {
-            console.log(`[${props.pair}] Initializing chart - Stored price: ${chartStore.currentPairData?.currentPrice}, Phase: ${chartStore.getSimulationPhase(props.pair)}`);
+        await nextTick();
+        await nextTick(() => {
             initializeChart()
             prepareSimulationFromBackend()
             setTimeout(() => {
@@ -1447,6 +1462,10 @@
 
         button {
             touch-action: manipulation;
+        }
+
+        [ref="chartContainer"] {
+            min-height: 250px !important;
         }
     }
 </style>

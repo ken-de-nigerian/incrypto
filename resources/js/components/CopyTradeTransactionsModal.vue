@@ -223,7 +223,7 @@
             <div
                 v-if="isOpen"
                 class="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 backdrop-blur-sm sm:p-4"
-                @click.self="handleClose">
+            >
                 <Transition
                     enter-active-class="transition-all duration-300"
                     enter-from-class="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"

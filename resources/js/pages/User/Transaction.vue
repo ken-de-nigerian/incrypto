@@ -142,7 +142,7 @@
                 @open-notifications="openNotificationsModal"
             />
 
-            <div class="mt-8">
+            <div class="mt-8 space-y-6">
                 <TransactionsCard
                     :transactions="transactions"
                     :statistics="statistics"

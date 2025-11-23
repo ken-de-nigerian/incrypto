@@ -90,7 +90,6 @@
             <div
                 v-if="isOpen && token"
                 class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
-                @click="handleBackdropClick"
             >
                 <Transition
                     enter-active-class="transition-all duration-300"
@@ -103,12 +102,11 @@
                     <div
                         v-if="isOpen && token"
                         class="bg-card w-full h-full max-h-full lg:w-full lg:max-w-lg lg:h-auto lg:max-h-[90vh] flex flex-col rounded-none lg:rounded-2xl shadow-2xl overflow-hidden border-border relative lg:border"
-                        @click.stop
                     >
                         <div class="p-6 border-b border-border flex-shrink-0">
                             <div class="flex items-center justify-between mb-4">
                                 <h3 class="text-xl font-bold text-card-foreground">Receive {{ formatSymbol(token.symbol) }}</h3>
-                                <button @click="handleClose" class="p-2 hover:bg-muted/70 rounded-lg"><XIcon class="w-5 h-5 text-muted-foreground" /></button>
+                                <button @click="handleClose" class="p-2 hover:bg-muted/70 rounded-lg cursor-pointer"><XIcon class="w-5 h-5 text-muted-foreground" /></button>
                             </div>
                             <div class="flex items-center gap-3">
                                 <img :src="token.logo" :alt="token.symbol" loading="lazy" class="w-12 h-12 rounded-full flex-shrink-0" />

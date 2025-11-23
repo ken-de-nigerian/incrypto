@@ -67,12 +67,11 @@
     <Teleport to="body">
         <div
             v-if="isOpen"
-            class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
-            @click.self="emit('update:isOpen', false)">
+            class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
             <div class="w-full max-w-md bg-card border border-border rounded-2xl shadow-2xl flex flex-col">
                 <div class="p-4 border-b border-border flex items-center justify-between">
                     <h3 class="text-lg font-bold text-card-foreground">Select Token</h3>
-                    <button @click="emit('update:isOpen', false)" class="p-2 hover:bg-muted/70 rounded-lg">
+                    <button @click="emit('update:isOpen', false)" class="p-2 hover:bg-muted/70 rounded-lg cursor-pointer">
                         <XIcon class="w-5 h-5 text-muted-foreground" />
                     </button>
                 </div>

@@ -92,6 +92,8 @@ Route::prefix('admin')
                 Route::get('/', 'index')->name('index');
                 Route::post('/approve', 'approve')->name('approve');
                 Route::post('/reject', 'reject')->name('reject');
+                Route::patch('/{trade}/trade/close', 'closeTrade')->name('trade.close');
+                Route::patch('{investment}/investment/cancel', 'cancelInvestment')->name('transaction.investment.cancel');
             });
 
         // Newsletter Notifications

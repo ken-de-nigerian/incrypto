@@ -3,13 +3,13 @@
     import {
         ArrowRightLeftIcon, ArrowDownLeftIcon, ArrowUpRightIcon, HistoryIcon,
         SearchIcon, FilterIcon, XIcon, Loader2Icon, CheckCircleIcon,
-        ClockIcon, AlertCircleIcon, ExternalLinkIcon, CopyIcon, CheckIcon,
-        ActivityIcon, InfoIcon, ArrowUpDownIcon,
+        ClockIcon, AlertCircleIcon, CopyIcon, CheckIcon,
+        ActivityIcon, ArrowUpDownIcon,
         SortAscIcon, SortDescIcon,
         ShieldCheckIcon, ZapIcon, TrophyIcon, TrendingUpIcon, TrendingDownIcon,
-        DollarSignIcon, BarChart3Icon, CoinsIcon, WalletIcon
+        DollarSignIcon, BarChart3Icon, CoinsIcon, WalletIcon, PieChartIcon, ExternalLinkIcon
     } from 'lucide-vue-next';
-    import TextLink from '@/components/TextLink.vue';
+    import { router } from '@inertiajs/vue3';
 
     interface InvestmentProgress {
         countdown: string;
@@ -26,32 +26,31 @@
         // Crypto swaps
         from_token?: string;
         to_token?: string;
-        from_amount?: number;
-        to_amount?: number;
+        from_amount?: number | string;
+        to_amount?: number | string;
         chain?: string;
         // Received/Sent crypto
         token_symbol?: string;
-        amount?: number;
+        amount?: number | string;
         wallet_address?: string;
         recipient_address?: string;
         transaction_hash?: string;
-        fee?: number;
+        fee?: number | string;
         // Trades (forex, stocks, crypto)
         pair?: string;
         pair_name?: string;
-        entry_price?: number;
-        exit_price?: number;
-        leverage?: number;
+        entry_price?: number | string;
+        exit_price?: number | string;
+        leverage?: number | string;
         duration?: string;
-        pnl?: number;
+        pnl?: number | string;
         trading_mode?: string;
         opened_at?: string;
         closed_at?: string;
-        expiry_time?: string;
         // Investments
         plan_id?: number;
         plan_name?: string;
-        interest?: number;
+        interest?: number | string;
         period?: number;
         repeat_time?: number;
         repeat_time_count?: number;
@@ -85,6 +84,9 @@
                 total: number;
                 completed: number;
                 pending: number;
+                failed: number;
+                successRate: number;
+                totalVolume: number;
                 swaps: number;
                 received: number;
                 sent: number;
@@ -103,6 +105,7 @@
 
     const activeTab = ref<'all' | 'swaps' | 'received' | 'sent' | 'forex' | 'stocks' | 'crypto_trades' | 'investments'>(props.currentTab);
     const searchQuery = ref('');
+    const dateFilter = ref<string>('all');
     const sortOrder = ref<'asc' | 'desc' | 'default'>('default');
     const filterByStatus = ref<string>('all');
     const showFilters = ref(false);
@@ -174,6 +177,48 @@
         );
     });
 
+    const computedStatistics = computed(() => {
+        const allTx = allTransactions.value;
+        const total = allTx.length;
+        const completed = allTx.filter(tx => ['completed', 'success', 'closed'].includes(tx.status.toLowerCase())).length;
+        const pending = allTx.filter(tx => ['pending', 'processing', 'open', 'running'].includes(tx.status.toLowerCase())).length;
+        const failed = allTx.filter(tx => ['failed', 'error', 'cancelled'].includes(tx.status.toLowerCase())).length;
+        const successRate = total > 0 ? Math.round((completed / total) * 100) : 0;
+
+        let totalVolume = 0;
+        allTx.forEach(tx => {
+            if (tx.type === 'swap') {
+                totalVolume += Number(tx.from_amount || 0) + Number(tx.to_amount || 0);
+            } else {
+                totalVolume += Math.abs(Number(tx.amount || 0));
+            }
+        });
+
+        const swaps = allTx.filter(tx => tx.type === 'swap').length;
+        const received = allTx.filter(tx => tx.type === 'received').length;
+        const sent = allTx.filter(tx => tx.type === 'sent').length;
+        const forex_trades = allTx.filter(tx => tx.type === 'forex_trade').length;
+        const stock_trades = allTx.filter(tx => tx.type === 'stock_trade').length;
+        const crypto_trades = allTx.filter(tx => tx.type === 'crypto_trade').length;
+        const investments = allTx.filter(tx => tx.type === 'investment').length;
+
+        return {
+            total,
+            completed,
+            pending,
+            failed,
+            successRate,
+            totalVolume: Math.round(totalVolume * 100) / 100,
+            swaps,
+            received,
+            sent,
+            forex_trades,
+            stock_trades,
+            crypto_trades,
+            investments
+        };
+    });
+
     const tabFilteredTransactions = computed(() => {
         switch (activeTab.value) {
             case 'swaps':
@@ -213,6 +258,31 @@
             );
         }
 
+        if (dateFilter.value !== 'all') {
+            const now = new Date();
+            const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+            filtered = filtered.filter(tx => {
+                const txDate = new Date(tx.created_at);
+                const txDateOnly = new Date(txDate.getFullYear(), txDate.getMonth(), txDate.getDate());
+
+                switch (dateFilter.value) {
+                    case 'today':
+                        return txDateOnly.getTime() === today.getTime();
+                    case 'week':
+                        const weekAgo = new Date(today);
+                        weekAgo.setDate(weekAgo.getDate() - 7);
+                        return txDate >= weekAgo;
+                    case 'month':
+                        const monthAgo = new Date(today);
+                        monthAgo.setDate(monthAgo.getDate() - 30);
+                        return txDate >= monthAgo;
+                    default:
+                        return true;
+                }
+            });
+        }
+
         if (filterByStatus.value !== 'all') {
             filtered = filtered.filter(tx => tx.status.toLowerCase() === filterByStatus.value.toLowerCase());
         }
@@ -237,7 +307,7 @@
     const totalTransactionsCount = computed(() => filteredTransactions.value.length);
 
     const hasActiveFilters = computed(() => {
-        return searchQuery.value.trim() !== '' || sortOrder.value !== 'default' || filterByStatus.value !== 'all';
+        return searchQuery.value.trim() !== '' || sortOrder.value !== 'default' || filterByStatus.value !== 'all' || dateFilter.value !== 'all';
     });
 
     const getTransactionIcon = (type: string) => {
@@ -338,25 +408,49 @@
         return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
     };
 
-    const formatAmount = (amount: number | undefined) => {
-        if (!amount) return '0.00';
+    const formatAmount = (amount: number | string | undefined) => {
+        const num = Number(amount);
+        if (isNaN(num) && num !== 0) return '0.00';
         return new Intl.NumberFormat('en-US', {
             minimumFractionDigits: 2,
             maximumFractionDigits: 8
-        }).format(amount);
+        }).format(num);
     };
 
     const truncateHash = (hash: string | undefined) => {
         if (!hash) return 'N/A';
+        if (hash.length < 11) return hash;
         return `${hash.slice(0, 6)}...${hash.slice(-4)}`;
     };
 
     const copyToClipboard = (text: string, id: number) => {
-        navigator.clipboard.writeText(text);
-        copiedHash.value = `${id}`;
-        setTimeout(() => {
-            copiedHash.value = null;
-        }, 2000);
+        if (!navigator.clipboard) {
+            const textArea = document.createElement('textarea');
+            textArea.value = text;
+            textArea.style.position = 'fixed';
+            textArea.style.left = '-999999px';
+            document.body.appendChild(textArea);
+            textArea.select();
+            try {
+                document.execCommand('copy');
+                copiedHash.value = `${id}`;
+                setTimeout(() => {
+                    copiedHash.value = null;
+                }, 2000);
+            } catch (err) {
+                console.error('Failed to copy:', err);
+            }
+            document.body.removeChild(textArea);
+        } else {
+            navigator.clipboard.writeText(text).then(() => {
+                copiedHash.value = `${id}`;
+                setTimeout(() => {
+                    copiedHash.value = null;
+                }, 2000);
+            }).catch(err => {
+                console.error('Failed to copy:', err);
+            });
+        }
     };
 
     const getExplorerUrl = (hash: string, chain: string = 'ethereum') => {
@@ -435,7 +529,7 @@
 
     const calculateTotalInterestEarned = (tx: Transaction): number => {
         const currentCycle = tx.repeat_time_count || 0;
-        const interestPerCycle = tx.interest || 0;
+        const interestPerCycle = Number(tx.interest || 0);
         return currentCycle * interestPerCycle;
     };
 
@@ -455,6 +549,7 @@
 
     const clearFilters = () => {
         searchQuery.value = '';
+        dateFilter.value = 'all';
         sortOrder.value = 'default';
         filterByStatus.value = 'all';
     };
@@ -486,15 +581,23 @@
         }
     };
 
+    const navigateToTab = (tabId: string) => {
+        activeTab.value = tabId as typeof activeTab.value;
+        router.visit(route('user.transactions.index', { tab: tabId }), {
+            preserveScroll: true,
+            preserveState: true
+        });
+    };
+
     const tabs = [
-        { id: 'all', label: 'All Transactions', icon: HistoryIcon, params: {} },
-        { id: 'swaps', label: 'Swaps', icon: ArrowRightLeftIcon, params: { tab: 'swaps' } },
-        { id: 'received', label: 'Received', icon: ArrowDownLeftIcon, params: { tab: 'received' } },
-        { id: 'sent', label: 'Sent', icon: ArrowUpRightIcon, params: { tab: 'sent' } },
-        { id: 'forex', label: 'Forex', icon: DollarSignIcon, params: { tab: 'forex' } },
-        { id: 'stocks', label: 'Stocks', icon: BarChart3Icon, params: { tab: 'stocks' } },
-        { id: 'crypto_trades', label: 'Crypto Trades', icon: CoinsIcon, params: { tab: 'crypto_trades' } },
-        { id: 'investments', label: 'Investments', icon: WalletIcon, params: { tab: 'investments' } }
+        { id: 'all', label: 'All', icon: HistoryIcon },
+        { id: 'swaps', label: 'Swaps', icon: ArrowRightLeftIcon },
+        { id: 'received', label: 'Received', icon: ArrowDownLeftIcon },
+        { id: 'sent', label: 'Sent', icon: ArrowUpRightIcon },
+        { id: 'forex', label: 'Forex', icon: DollarSignIcon },
+        { id: 'stocks', label: 'Stocks', icon: BarChart3Icon },
+        { id: 'crypto_trades', label: 'Crypto', icon: CoinsIcon },
+        { id: 'investments', label: 'Investments', icon: WalletIcon }
     ];
 
     const securityFeatures = [
@@ -504,7 +607,7 @@
         { icon: TrophyIcon, title: 'Low Fees', description: 'Competitive transaction fees with transparent pricing' }
     ];
 
-    watch([searchQuery, sortOrder, filterByStatus, activeTab], () => {
+    watch([searchQuery, sortOrder, filterByStatus, activeTab, dateFilter], () => {
         displayCount.value = Math.min(itemsPerLoad, totalTransactionsCount.value);
         if (scrollContainer.value) {
             scrollContainer.value.scrollTop = 0;
@@ -513,530 +616,442 @@
 </script>
 
 <template>
-    <div class="w-full mx-auto">
-        <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
-            <div class="xl:col-span-2 space-y-6">
-                <div class="rounded-2xl border border-primary/20 overflow-hidden">
-                    <div class="p-6 sm:p-8">
-                        <div class="flex items-start gap-4">
-                            <div class="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center flex-shrink-0 border border-border">
-                                <HistoryIcon class="w-7 h-7 text-primary" />
-                            </div>
-                            <div class="flex-1">
-                                <h2 class="text-2xl sm:text-3xl font-bold text-card-foreground mb-2">Transaction History</h2>
-                                <p class="text-muted-foreground text-sm sm:text-base">
-                                    Track all your transactions including crypto swaps, transfers, trades (forex, stocks, crypto), and investments. Monitor status and view detailed information.
-                                </p>
-                            </div>
-                        </div>
+    <!-- Header Section -->
+    <div class="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
+        <div>
+            <h1 class="text-3xl sm:text-4xl font-bold text-card-foreground mb-2">Transaction Center</h1>
+            <p class="text-muted-foreground">
+                Track all your transactions including crypto swaps, transfers, trades (forex, stocks, crypto), and investments.
+            </p>
+        </div>
+    </div>
 
-                        <div class="mt-6 grid grid-cols-2 lg:grid-cols-4 gap-4">
-                            <div class="bg-card/70 backdrop-blur-sm rounded-xl p-4 border border-border">
-                                <p class="text-xs text-muted-foreground mb-1">Total</p>
-                                <p class="text-2xl font-bold text-primary">{{ statistics.total }}</p>
-                            </div>
-                            <div class="bg-card/70 backdrop-blur-sm rounded-xl p-4 border border-border">
-                                <p class="text-xs text-muted-foreground mb-1">Completed</p>
-                                <p class="text-2xl font-bold text-success">{{ statistics.completed }}</p>
-                            </div>
-                            <div class="bg-card/70 backdrop-blur-sm rounded-xl p-4 border border-border">
-                                <p class="text-xs text-muted-foreground mb-1">Pending</p>
-                                <p class="text-2xl font-bold text-warning">{{ statistics.pending }}</p>
-                            </div>
-                            <div class="bg-card/70 backdrop-blur-sm rounded-xl p-4 border border-border">
-                                <p class="text-xs text-muted-foreground mb-1">Swaps</p>
-                                <p class="text-xl font-bold text-primary">{{ statistics.swaps }}</p>
-                            </div>
-                            <div class="bg-card/70 backdrop-blur-sm rounded-xl p-4 border border-border">
-                                <p class="text-xs text-muted-foreground mb-1">Forex</p>
-                                <p class="text-xl font-bold text-blue-500">{{ statistics.forex_trades }}</p>
-                            </div>
-                            <div class="bg-card/70 backdrop-blur-sm rounded-xl p-4 border border-border">
-                                <p class="text-xs text-muted-foreground mb-1">Stocks</p>
-                                <p class="text-xl font-bold text-purple-500">{{ statistics.stock_trades }}</p>
-                            </div>
-                            <div class="bg-card/70 backdrop-blur-sm rounded-xl p-4 border border-border">
-                                <p class="text-xs text-muted-foreground mb-1">Crypto Trades</p>
-                                <p class="text-xl font-bold text-orange-500">{{ statistics.crypto_trades }}</p>
-                            </div>
-                            <div class="bg-card/70 backdrop-blur-sm rounded-xl p-4 border border-border">
-                                <p class="text-xs text-muted-foreground mb-1">Investments</p>
-                                <p class="text-xl font-bold text-green-500">{{ statistics.investments }}</p>
-                            </div>
-                        </div>
+    <!-- Statistics Cards -->
+    <div class="grid grid-cols-2 lg:grid-cols-4 xl:grid-cols-6 gap-4">
+        <div class="bg-card backdrop-blur-sm rounded-xl p-4 border border-border cursor-pointer">
+            <div class="flex items-center justify-between mb-2">
+                <div class="w-10 h-10 rounded-lg bg-primary/20 flex items-center justify-center">
+                    <ActivityIcon class="w-5 h-5 text-primary" />
+                </div>
+                <span class="text-xs font-medium text-primary/70">Total</span>
+            </div>
+            <p class="text-2xl font-bold text-card-foreground">{{ computedStatistics.total }}</p>
+            <p class="text-xs text-muted-foreground mt-1">All transactions</p>
+        </div>
+
+        <div class="bg-card backdrop-blur-sm rounded-xl p-4 border border-border cursor-pointer">
+            <div class="flex items-center justify-between mb-2">
+                <div class="w-10 h-10 rounded-lg bg-success/20 flex items-center justify-center">
+                    <CheckCircleIcon class="w-5 h-5 text-success" />
+                </div>
+                <span class="text-xs font-medium text-success/70">Success</span>
+            </div>
+            <p class="text-2xl font-bold text-card-foreground">{{ computedStatistics.completed }}</p>
+            <p class="text-xs text-muted-foreground mt-1">{{ computedStatistics.successRate }}% rate</p>
+        </div>
+
+        <div class="bg-card backdrop-blur-sm rounded-xl p-4 border border-border cursor-pointer">
+            <div class="flex items-center justify-between mb-2">
+                <div class="w-10 h-10 rounded-lg bg-warning/20 flex items-center justify-center">
+                    <ClockIcon class="w-5 h-5 text-warning" />
+                </div>
+                <span class="text-xs font-medium text-warning/70">Pending</span>
+            </div>
+            <p class="text-2xl font-bold text-card-foreground">{{ computedStatistics.pending }}</p>
+            <p class="text-xs text-muted-foreground mt-1">In progress</p>
+        </div>
+
+        <div class="bg-card backdrop-blur-sm rounded-xl p-4 border border-border cursor-pointer">
+            <div class="flex items-center justify-between mb-2">
+                <div class="w-10 h-10 rounded-lg bg-destructive/20 flex items-center justify-center">
+                    <AlertCircleIcon class="w-5 h-5 text-destructive" />
+                </div>
+                <span class="text-xs font-medium text-destructive/70">Failed</span>
+            </div>
+            <p class="text-2xl font-bold text-card-foreground">{{ computedStatistics.failed }}</p>
+            <p class="text-xs text-muted-foreground mt-1">Unsuccessful</p>
+        </div>
+
+        <div class="bg-card backdrop-blur-sm rounded-xl p-4 border border-border cursor-pointer">
+            <div class="flex items-center justify-between mb-2">
+                <div class="w-10 h-10 rounded-lg bg-blue-500/20 flex items-center justify-center">
+                    <DollarSignIcon class="w-5 h-5 text-blue-500" />
+                </div>
+                <span class="text-xs font-medium text-blue-500/70">Volume</span>
+            </div>
+            <p class="text-xl font-bold text-card-foreground">${{ formatAmount(computedStatistics.totalVolume) }}</p>
+            <p class="text-xs text-muted-foreground mt-1">Total value</p>
+        </div>
+
+        <div class="bg-card backdrop-blur-sm rounded-xl p-4 border border-border cursor-pointer">
+            <div class="flex items-center justify-between mb-2">
+                <div class="w-10 h-10 rounded-lg bg-purple-500/20 flex items-center justify-center">
+                    <PieChartIcon class="w-5 h-5 text-purple-500" />
+                </div>
+                <span class="text-xs font-medium text-purple-500/70">Types</span>
+            </div>
+            <p class="text-2xl font-bold text-card-foreground">7</p>
+            <p class="text-xs text-muted-foreground mt-1">Categories</p>
+        </div>
+    </div>
+
+    <!-- Main Content Card -->
+    <div class="bg-card rounded-2xl border border-border overflow-hidden margin-bottom">
+        <!-- Tabs -->
+        <div class="bg-muted/30 px-4 sm:px-6 py-4 border-b border-border">
+            <div class="flex items-center gap-2 overflow-x-auto hide-scrollbar pb-2">
+                <button
+                    v-for="tab in tabs"
+                    :key="tab.id"
+                    @click="navigateToTab(tab.id)"
+                    class="flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-sm duration-200 whitespace-nowrap cursor-pointer"
+                    :class="activeTab === tab.id
+                    ? 'bg-primary text-primary-foreground'
+                    : 'text-muted-foreground border border-border hover:bg-muted hover:text-card-foreground'"
+                >
+                    <component :is="tab.icon" class="w-4 h-4" />
+                    {{ tab.label }}
+                    <span
+                        v-if="tab.id !== 'all'"
+                        class="px-2 py-0.5 text-xs rounded-full"
+                        :class="activeTab === tab.id ? 'bg-primary-foreground/20' : 'bg-muted'"
+                    >
+                        {{ computedStatistics[tab.id === 'forex' ? 'forex_trades' : tab.id === 'stocks' ? 'stock_trades' : tab.id === 'crypto_trades' ? 'crypto_trades' : tab.id] }}
+                    </span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Filters & Controls -->
+        <div class="bg-background/50 px-4 sm:px-6 py-4 border-b border-border">
+            <div class="flex flex-col gap-4">
+                <!-- Top Row: Search & View Controls -->
+                <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+                    <div class="relative flex-1">
+                        <SearchIcon class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                        <input
+                            v-model="searchQuery"
+                            type="text"
+                            placeholder="Search transactions..."
+                            class="w-full pl-10 pr-10 py-2.5 input-crypto border border-border rounded-lg text-sm"
+                        />
+                        <button
+                            v-if="searchQuery"
+                            @click="clearSearch"
+                            class="absolute right-3 top-1/2 -translate-y-1/2 p-1 hover:bg-muted/50 rounded cursor-pointer"
+                        >
+                            <XIcon class="w-4 h-4 text-muted-foreground" />
+                        </button>
+                    </div>
+
+                    <div class="flex items-center gap-2">
+                        <button
+                            @click="showFilters = !showFilters"
+                            class="px-4 py-2.5 rounded-lg text-sm font-medium bg-background hover:bg-muted border border-border flex items-center gap-2 cursor-pointer"
+                            :class="{ 'bg-primary/10 text-primary border-primary/30': hasActiveFilters }"
+                        >
+                            <FilterIcon class="w-4 h-4" />
+                            <span class="hidden sm:inline">Filters</span>
+                            <span v-if="hasActiveFilters" class="w-2 h-2 rounded-full bg-primary"></span>
+                        </button>
+
+                        <span class="px-3 py-2.5 rounded-lg text-sm font-medium bg-muted text-muted-foreground border border-border whitespace-nowrap">
+                            {{ displayedTransactions.length }} / {{ totalTransactionsCount }}
+                        </span>
                     </div>
                 </div>
 
-                <div class="bg-card rounded-2xl border border-border overflow-hidden margin-bottom">
-                    <div class="bg-muted/30 px-4 sm:px-6 py-4 border-b border-border">
-                        <div class="flex items-center gap-2 overflow-x-auto hide-scrollbar">
-                            <TextLink
-                                v-for="tab in tabs"
-                                :key="tab.id"
-                                :href="route('user.transactions.index', tab.params)"
-                                class="flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium text-sm transition-all duration-200 whitespace-nowrap cursor-pointer"
-                                :class="activeTab === tab.id
-                                    ? 'bg-primary text-primary-foreground scale-105'
-                                    : 'text-muted-foreground hover:bg-muted/70 hover:text-card-foreground'"
-                                preserve-scroll
-                                preserve-state
-                                @click="activeTab = tab.id as typeof activeTab"
-                            >
-                                <component :is="tab.icon" class="w-4 h-4" />
-                                {{ tab.label }}
-                            </TextLink>
+                <!-- Expandable Filters -->
+                <div v-if="showFilters" class="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-3 border-t border-border">
+                    <div>
+                        <label class="block text-xs font-medium text-muted-foreground mb-1.5">Date Range</label>
+                        <select
+                            v-model="dateFilter"
+                            class="w-full px-3 py-2 bg-background border border-border rounded-lg text-sm hover:bg-muted/50 cursor-pointer"
+                        >
+                            <option value="all">All Time</option>
+                            <option value="today">Today</option>
+                            <option value="week">Last 7 Days</option>
+                            <option value="month">Last 30 Days</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-medium text-muted-foreground mb-1.5">Status</label>
+                        <select
+                            v-model="filterByStatus"
+                            class="w-full px-3 py-2 bg-background border border-border rounded-lg text-sm hover:bg-muted/50 cursor-pointer"
+                        >
+                            <option value="all">All Statuses</option>
+                            <option value="completed">Completed</option>
+                            <option value="success">Success</option>
+                            <option value="closed">Closed</option>
+                            <option value="pending">Pending</option>
+                            <option value="processing">Processing</option>
+                            <option value="open">Open</option>
+                            <option value="running">Running</option>
+                            <option value="failed">Failed</option>
+                            <option value="cancelled">Cancelled</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-medium text-muted-foreground mb-1.5">Sort Order</label>
+                        <button
+                            @click="toggleSortOrder"
+                            class="w-full px-3 py-2 bg-background border border-border rounded-lg text-sm hover:bg-muted/50 flex items-center justify-between cursor-pointer"
+                        >
+                            <span>
+                                {{ sortOrder === 'asc' ? 'Oldest First' : sortOrder === 'desc' ? 'Newest First' : 'Recent First' }}
+                            </span>
+                            <SortAscIcon v-if="sortOrder === 'asc'" class="w-4 h-4 text-primary" />
+                            <SortDescIcon v-else-if="sortOrder === 'desc'" class="w-4 h-4 text-primary" />
+                            <ArrowUpDownIcon v-else class="w-4 h-4 text-muted-foreground" />
+                        </button>
+                    </div>
+
+                    <button
+                        v-if="hasActiveFilters"
+                        @click="clearFilters"
+                        class="sm:col-span-3 px-4 py-2 border border-destructive/30 bg-destructive/10 hover:bg-destructive/20 text-destructive rounded-lg text-sm font-medium flex items-center justify-center gap-2 cursor-pointer"
+                    >
+                        <XIcon class="w-4 h-4" />
+                        Clear All Filters
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Transactions Content -->
+        <div ref="scrollContainer" @scroll="handleScroll" class="p-4 sm:p-6 max-h-[800px] overflow-y-auto hide-scrollbar">
+            <!-- Empty States -->
+            <div v-if="allTransactions.length === 0" class="text-center py-16">
+                <div class="w-20 h-20 rounded-2xl bg-muted/70 mx-auto mb-4 flex items-center justify-center">
+                    <HistoryIcon class="w-10 h-10 text-muted-foreground" />
+                </div>
+                <h4 class="text-xl font-semibold text-card-foreground mb-2">No Transactions Yet</h4>
+                <p class="text-sm text-muted-foreground">Transactions will appear here once users start trading.</p>
+            </div>
+
+            <div v-else-if="displayedTransactions.length === 0" class="text-center py-16">
+                <div class="w-20 h-20 rounded-2xl bg-muted/70 mx-auto mb-4 flex items-center justify-center">
+                    <SearchIcon class="w-10 h-10 text-muted-foreground" />
+                </div>
+                <h4 class="text-xl font-semibold text-card-foreground mb-2">No Results Found</h4>
+                <p class="text-sm text-muted-foreground mb-4">Try adjusting your filters or search terms.</p>
+                <button @click="clearFilters" class="px-6 py-2.5 bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg text-sm font-medium cursor-pointer">
+                    Clear Filters
+                </button>
+            </div>
+
+            <!-- Grid View -->
+            <div v-else class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
+                <div
+                    v-for="tx in displayedTransactions"
+                    :key="tx.compositeId"
+                    class="group bg-background border border-border rounded-xl overflow-hidden hover:border-primary/30 duration-300 cursor-pointer"
+                >
+                    <!-- Card Header -->
+                    <div class="p-4 border-b border-border bg-muted/30">
+                        <div class="flex items-center justify-between mb-3">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 rounded-lg flex items-center justify-center border" :class="getTransactionColor(tx.type)">
+                                    <component :is="getTransactionIcon(tx.type)" class="w-5 h-5" />
+                                </div>
+                                <div>
+                                    <h4 class="text-sm font-semibold text-card-foreground">{{ getTransactionLabel(tx.type) }}</h4>
+                                    <p class="text-xs text-muted-foreground">{{ formatDate(tx.created_at) }}</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="flex items-center gap-2">
+                            <component :is="getStatusIcon(tx.status)" class="w-3.5 h-3.5" :class="getStatusColor(tx.status).split(' ')[0]" />
+                            <span class="px-2 py-0.5 text-xs rounded-full border capitalize font-medium" :class="getStatusColor(tx.status)">
+                                {{ tx.status }}
+                            </span>
                         </div>
                     </div>
 
-                    <div class="bg-muted/20 px-4 sm:px-6 py-4 border-b border-border">
-                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                            <div class="flex items-center gap-3">
-                                <component :is="getTransactionIcon(activeTab)" class="w-5 h-5 text-muted-foreground" />
-                                <h3 class="text-lg font-semibold text-card-foreground">
-                                    {{ tabs.find(t => t.id === activeTab)?.label }}
-                                </h3>
+                    <!-- Card Content -->
+                    <div class="p-4 space-y-3">
+                        <!-- Swap Transaction -->
+                        <div v-if="tx.type === 'swap'" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div class="bg-muted/50 rounded-lg p-3">
+                                <p class="text-xs text-muted-foreground mb-1">From</p>
+                                <p class="text-sm font-semibold text-card-foreground">{{ formatAmount(tx.from_amount) }} {{ tx.from_token }}</p>
                             </div>
-
-                            <div class="flex items-center gap-2">
-                                <button
-                                    @click="showFilters = !showFilters"
-                                    class="px-3 py-1.5 rounded-lg text-xs font-medium bg-muted/70 hover:bg-muted/80 text-muted-foreground border border-border flex items-center gap-2 cursor-pointer"
-                                    :class="{ 'bg-primary/10 text-primary border-primary/30': hasActiveFilters }"
-                                >
-                                    <FilterIcon class="w-3.5 h-3.5" />
-                                    Filters
-                                    <span v-if="hasActiveFilters" class="w-1.5 h-1.5 rounded-full bg-primary"></span>
-                                </button>
-
-                                <span class="px-3 py-1.5 rounded-lg text-xs font-medium bg-muted/70 text-muted-foreground border border-border">
-                                    {{ displayedTransactions.length }} of {{ totalTransactionsCount }}
-                                </span>
+                            <div class="bg-muted/50 rounded-lg p-3">
+                                <p class="text-xs text-muted-foreground mb-1">To</p>
+                                <p class="text-sm font-semibold text-card-foreground">{{ formatAmount(tx.to_amount) }} {{ tx.to_token }}</p>
+                            </div>
+                            <div v-if="tx.chain" class="bg-muted/50 rounded-lg p-3">
+                                <p class="text-xs text-muted-foreground mb-1">Network</p>
+                                <p class="text-sm font-semibold text-card-foreground capitalize">{{ tx.chain }}</p>
+                            </div>
+                            <div v-if="tx.transaction_hash" class="bg-muted/50 rounded-lg p-3">
+                                <p class="text-xs text-muted-foreground mb-1 flex items-center gap-1">Transaction Hash</p>
+                                <div class="flex items-center gap-2">
+                                    <p class="text-sm font-mono text-card-foreground">{{ truncateHash(tx.transaction_hash) }}</p>
+                                    <button @click="copyToClipboard(tx.transaction_hash!, tx.id)" class="p-1 hover:bg-muted/70 rounded cursor-pointer">
+                                        <CheckIcon v-if="copiedHash === `${tx.id}`" class="w-3 h-3 text-primary" />
+                                        <CopyIcon v-else class="w-3 h-3 text-muted-foreground" />
+                                    </button>
+                                    <a :href="getExplorerUrl(tx.transaction_hash!, tx.chain)" target="_blank" rel="noopener noreferrer" class="p-1 hover:bg-muted/70 rounded cursor-pointer">
+                                        <ExternalLinkIcon class="w-3 h-3 text-muted-foreground" />
+                                    </a>
+                                </div>
                             </div>
                         </div>
 
-                        <div v-if="showFilters" class="mt-4 space-y-3 pt-4 border-t border-border">
-                            <div class="relative">
-                                <SearchIcon class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                                <input
-                                    v-model="searchQuery"
-                                    type="text"
-                                    placeholder="Search by hash, token, pair, or plan..."
-                                    class="w-full pl-10 pr-10 py-2.5 bg-background border border-border rounded-lg text-sm input-crypto"
-                                />
-                                <button
-                                    v-if="searchQuery"
-                                    @click="clearSearch"
-                                    class="absolute right-3 top-1/2 -translate-y-1/2 p-1 hover:bg-muted/50 rounded cursor-pointer"
-                                >
-                                    <XIcon class="w-4 h-4 text-muted-foreground" />
-                                </button>
+                        <!-- Received Transaction -->
+                        <div v-if="tx.type === 'received'" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div class="bg-muted/50 rounded-lg p-3">
+                                <p class="text-xs text-muted-foreground mb-1">Amount Received</p>
+                                <p class="text-sm font-semibold text-success">+{{ formatAmount(tx.amount) }} {{ tx.token_symbol }}</p>
                             </div>
-
-                            <div class="flex flex-col sm:flex-row gap-3">
-                                <div class="flex-1">
-                                    <label class="block text-xs font-medium text-muted-foreground mb-1.5">Sort By Date</label>
-                                    <button
-                                        @click="toggleSortOrder"
-                                        class="w-full px-3 py-2 bg-background border border-border rounded-lg text-sm hover:bg-muted/50 flex items-center justify-between cursor-pointer"
-                                    >
-                                        <span>
-                                            {{ sortOrder === 'asc' ? 'Oldest First' : sortOrder === 'desc' ? 'Newest First' : 'Recent First' }}
-                                        </span>
-                                        <SortAscIcon v-if="sortOrder === 'asc'" class="w-4 h-4 text-primary" />
-                                        <SortDescIcon v-else-if="sortOrder === 'desc'" class="w-4 h-4 text-primary" />
-                                        <ArrowUpDownIcon v-else class="w-4 h-4 text-muted-foreground" />
+                            <div v-if="tx.wallet_address" class="bg-muted/50 rounded-lg p-3">
+                                <p class="text-xs text-muted-foreground mb-1">Wallet Address</p>
+                                <div class="flex items-center gap-2">
+                                    <p class="text-sm font-mono text-card-foreground">{{ truncateHash(tx.wallet_address) }}</p>
+                                    <button @click="copyToClipboard(tx.wallet_address!, tx.id + 1000)" class="p-1 hover:bg-muted/70 rounded cursor-pointer">
+                                        <CheckIcon v-if="copiedHash === `${tx.id + 1000}`" class="w-3 h-3 text-primary" />
+                                        <CopyIcon v-else class="w-3 h-3 text-muted-foreground" />
                                     </button>
                                 </div>
-
-                                <div class="flex-1">
-                                    <label class="block text-xs font-medium text-muted-foreground mb-1.5">Filter by Status</label>
-                                    <select
-                                        v-model="filterByStatus"
-                                        class="w-full px-3 py-2 bg-background border border-border rounded-lg text-sm hover:bg-muted/50 cursor-pointer"
-                                    >
-                                        <option value="all">All Statuses</option>
-                                        <option value="completed">Completed</option>
-                                        <option value="success">Success</option>
-                                        <option value="closed">Closed</option>
-                                        <option value="pending">Pending</option>
-                                        <option value="processing">Processing</option>
-                                        <option value="open">Open</option>
-                                        <option value="running">Running</option>
-                                        <option value="failed">Failed</option>
-                                        <option value="cancelled">Cancelled</option>
-                                    </select>
+                            </div>
+                            <div v-if="tx.transaction_hash" class="bg-muted/50 rounded-lg p-3 sm:col-span-2">
+                                <p class="text-xs text-muted-foreground mb-1">Transaction Hash</p>
+                                <div class="flex items-center gap-2">
+                                    <p class="text-sm font-mono text-card-foreground">{{ truncateHash(tx.transaction_hash) }}</p>
+                                    <button @click="copyToClipboard(tx.transaction_hash!, tx.id + 1000)" class="p-1 hover:bg-muted/70 rounded cursor-pointer">
+                                        <CheckIcon v-if="copiedHash === `${tx.id + 1000}`" class="w-3 h-3 text-primary" />
+                                        <CopyIcon v-else class="w-3 h-3 text-muted-foreground" />
+                                    </button>
+                                    <a :href="getExplorerUrl(tx.transaction_hash!)" target="_blank" rel="noopener noreferrer" class="p-1 hover:bg-muted/70 rounded cursor-pointer">
+                                        <ExternalLinkIcon class="w-3 h-3 text-muted-foreground" />
+                                    </a>
                                 </div>
                             </div>
-
-                            <button
-                                v-if="hasActiveFilters"
-                                @click="clearFilters"
-                                class="w-full px-4 py-2 border border-border bg-destructive/10 hover:bg-destructive/20 text-destructive rounded-lg text-sm font-medium flex items-center justify-center gap-2 cursor-pointer"
-                            >
-                                <XIcon class="w-4 h-4" />
-                                Clear All Filters
-                            </button>
                         </div>
-                    </div>
 
-                    <div ref="scrollContainer" @scroll="handleScroll" class="p-4 sm:p-6 max-h-[800px] overflow-y-auto custom-scrollbar">
-                        <div v-if="allTransactions.length === 0" class="text-center py-12">
-                            <div class="w-16 h-16 rounded-full bg-muted/70 mx-auto mb-4 flex items-center justify-center">
-                                <HistoryIcon class="w-8 h-8 text-muted-foreground" />
+                        <!-- Sent Transaction -->
+                        <div v-if="tx.type === 'sent'" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div class="bg-muted/50 rounded-lg p-3">
+                                <p class="text-xs text-muted-foreground mb-1">Amount Sent</p>
+                                <p class="text-sm font-semibold text-accent">-{{ formatAmount(tx.amount) }} {{ tx.token_symbol }}</p>
                             </div>
-                            <h4 class="text-lg font-semibold text-card-foreground mb-2">No Transactions Yet</h4>
-                            <p class="text-sm text-muted-foreground mb-6">Your transaction history will appear here once you start trading.</p>
-                            <TextLink :href="route('user.dashboard')" class="px-6 py-2.5 bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg text-sm font-semibold inline-flex items-center gap-2">
-                                <ActivityIcon class="w-4 h-4" />
-                                Start Trading
-                            </TextLink>
-                        </div>
-
-                        <div v-else-if="displayedTransactions.length === 0" class="text-center py-12">
-                            <div class="w-16 h-16 rounded-full bg-muted/70 mx-auto mb-4 flex items-center justify-center">
-                                <SearchIcon class="w-8 h-8 text-muted-foreground" />
+                            <div v-if="tx.fee" class="bg-muted/50 rounded-lg p-3">
+                                <p class="text-xs text-muted-foreground mb-1">Transaction Fee</p>
+                                <p class="text-sm font-semibold text-card-foreground">{{ formatAmount(tx.fee) }} {{ tx.token_symbol }}</p>
                             </div>
-                            <h4 class="text-lg font-semibold text-card-foreground mb-2">No Transactions Found</h4>
-                            <p class="text-sm text-muted-foreground mb-4">Try adjusting your search or filter criteria.</p>
-                            <button @click="clearFilters" class="px-4 py-2 bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg text-sm font-medium cursor-pointer">
-                                Clear Filters
-                            </button>
+                            <div v-if="tx.recipient_address" class="bg-muted/50 rounded-lg p-3 sm:col-span-2">
+                                <p class="text-xs text-muted-foreground mb-1">Recipient Address</p>
+                                <div class="flex items-center gap-2">
+                                    <p class="text-sm font-mono text-card-foreground">{{ truncateHash(tx.recipient_address) }}</p>
+                                    <button @click="copyToClipboard(tx.recipient_address!, tx.id + 2000)" class="p-1 hover:bg-muted/70 rounded cursor-pointer">
+                                        <CheckIcon v-if="copiedHash === `${tx.id + 2000}`" class="w-3 h-3 text-primary" />
+                                        <CopyIcon v-else class="w-3 h-3 text-muted-foreground" />
+                                    </button>
+                                </div>
+                            </div>
+                            <div v-if="tx.transaction_hash" class="bg-muted/50 rounded-lg p-3 sm:col-span-2">
+                                <p class="text-xs text-muted-foreground mb-1">Transaction Hash</p>
+                                <div class="flex items-center gap-2">
+                                    <p class="text-sm font-mono text-card-foreground">{{ truncateHash(tx.transaction_hash) }}</p>
+                                    <button @click="copyToClipboard(tx.transaction_hash!, tx.id + 3000)" class="p-1 hover:bg-muted/70 rounded cursor-pointer">
+                                        <CheckIcon v-if="copiedHash === `${tx.id + 3000}`" class="w-3 h-3 text-primary" />
+                                        <CopyIcon v-else class="w-3 h-3 text-muted-foreground" />
+                                    </button>
+                                    <a :href="getExplorerUrl(tx.transaction_hash!)" target="_blank" rel="noopener noreferrer" class="p-1 hover:bg-muted/70 rounded cursor-pointer">
+                                        <ExternalLinkIcon class="w-3 h-3 text-muted-foreground" />
+                                    </a>
+                                </div>
+                            </div>
                         </div>
 
-                        <div v-else class="space-y-4">
-                            <div
-                                v-for="tx in displayedTransactions"
-                                :key="tx.compositeId"
-                                class="group bg-gradient-to-br from-card to-muted/20 border border-border rounded-xl p-5 transition-all duration-200 hover:border-primary/30"
-                            >
-                                <div class="flex flex-col lg:flex-row items-start justify-between gap-4 mb-4">
-                                    <div class="flex items-center gap-3">
-                                        <div class="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 border" :class="getTransactionColor(tx.type)">
-                                            <component :is="getTransactionIcon(tx.type)" class="w-6 h-6" />
-                                        </div>
-                                        <div>
-                                            <h4 class="text-base font-semibold text-card-foreground capitalize">{{ getTransactionLabel(tx.type) }}</h4>
-                                            <p class="text-xs text-muted-foreground">{{ formatDate(tx.created_at) }}</p>
-                                        </div>
-                                    </div>
-                                    <div class="flex items-center gap-2">
-                                        <component :is="getStatusIcon(tx.status)" class="w-4 h-4" :class="getStatusColor(tx.status).split(' ')[0]" />
-                                        <span class="px-2 py-0.5 text-xs rounded-full border capitalize" :class="getStatusColor(tx.status)">
-                                            {{ tx.status }}
-                                        </span>
-                                    </div>
-                                </div>
-
-                                <!-- Swap Transaction -->
-                                <div v-if="tx.type === 'swap'" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                    <div class="bg-muted/50 rounded-lg p-3">
-                                        <p class="text-xs text-muted-foreground mb-1">From</p>
-                                        <p class="text-sm font-semibold text-card-foreground">{{ formatAmount(tx.from_amount) }} {{ tx.from_token }}</p>
-                                    </div>
-                                    <div class="bg-muted/50 rounded-lg p-3">
-                                        <p class="text-xs text-muted-foreground mb-1">To</p>
-                                        <p class="text-sm font-semibold text-card-foreground">{{ formatAmount(tx.to_amount) }} {{ tx.to_token }}</p>
-                                    </div>
-                                    <div v-if="tx.chain" class="bg-muted/50 rounded-lg p-3">
-                                        <p class="text-xs text-muted-foreground mb-1">Network</p>
-                                        <p class="text-sm font-semibold text-card-foreground capitalize">{{ tx.chain }}</p>
-                                    </div>
-                                    <div v-if="tx.transaction_hash" class="bg-muted/50 rounded-lg p-3">
-                                        <p class="text-xs text-muted-foreground mb-1 flex items-center gap-1">Transaction Hash</p>
-                                        <div class="flex items-center gap-2">
-                                            <p class="text-sm font-mono text-card-foreground">{{ truncateHash(tx.transaction_hash) }}</p>
-                                            <button @click="copyToClipboard(tx.transaction_hash!, tx.id)" class="p-1 hover:bg-muted/70 rounded cursor-pointer">
-                                                <CheckIcon v-if="copiedHash === `${tx.id}`" class="w-3 h-3 text-primary" />
-                                                <CopyIcon v-else class="w-3 h-3 text-muted-foreground" />
-                                            </button>
-                                            <a :href="getExplorerUrl(tx.transaction_hash!, tx.chain)" target="_blank" class="p-1 hover:bg-muted/70 rounded cursor-pointer">
-                                                <ExternalLinkIcon class="w-3 h-3 text-muted-foreground" />
-                                            </a>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <!-- Received Transaction -->
-                                <div v-if="tx.type === 'received'" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                    <div class="bg-muted/50 rounded-lg p-3">
-                                        <p class="text-xs text-muted-foreground mb-1">Amount Received</p>
-                                        <p class="text-sm font-semibold text-success">+{{ formatAmount(tx.amount) }} {{ tx.token_symbol }}</p>
-                                    </div>
-                                    <div v-if="tx.wallet_address" class="bg-muted/50 rounded-lg p-3">
-                                        <p class="text-xs text-muted-foreground mb-1">Wallet Address</p>
-                                        <div class="flex items-center gap-2">
-                                            <p class="text-sm font-mono text-card-foreground">{{ truncateHash(tx.wallet_address) }}</p>
-                                            <button @click="copyToClipboard(tx.wallet_address!, tx.id + 1000)" class="p-1 hover:bg-muted/70 rounded cursor-pointer">
-                                                <CheckIcon v-if="copiedHash === `${tx.id + 1000}`" class="w-3 h-3 text-primary" />
-                                                <CopyIcon v-else class="w-3 h-3 text-muted-foreground" />
-                                            </button>
-                                        </div>
-                                    </div>
-                                    <div v-if="tx.transaction_hash" class="bg-muted/50 rounded-lg p-3 sm:col-span-2">
-                                        <p class="text-xs text-muted-foreground mb-1">Transaction Hash</p>
-                                        <div class="flex items-center gap-2">
-                                            <p class="text-sm font-mono text-card-foreground">{{ truncateHash(tx.transaction_hash) }}</p>
-                                            <button @click="copyToClipboard(tx.transaction_hash!, tx.id + 1000)" class="p-1 hover:bg-muted/70 rounded cursor-pointer">
-                                                <CheckIcon v-if="copiedHash === `${tx.id + 1000}`" class="w-3 h-3 text-primary" />
-                                                <CopyIcon v-else class="w-3 h-3 text-muted-foreground" />
-                                            </button>
-                                            <a :href="getExplorerUrl(tx.transaction_hash!)" target="_blank" class="p-1 hover:bg-muted/70 rounded cursor-pointer">
-                                                <ExternalLinkIcon class="w-3 h-3 text-muted-foreground" />
-                                            </a>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <!-- Sent Transaction -->
-                                <div v-if="tx.type === 'sent'" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                    <div class="bg-muted/50 rounded-lg p-3">
-                                        <p class="text-xs text-muted-foreground mb-1">Amount Sent</p>
-                                        <p class="text-sm font-semibold text-accent">-{{ formatAmount(tx.amount) }} {{ tx.token_symbol }}</p>
-                                    </div>
-                                    <div v-if="tx.fee" class="bg-muted/50 rounded-lg p-3">
-                                        <p class="text-xs text-muted-foreground mb-1">Transaction Fee</p>
-                                        <p class="text-sm font-semibold text-card-foreground">{{ formatAmount(tx.fee) }} {{ tx.token_symbol }}</p>
-                                    </div>
-                                    <div v-if="tx.recipient_address" class="bg-muted/50 rounded-lg p-3 sm:col-span-2">
-                                        <p class="text-xs text-muted-foreground mb-1">Recipient Address</p>
-                                        <div class="flex items-center gap-2">
-                                            <p class="text-sm font-mono text-card-foreground">{{ truncateHash(tx.recipient_address) }}</p>
-                                            <button @click="copyToClipboard(tx.recipient_address!, tx.id + 2000)" class="p-1 hover:bg-muted/70 rounded cursor-pointer">
-                                                <CheckIcon v-if="copiedHash === `${tx.id + 2000}`" class="w-3 h-3 text-primary" />
-                                                <CopyIcon v-else class="w-3 h-3 text-muted-foreground" />
-                                            </button>
-                                        </div>
-                                    </div>
-                                    <div v-if="tx.transaction_hash" class="bg-muted/50 rounded-lg p-3 sm:col-span-2">
-                                        <p class="text-xs text-muted-foreground mb-1">Transaction Hash</p>
-                                        <div class="flex items-center gap-2">
-                                            <p class="text-sm font-mono text-card-foreground">{{ truncateHash(tx.transaction_hash) }}</p>
-                                            <button @click="copyToClipboard(tx.transaction_hash!, tx.id + 3000)" class="p-1 hover:bg-muted/70 rounded cursor-pointer">
-                                                <CheckIcon v-if="copiedHash === `${tx.id + 3000}`" class="w-3 h-3 text-primary" />
-                                                <CopyIcon v-else class="w-3 h-3 text-muted-foreground" />
-                                            </button>
-                                            <a :href="getExplorerUrl(tx.transaction_hash!)" target="_blank" class="p-1 hover:bg-muted/70 rounded cursor-pointer">
-                                                <ExternalLinkIcon class="w-3 h-3 text-muted-foreground" />
-                                            </a>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <!-- Trade Transactions (Forex, Stock, Crypto) -->
-                                <div v-if="['forex_trade', 'stock_trade', 'crypto_trade'].includes(tx.type)" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                    <div class="bg-muted/50 rounded-lg p-3">
-                                        <p class="text-xs text-muted-foreground mb-1">Trading Pair</p>
-                                        <p class="text-sm font-semibold text-card-foreground">{{ tx.pair_name || tx.pair }}</p>
-                                    </div>
-                                    <div class="bg-muted/50 rounded-lg p-3">
-                                        <p class="text-xs text-muted-foreground mb-1">Position Type</p>
-                                        <div class="flex items-center gap-1">
-                                            <component :is="tx.trade_direction === 'Up' ? TrendingUpIcon : TrendingDownIcon"
-                                                       class="w-3.5 h-3.5"
-                                                       :class="tx.trade_direction === 'Up' ? 'text-success' : 'text-destructive'" />
-                                            <p class="text-sm font-semibold" :class="tx.trade_direction === 'Up' ? 'text-success' : 'text-destructive'">
-                                                {{ tx.trade_direction }}
-                                            </p>
-                                        </div>
-                                    </div>
-                                    <div class="bg-muted/50 rounded-lg p-3">
-                                        <p class="text-xs text-muted-foreground mb-1">Amount</p>
-                                        <p class="text-sm font-semibold text-card-foreground">${{ formatAmount(tx.amount) }}</p>
-                                    </div>
-                                    <div class="bg-muted/50 rounded-lg p-3">
-                                        <p class="text-xs text-muted-foreground mb-1">Leverage</p>
-                                        <p class="text-sm font-semibold text-card-foreground">{{ tx.leverage }}x</p>
-                                    </div>
-                                    <div class="bg-muted/50 rounded-lg p-3">
-                                        <p class="text-xs text-muted-foreground mb-1">Entry Price</p>
-                                        <p class="text-sm font-semibold text-card-foreground">${{ formatAmount(tx.entry_price) }}</p>
-                                    </div>
-                                    <div class="bg-muted/50 rounded-lg p-3">
-                                        <p class="text-xs text-muted-foreground mb-1">Exit Price</p>
-                                        <p class="text-sm font-semibold text-card-foreground">
-                                            {{ tx.exit_price ? `$${formatAmount(tx.exit_price)}` : 'N/A' }}
-                                        </p>
-                                    </div>
-                                    <div class="bg-muted/50 rounded-lg p-3">
-                                        <p class="text-xs text-muted-foreground mb-1">P&L</p>
-                                        <p class="text-sm font-semibold" :class="tx.pnl >= 0 ? 'text-success' : 'text-destructive'">
-                                            {{ tx.pnl >= 0 ? '+' : '' }}${{ formatAmount(tx.pnl) }}
-                                        </p>
-                                    </div>
-                                    <div class="bg-muted/50 rounded-lg p-3">
-                                        <p class="text-xs text-muted-foreground mb-1">Trading Mode</p>
-                                        <p class="text-sm font-semibold text-card-foreground capitalize">{{ tx.trading_mode }}</p>
-                                    </div>
-                                    <div v-if="tx.duration" class="bg-muted/50 rounded-lg p-3">
-                                        <p class="text-xs text-muted-foreground mb-1">Duration</p>
-                                        <p class="text-sm font-semibold text-card-foreground">{{ tx.duration }}</p>
-                                    </div>
-                                    <div v-if="tx.expiry_time" class="bg-muted/50 rounded-lg p-3">
-                                        <p class="text-xs text-muted-foreground mb-1">Expiry Time</p>
-                                        <p class="text-sm font-semibold text-card-foreground">{{ formatDate(tx.expiry_time) }}</p>
-                                    </div>
-                                </div>
-
-                                <!-- Investment Transaction -->
-                                <div v-if="tx.type === 'investment'" class="space-y-4">
-                                    <!-- Header Info -->
-                                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                        <div class="bg-muted/50 rounded-lg p-3">
-                                            <p class="text-xs text-muted-foreground mb-1">Investment Plan</p>
-                                            <p class="text-sm font-semibold text-card-foreground">{{ tx.plan_name }}</p>
-                                        </div>
-                                        <div class="bg-muted/50 rounded-lg p-3">
-                                            <p class="text-xs text-muted-foreground mb-1">Amount Invested</p>
-                                            <p class="text-sm font-semibold text-card-foreground">${{ formatAmount(tx.amount) }}</p>
-                                        </div>
-                                    </div>
-
-                                    <!-- Financial Details -->
-                                    <div class="grid grid-cols-2 gap-4">
-                                        <div class="bg-muted/50 rounded-lg p-3">
-                                            <p class="text-xs text-muted-foreground mb-1">Interest/Cycle</p>
-                                            <p class="text-sm font-semibold text-primary">${{ formatAmount(tx.interest) }}</p>
-                                        </div>
-                                        <div class="bg-muted/50 rounded-lg p-3">
-                                            <p class="text-xs text-muted-foreground mb-1">Total Earned</p>
-                                            <p class="text-sm font-semibold text-success">+${{ formatAmount(tx.totalInterestEarned) }}</p>
-                                        </div>
-                                        <div class="bg-muted/50 rounded-lg p-3">
-                                            <p class="text-xs text-muted-foreground mb-1">Period</p>
-                                            <p class="text-sm font-semibold text-card-foreground">{{ tx.period >= 24 ? `${tx.period / 24} ${tx.period / 24 === 1 ? 'day' : 'days'}` : `${tx.period} ${tx.period === 1 ? 'hour' : 'hours'}` }}</p>
-                                        </div>
-                                        <div class="bg-muted/50 rounded-lg p-3">
-                                            <p class="text-xs text-muted-foreground mb-1">Cycles</p>
-                                            <p class="text-sm font-semibold text-card-foreground">{{ tx.progress?.currentCycle }} / {{ tx.progress?.totalCycles }}</p>
-                                        </div>
-                                    </div>
-
-                                    <!-- Current Cycle Progress -->
-                                    <div class="bg-muted/50 rounded-lg p-3 space-y-2">
-                                        <div class="flex items-center justify-between text-xs">
-                                            <span class="font-medium text-muted-foreground">Progress</span>
-                                            <span class="font-bold text-card-foreground">{{ tx.progress?.percentage.toFixed(1) }}%</span>
-                                        </div>
-                                        <div class="w-full bg-muted rounded-full h-1 overflow-hidden">
-                                            <div
-                                                class="h-full transition-all duration-500 rounded-full"
-                                                :class="tx.progress?.isExpired ? 'bg-success' : 'bg-warning'"
-                                                :style="{ width: `${tx.progress?.percentage}%` }">
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <!-- Countdown Timer -->
-                                    <div class="rounded-lg p-3 border border-primary/20">
-                                        <div class="flex items-center justify-between">
-                                            <div class="flex items-center gap-2">
-                                                <ClockIcon class="w-4 h-4 text-primary" />
-                                                <span class="text-xs font-medium text-muted-foreground">
-                                                    {{ tx.progress?.isExpired ? 'Status' : 'Next Payout In' }}
+                        <!-- Trade Transactions (Forex, Stock, Crypto) -->
+                        <div v-if="['forex_trade', 'stock_trade', 'crypto_trade'].includes(tx.type)" class="space-y-2">
+                            <div class="flex items-center justify-between">
+                                <span class="text-sm text-muted-foreground">Pair:</span>
+                                <span class="text-sm font-semibold text-card-foreground">{{ tx.pair_name || tx.pair }}</span>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <span class="text-sm text-muted-foreground">Direction:</span>
+                                <div class="flex items-center gap-1">
+                                    <component :is="tx.trade_direction === 'Up' ? TrendingUpIcon : TrendingDownIcon"
+                                               class="w-3.5 h-3.5"
+                                               :class="tx.trade_direction === 'Up' ? 'text-success' : 'text-destructive'" />
+                                    <span class="text-sm font-semibold" :class="tx.trade_direction === 'Up' ? 'text-success' : 'text-destructive'">
+                                                    {{ tx.trade_direction }}
                                                 </span>
-                                            </div>
-                                            <span
-                                                class="text-sm font-mono font-bold"
-                                                :class="tx.progress?.isExpired ? 'text-success' : 'text-primary'">
+                                </div>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <span class="text-sm text-muted-foreground">Amount:</span>
+                                <span class="text-sm font-semibold text-card-foreground">${{ formatAmount(tx.amount) }}</span>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <span class="text-sm text-muted-foreground">P&L:</span>
+                                <span class="text-sm font-bold" :class="tx.pnl >= 0 ? 'text-success' : 'text-destructive'">
+                                                {{ tx.pnl >= 0 ? '+' : '' }}${{ formatAmount(tx.pnl) }}
+                                            </span>
+                            </div>
+                        </div>
+
+                        <!-- Investment Transaction -->
+                        <div v-if="tx.type === 'investment'" class="space-y-2">
+                            <div class="flex items-center justify-between">
+                                <span class="text-sm text-muted-foreground">Plan:</span>
+                                <span class="text-sm font-semibold text-card-foreground">{{ tx.plan_name }}</span>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <span class="text-sm text-muted-foreground">Invested:</span>
+                                <span class="text-sm font-semibold text-card-foreground">${{ formatAmount(tx.amount) }}</span>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <span class="text-sm text-muted-foreground">Earned:</span>
+                                <span class="text-sm font-bold text-success">+${{ formatAmount(tx.totalInterestEarned) }}</span>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <span class="text-sm text-muted-foreground">Progress:</span>
+                                <span class="text-sm font-semibold text-card-foreground">{{ tx.progress?.currentCycle }}/{{ tx.progress?.totalCycles }}</span>
+                            </div>
+                            <div class="w-full bg-muted rounded-full h-1 overflow-hidden">
+                                <div
+                                    class="h-full duration-500 rounded-full"
+                                    :class="tx.progress?.isExpired ? 'bg-success' : 'bg-warning'"
+                                    :style="{ width: `${tx.progress?.percentage}%` }">
+                                </div>
+                            </div>
+                            <div class="flex items-center justify-between p-2 bg-primary/5 rounded-lg border border-primary/20">
+                                <div class="flex items-center gap-2">
+                                    <ClockIcon class="w-3.5 h-3.5 text-primary" />
+                                    <span class="text-xs font-medium text-muted-foreground">
+                                                    {{ tx.progress?.isExpired ? 'Status' : 'Next Payout' }}
+                                                </span>
+                                </div>
+                                <span
+                                    class="text-xs font-mono font-bold"
+                                    :class="tx.progress?.isExpired ? 'text-success' : 'text-primary'">
                                                 {{ tx.progress?.countdown }}
                                             </span>
-                                        </div>
-                                    </div>
-
-                                    <!-- Additional Details -->
-                                    <div class="grid grid-cols-2 gap-4">
-                                        <div class="bg-muted/50 rounded-lg p-3">
-                                            <p class="text-xs text-muted-foreground mb-1">Capital Back</p>
-                                            <p class="text-sm font-semibold" :class="tx.capital_back_status === 'yes' ? 'text-success' : 'text-muted-foreground'">
-                                                {{ tx.capital_back_status === 'yes' ? 'Yes' : 'No' }}
-                                            </p>
-                                        </div>
-                                        <div v-if="tx.last_time" class="bg-muted/50 rounded-lg p-3">
-                                            <p class="text-xs text-muted-foreground mb-1">Last Payout</p>
-                                            <p class="text-sm font-semibold text-card-foreground">{{ formatDate(tx.last_time) }}</p>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div v-if="isLoadingMore" class="flex items-center justify-center py-8">
-                            <Loader2Icon class="w-8 h-8 text-primary animate-spin" />
-                        </div>
-
-                        <div v-else-if="!hasMoreTransactions && displayedTransactions.length > itemsPerLoad" class="text-center py-8">
-                            <div class="inline-flex items-center gap-2 px-4 py-2 bg-muted/50 rounded-full text-sm text-muted-foreground">
-                                <CheckCircleIcon class="w-4 h-4" />
-                                You've reached the end of the list
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <div class="hidden sm:block">
-                <div class="xl:col-span-1 space-y-6 sticky top-6">
-                    <div class="border border-primary/20 rounded-2xl p-6">
-                        <h5 class="text-sm font-semibold text-card-foreground mb-4 flex items-center gap-2">
-                            <ShieldCheckIcon class="w-5 h-5 text-primary" />
-                            Security & Features
-                        </h5>
-                        <ul class="space-y-4">
-                            <li v-for="(feature, index) in securityFeatures" :key="index" class="flex items-start gap-3">
-                                <div class="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
-                                    <component :is="feature.icon" class="w-5 h-5 text-primary" />
-                                </div>
-                                <div>
-                                    <h6 class="text-sm font-semibold text-card-foreground mb-1">{{ feature.title }}</h6>
-                                    <p class="text-xs text-muted-foreground">{{ feature.description }}</p>
-                                </div>
-                            </li>
-                        </ul>
-                    </div>
+            <!-- Loading More -->
+            <div v-if="isLoadingMore" class="flex items-center justify-center py-8">
+                <Loader2Icon class="w-8 h-8 text-primary animate-spin" />
+            </div>
 
-                    <div class="border border-border rounded-2xl p-6">
-                        <h5 class="text-sm font-semibold text-card-foreground mb-4 flex items-center gap-2">
-                            <InfoIcon class="w-5 h-5 text-primary" />
-                            Transaction Types
-                        </h5>
-                        <div class="space-y-4 text-xs text-muted-foreground">
-                            <div>
-                                <h6 class="font-semibold text-card-foreground mb-1 flex items-center gap-2">
-                                    <ArrowRightLeftIcon class="w-3.5 h-3.5 text-primary" />
-                                    Swaps
-                                </h6>
-                                <p>Exchange one cryptocurrency for another instantly.</p>
-                            </div>
-                            <div>
-                                <h6 class="font-semibold text-card-foreground mb-1 flex items-center gap-2">
-                                    <DollarSignIcon class="w-3.5 h-3.5 text-blue-500" />
-                                    Trades
-                                </h6>
-                                <p>Forex, stocks, and crypto trading with leverage.</p>
-                            </div>
-                            <div>
-                                <h6 class="font-semibold text-card-foreground mb-1 flex items-center gap-2">
-                                    <WalletIcon class="w-3.5 h-3.5 text-green-500" />
-                                    Investments
-                                </h6>
-                                <p>Long-term investment plans with regular payouts.</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="text-center p-6 border border-border rounded-2xl">
-                        <div class="w-12 h-12 rounded-full bg-primary/10 mx-auto mb-3 flex items-center justify-center">
-                            <InfoIcon class="w-6 h-6 text-primary" />
-                        </div>
-                        <h5 class="text-sm font-semibold text-card-foreground mb-2">Need Help?</h5>
-                        <p class="text-xs text-muted-foreground mb-4">
-                            Having issues with a transaction? Our support team is ready to assist you.
-                        </p>
-                        <TextLink :href="route('user.support.index')" class="inline-flex items-center gap-2 text-sm font-medium text-primary hover:underline">
-                            Contact Support
-                            <ExternalLinkIcon class="w-4 h-4" />
-                        </TextLink>
-                    </div>
+            <!-- End of List -->
+            <div v-else-if="!hasMoreTransactions && displayedTransactions.length > itemsPerLoad" class="text-center py-8">
+                <div class="inline-flex items-center gap-2 px-4 py-2 bg-muted/50 rounded-full text-sm text-muted-foreground">
+                    <CheckCircleIcon class="w-4 h-4" />
+                    You've reached the end
                 </div>
             </div>
         </div>
@@ -1044,16 +1059,6 @@
 </template>
 
 <style scoped>
-    .custom-scrollbar {
-        scrollbar-width: none;
-        -ms-overflow-style: none;
-    }
-
-    .custom-scrollbar::-webkit-scrollbar {
-        width: 0;
-        height: 0;
-    }
-
     .hide-scrollbar {
         scrollbar-width: none;
         -ms-overflow-style: none;

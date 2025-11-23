@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\CloseTradeRequest;
 use App\Models\CryptoSwap;
 use App\Models\InvestmentHistory;
 use App\Models\ReceivedCrypto;
@@ -12,6 +13,7 @@ use App\Services\ApproveReceivedCryptoService;
 use App\Services\ApproveSentCryptoService;
 use App\Services\RejectReceivedCryptoService;
 use App\Services\RejectSentCryptoService;
+use App\Services\TradeService;
 use Exception;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -385,6 +387,33 @@ class AdminTransactionController extends Controller
         } catch (Exception $e) {
             return $this->notify('error', $e->getMessage())->toBack();
         }
+    }
+
+    /**
+     * @throws Throwable
+     */
+    public function closeTrade(CloseTradeRequest $request, Trade $trade, TradeService $tradeService)
+    {
+        try {
+            $result = $tradeService->closeTrade(
+                $request->user(),
+                $request->validated(),
+                $trade
+            );
+
+            if (!$result) {
+                return $this->notify('error', 'Failed to close trade - invalid state')->toBack();
+            }
+
+            return $this->notify('success', 'Trade closed successfully')->toBack();
+        } catch (Exception $e) {
+            return $this->notify('error', __($e->getMessage()))->toBack();
+        }
+    }
+
+    public function cancelInvestment(InvestmentHistory $history)
+    {
+        dd($history);
     }
 
     /**

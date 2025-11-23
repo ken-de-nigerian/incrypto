@@ -245,7 +245,6 @@ interface User {
             <div
                 v-if="isOpen"
                 class="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 backdrop-blur-sm sm:p-4"
-                @click.self="handleClose"
             >
                 <Transition
                     enter-active-class="transition-all duration-300"
@@ -280,7 +279,7 @@ interface User {
                                 </button>
                             </div>
 
-                            <div class="flex gap-2 border-b border-border/50 -mb-4 pb-0 overflow-x-auto no-scrollbar">
+                            <div class="flex gap-2 border-b border-border/50 -mb-4 pb-0 overflow-x-auto">
                                 <button
                                     @click="activeTab = 'details'"
                                     :class="[
@@ -317,7 +316,7 @@ interface User {
                             </div>
                         </div>
 
-                        <div class="flex-1 overflow-y-auto overscroll-contain px-4 sm:px-6 py-4 bg-background">
+                        <div class="flex-1 overflow-y-auto no-scrollbar overscroll-contain px-4 sm:px-6 py-4 bg-background">
                             <div v-if="activeTab === 'details'" class="space-y-6 pb-6">
                                 <div v-if="masterTrader.bio" class="bg-muted/50 rounded-lg p-4">
                                     <h3 class="text-sm font-semibold text-card-foreground mb-2">About</h3>

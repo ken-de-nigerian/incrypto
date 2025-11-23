@@ -16,10 +16,6 @@
         (e: 'close'): void;
     }>();
 
-    const handleBackdropClick = (event: MouseEvent) => {
-        if (event.target === event.currentTarget) emit('close');
-    };
-
     const handleClose = () => emit('close');
 
     watch(

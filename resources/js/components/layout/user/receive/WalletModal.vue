@@ -36,13 +36,6 @@
         emit('close');
     };
 
-    const handleBackdropClick = (event: MouseEvent) => {
-        // Only close if the click is directly on the backdrop container
-        if (event.target === event.currentTarget) {
-            handleClose();
-        }
-    };
-
     watch(() => props.isOpen, (isOpen) => {
         if (isOpen) {
             document.body.style.overflow = 'hidden';

@@ -5,8 +5,7 @@
         SearchIcon, FilterIcon, XIcon, Loader2Icon, CheckCircleIcon,
         ClockIcon, AlertCircleIcon, CopyIcon, CheckIcon,
         ActivityIcon, ArrowUpDownIcon,
-        SortAscIcon, SortDescIcon,
-        ShieldCheckIcon, ZapIcon, TrophyIcon, TrendingUpIcon, TrendingDownIcon,
+        SortAscIcon, SortDescIcon, TrendingUpIcon, TrendingDownIcon,
         DollarSignIcon, BarChart3Icon, CoinsIcon, WalletIcon, PieChartIcon, ExternalLinkIcon
     } from 'lucide-vue-next';
     import { router } from '@inertiajs/vue3';
@@ -598,13 +597,6 @@
         { id: 'stocks', label: 'Stocks', icon: BarChart3Icon },
         { id: 'crypto_trades', label: 'Crypto', icon: CoinsIcon },
         { id: 'investments', label: 'Investments', icon: WalletIcon }
-    ];
-
-    const securityFeatures = [
-        { icon: ShieldCheckIcon, title: 'Secure Transactions', description: 'All transactions are encrypted and secured with blockchain technology' },
-        { icon: ActivityIcon, title: 'Real-time Tracking', description: 'Monitor your transactions in real-time with instant status updates' },
-        { icon: ZapIcon, title: 'Fast Processing', description: 'Quick transaction processing with optimized network routing' },
-        { icon: TrophyIcon, title: 'Low Fees', description: 'Competitive transaction fees with transparent pricing' }
     ];
 
     watch([searchQuery, sortOrder, filterByStatus, activeTab, dateFilter], () => {

@@ -15,12 +15,6 @@
         emit('close');
     };
 
-    const handleBackdropClick = (event: MouseEvent) => {
-        if (event.target === event.currentTarget) {
-            handleClose();
-        }
-    };
-
     // Keep the body scroll lock logic
     watch(() => props.isOpen, (isOpen) => {
         if (isOpen) {

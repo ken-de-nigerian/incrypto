@@ -488,17 +488,6 @@
         }, 2000);
     };
 
-    const getExplorerUrl = (hash: string, chain: string = 'ethereum') => {
-        const explorers: Record<string, string> = {
-            ethereum: 'https://etherscan.io/tx/',
-            bsc: 'https://bscscan.com/tx/',
-            polygon: 'https://polygonscan.com/tx/',
-            arbitrum: 'https://arbiscan.io/tx/',
-            optimism: 'https://optimistic.etherscan.io/tx/',
-        };
-        return `${explorers[chain.toLowerCase()] || explorers.ethereum}${hash}`;
-    };
-
     const toggleSortOrder = () => {
         if (sortOrder.value === 'default') {
             sortOrder.value = 'desc';

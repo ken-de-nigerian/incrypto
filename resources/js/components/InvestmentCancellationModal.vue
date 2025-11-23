@@ -47,10 +47,6 @@
         return (props.investment?.totalInterestEarned || 0) > 0;
     });
 
-    const hasCompletedCycles = computed(() => {
-        return (props.investment?.repeat_time_count || 0) > 0;
-    });
-
     const totalPayout = computed(() => {
         if (!props.investment) return 0;
 

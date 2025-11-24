@@ -104,8 +104,9 @@ Route::prefix('admin')
             ->group(function () {
                 Route::get('/', 'index')->name('index');
                 Route::post('/store', 'store')->name('store');
-                Route::patch('/{network}/update', 'update')->name('update');
-                Route::delete('/{network}/delete', 'destroy')->name('destroy');
+                Route::patch('/{masterTrader}/update', 'update')->name('update');
+                Route::patch('/{masterTrader}/toggle/status', 'toggleStatus')->name('toggle.status');
+                Route::delete('/{masterTrader}/delete', 'destroy')->name('destroy');
             });
 
         // Newsletter Notifications

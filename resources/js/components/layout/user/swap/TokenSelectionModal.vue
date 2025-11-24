@@ -82,7 +82,7 @@
                             v-model="searchQuery"
                             type="text"
                             placeholder="Search by name or symbol"
-                            class="w-full pl-10 pr-4 py-3 bg-muted border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                            class="w-full pl-10 pr-4 py-3 bg-muted border border-border rounded-lg text-sm input-crypto"
                         />
                     </div>
                 </div>

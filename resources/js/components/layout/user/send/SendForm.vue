@@ -190,7 +190,7 @@
                     <div class="p-3 border-b border-border">
                         <div class="relative">
                             <SearchIcon class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                            <input v-model="assetSearchQuery" type="text" placeholder="Search assets..." class="w-full pl-10 pr-4 py-2 bg-muted border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary" />
+                            <input v-model="assetSearchQuery" type="text" placeholder="Search assets..." class="w-full pl-10 pr-4 py-2 bg-muted border border-border rounded-lg text-sm input-crypto" />
                         </div>
                     </div>
                     <div class="max-h-64 overflow-y-auto">
@@ -228,7 +228,7 @@
         <div>
             <label class="text-sm font-semibold text-card-foreground mb-2 block">Amount</label>
             <div class="relative">
-                <input v-model="sendAmount" @blur="validateAmount" @input="amountError = ''" type="text" step="any" placeholder="0.00" :disabled="!selectedAssetToSend" class="w-full p-4 pr-20 bg-muted border border-border rounded-lg text-lg font-semibold focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-50 disabled:cursor-not-allowed" />
+                <input v-model="sendAmount" @blur="validateAmount" @input="amountError = ''" type="text" step="any" placeholder="0.00" :disabled="!selectedAssetToSend" class="w-full p-4 pr-20 bg-muted border border-border rounded-lg text-lg font-semibold input-crypto disabled:opacity-50 disabled:cursor-not-allowed" />
                 <button @click="setMaxAmount" :disabled="!selectedAssetToSend" class="absolute right-3 top-1/2 -translate-y-1/2 px-3 py-1.5 bg-primary text-primary-foreground rounded-md text-sm font-semibold hover:bg-primary/90 transition-opacity disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed">
                     MAX
                 </button>
@@ -249,7 +249,7 @@
                        @input="addressError = ''"
                        type="text"
                        placeholder="0x..."
-                       class="w-full p-4 pr-12 bg-muted border border-border rounded-lg font-mono text-sm focus:outline-none focus:ring-2 focus:ring-primary" />
+                       class="w-full p-4 pr-12 bg-muted border border-border rounded-lg font-mono text-sm input-crypto" />
                 <button @click="pasteFromClipboard"
                         title="Paste from clipboard"
                         class="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-card-foreground p-1 transition-colors cursor-pointer">

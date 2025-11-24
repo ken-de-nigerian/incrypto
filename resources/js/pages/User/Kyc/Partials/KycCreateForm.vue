@@ -293,7 +293,7 @@
     }
 
     .vue-tel-input-custom .vti__input {
-        background-color: hsl(var(--input));
+        background-color: hsl(var(--background));
         border: 1px solid hsl(var(--border));
         border-radius: 0 0.75rem 0.75rem 0;
         padding: 0.75rem 1rem 0.75rem 5px;
@@ -315,7 +315,7 @@
     }
 
     .vue-tel-input-custom .vti__dropdown {
-        background-color: hsl(var(--input));
+        background-color: hsl(var(--background));
         border: 1px solid hsl(var(--border));
         border-radius: 0.75rem 0 0 0.75rem;
         border-right: none;
@@ -328,7 +328,7 @@
     }
 
     .vue-tel-input-custom .vti__dropdown-list {
-        background-color: hsl(var(--card));
+        background-color: hsl(var(--background));
         border: 1px solid hsl(var(--border));
         border-radius: 0.75rem;
         max-height: 200px;

@@ -12,11 +12,11 @@
         <div class="bg-gradient-to-br from-primary/10 to-primary/10 border border-border rounded-2xl p-6">
             <div class="flex items-center gap-2 mb-2">
                 <WalletIcon class="w-5 h-5 text-primary" />
-                <span class="text-xs sm:text-sm font-medium text-muted-foreground">Portfolio Value</span>
+                <span class="text-xs sm:text-sm font-medium text-muted-foreground">Crypto Value</span>
             </div>
 
             <div class="text-2xl sm:text-3xl font-bold text-card-foreground mb-1">
-                ${{ portfolioValue.toFixed(2) }}
+                ${{ portfolioValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}
             </div>
 
             <div :class="['flex items-center gap-1 text-xs sm:text-sm', portfolioChange24h >= 0 ? 'text-primary' : 'text-destructive']">

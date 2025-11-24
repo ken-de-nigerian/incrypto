@@ -60,14 +60,6 @@
         return interestPerCycle.value * remainingCycles;
     });
 
-    const hasPaidInterest = computed(() => {
-        return paidInterest.value > 0;
-    });
-
-    const hasUnpaidInterest = computed(() => {
-        return unpaidInterest.value > 0;
-    });
-
     const canSelectNoPayout = computed(() => {
         return !hasCompletedCycle.value;
     });

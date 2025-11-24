@@ -53,7 +53,7 @@
     const totalPortfolioValue = computed(() => {
         if (!props.userBalances || !props.prices) return 0;
         return Object.keys(props.userBalances).reduce((total, symbol) => {
-            return total + ((props.userBalances[symbol] || 0) * (props.prices[symbol] || 0));
+            return Number(total + ((props.userBalances[symbol] || 0) * (props.prices[symbol] || 0)));
         }, 0);
     });
 

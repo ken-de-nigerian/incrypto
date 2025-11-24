@@ -1,6 +1,5 @@
 <script setup lang="ts">
     import TextLink from '@/components/TextLink.vue';
-    import { computed } from 'vue';
     import { Users } from 'lucide-vue-next';
     import { route } from 'ziggy-js';
 
@@ -15,12 +14,6 @@
     const props = defineProps<{
         referred_users?: ReferredUserItem[];
     }>();
-
-    // Check if data is loading
-    const isLoading = computed(() => !props.referred_users);
-
-    // Skeleton loader count
-    const skeletonCount = computed(() => props.referred_users?.length || 5);
 
     const formatDate = (dateString: string): string => {
         return new Date(dateString).toLocaleDateString('en-US', {
@@ -40,20 +33,6 @@
                 <span class="flex-1 min-w-0">Referred User</span>
                 <span class="text-right">Joined</span>
             </div>
-
-            <template v-if="isLoading">
-                <div v-for="i in skeletonCount" :key="`skeleton-${i}`"
-                     class="flex items-center justify-between py-1 animate-pulse">
-                    <div class="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
-                        <div class="w-6 h-6 sm:w-7 sm:h-7 bg-secondary/70 rounded-full"></div>
-                        <div class="h-4 bg-secondary/70 rounded w-2/3"></div>
-                    </div>
-
-                    <div class="w-1/4 text-right flex-shrink-0">
-                        <div class="h-4 bg-secondary/70 rounded w-full"></div>
-                    </div>
-                </div>
-            </template>
 
             <template v-else-if="props.referred_users && props.referred_users.length > 0">
                 <div v-for="(referral, index) in props.referred_users"

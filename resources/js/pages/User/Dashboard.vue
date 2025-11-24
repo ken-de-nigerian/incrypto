@@ -35,7 +35,6 @@
 
     // Define reactive state
     const page = usePage();
-    const hideBalance = ref(false);
     const isNotificationsModalOpen = ref(false);
 
     const notificationCount = computed(() => page.props.auth.notification_count);
@@ -174,7 +173,10 @@
 
             <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6">
                 <div class="lg:col-span-3 space-y-4 sm:space-y-6">
-                    <WalletCard :hideBalance="hideBalance" :wallet_balances="wallet_balances" />
+                    <WalletCard
+                        :wallet_balances="wallet_balances"
+                        :user_profile="user.profile"
+                    />
                     <QuickActionsCard />
                 </div>
 

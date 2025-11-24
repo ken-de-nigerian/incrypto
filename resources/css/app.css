@@ -655,6 +655,44 @@
         cursor: not-allowed;
     }
 
+    #is_active[type="checkbox"] {
+        appearance: none;
+        border-radius: var(--radius, 0.75rem);
+        border: 1px solid hsl(var(--primary));
+        background-color: hsl(var(--background));
+        transition: var(--transition-smooth);
+        width: 16px;
+        height: 16px;
+        position: relative;
+        cursor: pointer;
+    }
+
+    #is_active[type="checkbox"]:checked::after {
+        content: "";
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 8px;
+        height: 8px;
+        background-color: hsl(var(--primary-foreground));
+        clip-path: polygon(14% 44%, 0% 65%, 50% 100%, 100% 16%, 80% 0%, 43% 62%);
+    }
+
+    #is_active[type="checkbox"]:checked {
+        background-color: hsl(var(--primary));
+    }
+
+    #is_active[type="checkbox"]:focus-visible {
+        outline: none;
+        box-shadow: 0 0 0 2px hsl(var(--ring));
+    }
+
+    #is_active[type="checkbox"]:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+
     #freeTrial[type="checkbox"] {
         appearance: none;
         border-radius: var(--radius, 0.75rem);

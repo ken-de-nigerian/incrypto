@@ -26,8 +26,8 @@ class UserDashboardController extends Controller
     public function __invoke(Request $request) {
         $cryptoListData = $this->getData(Auth::user());
         return Inertia::render('User/Dashboard', [
-            'wallet_balances' => Inertia::defer(fn () => $this->walletBalances()),
-            'referred_users' => Inertia::defer(fn () => $this->referredUsers()),
+            'wallet_balances' => $this->walletBalances(),
+            'referred_users' => $this->referredUsers(),
             ...$cryptoListData
         ]);
     }
@@ -87,7 +87,7 @@ class UserDashboardController extends Controller
 
         return [
             'wallets' => $processedWallets,
-            'totalUsdValue' => number_format($totalUsdValue, 2),
+            'totalUsdValue' =>  (float) $totalUsdValue,
         ];
     }
 

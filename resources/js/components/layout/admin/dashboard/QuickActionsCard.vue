@@ -5,21 +5,19 @@
         Download,
         Repeat,
         Send,
-        SettingsIcon,
-        ShieldCheck,
-        Users,
+        ShieldCheck, User2Icon, Users2Icon,
         Wallet
     } from 'lucide-vue-next';
     import TextLink from '@/components/TextLink.vue';
     const navigation = [
+        { name: "Master Traders", href: "admin.network.index", icon: Users2Icon },
         { name: "Sent", href: "admin.transaction.index", params: { tab: "sent" }, icon: Send },
         { name: "Received", href: "admin.transaction.index", params: { tab: "received" }, icon: Download },
         { name: "Swaps", href: "admin.transaction.index", params: { tab: "swaps" }, icon: Repeat },
         { name: "Connect", href: "admin.wallet.index", icon: Wallet },
-        { name: "Users", href: "admin.users.index", icon: Users },
+        { name: "Users", href: "admin.users.index", icon: User2Icon },
         { name: "Transactions", href: "admin.transaction.index", icon: CreditCard },
         { name: "KYC", href: "admin.kyc.index", icon: ShieldCheck },
-        { name: "Settings", href: "admin.profile.index", icon: SettingsIcon },
     ];
 </script>
 

@@ -49,7 +49,7 @@
                     type="number"
                     step="0.1"
                     placeholder="Custom"
-                    class="flex-1 px-2 sm:px-3 py-1 sm:py-1.5 bg-background border border-border rounded-lg text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                    class="flex-1 px-2 sm:px-3 py-1 sm:py-1.5 bg-background border border-border rounded-lg text-xs sm:text-sm input-crypto"
                 />
             </div>
         </div>
@@ -62,7 +62,7 @@
                     type="number"
                     min="1"
                     max="60"
-                    class="flex-1 px-2 sm:px-3 py-1 sm:py-1.5 bg-background border border-border rounded-lg text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                    class="flex-1 px-2 sm:px-3 py-1 sm:py-1.5 bg-background border border-border rounded-lg text-xs sm:text-sm input-crypto"
                 />
                 <span class="text-xs sm:text-sm text-muted-foreground">minutes</span>
             </div>

@@ -3,10 +3,14 @@
     import { Head, usePage, router } from '@inertiajs/vue3';
     import {
         Lock,
-        DollarSign,
         Repeat,
         Mail,
-        Send, Wallet2, Trash, UserCheck2, UserX2, Download
+        Send,
+        Wallet2,
+        Trash,
+        UserCheck2,
+        UserX2,
+        Download, PiggyBank
     } from 'lucide-vue-next';
 
     import AppLayout from '@/components/layout/admin/dashboard/AppLayout.vue';
@@ -89,9 +93,53 @@
         created_at: string;
     }
 
+    interface Trade {
+        id: number;
+        pair: string;
+        pair_name: string;
+        type: string;
+        amount: number;
+        leverage: number;
+        duration: number;
+        entry_price: number;
+        exit_price: number | null;
+        status: string;
+        pnl: number | null;
+        category: string;
+        opened_at: string;
+        closed_at: string | null;
+        expiry_time: string;
+        created_at: string;
+    }
+
+    interface Investment {
+        id: number;
+        plan_id: number;
+        amount: number;
+        interest: number;
+        period: string;
+        repeat_time: number;
+        repeat_time_count: number;
+        next_time: string | null;
+        last_time: string | null;
+        status: string;
+        capital_back_status: string;
+        created_at: string;
+        plan: {
+            id: number;
+            name: string;
+        };
+    }
+
     interface TransactionData<T> {
         data: T[];
         total: number;
+    }
+
+    interface UserProfile {
+        live_trading_balance: number | string;
+        demo_trading_balance: number | string;
+        trading_status: 'live' | 'demo';
     }
 
     const props = defineProps<{
@@ -103,7 +151,7 @@
             phone_number: string | null;
             status: 'active' | 'suspended';
             created_at: string;
-            profile: {
+            profile: UserProfile & {
                 profile_photo_path: string | null;
                 referral_code: string;
                 country: string;
@@ -117,19 +165,26 @@
             wallets: Array<Omit<WalletItem, 'key' | 'id' | 'network' | 'is_visible' | 'is_updating'>>;
             totalUsdValue: number | string;
         };
-
         referred_users: TransactionData<ReferredUser>;
         cryptoSwaps: TransactionData<CryptoSwap>;
-        receivedCryptos: TransactionData<ReceivedCrypto>
+        receivedCryptos: TransactionData<ReceivedCrypto>;
         sentCryptos: TransactionData<SentCrypto>;
+        trades: TransactionData<Trade>;
+        investments: TransactionData<Investment>;
     }>();
 
-    const getInitials = (name: string): string => {
-        return name.split(/\s+/).map(word => word.charAt(0)).join('').toUpperCase().slice(0, 2);
-    };
+    const page = usePage();
+    const authUser = computed(() => page.props.auth.user);
+    const notificationCount = computed(() => page.props.auth.notification_count);
 
     const activeTab = ref('wallets');
     const wallets = ref<WalletItem[]>([]);
+    const isNotificationsModalOpen = ref(false);
+
+    const convertToNumber = (v: any): number => (typeof v === 'number' ? v : parseFloat(v) || 0);
+
+    const isLiveMode = ref(props.user.profile.trading_status === 'live');
+    const liveBalance = computed(() => convertToNumber(props.user.profile.live_trading_balance));
 
     const parseWalletBalances = () => {
         const walletBalancesData = props.wallet_balances;
@@ -140,14 +195,13 @@
                 const key = data.symbol;
                 const incomingStatus = data.status || '1';
                 const status = existingWallet?.is_updating ? existingWallet.status : incomingStatus;
-                const network = null;
 
                 return {
                     key: key,
                     id: key,
                     name: data.name,
                     symbol: data.symbol,
-                    network: network,
+                    network: null,
                     balance: data.balance,
                     image: data.image,
                     status: status,
@@ -170,7 +224,6 @@
         const wallet = wallets.value.find(w => w.key === key);
         if (!wallet || wallet.is_updating) return;
 
-        // Set loading state
         wallet.is_updating = true;
         const newStatus = wallet.status === '1' ? '0' : '1';
         const previousStatus = wallet.status;
@@ -208,15 +261,28 @@
         });
     };
 
+    const getInitials = (name: string): string => {
+        return name.split(/\s+/).map(word => word.charAt(0)).join('').toUpperCase().slice(0, 2);
+    };
+
     const formatDate = (dateString: string) => {
         return new Date(dateString).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
     };
 
+    const initials = computed(() => {
+        if (authUser.value) {
+            const first = authUser.value.first_name?.charAt(0) || '';
+            const last = authUser.value.last_name?.charAt(0) || '';
+            return `${first}${last}`.toUpperCase();
+        }
+        return '';
+    });
+
     const metrics = computed(() => [
-        { label: 'Balance (USD)', value: `$${props.wallet_balances?.totalUsdValue ?? '0.00'}`, icon: DollarSign, color: 'text-primary' },
         { label: 'Sent (Txs)', value: props.sentCryptos.total, icon: Send, color: 'text-destructive' },
         { label: 'Swaps Done', value: props.cryptoSwaps.total, icon: Repeat, color: 'text-accent' },
         { label: 'Received (Txs)', value: props.receivedCryptos.total, icon: Download, color: 'text-success' },
+        { label: 'Investments', value: props.investments.total, icon: PiggyBank, color: 'text-info' },
     ]);
 
     const adminActionGroups = computed(() => [
@@ -232,29 +298,6 @@
         }
     ]);
 
-    const page = usePage();
-    const authUser = computed(() => page.props.auth.user);
-
-    const initials = computed(() => {
-        if (authUser.value) {
-            const first = authUser.value.first_name?.charAt(0) || '';
-            const last = authUser.value.last_name?.charAt(0) || '';
-            return `${first}${last}`.toUpperCase();
-        }
-        return '';
-    });
-
-    const isNotificationsModalOpen = ref(false);
-    const notificationCount = computed(() => page.props.auth.notification_count);
-
-    const openNotificationsModal = () => {
-        isNotificationsModalOpen.value = true;
-    };
-
-    const closeNotificationsModal = () => {
-        isNotificationsModalOpen.value = false;
-    };
-
     const breadcrumbItems = [
         { label: 'Dashboard', href: route('admin.dashboard') },
         { label: 'Users', href: route('admin.users.index') },
@@ -266,16 +309,28 @@
             case 'wallets':
                 return 'Connected Wallets';
             case 'swaps':
-                return `Crypto Swaps`;
+                return 'Crypto Swaps';
             case 'sends':
-                return `Sent Cryptos`;
+                return 'Sent Cryptos';
             case 'receives':
-                return `Received Cryptos`;
+                return 'Received Cryptos';
             case 'referrals':
-                return `Referred Users`;
+                return 'Referred Users';
+            case 'trades':
+                return 'Trading History';
+            case 'investments':
+                return 'Investment Portfolio';
             default:
                 return 'Transaction Details';
         }
+    };
+
+    const openNotificationsModal = () => {
+        isNotificationsModalOpen.value = true;
+    };
+
+    const closeNotificationsModal = () => {
+        isNotificationsModalOpen.value = false;
     };
 </script>
 
@@ -292,21 +347,21 @@
                 @open-notifications="openNotificationsModal"
             />
 
-            <ProfileHeader
-                :user="props.user"
-            />
+            <ProfileHeader :user="props.user" />
 
             <div class="grid grid-cols-12 gap-6 mt-8">
                 <div class="col-span-12 lg:col-span-4 xl:col-span-3 space-y-6 order-2 sm:order-1">
                     <AccountDetailsCard :user="props.user" />
-
-                    <WalletBalancesCard
-                        :visible-wallet-data="props.wallet_balances?.wallets"
-                    />
+                    <WalletBalancesCard :visible-wallet-data="props.wallet_balances?.wallets" />
                 </div>
 
                 <div class="col-span-12 lg:col-span-8 xl:col-span-6 space-y-6 order-1 sm:order-2">
-                    <ProfileMetrics :metrics="metrics" />
+                    <ProfileMetrics
+                        :metrics="metrics"
+                        v-model:is-live-mode="isLiveMode"
+                        :live-balance="liveBalance"
+                        :current-balance="props.wallet_balances?.totalUsdValue"
+                    />
 
                     <TransactionHistoryTabs
                         v-model:active-tab="activeTab"
@@ -315,6 +370,8 @@
                         :received-cryptos="props.receivedCryptos.data"
                         :referred-users="props.referred_users.data"
                         :connected-wallets="props.user.wallets"
+                        :trades="props.trades.data"
+                        :investments="props.investments.data"
                         :get-tab-header="getTabHeader"
                         :get-initials="getInitials"
                         :format-date="formatDate"

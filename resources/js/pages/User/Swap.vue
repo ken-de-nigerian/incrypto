@@ -86,7 +86,7 @@
         return Object.keys(props.userBalances).reduce((total, symbol) => {
             const balance = props.userBalances[symbol] || 0;
             const price = props.prices[symbol] || 0;
-            return total + balance * price;
+            return Number(total + balance * price);
         }, 0);
     });
 </script>

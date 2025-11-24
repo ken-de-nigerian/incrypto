@@ -115,6 +115,8 @@ class AdminUserController extends Controller
         $receivedCryptosCollection = $this->receivedCryptos($user)->get();
         $sentCryptosCollection = $this->sentCryptos($user)->get();
         $referredUsersCollection = $this->referredUsers($user)->get();
+        $tradesCollection = $this->trades($user)->get();
+        $investmentsCollection = $this->investments($user)->get();
 
         return Inertia::render('Admin/Users/Show', [
             'user' => $user->load(['profile', 'kyc', 'wallets']),
@@ -136,6 +138,14 @@ class AdminUserController extends Controller
             'sentCryptos' => [
                 'data' => $sentCryptosCollection->toArray(),
                 'total' => $sentCryptosCollection->count(),
+            ],
+            'trades' => [
+                'data' => $tradesCollection->toArray(),
+                'total' => $tradesCollection->count(),
+            ],
+            'investments' => [
+                'data' => $investmentsCollection->toArray(),
+                'total' => $investmentsCollection->count(),
             ],
         ]);
     }
@@ -301,6 +311,51 @@ class AdminUserController extends Controller
             ->latest();
     }
 
+    public function trades($user)
+    {
+        return $user->trades()
+            ->select([
+                'id',
+                'pair',
+                'pair_name',
+                'type',
+                'amount',
+                'leverage',
+                'duration',
+                'entry_price',
+                'exit_price',
+                'status',
+                'pnl',
+                'category',
+                'opened_at',
+                'closed_at',
+                'expiry_time',
+                'created_at',
+            ])
+            ->latest();
+    }
+
+    public function investments($user)
+    {
+        return $user->investmentHistories()
+            ->with('plan')
+            ->select([
+                'id',
+                'plan_id',
+                'amount',
+                'interest',
+                'period',
+                'repeat_time',
+                'repeat_time_count',
+                'next_time',
+                'last_time',
+                'status',
+                'capital_back_status',
+                'created_at',
+            ])
+            ->latest();
+    }
+
     private function walletBalances($user)
     {
         $fullWalletData = $this->getFullWalletData($user);
@@ -343,7 +398,7 @@ class AdminUserController extends Controller
 
         return [
             'wallets' => $processedWallets,
-            'totalUsdValue' => number_format($activeTotalUsdValue, 2)
+            'totalUsdValue' => (float) $activeTotalUsdValue
         ];
     }
 

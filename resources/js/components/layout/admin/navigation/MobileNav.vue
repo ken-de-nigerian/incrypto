@@ -6,7 +6,7 @@
 
     const navigation = [
         { name: 'Home', href: 'admin.dashboard', icon: Home, isDefault: true },
-        { name: "Users", href: "admin.users.index", icon: Users2, group: 'admin.users.' },
+        { name: "Users", href: "admin.users.index", icon: Users2, groups: ['admin.users.', 'admin.network.'] },
         { name: "Logs", href: 'admin.transaction.index', icon: FilesIcon, group: 'admin.transaction.' },
         { name: 'Wallets', href: 'admin.wallet.index', icon: CreditCard, group: 'admin.wallet.' },
         { name: 'Account', href: 'admin.profile.index', icon: User2, group: 'admin.profile.' }
@@ -14,6 +14,9 @@
 
     const isAnyItemActive = computed(() => {
         return navigation.some(item => {
+            if (item.groups) {
+                return item.groups.some(group => route().current(group + '*'));
+            }
             if (item.group) {
                 return route().current(item.group + '*');
             }
@@ -23,7 +26,9 @@
 
     const isActive = (item: typeof navigation[0]) => {
         let active: boolean;
-        if (item.group) {
+        if (item.groups) {
+            active = item.groups.some(group => route().current(group + '*'));
+        } else if (item.group) {
             active = route().current(item.group + '*');
         } else {
             active = route().current(item.href);

@@ -78,6 +78,11 @@
         { name: "Payment Methods", href: "admin.method.index", icon: Shield, description: "Configure cryptocurrency processing methods" },
     ];
 
+    const masterTraderNavigation = [
+        { name: "Master Traders", href: "admin.network.index", icon: Users, description: "Manage expert traders and their performance metrics" },
+        { name: "Copy Trading History", href: "admin.network.index", params: { tab: "copy_history" }, icon: Copy, description: "Track all copy trading activities and replicated trades" }
+    ];
+
     const userNavigation = [
         { name: "Manage Users", href: "admin.users.index", icon: Users },
     ];
@@ -426,6 +431,27 @@
                                     <template v-for="item in gatewaysNavigation" :key="item.name">
                                         <TextLink
                                             :href="route(item.href)"
+                                            @click="closeAccountModal"
+                                            class="flex items-center gap-2.5 xs:gap-3 p-2.5 xs:p-3 rounded-lg xs:rounded-xl hover:bg-secondary active:bg-secondary/90 transition-all group">
+                                            <div class="w-8 h-8 xs:w-10 xs:h-10 rounded-lg bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 flex-shrink-0">
+                                                <component :is="item.icon" class="w-4 h-4 xs:w-5 xs:h-5 text-primary" />
+                                            </div>
+                                            <div class="flex-1 min-w-0">
+                                                <p class="font-medium text-xs xs:text-sm">{{ item.name }}</p>
+                                                <p class="text-[10px] xs:text-xs text-muted-foreground truncate">{{ item.description }}</p>
+                                            </div>
+                                            <ChevronRight class="w-3.5 h-3.5 xs:w-4 xs:h-4 text-muted-foreground/50 group-hover:text-muted-foreground flex-shrink-0" />
+                                        </TextLink>
+                                    </template>
+                                </div>
+                            </div>
+
+                            <div>
+                                <h3 class="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 xs:mb-3 px-1">Copy Trading Management</h3>
+                                <div class="space-y-0.5 xs:space-y-1">
+                                    <template v-for="item in masterTraderNavigation" :key="item.name">
+                                        <TextLink
+                                            :href="route(item.href, item.params)"
                                             @click="closeAccountModal"
                                             class="flex items-center gap-2.5 xs:gap-3 p-2.5 xs:p-3 rounded-lg xs:rounded-xl hover:bg-secondary active:bg-secondary/90 transition-all group">
                                             <div class="w-8 h-8 xs:w-10 xs:h-10 rounded-lg bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 flex-shrink-0">

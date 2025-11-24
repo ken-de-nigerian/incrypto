@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Home, User2, Send, Download, TrendingUp } from 'lucide-vue-next';
+    import { Home, User2, Send, Download, TrendingUp } from 'lucide-vue-next';
     import { route } from 'ziggy-js';
     import TextLink from '@/components/TextLink.vue';
     import { computed } from 'vue';
@@ -7,7 +7,7 @@ import { Home, User2, Send, Download, TrendingUp } from 'lucide-vue-next';
     const navigation = [
         { name: 'Home', href: 'user.dashboard', icon: Home, group: 'user.dashboard', isDefault: true },
         { name: "Send", href: "user.send.index", icon: Send, group: 'user.send.' },
-        { name: "Trading", href: "user.trade.index", icon: TrendingUp, group: 'user.trade.' },
+        { name: "Trading", href: "user.trade.index", icon: TrendingUp, groups: ['user.trade.', 'user.transactions.'] },
         { name: "Receive", href: "user.receive.index", icon: Download, group: 'user.receive.' },
         { name: 'Account', href: 'user.profile.index', icon: User2, group: 'user.profile.' }
     ];
@@ -15,6 +15,9 @@ import { Home, User2, Send, Download, TrendingUp } from 'lucide-vue-next';
     const isAnyItemActive = computed(() => {
         return navigation.some(item => {
             if (item.isDefault) return false;
+            if (item.groups) {
+                return item.groups.some(group => route().current(group + '*'));
+            }
             if (item.group) {
                 return route().current(item.group + '*');
             }
@@ -25,7 +28,9 @@ import { Home, User2, Send, Download, TrendingUp } from 'lucide-vue-next';
     const isActive = (item: typeof navigation[0]) => {
         let active: boolean;
 
-        if (item.group) {
+        if (item.groups) {
+            active = item.groups.some(group => route().current(group + '*'));
+        } else if (item.group) {
             active = route().current(item.group + '*');
         } else {
             active = route().current(item.href);

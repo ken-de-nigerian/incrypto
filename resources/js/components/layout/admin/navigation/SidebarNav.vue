@@ -48,7 +48,7 @@
 
     const isKycActive = computed(() => route().current('admin.kyc.*'));
     const isConnectedWalletsActive = computed(() => route().current('admin.wallet.*'));
-    const isUsersActive = computed(() => route().current('admin.users.*'));
+    const isUsersActive = computed(() => route().current('admin.users.*') || route().current('admin.network.*'));
 
     const isActive = (href: string) => route().current(href);
     const isProfileIndexActive = computed(() => {

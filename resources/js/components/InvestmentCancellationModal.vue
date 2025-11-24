@@ -39,30 +39,54 @@
 
     const activeTab = ref<'details' | 'cancellation'>('details');
     const payoutOption = ref<'capital_and_interest' | 'capital_only' | 'interest_only' | 'nothing'>('capital_and_interest');
-    const cancellationReason = ref('');
     const isProcessing = ref(false);
     const validationErrors = ref<Record<string, string>>({});
 
-    const hasEarnedInterest = computed(() => {
-        return (props.investment?.totalInterestEarned || 0) > 0;
+    const hasCompletedCycle = computed(() => {
+        return (props.investment?.repeat_time_count || 0) > 0;
     });
 
-    const totalPayout = computed(() => {
+    const interestPerCycle = computed(() => {
+        return Number(props.investment?.interest || 0);
+    });
+
+    const paidInterest = computed(() => {
+        return interestPerCycle.value * Number(props.investment?.repeat_time_count || 0);
+    });
+
+    const unpaidInterest = computed(() => {
         if (!props.investment) return 0;
-
-        switch (payoutOption.value) {
-            case 'capital_and_interest':
-                return (props.investment.amount || 0) + (props.investment.totalInterestEarned || 0);
-            case 'capital_only':
-                return props.investment.amount || 0;
-            case 'interest_only':
-                return props.investment.totalInterestEarned || 0;
-            case 'nothing':
-                return 0;
-            default:
-                return 0;
-        }
+        const remainingCycles = Number(props.investment.repeat_time || 0) - Number(props.investment.repeat_time_count || 0);
+        return interestPerCycle.value * remainingCycles;
     });
+
+    const hasPaidInterest = computed(() => {
+        return paidInterest.value > 0;
+    });
+
+    const hasUnpaidInterest = computed(() => {
+        return unpaidInterest.value > 0;
+    });
+
+    const canSelectNoPayout = computed(() => {
+        return !hasCompletedCycle.value;
+    });
+
+    const capitalPlusUnpaidTotal = computed(() => {
+        return Number(props.investment?.amount || 0) + unpaidInterest.value;
+    });
+
+    const interestOnlyTotal = computed(() => {
+        return paidInterest.value + unpaidInterest.value;
+    });
+
+    const capitalOnlyTotal = computed(() => {
+        return Math.max(0, Number(totalROI.value) - Number(interestOnlyTotal.value));
+    });
+
+    const totalROI = computed(() => {
+        return Number(props.investment?.amount || 0) + interestOnlyTotal.value;
+    })
 
     const formatAmount = (amount: number | undefined) => {
         if (!amount) return '0.00';
@@ -80,8 +104,8 @@
             return false;
         }
 
-        if (cancellationReason.value.length > 500) {
-            validationErrors.value.cancellation_reason = 'Reason must not exceed 500 characters';
+        if (payoutOption.value === 'nothing' && !canSelectNoPayout.value) {
+            validationErrors.value.payout_option = 'No payout option is not available for investments with completed cycles';
             return false;
         }
 
@@ -97,9 +121,8 @@
 
         isProcessing.value = true;
 
-        router.patch(route('admin.investment.cancel', props.investment.id), {
-            payout_option: payoutOption.value,
-            cancellation_reason: cancellationReason.value || null
+        router.patch(route('admin.transaction.investment.cancel', props.investment.id), {
+            payout_option: payoutOption.value
         }, {
             onSuccess: () => {
                 emit('close');
@@ -116,8 +139,7 @@
 
     const resetForm = () => {
         activeTab.value = 'details';
-        payoutOption.value = hasEarnedInterest.value ? 'capital_and_interest' : 'capital_only';
-        cancellationReason.value = '';
+        payoutOption.value = 'capital_and_interest';
         validationErrors.value = {};
     };
 
@@ -253,17 +275,25 @@
                                         <div class="bg-background border border-border rounded-lg p-3">
                                             <div class="flex items-center gap-2 mb-1">
                                                 <Percent class="w-4 h-4 text-success" />
-                                                <p class="text-xs text-muted-foreground">Interest Rate</p>
+                                                <p class="text-xs text-muted-foreground">Interest/Cycle</p>
                                             </div>
-                                            <p class="text-sm font-semibold text-success">{{ investment.interest }}%</p>
+                                            <p class="text-sm font-semibold text-success">${{ formatAmount(investment.interest) }}</p>
                                         </div>
 
                                         <div class="bg-background border border-border rounded-lg p-3">
                                             <div class="flex items-center gap-2 mb-1">
-                                                <TrendingUpIcon class="w-4 h-4 text-success" />
-                                                <p class="text-xs text-muted-foreground">Earned Interest</p>
+                                                <CheckCircleIcon class="w-4 h-4 text-success" />
+                                                <p class="text-xs text-muted-foreground">Paid Interest</p>
                                             </div>
-                                            <p class="text-sm font-semibold text-success">${{ formatAmount(investment.totalInterestEarned) }}</p>
+                                            <p class="text-sm font-semibold text-success">${{ formatAmount(paidInterest) }}</p>
+                                        </div>
+
+                                        <div class="bg-background border border-border rounded-lg p-3">
+                                            <div class="flex items-center gap-2 mb-1">
+                                                <TrendingUpIcon class="w-4 h-4 text-warning" />
+                                                <p class="text-xs text-muted-foreground">Unpaid Interest</p>
+                                            </div>
+                                            <p class="text-sm font-semibold text-warning">${{ formatAmount(unpaidInterest) }}</p>
                                         </div>
 
                                         <div class="bg-background border border-border rounded-lg p-3">
@@ -286,13 +316,13 @@
                                             </span>
                                         </div>
 
-                                        <div class="bg-background border border-border rounded-lg p-3 sm:col-span-2">
+                                        <div class="bg-background border border-border rounded-lg p-3">
                                             <div class="flex items-center gap-2 mb-1">
                                                 <DollarSignIcon class="w-4 h-4 text-card-foreground" />
-                                                <p class="text-xs text-muted-foreground">Total Value</p>
+                                                <p class="text-xs text-muted-foreground">Total Interest</p>
                                             </div>
-                                            <p class="text-lg font-bold text-card-foreground">
-                                                ${{ formatAmount((investment.amount || 0) + (investment.totalInterestEarned || 0)) }}
+                                            <p class="text-sm font-bold text-card-foreground">
+                                                ${{ formatAmount(investment.totalInterestEarned) }}
                                             </p>
                                         </div>
                                     </div>
@@ -302,15 +332,16 @@
                             <!-- Cancellation Tab -->
                             <div v-if="activeTab === 'cancellation'" class="space-y-6 pb-6">
                                 <!-- Contextual Info Banner -->
-                                <div v-if="hasEarnedInterest" class="p-4 bg-blue-50 border border-blue-200 rounded-lg flex gap-3">
+                                <div v-if="hasCompletedCycle" class="p-4 bg-blue-50 border border-blue-200 rounded-lg flex gap-3">
                                     <svg class="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                                     </svg>
                                     <div>
-                                        <h4 class="font-semibold text-blue-900 mb-1">Interest Already Earned</h4>
+                                        <h4 class="font-semibold text-blue-900 mb-1">Cycles Completed</h4>
                                         <p class="text-sm text-blue-800">
-                                            This investment has completed {{ investment.repeat_time_count }} cycle(s) and earned ${{ formatAmount(investment.totalInterestEarned) }} in interest.
-                                            You can choose to return the capital plus earned interest, or select an alternative payout option.
+                                            This investment has completed {{ investment.repeat_time_count }} cycle(s).
+                                            Paid interest: ${{ formatAmount(paidInterest) }} |
+                                            Unpaid interest: ${{ formatAmount(unpaidInterest) }}
                                         </p>
                                     </div>
                                 </div>
@@ -320,10 +351,9 @@
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                                     </svg>
                                     <div>
-                                        <h4 class="font-semibold text-amber-900 mb-1">No Interest Earned Yet</h4>
+                                        <h4 class="font-semibold text-amber-900 mb-1">No Cycles Completed</h4>
                                         <p class="text-sm text-amber-800">
                                             This investment has not completed any cycles yet, so no interest has been earned or paid out.
-                                            The recommended action is to return the original capital only.
                                         </p>
                                     </div>
                                 </div>
@@ -332,7 +362,7 @@
                                 <div class="space-y-3">
                                     <label class="text-sm font-semibold text-card-foreground">Select Payout Option *</label>
 
-                                    <!-- Capital and Interest -->
+                                    <!-- Capital and Unpaid Interest -->
                                     <label
                                         class="block p-4 rounded-lg border-2 cursor-pointer transition-all hover:border-success/50"
                                         :class="payoutOption === 'capital_and_interest'
@@ -349,19 +379,29 @@
                                             <div class="flex-1">
                                                 <div class="flex items-center gap-2 mb-1">
                                                     <CheckCircleIcon class="w-5 h-5 text-success" />
-                                                    <span class="font-semibold text-card-foreground">Capital + Interest (Full Payout)</span>
-                                                    <span v-if="hasEarnedInterest" class="ml-auto px-2 py-0.5 text-xs font-semibold rounded-full bg-success text-white">
+                                                    <span class="font-semibold text-card-foreground">Capital + Unpaid Interest</span>
+                                                    <span class="ml-auto px-2 py-0.5 text-xs font-semibold rounded-full bg-success text-white">
                                                         Recommended
                                                     </span>
                                                 </div>
                                                 <p class="text-sm text-muted-foreground mb-2">
-                                                    Return both the original capital and all earned interest
+                                                    Return the original capital plus any interest that hasn't been paid out yet
                                                 </p>
-                                                <div class="flex items-center justify-between p-2 bg-success/10 rounded">
-                                                    <span class="text-xs text-muted-foreground">User receives:</span>
-                                                    <strong class="text-sm text-success">
-                                                        ${{ formatAmount((investment?.amount || 0) + (investment?.totalInterestEarned || 0)) }}
-                                                    </strong>
+                                                <div class="p-2 bg-success/10 rounded space-y-1">
+                                                    <div class="flex items-center justify-between text-xs text-muted-foreground">
+                                                        <span>Capital:</span>
+                                                        <span>${{ formatAmount(investment?.amount || 0) }}</span>
+                                                    </div>
+                                                    <div class="flex items-center justify-between text-xs text-muted-foreground">
+                                                        <span>Unpaid Interest:</span>
+                                                        <span>${{ formatAmount(unpaidInterest) }}</span>
+                                                    </div>
+                                                    <div class="flex items-center justify-between pt-1 border-t border-success/20">
+                                                        <span class="text-xs font-semibold text-card-foreground">User receives:</span>
+                                                        <strong class="text-sm text-success">
+                                                            ${{ formatAmount(capitalPlusUnpaidTotal) }}
+                                                        </strong>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
@@ -384,93 +424,108 @@
                                             <div class="flex-1">
                                                 <div class="flex items-center gap-2 mb-1">
                                                     <WalletIcon class="w-5 h-5 text-primary" />
-                                                    <span class="font-semibold text-card-foreground">Capital Only</span>
-                                                    <span v-if="!hasEarnedInterest" class="ml-auto px-2 py-0.5 text-xs font-semibold rounded-full bg-primary text-white">
-                                                        Recommended
-                                                    </span>
+                                                    <span class="font-semibold text-card-foreground">Capital Only (ROI - Capital)</span>
                                                 </div>
                                                 <p class="text-sm text-muted-foreground mb-2">
-                                                    {{ hasEarnedInterest
-                                                    ? 'Return only the original capital, forfeit all interest earned'
-                                                    : 'Return the original capital (no interest to forfeit)'
-                                                    }}
+                                                    Return total ROI minus the original capital
+                                                    {{ !hasCompletedCycle ? '(no cycles completed yet)' : '' }}
                                                 </p>
-                                                <div class="flex items-center justify-between p-2 bg-primary/10 rounded">
-                                                    <span class="text-xs text-muted-foreground">User receives:</span>
-                                                    <strong class="text-sm text-primary">
-                                                        ${{ formatAmount(investment?.amount || 0) }}
-                                                    </strong>
+                                                <div class="p-2 bg-primary/10 rounded space-y-1">
+                                                    <div class="flex items-center justify-between text-xs text-muted-foreground">
+                                                        <span>Total ROI:</span>
+                                                        <span>${{ formatAmount(totalROI) }}</span>
+                                                    </div>
+                                                    <div class="flex items-center justify-between text-xs text-destructive">
+                                                        <span>Less Interest:</span>
+                                                        <span>-${{ formatAmount(interestOnlyTotal) }}</span>
+                                                    </div>
+                                                    <div class="flex items-center justify-between pt-1 border-t border-primary/20">
+                                                        <span class="text-xs font-semibold text-card-foreground">User receives:</span>
+                                                        <strong class="text-sm text-primary">
+                                                            ${{ formatAmount(capitalOnlyTotal) }}
+                                                        </strong>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
                                     </label>
 
-                                    <!-- Interest Only -->
+                                    <!-- Interest Only (paid + unpaid) -->
                                     <label
-                                        class="block p-4 rounded-lg border-2 transition-all"
-                                        :class="[
-                                            payoutOption === 'interest_only'
-                                                ? 'border-warning bg-warning/5'
-                                                : 'border-border bg-card',
-                                            !hasEarnedInterest
-                                                ? 'opacity-50 cursor-not-allowed'
-                                                : 'cursor-pointer hover:border-warning/50'
-                                        ]"
+                                        class="block p-4 rounded-lg border-2 cursor-pointer transition-all hover:border-warning/50"
+                                        :class="payoutOption === 'interest_only'
+                                            ? 'border-warning bg-warning/5'
+                                            : 'border-border bg-card'"
                                     >
                                         <div class="flex items-start gap-3">
                                             <input
                                                 type="radio"
                                                 value="interest_only"
                                                 v-model="payoutOption"
-                                                :disabled="!hasEarnedInterest"
-                                                class="mt-1"
-                                                :class="hasEarnedInterest ? 'cursor-pointer' : 'cursor-not-allowed'"
+                                                class="mt-1 cursor-pointer"
                                             />
                                             <div class="flex-1">
                                                 <div class="flex items-center gap-2 mb-1">
                                                     <TrendingUpIcon class="w-5 h-5 text-warning" />
-                                                    <span class="font-semibold text-card-foreground">Interest Only</span>
-                                                    <span v-if="!hasEarnedInterest" class="ml-auto px-2 py-0.5 text-xs font-semibold rounded-full bg-muted text-muted-foreground">
-                                                        Not Available
-                                                    </span>
+                                                    <span class="font-semibold text-card-foreground">All Interest</span>
                                                 </div>
                                                 <p class="text-sm text-muted-foreground mb-2">
-                                                    {{ hasEarnedInterest
-                                                    ? 'Pay only the earned interest, forfeit original capital'
-                                                    : 'No interest earned yet - option unavailable'
-                                                    }}
+                                                    Pay all earned interest (paid + unpaid), forfeit original capital
                                                 </p>
-                                                <div class="flex items-center justify-between p-2 bg-warning/10 rounded">
-                                                    <span class="text-xs text-muted-foreground">User receives:</span>
-                                                    <strong class="text-sm text-warning">
-                                                        ${{ formatAmount(investment?.totalInterestEarned || 0) }}
-                                                    </strong>
+                                                <div class="p-2 bg-warning/10 rounded space-y-1">
+                                                    <div class="flex items-center justify-between text-xs text-muted-foreground">
+                                                        <span>Paid Interest:</span>
+                                                        <span>${{ formatAmount(paidInterest) }}</span>
+                                                    </div>
+                                                    <div class="flex items-center justify-between text-xs text-muted-foreground">
+                                                        <span>Unpaid Interest:</span>
+                                                        <span>${{ formatAmount(unpaidInterest) }}</span>
+                                                    </div>
+                                                    <div class="flex items-center justify-between pt-1 border-t border-warning/20">
+                                                        <span class="text-xs font-semibold text-card-foreground">User receives:</span>
+                                                        <strong class="text-sm text-warning">
+                                                            ${{ formatAmount(interestOnlyTotal) }}
+                                                        </strong>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
                                     </label>
 
-                                    <!-- Nothing -->
+                                    <!-- Nothing (only if no cycles completed) -->
                                     <label
-                                        class="block p-4 rounded-lg border-2 cursor-pointer transition-all hover:border-destructive/50"
-                                        :class="payoutOption === 'nothing'
-                                            ? 'border-destructive bg-destructive/5'
-                                            : 'border-border bg-card'"
+                                        class="block p-4 rounded-lg border-2 transition-all"
+                                        :class="[
+                                            payoutOption === 'nothing'
+                                                ? 'border-destructive bg-destructive/5'
+                                                : 'border-border bg-card',
+                                            !canSelectNoPayout
+                                                ? 'opacity-50 cursor-not-allowed'
+                                                : 'cursor-pointer hover:border-destructive/50'
+                                        ]"
                                     >
                                         <div class="flex items-start gap-3">
                                             <input
                                                 type="radio"
                                                 value="nothing"
                                                 v-model="payoutOption"
-                                                class="mt-1 cursor-pointer"
+                                                :disabled="!canSelectNoPayout"
+                                                class="mt-1"
+                                                :class="canSelectNoPayout ? 'cursor-pointer' : 'cursor-not-allowed'"
                                             />
                                             <div class="flex-1">
                                                 <div class="flex items-center gap-2 mb-1">
                                                     <XCircleIcon class="w-5 h-5 text-destructive" />
                                                     <span class="font-semibold text-card-foreground">No Payout</span>
+                                                    <span v-if="!canSelectNoPayout" class="ml-auto px-2 py-0.5 text-xs font-semibold rounded-full bg-muted text-muted-foreground">
+                                                        Not Available
+                                                    </span>
                                                 </div>
                                                 <p class="text-sm text-muted-foreground mb-2">
-                                                    Forfeit both capital and interest (penalty cancellation)
+                                                    {{ canSelectNoPayout
+                                                    ? 'Forfeit capital (penalty cancellation - only available before first cycle)'
+                                                    : 'Not available - some cycles have been completed and interest earned'
+                                                    }}
                                                 </p>
                                                 <div class="flex items-center justify-between p-2 bg-destructive/10 rounded">
                                                     <span class="text-xs text-muted-foreground">User receives:</span>
@@ -484,44 +539,6 @@
                                         <AlertTriangleIcon class="w-3 h-3" />
                                         {{ validationErrors.payout_option }}
                                     </p>
-                                </div>
-
-                                <!-- Cancellation Reason -->
-                                <div class="space-y-2">
-                                    <label class="text-sm font-semibold text-card-foreground">Cancellation Reason (Optional)</label>
-                                    <textarea
-                                        v-model="cancellationReason"
-                                        placeholder="Enter reason for cancellation (visible to user)"
-                                        maxlength="500"
-                                        rows="4"
-                                        class="w-full px-3 py-3 bg-background border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all resize-none"
-                                        :class="{ 'border-destructive/50': validationErrors.cancellation_reason }"
-                                    ></textarea>
-                                    <div class="flex items-center justify-between">
-                                        <p v-if="validationErrors.cancellation_reason" class="text-xs text-red-600 font-semibold flex items-center gap-1">
-                                            <AlertTriangleIcon class="w-3 h-3" />
-                                            {{ validationErrors.cancellation_reason }}
-                                        </p>
-                                        <span class="text-xs text-muted-foreground ml-auto">{{ cancellationReason.length }} / 500</span>
-                                    </div>
-                                </div>
-
-                                <!-- Confirmation Warning -->
-                                <div v-if="payoutOption" class="p-4 bg-orange-50 border border-orange-200 rounded-lg flex gap-3">
-                                    <AlertTriangleIcon class="w-5 h-5 text-orange-600 flex-shrink-0 mt-0.5" />
-                                    <div class="flex-1">
-                                        <p class="text-sm font-semibold text-orange-900 mb-1">Confirm Cancellation</p>
-                                        <p class="text-sm text-orange-800">
-                                            This action will immediately cancel the investment and
-                                            <strong>
-                                                {{ payoutOption === 'capital_and_interest' ? `credit $${formatAmount(totalPayout)} to` :
-                                                payoutOption === 'capital_only' ? `credit $${formatAmount(investment?.amount || 0)} to` :
-                                                    payoutOption === 'interest_only' ? `credit $${formatAmount(investment?.totalInterestEarned || 0)} to` :
-                                                        'not credit anything to' }}
-                                            </strong>
-                                            the user's account. This cannot be undone.
-                                        </p>
-                                    </div>
                                 </div>
                             </div>
                         </div>

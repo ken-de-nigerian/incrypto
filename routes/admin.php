@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\AdminCopyTradersController;
 use App\Http\Controllers\Admin\AdminDashboardController;
 use App\Http\Controllers\Admin\AdminKycController;
 use App\Http\Controllers\Admin\AdminNotificationController;
@@ -93,7 +94,18 @@ Route::prefix('admin')
                 Route::post('/approve', 'approve')->name('approve');
                 Route::post('/reject', 'reject')->name('reject');
                 Route::patch('/{trade}/trade/close', 'closeTrade')->name('trade.close');
-                Route::patch('{investment}/investment/cancel', 'cancelInvestment')->name('transaction.investment.cancel');
+                Route::patch('{investment}/investment/cancel', 'cancelInvestment')->name('investment.cancel');
+            });
+
+        // Copy Traders
+        Route::prefix('network')
+            ->name('network.')
+            ->controller(AdminCopyTradersController::class)
+            ->group(function () {
+                Route::get('/', 'index')->name('index');
+                Route::post('/store', 'store')->name('store');
+                Route::patch('/{network}/update', 'update')->name('update');
+                Route::delete('/{network}/delete', 'destroy')->name('destroy');
             });
 
         // Newsletter Notifications

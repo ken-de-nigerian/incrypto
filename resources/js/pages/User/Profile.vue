@@ -65,6 +65,16 @@
                 @open-notifications="openNotificationsModal"
             />
 
+            <div class="mt-8 md:mb-8 space-y-6">
+                <!-- Header Section -->
+                <div class="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
+                    <div>
+                        <h1 class="text-3xl sm:text-4xl font-bold text-card-foreground mb-2">Profile Settings</h1>
+                        <p class="text-muted-foreground">Manage your account information and preferences</p>
+                    </div>
+                </div>
+            </div>
+
             <div class="flex max-md:flex-col md:space-x-8 min-h-screen w-full">
                 <div class="md:w-80 md:shrink-0 bg-muted/10 md:rounded-lg lg:mt-0 mt-8">
                     <nav class="p-2 space-y-1 border border-border rounded-xl mb-4">

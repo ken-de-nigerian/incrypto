@@ -267,6 +267,16 @@
                 @open-notifications="openNotificationsModal"
             />
 
+            <div class="mt-8 space-y-6">
+                <!-- Header Section -->
+                <div class="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
+                    <div>
+                        <h1 class="text-3xl sm:text-4xl font-bold text-card-foreground mb-2">User Management</h1>
+                        <p class="text-muted-foreground">Monitor and manage all platform users and their activities</p>
+                    </div>
+                </div>
+            </div>
+
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-8">
                 <div class="p-4 bg-card border border-border rounded-xl">
                     <div class="flex items-center justify-between">

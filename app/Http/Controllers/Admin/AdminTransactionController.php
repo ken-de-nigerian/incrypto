@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\CancelInvestmentRequest;
 use App\Http\Requests\CloseTradeRequest;
 use App\Models\CryptoSwap;
 use App\Models\InvestmentHistory;
@@ -396,7 +397,7 @@ class AdminTransactionController extends Controller
     {
         try {
             $result = $tradeService->closeTrade(
-                $request->user(),
+                $trade->user,
                 $request->validated(),
                 $trade
             );
@@ -411,9 +412,26 @@ class AdminTransactionController extends Controller
         }
     }
 
-    public function cancelInvestment(InvestmentHistory $history)
+    /**
+     * @throws Throwable
+     */
+    public function cancelInvestment(CancelInvestmentRequest $request, InvestmentHistory $investment, TradeService $tradeService)
     {
-        dd($history);
+        try {
+            $result = $tradeService->cancelInvestment(
+                $investment->user,
+                $request->validated(),
+                $investment
+            );
+
+            if (!$result) {
+                return $this->notify('error', 'Failed to cancel investment - invalid state')->toBack();
+            }
+
+            return $this->notify('success', 'Investment cancelled successfully')->toBack();
+        } catch (Exception $e) {
+            return $this->notify('error', __($e->getMessage()))->toBack();
+        }
     }
 
     /**

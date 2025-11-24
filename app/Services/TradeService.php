@@ -20,6 +20,7 @@ use Carbon\Carbon;
 use DateTime;
 use Exception;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 use Throwable;
 
 class TradeService
@@ -500,6 +501,60 @@ class TradeService
     }
 
     /**
+     * Cancel an investment
+     *
+     * @throws Throwable
+     */
+    public function cancelInvestment(User $user, array $data, InvestmentHistory $investment)
+    {
+        $payoutOption = $data['payout_option'];
+
+        return DB::transaction(function () use ($user, $payoutOption, $investment, $data) {
+
+            // Check if investment is already canceled or completed
+            if ($investment->status == 'cancelled') {
+                throw ValidationException::withMessages([
+                    'message' => 'This investment has already been cancelled',
+                ]);
+            }
+
+            // Validate payout for no payout option
+            if ($payoutOption === 'nothing' && $investment->repeat_time_count > 0) {
+                throw ValidationException::withMessages([
+                    'payout_option' => 'No payout option is not available for investments with completed cycles.',
+                ]);
+            }
+
+            // Calculate payout amount based on selected option
+            $payoutAmount = $this->calculatePayoutAmount($investment, $payoutOption);
+
+            // Cancel the investment
+            $investment->status = 'cancelled';
+            $investment->save();
+
+            // Update user balance if there's a payout
+            if ($payoutAmount > 0) {
+                $user->profile()->increment('live_trading_balance', $payoutAmount);
+            }
+
+            // payout data
+            $payoutData = [
+                'cycle' => $investment->repeat_time_count,
+                'total_cycles' => $investment->repeat_time,
+                'payout_amount' => $payoutAmount,
+                'interest' => $investment->interest,
+                'capital_returned' => $investment->capital_back_status === 'yes',
+                'is_final_cycle' => true,
+            ];
+
+            // Dispatch payout event
+            event(new InvestmentPayout($user, $investment, $payoutData));
+
+            return true;
+        });
+    }
+
+    /**
      * @throws Throwable
      */
     public function startCopy(MasterTrader $masterTrader, User $user, array $data)
@@ -694,6 +749,40 @@ class TradeService
             '4h' => now()->addHours(4),
             '1d' => now()->addDay(),
             default => now()->addMinutes(5)
+        };
+    }
+
+    /**
+     * Calculate payout amount based on selected option
+     *
+     * @param InvestmentHistory $investment
+     * @param string $payoutOption
+     * @return float
+     */
+    protected function calculatePayoutAmount(InvestmentHistory $investment, string $payoutOption): float
+    {
+        // Calculate interest per cycle
+        $interestPerCycle = $investment->interest ?? 0;
+
+        // Calculate paid interest (interest already paid out)
+        $paidInterest = $interestPerCycle * ($investment->repeat_time_count ?? 0);
+
+        // Calculate unpaid interest (interest for remaining cycles)
+        $remainingCycles = ($investment->repeat_time ?? 0) - ($investment->repeat_time_count ?? 0);
+        $unpaidInterest = $interestPerCycle * $remainingCycles;
+
+        // Total interest (paid and unpaid)
+        $interestOnlyTotal = $paidInterest + $unpaidInterest;
+
+        // Total ROI = capital + total interest earned
+        $totalROI = $investment->amount + $interestOnlyTotal;
+
+        return match ($payoutOption) {
+            'capital_and_interest' => $investment->amount + $unpaidInterest,
+            'capital_only' => max(0, $totalROI - $interestOnlyTotal),
+            'interest_only' => $interestOnlyTotal,
+            'nothing' => 0.0,
+            default => 0.0,
         };
     }
 }

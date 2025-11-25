@@ -23,7 +23,6 @@ return new class extends Migration
             $table->integer('total_trades')->default(0);
             $table->decimal('win_rate', 5)->default(0.00);
             $table->timestamps();
-            $table->softDeletes();
 
             $table->index(['is_active', 'expertise']);
             $table->index('gain_percentage');

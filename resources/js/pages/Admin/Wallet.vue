@@ -6,7 +6,7 @@
     import Breadcrumb from '@/components/Breadcrumb.vue';
     import NotificationsModal from '@/components/utilities/NotificationsModal.vue';
     import {
-        Search, Mail, Eye, FileText, ArrowUpDown, Copy, Check, XCircle
+        Search, Mail, Eye, FileText, ArrowUpDown, Copy, Check, XCircle, Users
     } from 'lucide-vue-next';
     import PaginationControls from '@/components/PaginationControls.vue';
     import QuickActionModal from '@/components/QuickActionModal.vue';
@@ -177,7 +177,7 @@
                             <p class="text-sm font-medium text-muted-foreground">Total Users with Wallets</p>
                             <p class="text-3xl font-bold text-foreground mt-1">{{ props.users.total }}</p>
                         </div>
-                        <FileText class="w-12 h-12 text-primary opacity-20" />
+                        <Users class="w-12 h-12 opacity-20" />
                     </div>
                 </div>
 
@@ -187,7 +187,7 @@
                             <p class="text-sm font-medium text-muted-foreground">Total Wallets Connected</p>
                             <p class="text-3xl font-bold text-foreground mt-1">{{ totalWalletsConnected }}</p>
                         </div>
-                        <FileText class="w-12 h-12 text-primary opacity-20" />
+                        <FileText class="w-12 h-12 opacity-20" />
                     </div>
                 </div>
             </div>

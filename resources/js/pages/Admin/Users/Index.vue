@@ -290,7 +290,7 @@
                             <p class="text-sm font-medium text-muted-foreground">Total Users</p>
                             <p class="text-3xl font-bold text-foreground mt-1">{{ props.users.total }}</p>
                         </div>
-                        <Users class="w-12 h-12 text-primary opacity-20" />
+                        <Users class="w-12 h-12 opacity-20" />
                     </div>
                 </div>
 
@@ -300,7 +300,7 @@
                             <p class="text-sm font-medium text-muted-foreground">Active Users</p>
                             <p class="text-3xl font-bold text-foreground mt-1">{{ totalActiveUsers }}</p>
                         </div>
-                        <CheckCircleIcon class="w-14 h-14 text-success opacity-20" />
+                        <CheckCircleIcon class="w-14 h-14 opacity-20" />
                     </div>
                 </div>
 
@@ -310,7 +310,7 @@
                             <p class="text-sm font-medium text-muted-foreground">Suspended Users</p>
                             <p class="text-3xl font-bold text-foreground mt-1">{{ totalSuspendedUsers }}</p>
                         </div>
-                        <XCircle class="w-12 h-12 text-destructive opacity-20" />
+                        <XCircle class="w-12 h-12 opacity-20" />
                     </div>
                 </div>
             </div>

@@ -286,7 +286,7 @@
                             <p class="text-sm font-medium text-muted-foreground">Total Gateways</p>
                             <p class="text-3xl font-bold text-foreground mt-1">{{ props.metrics.total_gateways }}</p>
                         </div>
-                        <Wallet2 class="w-12 h-12 text-primary opacity-20" />
+                        <Wallet2 class="w-12 h-12 opacity-20" />
                     </div>
                 </div>
 
@@ -296,7 +296,7 @@
                             <p class="text-sm font-medium text-muted-foreground">Active Gateways</p>
                             <p class="text-3xl font-bold text-foreground mt-1">{{ totalActiveGateways }}</p>
                         </div>
-                        <CheckCircleIcon class="w-14 h-14 text-success opacity-20" />
+                        <CheckCircleIcon class="w-14 h-14 opacity-20" />
                     </div>
                 </div>
 
@@ -306,7 +306,7 @@
                             <p class="text-sm font-medium text-muted-foreground">Deactivated Gateways</p>
                             <p class="text-3xl font-bold text-foreground mt-1">{{ totalDeactivatedGateways }}</p>
                         </div>
-                        <XCircle class="w-12 h-12 text-destructive opacity-20" />
+                        <XCircle class="w-12 h-12 opacity-20" />
                     </div>
                 </div>
             </div>

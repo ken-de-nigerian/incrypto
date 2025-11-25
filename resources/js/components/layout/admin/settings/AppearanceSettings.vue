@@ -39,9 +39,9 @@
                             :key="value"
                             @click="updateAppearance(value as 'light' | 'dark' | 'system')"
                             :class="[
-                                'flex flex-col items-center justify-center gap-2 rounded-lg border-2 p-6 transition-all duration-150',
+                                'flex flex-col items-center justify-center gap-2 rounded-lg border-2 p-6 cursor-pointer',
                                 appearance === value
-                                    ? 'bg-primary/10 border-primary text-primary ring-2 ring-primary'
+                                    ? 'bg-primary/10 border-primary text-primary'
                                     : 'bg-secondary/20 border-border text-muted-foreground hover:border-primary',
                             ]">
                             <component :is="Icon" class="h-8 w-8" />

@@ -271,7 +271,7 @@
                             <p class="text-sm font-medium text-muted-foreground">Pending Submissions</p>
                             <p class="text-3xl font-bold text-foreground mt-1">{{ metrics.kyc_unverified }}</p>
                         </div>
-                        <AlertCircle class="w-12 h-12 text-yellow-500 opacity-20" />
+                        <AlertCircle class="w-12 h-12 opacity-20" />
                     </div>
                 </div>
 
@@ -281,7 +281,7 @@
                             <p class="text-sm font-medium text-muted-foreground">Rejected Submissions</p>
                             <p class="text-3xl font-bold text-foreground mt-1">{{ metrics.kyc_rejected }}</p>
                         </div>
-                        <XCircle class="w-12 h-12 text-destructive opacity-20" />
+                        <XCircle class="w-12 h-12 opacity-20" />
                     </div>
                 </div>
 
@@ -291,7 +291,7 @@
                             <p class="text-sm font-medium text-muted-foreground">Total Submissions</p>
                             <p class="text-3xl font-bold text-foreground mt-1">{{ props.users.total }}</p>
                         </div>
-                        <FileText class="w-12 h-12 text-primary opacity-20" />
+                        <FileText class="w-12 h-12 opacity-20" />
                     </div>
                 </div>
             </div>

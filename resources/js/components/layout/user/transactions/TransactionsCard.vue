@@ -330,10 +330,6 @@
         }
     };
 
-    const getTransactionColor = (type: string) => {
-        return 'text-muted-foreground bg-muted/20 border-border/50';
-    };
-
     const getTransactionLabel = (type: string) => {
         const labels: Record<string, string> = {
             'swap': 'Swap',
@@ -838,7 +834,7 @@
                     <div class="p-4 border-b border-border bg-muted/30">
                         <div class="flex items-center justify-between mb-3">
                             <div class="flex items-center gap-3">
-                                <div class="w-10 h-10 rounded-lg flex items-center justify-center border" :class="getTransactionColor(tx.type)">
+                                <div class="w-10 h-10 rounded-lg flex items-center justify-center border text-muted-foreground bg-muted/20 border-border/50">
                                     <component :is="getTransactionIcon(tx.type)" class="w-5 h-5" />
                                 </div>
                                 <div>

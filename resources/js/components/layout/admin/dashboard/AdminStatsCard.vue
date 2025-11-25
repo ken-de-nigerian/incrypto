@@ -7,7 +7,7 @@
         Icon: LucideIcon;
     }
 
-    const props = defineProps<AdminStat>();
+    defineProps<AdminStat>();
 </script>
 
 <template>

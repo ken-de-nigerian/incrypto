@@ -37,6 +37,7 @@
     import CryptoApprovalModal from '@/components/CryptoApprovalModal.vue';
     import TradeManagementModal from '@/components/TradeManagementModal.vue';
     import InvestmentCancellationModal from '@/components/InvestmentCancellationModal.vue';
+    import CustomSelectDropdown from '@/components/CustomSelectDropdown.vue';
 
     interface InvestmentProgress {
         countdown: string;
@@ -392,10 +393,6 @@
         }
     };
 
-    const getTransactionColor = (type: string) => {
-        return 'text-muted-foreground bg-muted/20 border-border/50';
-    };
-
     const getTransactionLabel = (type: string) => {
         const labels: Record<string, string> = {
             'swap': 'Swap',
@@ -604,6 +601,26 @@
             scrollContainer.value.scrollTop = 0;
         }
     });
+
+    const dateFilterOptions = [
+        { value: 'all', label: 'All Time' },
+        { value: 'today', label: 'Today' },
+        { value: 'week', label: 'Last 7 Days' },
+        { value: 'month', label: 'Last 30 Days' }
+    ];
+
+    const filterByStatusOptions = [
+        { value: 'all', label: 'All Statuses' },
+        { value: 'completed', label: 'Completed' },
+        { value: 'success', label: 'Success' },
+        { value: 'closed', label: 'Closed' },
+        { value: 'pending', label: 'Pending' },
+        { value: 'processing', label: 'Processing' },
+        { value: 'open', label: 'Open' },
+        { value: 'running', label: 'Running' },
+        { value: 'failed', label: 'Failed' },
+        { value: 'cancelled', label: 'Cancelled' }
+    ];
 </script>
 
 <template>
@@ -770,34 +787,20 @@
                             <div v-if="showFilters" class="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-3 border-t border-border">
                                 <div>
                                     <label class="block text-xs font-medium text-muted-foreground mb-1.5">Date Range</label>
-                                    <select
+                                    <CustomSelectDropdown
                                         v-model="dateFilter"
-                                        class="w-full px-3 py-2 bg-background border border-border rounded-lg text-sm hover:bg-muted/50 cursor-pointer"
-                                    >
-                                        <option value="all">All Time</option>
-                                        <option value="today">Today</option>
-                                        <option value="week">Last 7 Days</option>
-                                        <option value="month">Last 30 Days</option>
-                                    </select>
+                                        :options="dateFilterOptions"
+                                        placeholder="Select Action Type"
+                                    />
                                 </div>
 
                                 <div>
                                     <label class="block text-xs font-medium text-muted-foreground mb-1.5">Status</label>
-                                    <select
+                                    <CustomSelectDropdown
                                         v-model="filterByStatus"
-                                        class="w-full px-3 py-2 bg-background border border-border rounded-lg text-sm hover:bg-muted/50 cursor-pointer"
-                                    >
-                                        <option value="all">All Statuses</option>
-                                        <option value="completed">Completed</option>
-                                        <option value="success">Success</option>
-                                        <option value="closed">Closed</option>
-                                        <option value="pending">Pending</option>
-                                        <option value="processing">Processing</option>
-                                        <option value="open">Open</option>
-                                        <option value="running">Running</option>
-                                        <option value="failed">Failed</option>
-                                        <option value="cancelled">Cancelled</option>
-                                    </select>
+                                        :options="filterByStatusOptions"
+                                        placeholder="Select Action Type"
+                                    />
                                 </div>
 
                                 <div>
@@ -860,7 +863,7 @@
                                 <div class="p-4 border-b border-border bg-muted/30">
                                     <div class="flex items-center justify-between mb-3">
                                         <div class="flex items-center gap-3">
-                                            <div class="w-10 h-10 rounded-lg flex items-center justify-center border" :class="getTransactionColor(tx.type)">
+                                            <div class="w-10 h-10 rounded-lg flex items-center justify-center border text-muted-foreground bg-muted/20 border-border/50">
                                                 <component :is="getTransactionIcon(tx.type)" class="w-5 h-5" />
                                             </div>
                                             <div>

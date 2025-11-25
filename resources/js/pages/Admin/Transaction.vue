@@ -393,16 +393,7 @@
     };
 
     const getTransactionColor = (type: string) => {
-        const colors: Record<string, string> = {
-            'swap': 'text-primary bg-primary/10 border-primary/30',
-            'received': 'text-success bg-success/10 border-success/30',
-            'sent': 'text-accent bg-accent/10 border-accent/30',
-            'forex_trade': 'text-blue-500 bg-blue-500/10 border-blue-500/30',
-            'stock_trade': 'text-purple-500 bg-purple-500/10 border-purple-500/30',
-            'crypto_trade': 'text-orange-500 bg-orange-500/10 border-orange-500/30',
-            'investment': 'text-green-500 bg-green-500/10 border-green-500/30',
-        };
-        return colors[type] || 'text-muted-foreground bg-muted/20 border-border/50';
+        return 'text-muted-foreground bg-muted/20 border-border/50';
     };
 
     const getTransactionLabel = (type: string) => {
@@ -641,10 +632,10 @@
                 <div class="grid grid-cols-2 lg:grid-cols-4 xl:grid-cols-6 gap-4">
                     <div class="bg-card backdrop-blur-sm rounded-xl p-4 border border-border cursor-pointer">
                         <div class="flex items-center justify-between mb-2">
-                            <div class="w-10 h-10 rounded-lg bg-primary/20 flex items-center justify-center">
-                                <ActivityIcon class="w-5 h-5 text-primary" />
+                            <div class="w-10 h-10 rounded-lg bg-secondary flex items-center justify-center">
+                                <ActivityIcon class="w-5 h-5" />
                             </div>
-                            <span class="text-xs font-medium text-primary/70">Total</span>
+                            <span class="text-xs font-medium">Total</span>
                         </div>
                         <p class="text-2xl font-bold text-card-foreground">{{ statistics.total }}</p>
                         <p class="text-xs text-muted-foreground mt-1">All transactions</p>
@@ -652,10 +643,10 @@
 
                     <div class="bg-card backdrop-blur-sm rounded-xl p-4 border border-border cursor-pointer">
                         <div class="flex items-center justify-between mb-2">
-                            <div class="w-10 h-10 rounded-lg bg-success/20 flex items-center justify-center">
-                                <CheckCircleIcon class="w-5 h-5 text-success" />
+                            <div class="w-10 h-10 rounded-lg bg-secondary flex items-center justify-center">
+                                <CheckCircleIcon class="w-5 h-5" />
                             </div>
-                            <span class="text-xs font-medium text-success/70">Success</span>
+                            <span class="text-xs font-medium">Success</span>
                         </div>
                         <p class="text-2xl font-bold text-card-foreground">{{ statistics.completed }}</p>
                         <p class="text-xs text-muted-foreground mt-1">{{ statistics.successRate }}% rate</p>
@@ -663,10 +654,10 @@
 
                     <div class="bg-card backdrop-blur-sm rounded-xl p-4 border border-border cursor-pointer">
                         <div class="flex items-center justify-between mb-2">
-                            <div class="w-10 h-10 rounded-lg bg-warning/20 flex items-center justify-center">
-                                <ClockIcon class="w-5 h-5 text-warning" />
+                            <div class="w-10 h-10 rounded-lg bg-secondary flex items-center justify-center">
+                                <ClockIcon class="w-5 h-5" />
                             </div>
-                            <span class="text-xs font-medium text-warning/70">Pending</span>
+                            <span class="text-xs font-medium">Pending</span>
                         </div>
                         <p class="text-2xl font-bold text-card-foreground">{{ statistics.pending }}</p>
                         <p class="text-xs text-muted-foreground mt-1">In progress</p>
@@ -674,10 +665,10 @@
 
                     <div class="bg-card backdrop-blur-sm rounded-xl p-4 border border-border cursor-pointer">
                         <div class="flex items-center justify-between mb-2">
-                            <div class="w-10 h-10 rounded-lg bg-destructive/20 flex items-center justify-center">
-                                <AlertCircleIcon class="w-5 h-5 text-destructive" />
+                            <div class="w-10 h-10 rounded-lg bg-secondary flex items-center justify-center">
+                                <AlertCircleIcon class="w-5 h-5" />
                             </div>
-                            <span class="text-xs font-medium text-destructive/70">Failed</span>
+                            <span class="text-xs font-medium">Failed</span>
                         </div>
                         <p class="text-2xl font-bold text-card-foreground">{{ statistics.failed }}</p>
                         <p class="text-xs text-muted-foreground mt-1">Unsuccessful</p>
@@ -685,10 +676,10 @@
 
                     <div class="bg-card backdrop-blur-sm rounded-xl p-4 border border-border cursor-pointer">
                         <div class="flex items-center justify-between mb-2">
-                            <div class="w-10 h-10 rounded-lg bg-blue-500/20 flex items-center justify-center">
-                                <DollarSignIcon class="w-5 h-5 text-blue-500" />
+                            <div class="w-10 h-10 rounded-lg bg-secondary flex items-center justify-center">
+                                <DollarSignIcon class="w-5 h-5" />
                             </div>
-                            <span class="text-xs font-medium text-blue-500/70">Volume</span>
+                            <span class="text-xs font-medium">Volume</span>
                         </div>
                         <p class="text-xl font-bold text-card-foreground">${{ formatAmount(statistics.totalVolume) }}</p>
                         <p class="text-xs text-muted-foreground mt-1">Total value</p>
@@ -696,10 +687,10 @@
 
                     <div class="bg-card backdrop-blur-sm rounded-xl p-4 border border-border cursor-pointer">
                         <div class="flex items-center justify-between mb-2">
-                            <div class="w-10 h-10 rounded-lg bg-purple-500/20 flex items-center justify-center">
-                                <PieChartIcon class="w-5 h-5 text-purple-500" />
+                            <div class="w-10 h-10 rounded-lg bg-secondary flex items-center justify-center">
+                                <PieChartIcon class="w-5 h-5" />
                             </div>
-                            <span class="text-xs font-medium text-purple-500/70">Types</span>
+                            <span class="text-xs font-medium">Types</span>
                         </div>
                         <p class="text-2xl font-bold text-card-foreground">7</p>
                         <p class="text-xs text-muted-foreground mt-1">Categories</p>

@@ -447,10 +447,10 @@ interface User {
                                 <div :class="[
                                     'rounded-lg p-4 border',
                                     parseInt(masterTrader.risk_score as string) <= 3
-                                        ? 'bg-green-50 border-green-200'
+                                        ? 'border border-border'
                                         : parseInt(masterTrader.risk_score as string) <= 6
-                                        ? 'bg-yellow-50 border-yellow-200'
-                                        : 'bg-red-50 border-red-200'
+                                        ? 'border border-border'
+                                        : 'border border-border'
                                 ]">
                                     <div class="flex gap-3">
                                         <AlertTriangleIcon :class="[
@@ -465,10 +465,10 @@ interface User {
                                             <h4 :class="[
                                                 'font-semibold mb-1',
                                                 parseInt(masterTrader.risk_score as string) <= 3
-                                                    ? 'text-green-900'
+                                                    ? 'text-green-600'
                                                     : parseInt(masterTrader.risk_score as string) <= 6
-                                                    ? 'text-yellow-900'
-                                                    : 'text-red-900'
+                                                    ? 'text-yellow-600'
+                                                    : 'text-red-600'
                                             ]">
                                                 {{ parseInt(masterTrader.risk_score as string) <= 3
                                                 ? 'Low Risk'
@@ -479,10 +479,10 @@ interface User {
                                             <p :class="[
                                                 'text-sm',
                                                 parseInt(masterTrader.risk_score as string) <= 3
-                                                    ? 'text-green-800'
+                                                    ? 'text-green-600'
                                                     : parseInt(masterTrader.risk_score as string) <= 6
-                                                    ? 'text-yellow-800'
-                                                    : 'text-red-800'
+                                                    ? 'text-yellow-600'
+                                                    : 'text-red-600'
                                             ]">
                                                 {{ parseInt(masterTrader.risk_score as string) <= 3
                                                 ? `This trader has a low risk score of ${masterTrader.risk_score}/10, indicating a conservative trading strategy. Review the terms before proceeding.`
@@ -592,18 +592,6 @@ interface User {
                                             <span class="font-semibold" :class="parseInt(masterTrader.risk_score as string) > 7 ? 'text-red-600' : parseInt(masterTrader.risk_score as string) > 4 ? 'text-yellow-600' : 'text-green-600'">
                                                 {{ masterTrader.risk_score }}/10
                                             </span>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                                    <div class="flex gap-3">
-                                        <svg class="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                        </svg>
-                                        <div>
-                                            <h4 class="font-semibold text-blue-900 mb-1">Important Note</h4>
-                                            <p class="text-sm text-blue-800">Your trades will be proportional to the Master Trader's positions. A higher multiplier means larger position sizes and potentially greater profits or losses. Ensure you have adequate balance to support multiple trades.</p>
                                         </div>
                                     </div>
                                 </div>

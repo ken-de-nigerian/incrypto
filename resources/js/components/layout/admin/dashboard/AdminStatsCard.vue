@@ -5,27 +5,9 @@
         title: string;
         value: string;
         Icon: LucideIcon;
-        color: string;
     }
 
     const props = defineProps<AdminStat>();
-    const bgColorClass = (() => {
-        const baseColor = props.color.replace('text-', '');
-        switch (baseColor) {
-            case 'primary':
-                return 'bg-primary/20';
-            case 'success':
-                return 'bg-success/10';
-            case 'warning':
-                return 'bg-warning/20';
-            case 'destructive':
-                return 'bg-destructive/20';
-            case 'secondary':
-                return 'bg-secondary/20';
-            default:
-                return 'bg-muted/30';
-        }
-    })();
 </script>
 
 <template>
@@ -37,9 +19,7 @@
             </div>
 
             <component
-                :is="Icon"
-                :class="['w-6 h-6 sm:w-7 sm:h-7 shrink-0 p-1.5 rounded-lg', props.color, bgColorClass]"
-            />
+                :is="Icon" :class="['w-8 h-8 bg-secondary shrink-0 p-1.5 rounded-lg']" />
         </div>
     </div>
 </template>

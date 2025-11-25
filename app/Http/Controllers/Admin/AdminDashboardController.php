@@ -4,9 +4,11 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\CryptoSwap;
+use App\Models\InvestmentHistory;
 use App\Models\KycSubmission;
 use App\Models\ReceivedCrypto;
 use App\Models\SendCrypto;
+use App\Models\Trade;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -36,14 +38,15 @@ class AdminDashboardController extends Controller
                 ->where('status', 'suspended')
                 ->count(),
             'total_sent' => SendCrypto::query()
-                ->whereHas('user')
                 ->count(),
             'total_received' => ReceivedCrypto::query()
-                ->whereHas('user')
                 ->count(),
             'total_swaps' => CryptoSwap::query()
-                ->whereHas('user')
                 ->count(),
+            'total_trades' => Trade::query()
+                ->count(),
+            'total_investments' => InvestmentHistory::query()
+                ->count()
         ];
     }
 

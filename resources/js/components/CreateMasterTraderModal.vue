@@ -61,10 +61,6 @@
         }));
     });
 
-    const selectedUser = computed(() => {
-        return props.users.find(u => u.id === Number(formData.value.user_id));
-    });
-
     const validateForm = (): boolean => {
         validationErrors.value = {};
         let isValid = true;

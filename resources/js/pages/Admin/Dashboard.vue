@@ -6,7 +6,7 @@
         SearchIcon,
         BellIcon,
         Users,
-        Send, Download, Repeat
+        Send, ArrowLeftRight, CandlestickChart, Briefcase, Download
     } from 'lucide-vue-next';
     import AdminStatsCard from '@/components/layout/admin/dashboard/AdminStatsCard.vue';
     import RecentActivityCard from '@/components/layout/admin/dashboard/RecentActivityCard.vue';
@@ -31,6 +31,8 @@
             total_sent: number;
             total_received: number;
             total_swaps: number;
+            total_trades: number;
+            total_investments: number;
         };
         pendingActions: Array<{
             id: string | number;
@@ -93,26 +95,32 @@
         {
             title: 'Total Users',
             value: formatNumber(props.adminStatsData.total_users),
-            Icon: Users,
-            color: 'text-primary',
+            Icon: Users
         },
         {
             title: 'Total Sent',
             value: formatNumber(props.adminStatsData.total_sent),
-            Icon: Send,
-            color: 'text-destructive',
+            Icon: Send
         },
         {
             title: 'Total Received',
             value: formatNumber(props.adminStatsData.total_received),
-            Icon: Download,
-            color: 'text-warning',
+            Icon: Download
         },
         {
             title: 'Crypto Swaps',
             value: formatNumber(props.adminStatsData.total_swaps),
-            Icon: Repeat,
-            color: 'text-muted-foreground',
+            Icon: ArrowLeftRight
+        },
+        {
+            title: 'Total Trades',
+            value: formatNumber(props.adminStatsData.total_trades),
+            Icon: CandlestickChart
+        },
+        {
+            title: 'Investments',
+            value: formatNumber(props.adminStatsData.total_investments),
+            Icon: Briefcase
         },
     ]);
 
@@ -168,7 +176,7 @@
                 <p class="text-sm text-muted-foreground mt-1">Review the system overview.</p>
             </div>
 
-            <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 sm:gap-6 mb-8">
+            <div class="grid grid-cols-2 lg:grid-cols-4 xl:grid-cols-6 gap-4 mb-8">
                 <AdminStatsCard
                     v-for="stat in adminStats"
                     :key="stat.title"
@@ -176,7 +184,6 @@
                     :value="stat.value"
                     :change="stat.change"
                     :Icon="stat.Icon"
-                    :color="stat.color"
                 />
             </div>
 

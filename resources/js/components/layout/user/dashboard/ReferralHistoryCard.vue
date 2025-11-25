@@ -29,12 +29,12 @@
         <h3 v-if="props.referred_users && props.referred_users.length > 0" class="text-card-foreground font-semibold mb-3 sm:mb-4 text-sm sm:text-base">Recent Referrals</h3>
 
         <div class="space-y-2 sm:space-y-3">
-            <div v-if="props.referred_users && props.referred_users.length > 0" class="flex items-center justify-between text-muted-foreground text-xs uppercase font-medium pb-1 border-b border-border/50">
-                <span class="flex-1 min-w-0">Referred User</span>
-                <span class="text-right">Joined</span>
-            </div>
+            <template v-if="props.referred_users && props.referred_users.length > 0">
+                <div class="flex items-center justify-between text-muted-foreground text-xs uppercase font-medium pb-1 border-b border-border/50">
+                    <span class="flex-1 min-w-0">Referred User</span>
+                    <span class="text-right">Joined</span>
+                </div>
 
-            <template v-else-if="props.referred_users && props.referred_users.length > 0">
                 <div v-for="(referral, index) in props.referred_users"
                      :key="referral.id"
                      class="flex items-center justify-between py-1">

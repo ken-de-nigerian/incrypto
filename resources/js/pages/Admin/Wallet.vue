@@ -202,11 +202,12 @@
                     </div>
 
                     <div class="flex gap-2">
-                        <button @click="toggleSort('date')" class="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-secondary hover:bg-secondary/90 text-secondary-foreground rounded-lg text-sm font-medium transition-colors h-10 lg:h-auto cursor-pointer">
+                        <button @click="toggleSort('date')" class="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-background border border-border hover:bg-secondary/90 text-secondary-foreground rounded-lg text-sm font-medium transition-colors h-10 lg:h-auto cursor-pointer">
                             <ArrowUpDown class="w-4 h-4" />
                             Date {{ sortBy === 'date' ? (sortOrder === 'asc' ? '↑' : '↓') : '' }}
                         </button>
-                        <button @click="toggleSort('name')" class="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-secondary hover:bg-secondary/90 text-secondary-foreground rounded-lg text-sm font-medium transition-colors h-10 lg:h-auto cursor-pointer">
+
+                        <button @click="toggleSort('name')" class="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-background border border-border hover:bg-secondary/90 text-secondary-foreground rounded-lg text-sm font-medium transition-colors h-10 lg:h-auto cursor-pointer">
                             <ArrowUpDown class="w-4 h-4" />
                             Name {{ sortBy === 'name' ? (sortOrder === 'asc' ? '↑' : '↓') : '' }}
                         </button>

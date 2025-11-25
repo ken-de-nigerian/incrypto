@@ -10,15 +10,8 @@
 
     const props = defineProps<{
         metrics: Metric[];
-        isLiveMode: boolean;
         liveBalance: number;
         currentBalance: number | string;
-    }>();
-
-    defineEmits<{
-        (e: 'update:isLiveMode', value: boolean): void;
-        (e: 'deposit'): void;
-        (e: 'withdraw'): void;
     }>();
 
     const combinedTotalValue = computed(() => {
@@ -35,15 +28,9 @@
                 <h2 class="text-sm font-semibold text-muted-foreground mb-2">Total Assets</h2>
 
                 <div class="flex items-baseline gap-2 sm:gap-3 mb-3">
-                <span class="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-card-foreground tracking-tight">
-                    {{ '$' + combinedTotalValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}
-                </span>
-                    <span
-                        class="font-bold px-2 py-1 rounded-md text-xs uppercase tracking-wide whitespace-nowrap"
-                        :class="isLiveMode ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'"
-                    >
-                    {{ isLiveMode ? 'Live' : 'Demo' }}
-                </span>
+                    <span class="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-card-foreground tracking-tight">
+                        {{ '$' + combinedTotalValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}
+                    </span>
                 </div>
             </div>
 

@@ -807,7 +807,7 @@
                                     <label class="block text-xs font-medium text-muted-foreground mb-1.5">Sort Order</label>
                                     <button
                                         @click="toggleSortOrder"
-                                        class="w-full px-3 py-2 bg-background border border-border rounded-lg text-sm hover:bg-muted/50 flex items-center justify-between cursor-pointer"
+                                        class="w-full px-3 py-3 bg-background border border-border rounded-lg text-sm hover:bg-muted/50 flex items-center justify-between cursor-pointer"
                                     >
                                         <span>
                                             {{ sortOrder === 'asc' ? 'Oldest First' : sortOrder === 'desc' ? 'Newest First' : 'Recent First' }}

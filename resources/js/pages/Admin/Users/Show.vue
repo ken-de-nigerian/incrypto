@@ -182,8 +182,6 @@
     const isNotificationsModalOpen = ref(false);
 
     const convertToNumber = (v: any): number => (typeof v === 'number' ? v : parseFloat(v) || 0);
-
-    const isLiveMode = ref(props.user.profile.trading_status === 'live');
     const liveBalance = computed(() => convertToNumber(props.user.profile.live_trading_balance));
 
     const parseWalletBalances = () => {
@@ -358,7 +356,6 @@
                 <div class="col-span-12 lg:col-span-8 xl:col-span-6 space-y-6 order-1 sm:order-2">
                     <ProfileMetrics
                         :metrics="metrics"
-                        v-model:is-live-mode="isLiveMode"
                         :live-balance="liveBalance"
                         :current-balance="props.wallet_balances?.totalUsdValue"
                     />

@@ -9,6 +9,7 @@
         DollarSignIcon, BarChart3Icon, CoinsIcon, WalletIcon, PieChartIcon, ExternalLinkIcon
     } from 'lucide-vue-next';
     import { router } from '@inertiajs/vue3';
+    import CustomSelectDropdown from '@/components/CustomSelectDropdown.vue';
 
     interface InvestmentProgress {
         countdown: string;
@@ -586,6 +587,26 @@
         { id: 'investments', label: 'Investments', icon: WalletIcon }
     ];
 
+    const dateFilterOptions = [
+        { value: 'all', label: 'All Time' },
+        { value: 'today', label: 'Today' },
+        { value: 'week', label: 'Last 7 Days' },
+        { value: 'month', label: 'Last 30 Days' }
+    ];
+
+    const filterByStatusOptions = [
+        { value: 'all', label: 'All Statuses' },
+        { value: 'completed', label: 'Completed' },
+        { value: 'success', label: 'Success' },
+        { value: 'closed', label: 'Closed' },
+        { value: 'pending', label: 'Pending' },
+        { value: 'processing', label: 'Processing' },
+        { value: 'open', label: 'Open' },
+        { value: 'running', label: 'Running' },
+        { value: 'failed', label: 'Failed' },
+        { value: 'cancelled', label: 'Cancelled' }
+    ];
+
     watch([searchQuery, sortOrder, filterByStatus, activeTab, dateFilter], () => {
         displayCount.value = Math.min(itemsPerLoad, totalTransactionsCount.value);
         if (scrollContainer.value) {
@@ -744,41 +765,27 @@
                 <div v-if="showFilters" class="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-3 border-t border-border">
                     <div>
                         <label class="block text-xs font-medium text-muted-foreground mb-1.5">Date Range</label>
-                        <select
+                        <CustomSelectDropdown
                             v-model="dateFilter"
-                            class="w-full px-3 py-2 bg-background border border-border rounded-lg text-sm hover:bg-muted/50 cursor-pointer"
-                        >
-                            <option value="all">All Time</option>
-                            <option value="today">Today</option>
-                            <option value="week">Last 7 Days</option>
-                            <option value="month">Last 30 Days</option>
-                        </select>
+                            :options="dateFilterOptions"
+                            placeholder="Select Action Type"
+                        />
                     </div>
 
                     <div>
                         <label class="block text-xs font-medium text-muted-foreground mb-1.5">Status</label>
-                        <select
+                        <CustomSelectDropdown
                             v-model="filterByStatus"
-                            class="w-full px-3 py-2 bg-background border border-border rounded-lg text-sm hover:bg-muted/50 cursor-pointer"
-                        >
-                            <option value="all">All Statuses</option>
-                            <option value="completed">Completed</option>
-                            <option value="success">Success</option>
-                            <option value="closed">Closed</option>
-                            <option value="pending">Pending</option>
-                            <option value="processing">Processing</option>
-                            <option value="open">Open</option>
-                            <option value="running">Running</option>
-                            <option value="failed">Failed</option>
-                            <option value="cancelled">Cancelled</option>
-                        </select>
+                            :options="filterByStatusOptions"
+                            placeholder="Select Action Type"
+                        />
                     </div>
 
                     <div>
                         <label class="block text-xs font-medium text-muted-foreground mb-1.5">Sort Order</label>
                         <button
                             @click="toggleSortOrder"
-                            class="w-full px-3 py-2 bg-background border border-border rounded-lg text-sm hover:bg-muted/50 flex items-center justify-between cursor-pointer"
+                            class="w-full px-3 py-3 bg-background border border-border rounded-lg text-sm hover:bg-muted/50 flex items-center justify-between cursor-pointer"
                         >
                             <span>
                                 {{ sortOrder === 'asc' ? 'Oldest First' : sortOrder === 'desc' ? 'Newest First' : 'Recent First' }}

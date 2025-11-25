@@ -21,7 +21,7 @@
         Sun,
         Users,
         Wallet,
-        X, Globe, HelpCircle, Mail, House
+        X, Globe, HelpCircle, Mail, House, PiggyBank
     } from 'lucide-vue-next';
     import TextLink from '@/components/TextLink.vue';
     import NotificationsModal from '@/components/utilities/NotificationsModal.vue';
@@ -76,6 +76,7 @@
     const gatewaysNavigation = [
         { name: "Connected Wallets", href: "admin.wallet.index", icon: Wallet, description: "Manage all linked user wallet connections" },
         { name: "Payment Methods", href: "admin.method.index", icon: Shield, description: "Configure cryptocurrency processing methods" },
+        { name: "Investment Plans", href: "admin.plans.index", icon: PiggyBank, description: "Manage investment packages, ROI rates, and plan durations" },
     ];
 
     const masterTraderNavigation = [

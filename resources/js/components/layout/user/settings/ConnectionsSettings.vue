@@ -39,7 +39,7 @@
         </div>
 
         <div class="grid gap-4">
-            <div class="rounded-lg border bg-card text-card-foreground shadow-sm">
+            <div class="rounded-lg border bg-card text-card-foreground">
                 <div class="p-4 sm:p-6">
                     <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                         <div class="flex items-center space-x-4">
@@ -81,7 +81,7 @@
                 </div>
             </div>
 
-            <div class="rounded-lg border bg-card text-card-foreground shadow-sm">
+            <div class="rounded-lg border bg-card text-card-foreground">
                 <div class="p-4 sm:p-6">
                     <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                         <div class="flex items-center space-x-4">
@@ -120,7 +120,7 @@
                 </div>
             </div>
 
-            <div class="rounded-lg border bg-card text-card-foreground shadow-sm">
+            <div class="rounded-lg border bg-card text-card-foreground">
                 <div class="p-4 sm:p-6">
                     <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                         <div class="flex items-center space-x-4">

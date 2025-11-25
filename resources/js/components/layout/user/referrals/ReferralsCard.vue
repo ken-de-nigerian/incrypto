@@ -355,7 +355,7 @@
                         <div v-if="showFilters" class="mt-4 space-y-3 pt-4 border-t border-border">
                             <div class="relative">
                                 <SearchIcon class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                                <input v-model="searchQuery" type="text" placeholder="Search by name or email..." class="w-full pl-10 pr-10 py-2.5 bg-background border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all cursor-pointer" />
+                                <input v-model="searchQuery" type="text" placeholder="Search by name or email..." class="w-full pl-10 pr-10 py-2.5 bg-background border border-border rounded-lg text-sm input-crypto cursor-pointer" />
                                 <button v-if="searchQuery" @click="clearSearch" class="absolute right-3 top-1/2 -translate-y-1/2 p-1 hover:bg-muted/50 rounded">
                                     <XIcon class="w-4 h-4 text-muted-foreground" />
                                 </button>

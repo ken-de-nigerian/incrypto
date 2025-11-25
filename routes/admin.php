@@ -5,6 +5,8 @@ use App\Http\Controllers\Admin\AdminDashboardController;
 use App\Http\Controllers\Admin\AdminKycController;
 use App\Http\Controllers\Admin\AdminNotificationController;
 use App\Http\Controllers\Admin\AdminPaymentMethodController;
+use App\Http\Controllers\Admin\AdminPlansController;
+use App\Http\Controllers\Admin\AdminPlanTimeSettingsController;
 use App\Http\Controllers\Admin\AdminProfileController;
 use App\Http\Controllers\Admin\AdminTransactionController;
 use App\Http\Controllers\Admin\AdminUserController;
@@ -107,6 +109,28 @@ Route::prefix('admin')
                 Route::patch('/{masterTrader}/update', 'update')->name('update');
                 Route::patch('/{masterTrader}/toggle/status', 'toggleStatus')->name('toggle.status');
                 Route::delete('/{masterTrader}/delete', 'destroy')->name('destroy');
+            });
+
+        // Plan Management
+        Route::prefix('plans')
+            ->name('plans.')
+            ->controller(AdminPlansController::class)
+            ->group(function () {
+                Route::get('/', 'index')->name('index');
+                Route::post('/store', 'store')->name('store');
+                Route::put('/{plan}/update', 'update')->name('update');
+                Route::delete('/{plan}/delete', 'destroy')->name('destroy');
+            });
+
+        // Plan Time Management
+        Route::prefix('time')
+            ->name('time.')
+            ->controller(AdminPlanTimeSettingsController::class)
+            ->group(function () {
+                Route::get('/settings', 'index')->name('index');
+                Route::post('/store', 'store')->name('store');
+                Route::put('/{planTimeSetting}/update', 'update')->name('update');
+                Route::delete('/{planTimeSetting}/delete', 'destroy')->name('destroy');
             });
 
         // Newsletter Notifications

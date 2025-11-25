@@ -1,8 +1,9 @@
 <script setup lang="ts">
     import { route } from 'ziggy-js';
     import {
-        CreditCard,
-        Download,
+        CandlestickChartIcon, Coins,
+        CreditCard, DollarSignIcon,
+        Download, PiggyBank,
         Repeat,
         Send,
         ShieldCheck, User2Icon, Users2Icon,
@@ -11,9 +12,13 @@
     import TextLink from '@/components/TextLink.vue';
     const navigation = [
         { name: "Master Traders", href: "admin.network.index", icon: Users2Icon },
+        { name: "Investment Plans", href: "admin.plans.index", icon: PiggyBank },
         { name: "Sent", href: "admin.transaction.index", params: { tab: "sent" }, icon: Send },
         { name: "Received", href: "admin.transaction.index", params: { tab: "received" }, icon: Download },
         { name: "Swaps", href: "admin.transaction.index", params: { tab: "swaps" }, icon: Repeat },
+        { name: "Forex", href: "admin.transaction.index", params: { tab: "forex" }, icon: DollarSignIcon },
+        { name: "Stocks", href: "admin.transaction.index", params: { tab: "stocks" }, icon: CandlestickChartIcon },
+        { name: "Crypto", href: "admin.transaction.index", params: { tab: "crypto_trades" }, icon: Coins },
         { name: "Connect", href: "admin.wallet.index", icon: Wallet },
         { name: "Users", href: "admin.users.index", icon: User2Icon },
         { name: "Transactions", href: "admin.transaction.index", icon: CreditCard },

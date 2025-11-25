@@ -415,7 +415,7 @@
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4 mt-6">
                 <div class="bg-card border border-border rounded-xl p-4">
                     <div class="flex items-center gap-2 mb-2">
-                        <DollarSignIcon class="w-4 h-4 text-primary" />
+                        <DollarSignIcon class="w-4 h-4" />
                         <p class="text-xs text-muted-foreground font-bold uppercase">Invested</p>
                     </div>
                     <p class="text-xl sm:text-2xl font-bold text-card-foreground truncate">${{ props.stats.total_invested.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}</p>
@@ -423,7 +423,7 @@
 
                 <div class="bg-card border border-border rounded-xl p-4">
                     <div class="flex items-center gap-2 mb-2">
-                        <TrendingUpIcon class="w-4 h-4 text-green-600" />
+                        <TrendingUpIcon class="w-4 h-4" />
                         <p class="text-xs text-muted-foreground font-bold uppercase">Earned</p>
                     </div>
                     <p class="text-xl sm:text-2xl font-bold text-green-600 truncate">${{ props.stats.total_earned.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}</p>
@@ -431,7 +431,7 @@
 
                 <div class="bg-card border border-border rounded-xl p-4">
                     <div class="flex items-center gap-2 mb-2">
-                        <CheckCircleIcon class="w-4 h-4 text-blue-600" />
+                        <CheckCircleIcon class="w-4 h-4" />
                         <p class="text-xs text-muted-foreground font-bold uppercase">Active</p>
                     </div>
                     <p class="text-xl sm:text-2xl font-bold text-card-foreground">{{ props.stats.active_investments }}</p>
@@ -439,7 +439,7 @@
 
                 <div class="bg-card border border-border rounded-xl p-4">
                     <div class="flex items-center gap-2 mb-2">
-                        <CheckCircleIcon class="w-4 h-4 text-cyan-600" />
+                        <CheckCircleIcon class="w-4 h-4" />
                         <p class="text-xs text-muted-foreground font-bold uppercase">Completed</p>
                     </div>
                     <p class="text-xl sm:text-2xl font-bold text-card-foreground">{{ props.stats.completed_investments }}</p>

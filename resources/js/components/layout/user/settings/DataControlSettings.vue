@@ -27,7 +27,7 @@
 
 <template>
     <div class="space-y-6 margin-bottom">
-        <div class="rounded-lg border bg-card text-card-foreground shadow-sm">
+        <div class="rounded-lg border bg-card text-card-foreground">
             <div class="flex flex-col space-y-1.5 p-6">
                 <div class="text-2xl font-semibold leading-none tracking-tight flex items-center space-x-2">
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-database h-5 w-5 mt-0.5 flex-shrink-0" aria-hidden="true">

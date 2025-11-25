@@ -28,8 +28,8 @@ class PlanTimeSetting extends Model
         'period' => 'integer',
     ];
 
-    public function plan()
+    public function plans()
     {
-        return $this->hasMany(Plan::class);
+        return $this->hasMany(Plan::class, 'plan_time_settings_id');
     }
 }

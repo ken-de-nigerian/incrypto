@@ -2,6 +2,7 @@
     import { computed, ref, watch } from 'vue';
     import { Head, router, usePage } from '@inertiajs/vue3';
     import {
+        Copy,
         HistoryIcon,
         Search,
         UsersIcon,
@@ -461,15 +462,16 @@
                                 :class="[
                                 'w-full flex items-center justify-center gap-2 py-3.5 sm:py-3 rounded-xl font-bold text-sm transition-all active:scale-[0.98] touch-manipulation',
                                 isTraderCopied(trader.id)
-                                    ? 'bg-muted text-muted-foreground cursor-not-allowed border border-border'
-                                    : isLiveMode
-                                        ? 'bg-primary text-primary-foreground hover:bg-primary/90 cursor-pointer'
-                                        : 'bg-muted text-muted-foreground cursor-not-allowed opacity-70'
+                                ? 'bg-muted text-muted-foreground cursor-not-allowed border border-border'
+                                : isLiveMode
+                                ? 'bg-primary/10 text-primary border border-border hover:bg-primary/20 cursor-pointer'
+                                : 'bg-muted text-muted-foreground cursor-not-allowed opacity-70'
                             ]">
                                 <template v-if="isTraderCopied(trader.id)">
                                     Already Copying
                                 </template>
                                 <template v-else>
+                                    <Copy class="w-3.5 h-3.5" />
                                     {{ !trader.commission_rate || parseFloat(trader.commission_rate as string) === 0 ? 'Start Free Trial' : 'Copy Strategy' }}
                                 </template>
                             </button>

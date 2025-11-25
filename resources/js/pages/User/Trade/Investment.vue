@@ -256,7 +256,7 @@
 
                         <div class="flex items-start justify-between mb-4 pb-4 border-b border-border/50">
                             <div class="flex items-center gap-3">
-                                <div class="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+                                <div class="w-10 h-10 rounded-full bg-secondary flex items-center justify-center">
                                     <PiggyBankIcon class="w-5 h-5" />
                                 </div>
                                 <h3 class="text-lg font-bold text-card-foreground">{{ plan.name }}</h3>
@@ -311,7 +311,7 @@
                                 :class="[
                                     'flex items-center justify-center gap-2 py-3 rounded-xl font-semibold transition-all active:scale-[0.98] cursor-pointer touch-manipulation',
                                     isLiveMode
-                                        ? 'bg-primary text-primary-foreground hover:bg-primary/90'
+                                        ? 'bg-primary/10 text-primary border border-border hover:bg-primary/20'
                                         : 'bg-muted text-muted-foreground cursor-not-allowed border border-border'
                                 ]">
                                 <PiggyBankIcon class="w-4 h-4" />

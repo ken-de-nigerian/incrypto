@@ -16,6 +16,7 @@ class Plan extends Model
      * @var array<int, string>
      */
     protected $fillable = [
+        'plan_time_settings_id',
         'name',
         'minimum',
         'maximum',

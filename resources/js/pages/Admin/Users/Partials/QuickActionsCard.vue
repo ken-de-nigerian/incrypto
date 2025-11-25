@@ -296,11 +296,6 @@
         @close="isFundsModalOpen = false">
 
         <form @submit.prevent="manageFunds" class="space-y-4">
-            <p class="text-sm text-muted-foreground leading-relaxed">
-                Adjust the balance for user
-                <span class="font-semibold text-card-foreground">{{ user.first_name }}</span>. Specify the wallet, action type, and amount.
-            </p>
-
             <div class="space-y-2">
                 <label class="text-sm font-medium text-muted-foreground uppercase tracking-wider">Select Wallet</label>
                 <CustomSelectDropdown
@@ -393,12 +388,6 @@
         @close="isSendEmailModalOpen = false">
 
         <form @submit.prevent="sendEmail" class="space-y-4">
-            <p class="text-sm text-muted-foreground leading-relaxed">
-                Send a custom email notification to
-                <span class="font-semibold text-card-foreground">{{ user.first_name }}</span> at
-                <span class="font-semibold text-card-foreground">{{ user.email }}</span>.
-            </p>
-
             <div class="space-y-2">
                 <label for="subject" class="text-sm font-medium text-muted-foreground uppercase tracking-wider">Subject</label>
                 <input id="subject" v-model="emailForm.subject" @focus="clearError(emailForm, 'subject')" type="text" placeholder="Important Account Notice" class="input-crypto w-full text-sm" />
@@ -425,11 +414,6 @@
         @close="isUserPasswordModalOpen = false">
 
         <form @submit.prevent="resetPassword" class="space-y-4">
-            <p class="text-sm text-muted-foreground leading-relaxed">
-                Generate a new password for user
-                <span class="font-semibold text-card-foreground">{{ user.first_name }}</span>. They will use this to log back in.
-            </p>
-
             <div class="space-y-2">
                 <label for="generated-password" class="text-sm font-medium text-muted-foreground uppercase tracking-wider">Generated Password</label>
                 <div class="flex gap-2">
@@ -469,11 +453,6 @@
         @close="isLoginAsUserModalOpen = false">
 
         <div class="space-y-4">
-            <p class="text-sm text-muted-foreground leading-relaxed">
-                You will log into the account as
-                <span class="font-semibold text-card-foreground">{{ user.first_name }}</span>, gaining full access to their account session. This action is logged for security purposes.
-            </p>
-
             <div class="p-3 bg-warning/10 border border-warning/30 rounded-lg text-sm text-warning-foreground">
                 <span class="font-semibold block mb-2 flex items-center gap-2">
                     <AlertTriangle class="w-5 h-5 text-destructive" /> Warning
@@ -501,12 +480,6 @@
         @close="isSuspendModalOpen = false">
 
         <form @submit.prevent="manageSuspend" class="space-y-4">
-            <p class="text-sm text-muted-foreground leading-relaxed">
-                Are you sure you want to
-                <span class="font-semibold text-card-foreground">suspend</span> the account for user
-                <span class="font-semibold text-card-foreground">{{ user.first_name }}</span>?
-            </p>
-
             <div class="p-3 bg-warning/10 border border-warning/30 rounded-lg text-sm text-warning-foreground">
                 <span class="font-semibold block mb-2 flex items-center gap-2">
                     <AlertTriangle class="w-5 h-5 text-destructive" /> Warning
@@ -539,12 +512,6 @@
         @close="isUnsuspendModalOpen = false">
 
         <form @submit.prevent="manageUnsuspend" class="space-y-4">
-            <p class="text-sm text-muted-foreground leading-relaxed">
-                Are you sure you want to
-                <span class="font-semibold text-card-foreground">unsuspend</span> the account for user
-                <span class="font-semibold text-card-foreground">{{ user.first_name }}</span>?
-            </p>
-
             <div class="p-3 bg-success/10 border border-success/30 rounded-lg text-sm text-success-foreground">
                 <span class="font-semibold block mb-1 flex items-center gap-2">
                     <CheckCircle2 class="w-5 h-5 text-success" /> Confirmation
@@ -566,12 +533,6 @@
         @close="isDeleteModalOpen = false">
 
         <form @submit.prevent="manageDelete" class="space-y-4">
-            <p class="text-sm text-muted-foreground leading-relaxed">
-                To confirm permanent deletion of account
-                <span class="font-semibold text-card-foreground">{{ user.first_name }}</span>, please type
-                <span class="bg-destructive/10 text-destructive font-mono text-xs px-2 py-1 rounded">DELETE</span> below.
-            </p>
-
             <div class="p-3 bg-warning/10 border border-warning/30 rounded-lg text-sm text-warning-foreground">
                 <span class="font-semibold block mb-1 flex items-center gap-2">
                     <AlertTriangle class="w-5 h-5 text-destructive" /> Warning

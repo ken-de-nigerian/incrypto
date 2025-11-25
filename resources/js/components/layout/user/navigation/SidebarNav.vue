@@ -143,8 +143,8 @@
 
             <div class="px-3 py-3">
                 <TextLink :href="route('user.profile.index')">
-                    <div class="flex items-center p-2 rounded-lg bg-sidebar-accent/20 hover:bg-sidebar-accent/40 transition-all duration-200">
-                        <div class="w-7 h-7 bg-accent rounded-full flex items-center justify-center">
+                    <div class="flex items-center p-2 rounded-lg bg-sidebar-accent transition-all duration-200">
+                        <div class="w-7 h-7 bg-primary/50 rounded-full flex items-center justify-center">
                             <UserIcon class="h-4 w-4 text-accent-foreground" />
                         </div>
                         <span v-if="user" class="ml-2 text-sm font-medium text-sidebar-foreground">{{ user.first_name }} {{ user.last_name?.charAt(0) }}.</span>

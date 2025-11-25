@@ -61,7 +61,7 @@
 
 <template>
     <div class="space-y-6 margin-bottom">
-        <div class="rounded-lg border bg-card text-card-foreground shadow-sm">
+        <div class="rounded-lg border bg-card text-card-foreground">
             <div class="flex flex-col space-y-1.5 p-6">
                 <div class="text-2xl font-semibold leading-none tracking-tight">Password</div>
                 <div class="text-sm text-muted-foreground mt-2">Change your account password</div>
@@ -128,7 +128,7 @@
             </div>
         </div>
 
-        <div class="rounded-lg border bg-card text-card-foreground shadow-sm">
+        <div class="rounded-lg border bg-card text-card-foreground">
             <div class="flex flex-col space-y-1.5 p-6">
                 <div class="text-2xl font-semibold leading-none tracking-tight">Active Sessions</div>
                 <div class="text-sm text-muted-foreground mt-2">Monitor and manage your active login sessions</div>
@@ -189,7 +189,7 @@
     </div>
 
     <div v-if="isLogoutModalOpen" class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm" @click="closeLogoutModal">
-        <div class="w-full max-w-md p-6 bg-card rounded-lg shadow-xl" @click.stop>
+        <div class="w-full max-w-md p-6 bg-card rounded-lg" @click.stop>
             <h2 class="text-lg font-medium text-foreground">Log Out Other Browser Sessions</h2>
             <p class="mt-1 text-sm text-muted-foreground">
                 Please enter your password to confirm you would like to log out of your other browser sessions across all of your devices.

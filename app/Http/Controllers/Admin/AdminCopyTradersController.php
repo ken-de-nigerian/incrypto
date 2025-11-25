@@ -111,7 +111,6 @@ class AdminCopyTradersController extends Controller
 
             return $this->notify('success', 'Master trader created successfully.')
                 ->toBack();
-
         } catch (Exception $e) {
             return $this->notify('error', __($e->getMessage()))->toBack();
         }
@@ -131,7 +130,6 @@ class AdminCopyTradersController extends Controller
 
             return $this->notify('success', 'Master trader updated successfully.')
                 ->toBack();
-
         } catch (Exception $e) {
             return $this->notify('error', __($e->getMessage()))->toBack();
         }
@@ -148,7 +146,6 @@ class AdminCopyTradersController extends Controller
 
             return $this->notify('success', "Trader status $status successfully.")
                 ->toBack();
-
         } catch (Exception $e) {
             return $this->notify('error', __($e->getMessage()))->toBack();
         }
@@ -168,7 +165,6 @@ class AdminCopyTradersController extends Controller
 
             return $this->notify('success', "Master trader deleted successfully. $copierCount active copy trade(s) were stopped.")
                 ->toBack();
-
         } catch (Exception $e) {
             return $this->notify('error', __($e->getMessage()))->toBack();
         }

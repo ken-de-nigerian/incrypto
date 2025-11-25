@@ -388,7 +388,7 @@
             <div class="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3 sm:gap-4 mt-6 mb-6">
                 <div class="bg-card border border-border rounded-xl p-4">
                     <div class="flex items-center gap-2 mb-2">
-                        <Activity class="w-4 h-4 text-primary" />
+                        <Activity class="w-4 h-4" />
                         <p class="text-xs text-muted-foreground font-bold uppercase">Active</p>
                     </div>
                     <p class="text-xl sm:text-2xl font-bold text-card-foreground">{{ props.stats.total_active }}</p>
@@ -396,7 +396,7 @@
 
                 <div class="bg-card border border-border rounded-xl p-4">
                     <div class="flex items-center gap-2 mb-2">
-                        <UsersIcon class="w-4 h-4 text-cyan-600" />
+                        <UsersIcon class="w-4 h-4" />
                         <p class="text-xs text-muted-foreground font-bold uppercase">Traders</p>
                     </div>
                     <p class="text-xl sm:text-2xl font-bold text-card-foreground">{{ props.stats.active_traders }}</p>
@@ -404,7 +404,7 @@
 
                 <div class="bg-card border border-border rounded-xl p-4">
                     <div class="flex items-center gap-2 mb-2">
-                        <TrendingUp class="w-4 h-4 text-green-600" />
+                        <TrendingUp class="w-4 h-4" />
                         <p class="text-xs text-muted-foreground font-bold uppercase">Profit</p>
                     </div>
                     <p class="text-lg sm:text-2xl font-bold text-green-600 truncate">+${{ props.stats.total_profit.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}</p>
@@ -412,7 +412,7 @@
 
                 <div class="bg-card border border-border rounded-xl p-4">
                     <div class="flex items-center gap-2 mb-2">
-                        <TrendingDown class="w-4 h-4 text-red-600" />
+                        <TrendingDown class="w-4 h-4" />
                         <p class="text-xs text-muted-foreground font-bold uppercase">Loss</p>
                     </div>
                     <p class="text-lg sm:text-2xl font-bold text-red-600 truncate">-${{ props.stats.total_loss.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}</p>
@@ -430,7 +430,7 @@
 
                 <div class="bg-card border border-border rounded-xl p-4">
                     <div class="flex items-center gap-2 mb-2">
-                        <DollarSignIcon class="w-4 h-4 text-orange-600" />
+                        <DollarSignIcon class="w-4 h-4" />
                         <p class="text-xs text-muted-foreground font-bold uppercase">Fees Paid</p>
                     </div>
                     <p class="text-lg sm:text-2xl font-bold text-card-foreground truncate">${{ props.stats.total_commission.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}</p>

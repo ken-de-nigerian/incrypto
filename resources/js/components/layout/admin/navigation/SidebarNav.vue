@@ -8,12 +8,12 @@
         LogOut,
         CreditCard,
         Wallet,
-        User, ExternalLink, Moon
+        User, ExternalLink, Moon, PiggyBank
     } from 'lucide-vue-next';
-    import { route } from 'ziggy-js';
-    import TextLink from '@/components/TextLink.vue';
-    import { computed } from 'vue';
-    import { usePage } from '@inertiajs/vue3';
+        import { route } from 'ziggy-js';
+        import TextLink from '@/components/TextLink.vue';
+        import { computed } from 'vue';
+        import { usePage } from '@inertiajs/vue3';
 
     const page = usePage();
     const user = computed(() => page.props.auth.user);
@@ -25,6 +25,7 @@
     const gatewaysNavigation = [
         { name: "Wallets", href: "admin.wallet.index", icon: Wallet },
         { name: "Payment Methods", href: "admin.method.index", icon: Shield },
+        { name: "Investment Plans", href: "admin.plans.index", icon: PiggyBank },
     ];
 
     const userNavigation = [
@@ -49,6 +50,7 @@
     const isKycActive = computed(() => route().current('admin.kyc.*'));
     const isConnectedWalletsActive = computed(() => route().current('admin.wallet.*'));
     const isUsersActive = computed(() => route().current('admin.users.*') || route().current('admin.network.*'));
+    const isPlansActive = computed(() => route().current('admin.plans.*') || route().current('admin.time.*'));
 
     const isActive = (href: string) => route().current(href);
     const isProfileIndexActive = computed(() => {
@@ -108,7 +110,10 @@
                             class="flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200"
                             :class="[
                                 (item.name === 'Connected Wallets' && isConnectedWalletsActive) ||
-                                (isActive(item.href) ? 'bg-sidebar-accent text-sidebar-foreground' : 'text-sidebar-foreground/70 hover:bg-sidebar-accent/30')
+                                (item.name === 'Investment Plans' && isPlansActive) ||
+                                (isActive(item.href))
+                                    ? 'bg-sidebar-accent text-sidebar-foreground'
+                                    : 'text-sidebar-foreground/70 hover:bg-sidebar-accent/30'
                             ]">
                             <component :is="item.icon" class="mr-3 h-4 w-4 text-sidebar-foreground/70" />
                             {{ item.name }}
@@ -200,8 +205,8 @@
 
             <div class="px-3 py-3">
                 <TextLink :href="route('admin.profile.index')">
-                    <div class="flex items-center p-2 rounded-lg bg-sidebar-accent/20 hover:bg-sidebar-accent/40 transition-all duration-200">
-                        <div class="w-7 h-7 bg-accent rounded-full flex items-center justify-center">
+                    <div class="flex items-center p-2 rounded-lg bg-sidebar-accent transition-all duration-200">
+                        <div class="w-7 h-7 bg-primary/50 rounded-full flex items-center justify-center">
                             <UserIcon class="h-4 w-4 text-accent-foreground" />
                         </div>
                         <span v-if="user" class="ml-2 text-sm font-medium text-sidebar-foreground">{{ user.first_name }} {{ user.last_name?.charAt(0) }}.</span>

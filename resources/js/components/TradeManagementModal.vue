@@ -229,18 +229,18 @@
                         <div class="flex-1 overflow-y-auto no-scrollbar overscroll-contain px-4 sm:px-6 py-4 bg-background">
                             <!-- Details Tab -->
                             <div v-if="activeTab === 'details'" class="space-y-6 pb-6">
-                                <div class="bg-muted/50 rounded-lg p-4">
+                                <div class="bg-muted/50 rounded-lg">
                                     <h3 class="text-sm font-semibold text-card-foreground mb-3 uppercase tracking-wide">Trade Summary</h3>
 
                                     <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
                                         <div class="bg-background border border-border rounded-lg p-3">
                                             <p class="text-xs text-muted-foreground mb-1">User</p>
-                                            <p class="text-sm font-semibold text-card-foreground truncate">{{ trade.user_name }}</p>
+                                            <p class="text-sm font-medium text-muted-foreground uppercase tracking-wider">{{ trade.user_name }}</p>
                                         </div>
 
                                         <div class="bg-background border border-border rounded-lg p-3">
                                             <p class="text-xs text-muted-foreground mb-1">Trading Pair</p>
-                                            <p class="text-sm font-semibold text-card-foreground truncate">{{ trade.pair_name || trade.pair }}</p>
+                                            <p class="text-sm font-medium text-muted-foreground uppercase tracking-wider">{{ trade.pair_name || trade.pair }}</p>
                                         </div>
 
                                         <div class="bg-background border border-border rounded-lg p-3">
@@ -264,17 +264,17 @@
 
                                         <div class="bg-background border border-border rounded-lg p-3">
                                             <p class="text-xs text-muted-foreground mb-1">Amount</p>
-                                            <p class="text-sm font-semibold text-card-foreground">${{ formatAmount(trade.amount) }}</p>
+                                            <p class="text-sm font-medium text-muted-foreground uppercase tracking-wider">${{ formatAmount(trade.amount) }}</p>
                                         </div>
 
                                         <div class="bg-background border border-border rounded-lg p-3">
                                             <p class="text-xs text-muted-foreground mb-1">Leverage</p>
-                                            <p class="text-sm font-semibold text-card-foreground">{{ trade.leverage }}x</p>
+                                            <p class="text-sm font-medium text-muted-foreground uppercase tracking-wider">{{ trade.leverage }}x</p>
                                         </div>
 
                                         <div class="bg-background border border-border rounded-lg p-3">
                                             <p class="text-xs text-muted-foreground mb-1">Trading Mode</p>
-                                            <p class="text-sm font-semibold text-card-foreground capitalize">{{ trade.trading_mode }}</p>
+                                            <p class="text-sm font-medium text-muted-foreground uppercase tracking-wider capitalize">{{ trade.trading_mode }}</p>
                                         </div>
 
                                         <div class="bg-background border border-border rounded-lg p-3">
@@ -286,7 +286,7 @@
 
                                         <div class="bg-background border border-border rounded-lg p-3">
                                             <p class="text-xs text-muted-foreground mb-1">Position Size</p>
-                                            <p class="text-sm font-semibold text-card-foreground">${{ formatAmount((trade.amount || 0) * (trade.leverage || 1)) }}</p>
+                                            <p class="text-sm font-medium text-muted-foreground uppercase tracking-wider">${{ formatAmount((trade.amount || 0) * (trade.leverage || 1)) }}</p>
                                         </div>
                                     </div>
                                 </div>
@@ -307,7 +307,7 @@
 
                                 <!-- P&L Input -->
                                 <div class="space-y-2">
-                                    <label class="text-sm font-semibold text-card-foreground flex items-center gap-2">
+                                    <label class="text-sm font-medium text-muted-foreground uppercase tracking-wider flex items-center gap-2">
                                         <TrendingUpIcon class="w-4 h-4" />
                                         Profit/Loss (P&L) *
                                     </label>
@@ -349,7 +349,7 @@
 
                                 <!-- Exit Price Adjustment (Optional) -->
                                 <div v-if="calculatedExitPrice" class="space-y-2">
-                                    <label class="text-sm font-semibold text-card-foreground flex items-center gap-2">
+                                    <label class="text-sm font-medium text-muted-foreground uppercase tracking-wider flex items-center gap-2">
                                         <BarChart3 class="w-4 h-4" />
                                         Exit Price Adjustment (Optional)
                                     </label>
@@ -367,26 +367,11 @@
                                     </p>
                                 </div>
 
-                                <!-- Info Box -->
-                                <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                                    <div class="flex gap-3">
-                                        <svg class="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                        </svg>
-                                        <div>
-                                            <h4 class="font-semibold text-blue-900 mb-1">Automatic Exit Price Calculation</h4>
-                                            <p class="text-sm text-blue-800">
-                                                The exit price is automatically calculated based on the P&L you enter. This ensures accuracy and consistency with the profit/loss amount.
-                                            </p>
-                                        </div>
-                                    </div>
-                                </div>
-
                                 <!-- Warning -->
                                 <div class="p-4 bg-warning/10 border border-warning/30 rounded-lg flex gap-3">
                                     <AlertTriangleIcon class="w-5 h-5 text-warning flex-shrink-0 mt-0.5" />
                                     <div class="flex-1">
-                                        <p class="text-sm font-semibold text-card-foreground mb-1">Confirm Trade Closure</p>
+                                        <p class="text-sm font-medium text-muted-foreground uppercase tracking-wider mb-1">Confirm Trade Closure</p>
                                         <p class="text-sm text-muted-foreground">
                                             This action will close the trade and update the user's balance.
                                             <strong>This cannot be undone.</strong>

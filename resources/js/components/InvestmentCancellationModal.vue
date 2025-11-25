@@ -236,8 +236,8 @@
                         <div class="flex-1 overflow-y-auto no-scrollbar overscroll-contain px-4 sm:px-6 py-4 bg-background">
                             <!-- Details Tab -->
                             <div v-if="activeTab === 'details'" class="space-y-6 pb-6">
-                                <div class="bg-muted/50 rounded-lg p-4">
-                                    <h3 class="text-sm font-semibold text-card-foreground mb-3 uppercase tracking-wide">Investment Summary</h3>
+                                <div class="bg-muted/50 rounded-lg">
+                                    <h3 class="text-sm font-medium text-muted-foreground uppercase tracking-wider mb-3">Investment Summary</h3>
 
                                     <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
                                         <div class="bg-background border border-border rounded-lg p-3">
@@ -245,7 +245,7 @@
                                                 <User class="w-4 h-4 text-muted-foreground" />
                                                 <p class="text-xs text-muted-foreground">User</p>
                                             </div>
-                                            <p class="text-sm font-semibold text-card-foreground truncate">{{ investment.user_name }}</p>
+                                            <p class="text-sm font-medium text-muted-foreground uppercase tracking-wider">{{ investment.user_name }}</p>
                                         </div>
 
                                         <div class="bg-background border border-border rounded-lg p-3">
@@ -253,7 +253,7 @@
                                                 <TrendingUpIcon class="w-4 h-4 text-muted-foreground" />
                                                 <p class="text-xs text-muted-foreground">Plan</p>
                                             </div>
-                                            <p class="text-sm font-semibold text-card-foreground truncate">{{ investment.plan_name }}</p>
+                                            <p class="text-sm font-medium text-muted-foreground uppercase tracking-wider">{{ investment.plan_name }}</p>
                                         </div>
 
                                         <div class="bg-background border border-border rounded-lg p-3">
@@ -293,7 +293,7 @@
                                                 <Calendar class="w-4 h-4 text-muted-foreground" />
                                                 <p class="text-xs text-muted-foreground">Cycles</p>
                                             </div>
-                                            <p class="text-sm font-semibold text-card-foreground">
+                                            <p class="text-sm font-medium text-muted-foreground uppercase tracking-wider">
                                                 {{ investment.repeat_time_count }}/{{ investment.repeat_time }}
                                             </p>
                                         </div>
@@ -324,13 +324,13 @@
                             <!-- Cancellation Tab -->
                             <div v-if="activeTab === 'cancellation'" class="space-y-6 pb-6">
                                 <!-- Contextual Info Banner -->
-                                <div v-if="hasCompletedCycle" class="p-4 bg-blue-50 border border-blue-200 rounded-lg flex gap-3">
-                                    <svg class="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <div v-if="hasCompletedCycle" class="p-4 border border-border rounded-lg flex gap-3">
+                                    <svg class="w-5 h-5 text-orange-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                                     </svg>
                                     <div>
-                                        <h4 class="font-semibold text-blue-900 mb-1">Cycles Completed</h4>
-                                        <p class="text-sm text-blue-800">
+                                        <h4 class="font-semibold text-orange-600 mb-1">Cycles Completed</h4>
+                                        <p class="text-sm text-orange-600">
                                             This investment has completed {{ investment.repeat_time_count }} cycle(s).
                                             Paid interest: ${{ formatAmount(paidInterest) }} |
                                             Unpaid interest: ${{ formatAmount(unpaidInterest) }}
@@ -352,11 +352,11 @@
 
                                 <!-- Payout Options -->
                                 <div class="space-y-3">
-                                    <label class="text-sm font-semibold text-card-foreground">Select Payout Option *</label>
+                                    <label class="text-sm font-medium text-muted-foreground uppercase tracking-wider">Select Payout Option *</label>
 
                                     <!-- Capital and Unpaid Interest -->
                                     <label
-                                        class="block p-4 rounded-lg border-2 cursor-pointer transition-all hover:border-success/50"
+                                        class="mt-3 block p-4 rounded-lg border-2 cursor-pointer transition-all hover:border-success/50"
                                         :class="payoutOption === 'capital_and_interest'
                                             ? 'border-success bg-success/5'
                                             : 'border-border bg-card'"

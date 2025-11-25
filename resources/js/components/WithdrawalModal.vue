@@ -110,14 +110,14 @@
             </div>
 
             <div class="bg-primary/20 p-3 rounded-lg space-y-2">
-                <p class="text-sm font-semibold text-card-foreground flex items-center gap-2">
+                <p class="text-sm font-medium text-muted-foreground uppercase tracking-wider flex items-center gap-2">
                     <BriefcaseIcon class="w-4 h-4 text-primary" />
                     Available USD Value: <span class="text-primary">${{ liveBalance.toLocaleString('en-US', { minimumFractionDigits: 2 }) }}</span>
                 </p>
             </div>
 
             <div class="space-y-2">
-                <h4 class="text-sm font-semibold text-card-foreground">Amount of USD to Convert:</h4>
+                <h4 class="text-sm font-medium text-muted-foreground uppercase tracking-wider">Amount of USD to Convert:</h4>
                 <div class="relative">
                     <input
                         v-model.number.lazy="withdrawalAmountUSD"
@@ -138,7 +138,7 @@
             </div>
 
             <div class="space-y-2">
-                <h4 class="text-sm font-semibold text-card-foreground">Select Target Crypto:</h4>
+                <h4 class="text-sm font-medium text-muted-foreground uppercase tracking-wider">Select Target Crypto:</h4>
                 <div class="flex gap-3 overflow-x-auto pb-2">
                     <button
                         v-for="holding in cryptoHoldings"

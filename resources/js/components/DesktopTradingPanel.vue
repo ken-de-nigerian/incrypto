@@ -119,7 +119,7 @@
             </div>
 
             <div class="space-y-2">
-                <label class="text-xs font-semibold text-card-foreground">Duration</label>
+                <label class="text-sm font-medium text-muted-foreground uppercase tracking-wider">Duration</label>
                 <div class="grid grid-cols-7 gap-1">
                     <button
                         v-for="duration in durations"
@@ -137,7 +137,7 @@
             </div>
 
             <div class="space-y-2">
-                <label class="text-xs font-bold text-card-foreground">Amount (USD)</label>
+                <label class="text-sm font-medium text-muted-foreground uppercase tracking-wider">Amount (USD)</label>
                 <div class="relative">
                     <input
                         :value="tradeFormData.amount"
@@ -159,7 +159,7 @@
             </div>
 
             <div class="space-y-2">
-                <label class="text-xs font-semibold text-card-foreground">Leverage</label>
+                <label class="text-sm font-medium text-muted-foreground uppercase tracking-wider">Leverage</label>
                 <div class="grid grid-cols-7 gap-1">
                     <button
                         v-for="leverage in availableLeverages"

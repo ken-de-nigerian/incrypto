@@ -445,7 +445,7 @@
                                 </div>
 
                                 <div v-if="masterTrader.bio" class="bg-muted/30 rounded-lg p-4 border border-border">
-                                    <h3 class="text-sm font-semibold text-card-foreground mb-2 flex items-center gap-2">
+                                    <h3 class="text-sm font-medium text-muted-foreground uppercase tracking-wider mb-2 flex items-center gap-2">
                                         <UserIcon class="w-4 h-4" />
                                         Bio
                                     </h3>
@@ -453,7 +453,7 @@
                                 </div>
 
                                 <div class="bg-muted/30 rounded-lg p-4 border border-border">
-                                    <h3 class="text-sm font-semibold text-card-foreground mb-3 flex items-center gap-2">
+                                    <h3 class="text-sm font-medium text-muted-foreground uppercase tracking-wider mb-3 flex items-center gap-2">
                                         <UserIcon class="w-4 h-4" />
                                         User Account
                                     </h3>
@@ -506,7 +506,7 @@
                                 </div>
 
                                 <div class="bg-muted/30 rounded-lg p-5 border border-border">
-                                    <h3 class="text-sm font-semibold text-card-foreground mb-4 flex items-center gap-2">
+                                    <h3 class="text-sm font-medium text-muted-foreground uppercase tracking-wider mb-4 flex items-center gap-2">
                                         <BarChart3Icon class="w-4 h-4" />
                                         Profit vs Loss Distribution
                                     </h3>
@@ -584,18 +584,8 @@
 
                             <div v-if="activeTab === 'edit'" class="space-y-6 pb-6">
                                 <form @submit.prevent="handleSubmit" class="space-y-6">
-                                    <div class="p-4 bg-muted/30 rounded-lg border border-border">
-                                        <div class="flex items-center gap-3">
-                                            <UserIcon class="w-5 h-5 text-muted-foreground" />
-                                            <div>
-                                                <p class="text-sm font-semibold text-card-foreground">{{ traderName }}</p>
-                                                <p class="text-xs text-muted-foreground">{{ masterTrader.user?.email }}</p>
-                                            </div>
-                                        </div>
-                                    </div>
-
                                     <div class="space-y-2">
-                                        <label class="text-sm font-semibold text-card-foreground flex items-center gap-2">
+                                        <label class="text-sm font-medium text-muted-foreground uppercase tracking-wider">
                                             Expertise Level *
                                         </label>
                                         <CustomSelectDropdown
@@ -606,7 +596,7 @@
                                     </div>
 
                                     <div class="space-y-2">
-                                        <label class="text-sm font-semibold text-card-foreground flex items-center gap-2">
+                                        <label class="text-sm font-medium text-muted-foreground uppercase tracking-wider">
                                             Risk Score (1-10) *
                                         </label>
                                         <input v-model.number="formData.risk_score" type="number" min="1" max="10" class="w-full px-4 py-3 bg-background border rounded-lg text-sm input-crypto" />
@@ -615,49 +605,49 @@
 
                                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                         <div class="space-y-2">
-                                            <label class="text-sm font-semibold text-card-foreground flex items-center gap-2">
+                                            <label class="text-sm font-medium text-muted-foreground uppercase tracking-wider">
                                                 Gain Percentage
                                             </label>
                                             <input v-model.number="formData.gain_percentage" type="number" step="0.01" class="w-full px-4 py-3 bg-background border border-border rounded-lg text-sm input-crypto" />
                                         </div>
 
                                         <div class="space-y-2">
-                                            <label class="text-sm font-semibold text-card-foreground flex items-center gap-2">
+                                            <label class="text-sm font-medium text-muted-foreground uppercase tracking-wider">
                                                 Commission Rate
                                             </label>
                                             <input v-model="formData.commission_rate" type="number" step="0.01" placeholder="Leave empty for free" class="w-full px-4 py-3 bg-background border border-border rounded-lg text-sm input-crypto" />
                                         </div>
 
                                         <div class="space-y-2">
-                                            <label class="text-sm font-semibold text-card-foreground">Total Profit</label>
+                                            <label class="text-sm font-medium text-muted-foreground uppercase tracking-wider">Total Profit</label>
                                             <input v-model.number="formData.total_profit" type="number" step="0.01" class="w-full px-4 py-3 bg-background border border-border rounded-lg text-sm input-crypto" />
                                         </div>
 
                                         <div class="space-y-2">
-                                            <label class="text-sm font-semibold text-card-foreground">Total Loss</label>
+                                            <label class="text-sm font-medium text-muted-foreground uppercase tracking-wider">Total Loss</label>
                                             <input v-model.number="formData.total_loss" type="number" step="0.01" class="w-full px-4 py-3 bg-background border border-border rounded-lg text-sm input-crypto" />
                                         </div>
 
                                         <div class="space-y-2">
-                                            <label class="text-sm font-semibold text-card-foreground flex items-center gap-2">
+                                            <label class="text-sm font-medium text-muted-foreground uppercase tracking-wider">
                                                 Total Trades
                                             </label>
                                             <input v-model.number="formData.total_trades" type="number" class="w-full px-4 py-3 bg-background border border-border rounded-lg text-sm input-crypto" />
                                         </div>
 
                                         <div class="space-y-2">
-                                            <label class="text-sm font-semibold text-card-foreground">Win Rate (%)</label>
+                                            <label class="text-sm font-medium text-muted-foreground uppercase tracking-wider">Win Rate (%)</label>
                                             <input v-model.number="formData.win_rate" type="number" step="0.01" min="0" max="100" class="w-full px-4 py-3 bg-background border rounded-lg text-sm input-crypto" />
                                             <InputError :message="validationErrors.win_rate" />
                                         </div>
                                     </div>
 
                                     <div class="space-y-2">
-                                        <label class="text-sm font-semibold text-card-foreground">Bio</label>
+                                        <label class="text-sm font-medium text-muted-foreground uppercase tracking-wider">Bio</label>
                                         <textarea v-model="formData.bio" rows="4" placeholder="Enter trader bio..." class="w-full px-4 py-3 bg-background border border-border rounded-lg text-sm input-crypto resize-none"></textarea>
                                     </div>
 
-                                    <div class="flex items-center gap-3 p-4 bg-muted/30 rounded-lg">
+                                    <div class="flex items-center gap-3 p-4 bg-muted/30 rounded-lg border border-border">
                                         <input v-model="formData.is_active" type="checkbox" id="is_active" class="w-5 h-5 text-primary bg-background border-border rounded cursor-pointer" />
                                         <label for="is_active" class="text-sm font-medium text-card-foreground cursor-pointer flex-1">
                                             Set as Active Trader
@@ -670,7 +660,7 @@
                                 <div class="bg-muted/30 rounded-lg p-5 border border-border">
                                     <div class="flex items-start justify-between gap-4">
                                         <div class="flex-1">
-                                            <h3 class="text-sm font-semibold text-card-foreground mb-1 flex items-center gap-2">
+                                            <h3 class="text-sm font-medium text-muted-foreground uppercase tracking-wider mb-1 flex items-center gap-2">
                                                 <ActivityIcon class="w-4 h-4" />
                                                 Trader Status
                                             </h3>
@@ -701,7 +691,7 @@
                                 <div class="bg-muted/30 rounded-lg p-5 border border-border">
                                     <div class="flex items-start justify-between gap-4">
                                         <div class="flex-1">
-                                            <h3 class="text-sm font-semibold text-card-foreground mb-1 flex items-center gap-2">
+                                            <h3 class="text-sm font-medium text-muted-foreground uppercase tracking-wider mb-1 flex items-center gap-2">
                                                 <EditIcon class="w-4 h-4" />
                                                 Edit Trader Details
                                             </h3>
@@ -834,6 +824,16 @@
     .no-scrollbar {
         -ms-overflow-style: none;
         scrollbar-width: none;
+    }
+
+    input[type="number"]::-webkit-inner-spin-button,
+    input[type="number"]::-webkit-outer-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+    }
+
+    input[type="number"] {
+        -moz-appearance: textfield;
     }
 
     ::-webkit-scrollbar {

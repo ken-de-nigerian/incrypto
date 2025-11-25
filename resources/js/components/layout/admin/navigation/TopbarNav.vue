@@ -79,8 +79,7 @@
     ];
 
     const masterTraderNavigation = [
-        { name: "Master Traders", href: "admin.network.index", icon: Users, description: "Manage expert traders and their performance metrics" },
-        { name: "Copy Trading History", href: "admin.network.index", params: { tab: "copy_history" }, icon: Copy, description: "Track all copy trading activities and replicated trades" }
+        { name: "Master Traders", href: "admin.network.index", icon: Users, description: "Manage expert traders and their performance metrics" }
     ];
 
     const userNavigation = [
@@ -447,7 +446,7 @@
                             </div>
 
                             <div>
-                                <h3 class="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 xs:mb-3 px-1">Copy Trading Management</h3>
+                                <h3 class="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 xs:mb-3 px-1">Copy Trading Network</h3>
                                 <div class="space-y-0.5 xs:space-y-1">
                                     <template v-for="item in masterTraderNavigation" :key="item.name">
                                         <TextLink

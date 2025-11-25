@@ -319,7 +319,7 @@ interface User {
                         <div class="flex-1 overflow-y-auto no-scrollbar overscroll-contain px-4 sm:px-6 py-4 bg-background">
                             <div v-if="activeTab === 'details'" class="space-y-6 pb-6">
                                 <div v-if="masterTrader.bio" class="bg-muted/50 rounded-lg p-4">
-                                    <h3 class="text-sm font-semibold text-card-foreground mb-2">About</h3>
+                                    <h3 class="text-sm font-medium text-muted-foreground uppercase tracking-wider mb-2">About</h3>
                                     <p class="text-sm text-muted-foreground">{{ masterTrader.bio }}</p>
                                 </div>
 
@@ -495,7 +495,7 @@ interface User {
                                 </div>
 
                                 <div>
-                                    <label class="block text-sm font-semibold text-card-foreground mb-3">
+                                    <label class="block text-sm font-medium text-muted-foreground uppercase tracking-wider mb-3">
                                         Choose Copy Multiplier
                                     </label>
                                     <div class="grid grid-cols-2 gap-3">

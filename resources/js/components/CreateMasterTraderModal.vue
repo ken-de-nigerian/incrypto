@@ -195,7 +195,7 @@
                             <form @submit.prevent="handleSubmit" class="space-y-6">
                                 <!-- User Selection -->
                                 <div class="space-y-2">
-                                    <label class="text-sm font-semibold text-card-foreground flex items-center gap-2">
+                                    <label class="text-sm font-medium text-muted-foreground uppercase tracking-wider">
                                         Select User *
                                     </label>
 
@@ -255,7 +255,7 @@
 
                                 <!-- Expertise Level -->
                                 <div class="space-y-2">
-                                    <label class="text-sm font-semibold text-card-foreground flex items-center gap-2">
+                                    <label class="text-sm font-medium text-muted-foreground uppercase tracking-wider">
                                         Expertise Level *
                                     </label>
                                     <CustomSelectDropdown
@@ -267,7 +267,7 @@
 
                                 <!-- Risk Score -->
                                 <div class="space-y-2">
-                                    <label class="text-sm font-semibold text-card-foreground flex items-center gap-2">
+                                    <label class="text-sm font-medium text-muted-foreground uppercase tracking-wider">
                                         Risk Score (1-10) *
                                     </label>
                                     <input v-model.number="formData.risk_score" type="number" min="1" max="10" class="w-full px-4 py-3 bg-background border rounded-lg text-sm input-crypto" />
@@ -278,7 +278,7 @@
                                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                     <!-- Gain Percentage -->
                                     <div class="space-y-2">
-                                        <label class="text-sm font-semibold text-card-foreground flex items-center gap-2">
+                                        <label class="text-sm font-medium text-muted-foreground uppercase tracking-wider">
                                             Gain Percentage
                                         </label>
                                         <input v-model.number="formData.gain_percentage" type="number" step="0.01" class="w-full px-4 py-3 bg-background border border-border rounded-lg text-sm input-crypto" />
@@ -286,7 +286,7 @@
 
                                     <!-- Commission Rate -->
                                     <div class="space-y-2">
-                                        <label class="text-sm font-semibold text-card-foreground flex items-center gap-2">
+                                        <label class="text-sm font-medium text-muted-foreground uppercase tracking-wider">
                                             Commission Rate
                                         </label>
                                         <input v-model="formData.commission_rate" type="number" step="0.01" placeholder="Leave empty for free" class="w-full px-4 py-3 bg-background border border-border rounded-lg text-sm input-crypto" />
@@ -294,19 +294,19 @@
 
                                     <!-- Total Profit -->
                                     <div class="space-y-2">
-                                        <label class="text-sm font-semibold text-card-foreground">Total Profit</label>
+                                        <label class="text-sm font-medium text-muted-foreground uppercase tracking-wider">Total Profit</label>
                                         <input v-model.number="formData.total_profit" type="number" step="0.01" class="w-full px-4 py-3 bg-background border border-border rounded-lg text-sm input-crypto" />
                                     </div>
 
                                     <!-- Total Loss -->
                                     <div class="space-y-2">
-                                        <label class="text-sm font-semibold text-card-foreground">Total Loss</label>
+                                        <label class="text-sm font-medium text-muted-foreground uppercase tracking-wider">Total Loss</label>
                                         <input v-model.number="formData.total_loss" type="number" step="0.01" class="w-full px-4 py-3 bg-background border border-border rounded-lg text-sm input-crypto" />
                                     </div>
 
                                     <!-- Total Trades -->
                                     <div class="space-y-2">
-                                        <label class="text-sm font-semibold text-card-foreground flex items-center gap-2">
+                                        <label class="text-sm font-medium text-muted-foreground uppercase tracking-wider">
                                             Total Trades
                                         </label>
                                         <input v-model.number="formData.total_trades" type="number" class="w-full px-4 py-3 bg-background border border-border rounded-lg text-sm input-crypto" />
@@ -314,7 +314,7 @@
 
                                     <!-- Win Rate -->
                                     <div class="space-y-2">
-                                        <label class="text-sm font-semibold text-card-foreground">Win Rate (%)</label>
+                                        <label class="text-sm font-medium text-muted-foreground uppercase tracking-wider">Win Rate (%)</label>
                                         <input v-model.number="formData.win_rate" type="number" step="0.01" min="0" max="100" class="w-full px-4 py-3 bg-background border rounded-lg text-sm input-crypto" />
                                         <InputError :message="validationErrors.win_rate" />
                                     </div>
@@ -322,12 +322,12 @@
 
                                 <!-- Bio -->
                                 <div class="space-y-2">
-                                    <label class="text-sm font-semibold text-card-foreground">Bio</label>
+                                    <label class="text-sm font-medium text-muted-foreground uppercase tracking-wider">Bio</label>
                                     <textarea v-model="formData.bio" rows="4" placeholder="Enter trader bio..." class="w-full px-4 py-3 bg-background border border-border rounded-lg text-sm input-crypto resize-none"></textarea>
                                 </div>
 
                                 <!-- Active Status -->
-                                <div class="flex items-center gap-3 p-4 bg-muted/30 rounded-lg">
+                                <div class="flex items-center gap-3 p-4 bg-muted/30 border border-border rounded-lg">
                                     <input v-model="formData.is_active" type="checkbox" id="is_active" class="w-5 h-5 text-primary bg-background border-border rounded cursor-pointer" />
                                     <label for="is_active" class="text-sm font-medium text-card-foreground cursor-pointer flex-1">
                                         Set as Active Trader

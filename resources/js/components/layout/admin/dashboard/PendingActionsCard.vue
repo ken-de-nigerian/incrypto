@@ -45,7 +45,7 @@
                     <p class="text-xs sm:text-sm text-muted-foreground truncate">For: {{ action.user }}</p>
                 </div>
 
-                <TextLink :href="action.link" class="text-sm font-semibold text-primary hover:text-primary/70 shrink-0 whitespace-nowrap">
+                <TextLink :href="action.link" class="bg-secondary/70 text-card-foreground px-2 sm:px-3 py-1 rounded-lg text-xs border border-border">
                     Review &rarr;
                 </TextLink>
             </li>

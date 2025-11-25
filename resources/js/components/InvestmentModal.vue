@@ -275,7 +275,7 @@
 
             <!-- Amount Input -->
             <div class="space-y-2">
-                <h4 class="text-sm font-semibold text-card-foreground">
+                <h4 class="text-sm font-medium text-muted-foreground uppercase tracking-wider">
                     Investment Amount <span class="text-red-500">*</span>
                 </h4>
                 <div class="relative">
@@ -309,7 +309,7 @@
 
             <!-- Projected Returns -->
             <div v-if="projectedReturns && isInvestmentValid" class="bg-gradient-to-br from-green-50 to-green-100/50 border border-green-200 rounded-lg p-4 space-y-2">
-                <h5 class="text-sm font-semibold text-card-foreground mb-2">📊 Projected Returns</h5>
+                <h5 class="text-sm font-medium text-muted-foreground uppercase tracking-wider mb-2">📊 Projected Returns</h5>
 
                 <div class="grid grid-cols-2 gap-3 text-sm">
                     <div>

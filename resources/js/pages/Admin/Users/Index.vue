@@ -9,7 +9,7 @@
     import 'vue-tel-input/vue-tel-input.css';
 
     import {
-        Search, Circle, Mail, UserPlus, XCircle, Eye, Edit, Users, Link as LinkIcon
+        Search, Circle, Mail, UserPlus, XCircle, Eye, Edit, Users, Link as LinkIcon,
     } from 'lucide-vue-next';
     import PaginationControls from '@/components/PaginationControls.vue';
     import TextLink from '@/components/TextLink.vue';
@@ -274,6 +274,12 @@
                         <h1 class="text-3xl sm:text-4xl font-bold text-card-foreground mb-2">User Management</h1>
                         <p class="text-muted-foreground">Monitor and manage all platform users and their activities</p>
                     </div>
+
+                    <TextLink :href="route('admin.network.index')"
+                        class="flex items-center gap-2 px-6 py-3 bg-primary text-primary-foreground rounded-xl font-semibold hover:bg-primary/90 transition-colors cursor-pointer touch-manipulation whitespace-nowrap">
+                        <Users class="w-5 h-5" />
+                        Master Traders
+                    </TextLink>
                 </div>
             </div>
 

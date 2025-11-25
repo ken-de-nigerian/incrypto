@@ -173,7 +173,7 @@
                         class="bg-card w-full h-[100dvh] sm:h-auto sm:max-h-[90vh] sm:max-w-2xl flex flex-col rounded-none sm:rounded-2xl overflow-hidden border-border sm:border relative"
                     >
                         <!-- Header -->
-                        <div class="px-4 sm:px-6 py-4 border-b border-border bg-muted/30 shrink-0">
+                        <div class="px-4 sm:px-4 py-4 border-b border-border bg-muted/30 shrink-0">
                             <div class="flex items-center justify-between mb-4">
                                 <div class="flex items-center gap-3 sm:gap-4 overflow-hidden">
                                     <div
@@ -233,10 +233,10 @@
                         </div>
 
                         <!-- Content -->
-                        <div class="flex-1 overflow-y-auto no-scrollbar overscroll-contain px-4 sm:px-6 py-4 bg-background">
+                        <div class="flex-1 overflow-y-auto no-scrollbar overscroll-contain px-4 sm:px-4 py-4 bg-background">
                             <!-- Details Tab -->
                             <div v-if="activeTab === 'details'" class="space-y-6 pb-6">
-                                <div class="bg-muted/50 rounded-lg p-4">
+                                <div class="bg-muted/50 rounded-lg">
                                     <h3 class="text-sm font-semibold text-card-foreground mb-3 uppercase tracking-wide">Transaction Summary</h3>
 
                                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
@@ -291,21 +291,20 @@
                             <div v-if="activeTab === 'action'" class="space-y-6 pb-6">
                                 <!-- Amount Input for Received Transactions (Approve only) -->
                                 <div v-if="actionType === 'approve' && transaction?.type === 'received'" class="space-y-3">
-                                    <div class="p-4 bg-blue-50 border border-blue-200 rounded-lg flex gap-3">
-                                        <InfoIcon class="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
+                                    <div class="p-4 bg-card border border-border rounded-lg flex gap-3">
+                                        <InfoIcon class="w-5 h-5 text-secondary-foreground mt-0.5 flex-shrink-0" />
                                         <div>
-                                            <p class="text-sm font-semibold text-blue-900 mb-1">Received Transaction</p>
-                                            <p class="text-sm text-blue-800">
+                                            <p class="text-sm font-semibold text-secondary-foreground mb-1">Received Transaction</p>
+                                            <p class="text-sm text-secondary-foreground">
                                                 Enter the actual amount received from the user. This will be credited to their account.
                                             </p>
                                         </div>
                                     </div>
 
-                                    <div>
-                                        <label class="text-sm font-semibold text-card-foreground flex items-center gap-2 mb-2">
-                                            <DollarSignIcon class="w-4 h-4" />
+                                    <div class="mt-6">
+                                        <h4 class="text-sm font-medium text-muted-foreground uppercase tracking-wider mb-2">
                                             Enter Amount Received *
-                                        </label>
+                                        </h4>
                                         <div class="relative">
                                             <input
                                                 v-model="approvalAmount"
@@ -329,43 +328,25 @@
                                 </div>
 
                                 <!-- Approval Ready -->
-                                <div v-else-if="actionType === 'approve'" class="p-4 bg-green-50 border border-green-200 rounded-lg flex gap-3">
+                                <div v-else-if="actionType === 'approve'" class="p-4 border border-border rounded-lg flex gap-3">
                                     <ThumbsUpIcon class="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" />
                                     <div>
-                                        <p class="text-sm font-semibold text-green-900 mb-1">Ready to Approve</p>
-                                        <p class="text-sm text-green-800">
+                                        <p class="text-sm font-semibold text-green-600 mb-1">Ready to Approve</p>
+                                        <p class="text-sm text-green-600">
                                             This transaction will be marked as approved and completed. This action cannot be undone.
                                         </p>
                                     </div>
                                 </div>
 
                                 <!-- Rejection Warning -->
-                                <div v-if="actionType === 'reject'" class="p-4 bg-red-50 border border-red-200 rounded-lg flex gap-3">
+                                <div v-if="actionType === 'reject'" class="p-4 border border-border rounded-lg flex gap-3">
                                     <AlertTriangleIcon class="w-5 h-5 text-red-600 mt-0.5 flex-shrink-0" />
                                     <div>
-                                        <p class="text-sm font-semibold text-red-900 mb-1">Rejection Warning</p>
-                                        <p class="text-sm text-red-800">
+                                        <p class="text-sm font-semibold text-red-600 mb-1">Rejection Warning</p>
+                                        <p class="text-sm text-red-600">
                                             Once rejected, this transaction will be marked as failed and cannot be recovered.
                                             The user will be notified of the rejection.
                                         </p>
-                                    </div>
-                                </div>
-
-                                <!-- General Info -->
-                                <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                                    <div class="flex gap-3">
-                                        <svg class="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                        </svg>
-                                        <div>
-                                            <h4 class="font-semibold text-blue-900 mb-1">Important Note</h4>
-                                            <p class="text-sm text-blue-800">
-                                                {{ actionType === 'approve'
-                                                ? 'Approving this transaction will update the user\'s balance and mark the transaction as completed.'
-                                                : 'Rejecting this transaction will mark it as failed. Consider contacting the user if needed.'
-                                                }}
-                                            </p>
-                                        </div>
                                     </div>
                                 </div>
                             </div>

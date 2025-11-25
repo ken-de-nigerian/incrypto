@@ -390,12 +390,6 @@
                     </div>
                 </div>
 
-                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-5">
-                    <h2 class="text-xl sm:text-2xl font-bold text-card-foreground">
-                        Master Traders
-                    </h2>
-                </div>
-
                 <!-- Traders Grid -->
                 <div v-if="props.masterTraders.data.length > 0" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
                     <div

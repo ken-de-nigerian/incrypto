@@ -925,7 +925,7 @@
                         <div v-if="tx.type === 'sent'" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div class="bg-muted/50 rounded-lg p-3">
                                 <p class="text-xs text-muted-foreground mb-1">Amount Sent</p>
-                                <p class="text-sm font-semibold text-accent">-{{ formatAmount(tx.amount) }} {{ tx.token_symbol }}</p>
+                                <p class="text-sm font-semibold">-{{ formatAmount(tx.amount) }} {{ tx.token_symbol }}</p>
                             </div>
                             <div v-if="tx.fee" class="bg-muted/50 rounded-lg p-3">
                                 <p class="text-xs text-muted-foreground mb-1">Transaction Fee</p>

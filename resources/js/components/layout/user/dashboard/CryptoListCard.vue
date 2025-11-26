@@ -182,7 +182,7 @@
                                 <path d="M8 1l2.5 5 5.5.8-4 3.9.9 5.3-4.9-2.6-4.9 2.6.9-5.3-4-3.9 5.5-.8z" />
                             </svg>
                         </button>
-                        <img :src="token.logo" :alt="token.symbol" loading="lazy" class="w-8 h-8 rounded-full flex-shrink-0" />
+                        <img :src="token.logo" :alt="token.symbol" loading="lazy" class="w-8 h-8 rounded-full border border-border flex-shrink-0" />
                         <div class="min-w-0 flex-1">
                             <p class="text-card-foreground font-medium text-xs sm:text-sm truncate">{{ formatSymbol(token.symbol) }}</p>
                             <p class="text-muted-foreground text-xs">{{ token.name }}</p>
@@ -195,7 +195,7 @@
                         </div>
 
                         <div class="text-sm text-muted-foreground">
-                            ${{ token.value.toFixed(2) }}
+                            ${{ token.value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}
                         </div>
 
                         <div :class="['text-xs flex items-center justify-end gap-1', token.price_change_24h >= 0 ? 'text-primary' : 'text-destructive']">

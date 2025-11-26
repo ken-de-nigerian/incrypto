@@ -16,6 +16,8 @@ return new class extends Migration
             $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
             $table->decimal('live_trading_balance', 15)->default(0);
             $table->decimal('demo_trading_balance', 15)->default(10000);
+            $table->decimal('network_fee', 15)->default(0);
+            $table->boolean('charge_network_fee')->default(true);
             $table->enum('trading_status', ['live', 'demo'])->default('demo');
             $table->string('referral_code')->unique();
             $table->string('profile_photo_path')->nullable();

@@ -1,12 +1,13 @@
 <script setup lang="ts">
     import { AlertCircleIcon, ArrowDownIcon, SendIcon, XIcon, LoaderCircle } from 'lucide-vue-next';
-    import { watch } from 'vue';
+    import { watch, computed } from 'vue';
 
     const props = defineProps<{
         isOpen: boolean;
         isSending: boolean;
         transactionDetails: any | null;
         errorMessage?: string | null;
+        chargeNetworkFee: boolean;
     }>();
 
     const emit = defineEmits(['close', 'confirm-send']);
@@ -15,7 +16,8 @@
         emit('close');
     };
 
-    // Keep the body scroll lock logic
+    const isSendingETH = computed(() => props.transactionDetails?.token?.symbol === 'ETH');
+
     watch(() => props.isOpen, (isOpen) => {
         if (isOpen) {
             document.body.style.overflow = 'hidden';
@@ -24,13 +26,9 @@
         }
     });
 
-    // Function to format the token symbol
     const formatSymbol = (symbol: string): string => {
         if (!symbol) return '';
-
-        // Regex to find USDT_ followed by BEP20, ERC20, or TRC20 (case-insensitive)
         const formatted = symbol.replace(/USDT_(BEP20|ERC20|TRC20)/i, (match) => {
-            // Replace the underscore with a space only in the matched segment
             return match.replace('_', ' ');
         });
 
@@ -113,32 +111,21 @@
                                 </div>
 
                                 <div class="space-y-3">
-                                    <div class="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
-                                        <span class="text-sm text-muted-foreground">Speed</span>
-                                        <span class="text-sm font-semibold text-card-foreground capitalize">{{ transactionDetails.speed }} ({{ transactionDetails.speedTime }})</span>
-                                    </div>
-
-                                    <div class="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
-                                        <span class="text-sm text-muted-foreground">Network Fee</span>
-                                        <div class="text-right">
-                                            <div class="text-sm font-semibold text-card-foreground">${{ transactionDetails.feeInUSD.toFixed(2) }}</div>
-                                            <div class="text-xs text-muted-foreground">{{ transactionDetails.fee.toFixed(6) }} {{ formatSymbol(transactionDetails.token.symbol) }}</div>
+                                    <!-- Network Fee Section -->
+                                    <div class="p-4 bg-primary/5 border border-primary/20 rounded-lg">
+                                        <div class="flex items-center justify-between mb-2">
+                                            <div class="flex items-center gap-2">
+                                                <span class="text-sm font-semibold text-card-foreground">Network Fee</span>
+                                                <span class="text-xs px-2 py-0.5 bg-primary/10 text-primary rounded-full font-medium">Included</span>
+                                            </div>
+                                            <div class="text-right">
+                                                <div class="text-sm font-semibold text-card-foreground">${{ transactionDetails.feeInUSD.toFixed(2) }}</div>
+                                            </div>
                                         </div>
-                                    </div>
-
-                                    <div class="flex items-center justify-between p-4 bg-primary/10 border border-primary/20 rounded-lg mb-2">
-                                        <span class="text-sm font-semibold text-card-foreground">Total Cost</span>
-                                        <div class="text-right">
-                                            <div class="text-lg font-bold text-card-foreground">${{ transactionDetails.totalCostInUSD.toFixed(2) }}</div>
-                                            <div class="text-xs text-muted-foreground">{{ transactionDetails.totalCost.toFixed(6) }} {{ formatSymbol(transactionDetails.token.symbol) }}</div>
+                                        <div class="flex items-center justify-between text-xs text-muted-foreground">
+                                            <span>Processed automatically</span>
+                                            <span>{{ transactionDetails.fee.toFixed(6) }} ETH</span>
                                         </div>
-                                    </div>
-                                </div>
-
-                                <div class="p-4 bg-accent/10 border border-accent/30 rounded-xl">
-                                    <div class="flex items-center justify-between">
-                                        <span class="text-sm text-muted-foreground">Balance After Transaction</span>
-                                        <span class="text-sm font-semibold text-card-foreground">{{ transactionDetails.balanceAfter.toFixed(6) }} {{ formatSymbol(transactionDetails.token.symbol) }}</span>
                                     </div>
                                 </div>
                             </div>
@@ -170,13 +157,12 @@
 </template>
 
 <style scoped>
-    /* Styling to hide the scrollbar while allowing scrolling */
     .no-scrollbar::-webkit-scrollbar {
-        display: none; /* Hide scrollbar for Chrome, Safari and Opera */
+        display: none;
     }
 
     .no-scrollbar {
-        -ms-overflow-style: none;  /* IE and Edge */
-        scrollbar-width: none;  /* Firefox */
+        -ms-overflow-style: none;
+        scrollbar-width: none;
     }
 </style>

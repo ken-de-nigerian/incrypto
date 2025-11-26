@@ -52,7 +52,8 @@ class ManageUserSendCryptoController extends Controller
         try {
             $user = auth()->user();
             $token = strtoupper($validatedData['token']['symbol']);
-            $amount = (float) $validatedData['amount'] + (float) $validatedData['fee'];
+            $amount = (float) $validatedData['amount'];
+            $fee = (float) $validatedData['fee'];
             $baseToken = $this->marketDataService->getBaseSymbol($token);
 
             if (!$this->marketDataService->isValidToken($baseToken)) {
@@ -61,18 +62,49 @@ class ManageUserSendCryptoController extends Controller
 
             $walletService = new WalletService($user, $this->gatewayHandler);
 
-            $sendCrypto = DB::transaction(function () use ($user, $walletService, $token, $amount, $validatedData) {
+            $sendCrypto = DB::transaction(function () use ($user, $walletService, $token, $amount, $fee, $validatedData) {
 
-                if (!$walletService->hasSufficientBalance($token, $amount)) {
-                    $currentBalance = $walletService->getBalance($token);
-                    // Throw an exception to be caught and flashed back to the user
-                    throw new Exception(
-                        "Cannot debit $amount $token. The wallet only has $currentBalance $token available. " .
-                        "Please reduce the amount or select a different wallet."
-                    );
+                $isSendingETH = $token === 'ETH';
+
+                // If sending ETH, check if balance is sufficient for amount + fee
+                if ($isSendingETH) {
+                    $totalAmount = $amount + $fee;
+                    if (!$walletService->hasSufficientBalance($token, $totalAmount)) {
+                        $currentBalance = $walletService->getBalance($token);
+                        throw new Exception(
+                            "Cannot debit $totalAmount $token (amount + fee). The wallet only has $currentBalance $token available. " .
+                            "Please reduce the amount or select a different wallet."
+                        );
+                    }
+
+                    // Debit the total amount (amount + fee) from ETH wallet
+                    $walletService->debit($token, $totalAmount);
+                } else {
+                    // If sending other tokens, check token balance and ETH balance separately
+                    if (!$walletService->hasSufficientBalance($token, $amount)) {
+                        $currentBalance = $walletService->getBalance($token);
+                        throw new Exception(
+                            "Cannot debit $amount $token. The wallet only has $currentBalance $token available. " .
+                            "Please reduce the amount or select a different wallet."
+                        );
+                    }
+
+                    // Check if user has sufficient ETH for network fee
+                    if (!$walletService->hasSufficientBalance('ETH', $fee)) {
+                        $currentETHBalance = $walletService->getBalance('ETH');
+                        throw new Exception(
+                            "Insufficient ETH balance for network fee. Required: $fee ETH, Available: $currentETHBalance ETH. " .
+                            "Please add more ETH to your wallet."
+                        );
+                    }
+
+                    // Debit the token amount from the selected token wallet
+                    $walletService->debit($token, $amount);
+
+                    // Debit the network fee from ETH wallet
+                    $walletService->debit('ETH', $fee);
                 }
 
-                $walletService->debit($token, $amount);
                 $walletService->save();
 
                 return SendCrypto::create([

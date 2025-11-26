@@ -14,7 +14,6 @@ class GatewayHandlerService
      */
     private const CACHE_TTL = [
         'PRICE_DATA' => 300, // 5 minutes
-        'GAS_PRICE_DATA' => 120, // 2 minutes
         'WALLET_DATA' => 43200, // 12 hours
         'CHART_DATA' => 300, // 5 minutes
         'CRYPTOS_LIST' => 3600, // 1 hour
@@ -27,13 +26,6 @@ class GatewayHandlerService
     private const RETRY_BASE_DELAY = 1;
     private const RATE_LIMIT_MAX_RETRIES = 2;
     private const RATE_LIMIT_RETRY_DELAY = 5;
-    private const CHAIN_IDS = [
-        'Ethereum' => 1,
-        'BSC' => 56,
-        'Polygon' => 137,
-        'Arbitrum' => 42161,
-        'Optimism' => 10,
-    ];
 
     /**
      * Circuit Breaker constants
@@ -274,7 +266,7 @@ class GatewayHandlerService
 
             $allResults = $data['results'] ?? [];
 
-            // Get next cursor
+            // Get the next cursor
             $nextUrl = $data['next_url'] ?? null;
             $proxiedNextUrl = null;
 
@@ -498,7 +490,7 @@ class GatewayHandlerService
     }
 
     /**
-     * Circuit Breaker: Get current state for a provider from cache.
+     * Circuit Breaker: Get the current state for a provider from cache.
      */
     private function getCircuitState(string $provider): array
     {
@@ -640,8 +632,7 @@ class GatewayHandlerService
             "raw_coingecko_no_pagination_temp",
             $url,
             self::CACHE_TTL['CRYPTOS_LIST'],
-            "Failed to fetch CoinGecko top cryptos",
-            'coingecko'
+            "Failed to fetch CoinGecko top cryptos"
         );
     }
 
@@ -919,200 +910,11 @@ class GatewayHandlerService
 
     public function fetchGasPrices(string $chain = 'Ethereum'): array
     {
-        $cacheKey = "etherscan_gas_prices_$chain";
-        $apiKey = config('services.etherscan.key');
-        if (!$apiKey) {
-            Log::warning('Etherscan API key missing, using fallback gas prices', ['method' => __METHOD__, 'chain' => $chain]);
-            return $this->getFallbackGasPrices();
-        }
-        $chainId = self::CHAIN_IDS[$chain] ?? 1;
-        return Cache::remember($cacheKey, self::CACHE_TTL['GAS_PRICE_DATA'], function () use ($apiKey, $chain, $chainId) {
-            try {
-                $ethPrice = $this->fetchEthPrice();
-                $url = "https://api.etherscan.io/v2/api?module=gastracker&action=gasoracle&chainid=$chainId&apikey=$apiKey";
-                $response = $this->fetchData(
-                    "etherscan_gas_oracle_$chain",
-                    $url,
-                    self::CACHE_TTL['GAS_PRICE_DATA'],
-                    "Failed to fetch Etherscan V2 Gas Oracle data for chain $chain",
-                    'etherscan'
-                );
-                if (($response['status'] ?? '0') !== '1' || !isset($response['result'])) {
-                    throw new Exception('Invalid response from Etherscan V2 Gas Oracle API: ' . ($response['message'] ?? 'Unknown error'));
-                }
-                $result = $response['result'];
-                $safeGasPrice = $result['safeGasPrice'] ?? $result['SafeGasPrice'] ?? null;
-                $proposeGasPrice = $result['proposeGasPrice'] ?? $result['ProposeGasPrice'] ?? null;
-                $fastGasPrice = $result['fastGasPrice'] ?? $result['FastGasPrice'] ?? null;
-                if (!$safeGasPrice || !$proposeGasPrice || !$fastGasPrice) {
-                    throw new Exception('Missing gas price fields in Etherscan V2 response');
-                }
-                $gweiToUsd = fn($gwei) => ($gwei * 21000 * $ethPrice) / 1e9;
-                return [
-                    'low' => [
-                        'gwei' => (float)$safeGasPrice,
-                        'time' => '~3 min',
-                        'usd' => round($gweiToUsd($safeGasPrice), 2),
-                    ],
-                    'medium' => [
-                        'gwei' => (float)$proposeGasPrice,
-                        'time' => '~1 min',
-                        'usd' => round($gweiToUsd($proposeGasPrice), 2),
-                    ],
-                    'high' => [
-                        'gwei' => (float)$fastGasPrice,
-                        'time' => '~15 sec',
-                        'usd' => round($gweiToUsd($fastGasPrice), 2),
-                    ],
-                ];
-            } catch (Throwable $e) {
-                Log::error("Failed to fetch gas prices for chain $chain", [
-                    'method' => __METHOD__,
-                    'chain' => $chain,
-                    'error' => $e->getMessage(),
-                    'trace' => $e->getTraceAsString()
-                ]);
-                return $this->getFallbackGasPrices();
-            }
-        });
-    }
-
-    private function getFallbackGasPrices(): array
-    {
         return [
-            'low' => ['gwei' => 0.144273214, 'time' => '~3 min', 'usd' => 3.50],
-            'medium' => ['gwei' => 0.144294078, 'time' => '~1 min', 'usd' => 4.90],
-            'high' => ['gwei' => 0.158723485, 'time' => '~15 sec', 'usd' => 7.00],
+            'low' => ['gwei' => 0.08295024, 'time' => '~3 min', 'usd' => 3.50],
+            'medium' => ['gwei' => 0.08295024, 'time' => '~1 min', 'usd' => 4.90],
+            'high' => ['gwei' => 0.091245264, 'time' => '~15 sec', 'usd' => 7.00],
         ];
-    }
-
-    private function fetchEthPrice(): float
-    {
-        $cacheKey = 'eth_price';
-        $cached = Cache::get($cacheKey);
-        if ($cached && is_numeric($cached) && $cached > 0) {
-            return (float)$cached;
-        }
-        $price = $this->fetchPriceDataWithProviderFallback();
-        if ($price > 0.0) {
-            Cache::put($cacheKey, $price, self::CACHE_TTL['PRICE_DATA']);
-        } else {
-            $price = 2000.0;
-            Log::warning('Using fallback ETH price due to fetch failure', ['method' => __METHOD__, 'fallback_price' => $price]);
-        }
-        return $price;
-    }
-
-    private function fetchPriceDataWithProviderFallback(): float
-    {
-        foreach (self::API_PROVIDERS['price'] as $provider) {
-            try {
-                $price = $this->fetchPriceDataWithRetry($provider);
-                if ($price > 0.0) {
-                    return $price;
-                }
-            } catch (Throwable $e) {
-                Log::warning("Failed to fetch price data from $provider after retries, trying next provider", [
-                    'method' => __METHOD__,
-                    'symbol' => 'ethereum',
-                    'provider' => $provider,
-                    'error' => $e->getMessage()
-                ]);
-            }
-        }
-        Log::error('All price providers failed for ETH', ['method' => __METHOD__]);
-        return 0.0;
-    }
-
-    private function fetchPriceDataWithRetry(string $provider): float
-    {
-        $maxRetries = self::MAX_RETRIES;
-        for ($attempt = 0; $attempt < $maxRetries; $attempt++) {
-            try {
-                $result = $this->fetchPriceDataFromProvider($provider);
-                $price = $result['price'] ?? 0.0;
-                if ($price > 0.0) {
-                    return $price;
-                }
-            } catch (Throwable) {
-                if ($attempt < $maxRetries - 1) {
-                    $delay = self::RETRY_BASE_DELAY * pow(2, $attempt);
-                    sleep($delay);
-                }
-            }
-        }
-        Log::warning("Price fetch failed after max retries for provider $provider", ['method' => __METHOD__, 'provider' => $provider]);
-        return 0.0;
-    }
-
-    /**
-     * @throws Exception
-     */
-    private function fetchPriceDataFromProvider(string $provider): array
-    {
-        return match ($provider) {
-            'cryptocompare' => $this->fetchPriceDataFromCryptoCompare(),
-            'coinmarketcap' => $this->fetchPriceDataFromCoinMarketCap(),
-            'coingecko' => $this->fetchPriceDataFromCoinGeckoSimple(),
-            default => ['price' => 0.0],
-        };
-    }
-
-    /**
-     * @throws Exception
-     */
-    private function fetchPriceDataFromCryptoCompare(): array
-    {
-        $mappedSymbol = $this->getMappedSymbol('ethereum', 'cryptocompare');
-        $apiKey = config('services.cryptocompare.key');
-        if (!$apiKey) {
-            Log::error('CryptoCompare API key missing', ['method' => __METHOD__]);
-            return ['price' => 0.0];
-        }
-        $url = "https://min-api.cryptocompare.com/data/price?fsym=$mappedSymbol&tsyms=USD";
-        $responseData = $this->makeResilientRequest('cryptocompare', $url);
-        $data = $responseData['json'];
-        $price = $data['USD'] ?? 0.0;
-        if (isset($data['Response']) && $data['Response'] === 'Error') {
-            Log::warning('CryptoCompare API returned error response', ['method' => __METHOD__, 'response' => $data]);
-            return ['price' => 0.0];
-        }
-        return ['price' => (float)$price];
-    }
-
-    /**
-     * @throws Exception
-     */
-    private function fetchPriceDataFromCoinMarketCap(): array
-    {
-        $mappedSymbol = strtoupper($this->getMappedSymbol('ethereum', 'coinmarketcap'));
-        $apiKey = config('services.coinmarketcap.key');
-        if (!$apiKey) {
-            Log::error('CoinMarketCap API key missing', ['method' => __METHOD__]);
-            return ['price' => 0.0];
-        }
-        $url = "https://pro-api.coinmarketcap.com/v1/cryptocurrency/quotes/latest";
-        $params = ['symbol' => $mappedSymbol, 'convert' => 'USD'];
-        $responseData = $this->makeResilientRequest('coinmarketcap', $url, $params);
-        $data = $responseData['json'];
-        $price = $data['data'][$mappedSymbol]['quote']['USD']['price'] ?? 0.0;
-        if (!$price && !empty($data['status']['error_message'])) {
-            Log::warning('CoinMarketCap error response', ['method' => __METHOD__, 'message' => $data['status']['error_message']]);
-        }
-        return ['price' => (float)$price];
-    }
-
-    /**
-     * @throws Exception
-     */
-    private function fetchPriceDataFromCoinGeckoSimple(): array
-    {
-        $mappedSymbol = $this->getMappedSymbol('ethereum', 'coingecko');
-        $url = "https://api.coingecko.com/api/v3/simple/price?ids=$mappedSymbol&vs_currencies=usd";
-        $responseData = $this->makeResilientRequest('coingecko', $url);
-        $data = $responseData['json'];
-        $price = $data[$mappedSymbol]['usd'] ?? 0.0;
-        return ['price' => (float)$price];
     }
 
     private function fetchCoinGeckoMarketData(array $coinIds): array
@@ -1186,8 +988,7 @@ class GatewayHandlerService
                 'temp_coingecko_market_data',
                 $url,
                 self::CACHE_TTL['PRICE_DATA'],
-                'Failed to fetch CoinGecko market data for specific IDs',
-                'coingecko'
+                'Failed to fetch CoinGecko market data for specific IDs'
             );
             if (!empty($rawData)) {
                 return $this->transformCoinGeckoMarketData($rawData);
@@ -1339,15 +1140,15 @@ class GatewayHandlerService
         return null;
     }
 
-    private function fetchData(string $cacheKey, string $apiUrl, int $ttl, string $errorContext, string $provider): array
+    private function fetchData(string $cacheKey, string $apiUrl, int $ttl, string $errorContext): array
     {
         $cached = Cache::get($cacheKey);
         if (is_array($cached) && !empty($cached)) {
             return $cached;
         }
-        $response = $this->fetchFromAPIWithRetry($apiUrl, $provider);
+        $response = $this->fetchFromAPIWithRetry($apiUrl, 'coingecko');
         if ($response['error'] ?? false) {
-            Log::warning($errorContext, ['method' => __METHOD__, 'provider' => $provider, 'url' => $apiUrl]);
+            Log::warning($errorContext, ['method' => __METHOD__, 'provider' => 'coingecko', 'url' => $apiUrl]);
             return [];
         }
         $data = $response['data'] ?? [];

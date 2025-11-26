@@ -30,7 +30,7 @@
                 <div>
                     <div class="text-xs text-muted-foreground mb-1">{{ formatSymbol(fromToken.symbol) }} Price</div>
                     <div class="text-lg font-bold text-card-foreground">
-                        ${{ (prices[fromToken.symbol] || 0).toFixed(2) }}
+                        ${{ (prices[fromToken.symbol] || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}
                     </div>
                     <div :class="['text-xs flex items-center gap-1 mt-1', fromToken.price_change_24h >= 0 ? 'text-primary' : 'text-destructive']">
                         <TrendingUpIcon v-if="fromToken.price_change_24h >= 0" class="w-3 h-3" />
@@ -42,7 +42,7 @@
                 <div class="border-t border-border pt-3">
                     <div class="text-xs text-muted-foreground mb-1">{{ formatSymbol(toToken.symbol) }} Price</div>
                     <div class="text-lg font-bold text-card-foreground">
-                        ${{ (prices[toToken.symbol] || 0).toFixed(2) }}
+                        ${{ (prices[toToken.symbol] || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}
                     </div>
                     <div :class="['text-xs flex items-center gap-1 mt-1', toToken.price_change_24h >= 0 ? 'text-primary' : 'text-destructive']">
                         <TrendingUpIcon v-if="toToken.price_change_24h >= 0" class="w-3 h-3" />

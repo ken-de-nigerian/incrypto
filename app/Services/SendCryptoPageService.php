@@ -51,7 +51,8 @@ class SendCryptoPageService
             'portfolioChange24h' => $this->calculatePortfolioChange($userBalances, $marketData),
             'popularTokens' => $this->marketDataService->getPopularTokens(6),
             'sentTransactions' => $sentTransactions,
-            'networkFee' => config('settings.currency.network_fee')
+            'networkFee' => config('settings.currency.network_fee'),
+            'chargeNetworkFee' => config('settings.currency.charge_network_fee'),
         ];
     }
 

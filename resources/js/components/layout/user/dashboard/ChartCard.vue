@@ -397,7 +397,7 @@
     <div class="card-crypto text-card-foreground rounded-xl p-4 sm:p-6" v-if="selectedToken">
         <div class="flex flex-col sm:flex-row items-start justify-between gap-3 sm:gap-4 mb-4 w-full">
             <div class="flex items-center gap-3">
-                <img :src="selectedToken.logo" :alt="`${selectedToken.symbol} logo`" loading="lazy" class="w-7 h-7 sm:w-8 sm:h-8 rounded-full" />
+                <img :src="selectedToken.logo" :alt="`${selectedToken.symbol} logo`" loading="lazy" class="w-7 h-7 sm:w-8 sm:h-8 border border-border rounded-full" />
                 <div>
                     <h2 class="text-lg sm:text-xl font-bold text-foreground">{{ displaySymbol }} / <span class="text-muted-foreground font-normal">USD</span></h2>
                     <p class="text-2xl sm:text-4xl font-extrabold text-foreground">${{ displayPrice }}</p>

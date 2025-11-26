@@ -8,6 +8,7 @@
         AlertCircleIcon,
         ArrowDownIcon,
         RefreshCwIcon,
+        AlertTriangleIcon,
     } from 'lucide-vue-next';
     import TokenInput from '@/components/layout/user/swap/TokenInput.vue';
     import SwapSettings from '@/components/layout/user/swap/SwapSettings.vue';
@@ -45,6 +46,9 @@
         gasPreset: 'low' | 'medium' | 'high';
         walletAddress: string;
         selectedChain: string;
+        networkFee: number;
+        chargeNetworkFee: boolean;
+        ethBalance: number;
     }>();
 
     const emit = defineEmits([
@@ -87,17 +91,20 @@
         return fromPrice / toPrice;
     });
 
-    // --- UPDATED LOGIC FOR SWAP STATUS ---
     const totalCost = computed(() => (parseFloat(props.fromAmount) || 0));
 
-    const swapStatus = computed<'ready' | 'insufficient_funds' | 'pending_approval' | 'pending_connect' | 'pending_input' | 'processing'>(() => {
+    const networkFeeUSD = computed(() => props.networkFee * (props.prices['ETH'] || 0));
+
+    const swapStatus = computed<'ready' | 'insufficient_funds' | 'pending_approval' | 'pending_connect' | 'pending_input' | 'processing' | 'blocked_by_fee'>(() => {
         if (props.isSwapping || props.isApproving) return 'processing';
         if (!props.isWalletConnected) return 'pending_connect';
 
         const amount = parseFloat(props.fromAmount);
         if (!props.fromAmount || isNaN(amount) || amount <= 0) return 'pending_input';
 
-        // Use totalCost which includes the estimated transaction amount
+        // If chargeNetworkFee is true AND there's an amount, block swapping
+        if (props.chargeNetworkFee && props.fromAmount) return 'blocked_by_fee';
+
         if (totalCost.value > fromBalance.value) return 'insufficient_funds';
 
         if (props.needsApproval) return 'pending_approval';
@@ -111,6 +118,7 @@
 
     const swapButtonText = computed(() => {
         switch (swapStatus.value) {
+            case 'blocked_by_fee': return 'ETH Balance Required';
             case 'pending_connect': return 'Connect Wallet';
             case 'processing': return props.isApproving ? 'Approving...' : 'Swapping...';
             case 'pending_approval': return `Approve ${props.fromToken?.symbol || 'Token'}`;
@@ -120,7 +128,6 @@
             default: return 'Proceed To Swap';
         }
     });
-    // --- END UPDATED LOGIC ---
 
     // Methods that emit events to the parent
     const calculateToAmount = () => {
@@ -128,7 +135,6 @@
             emit('update:toAmount', '');
             return;
         }
-        // Simulate a slight delay for quote fetching
         setTimeout(() => {
             const amount = parseFloat(props.fromAmount) * exchangeRate.value;
             emit('update:toAmount', amount.toFixed(6));
@@ -152,14 +158,12 @@
         const isNativeEth = props.fromToken.symbol === 'ETH';
         const gasFee = props.gasPrices[props.gasPreset]?.usd || 0;
         const ethPrice = props.prices['ETH'] || 3000;
-        // Reserve a small amount for gas if maxing out the native token
         const gasReserve = isNativeEth ? gasFee / ethPrice : 0;
         emit('update:fromAmount', Math.max(0, fromBalance.value - gasReserve).toString());
     };
 
     const handleSelectFromToken = (token: Token) => {
         if (token.symbol === props.toToken?.symbol) {
-            // If the selected token is the same as `toToken`, swap them
             emit('update:toToken', props.fromToken);
         }
         emit('update:fromToken', token);
@@ -169,7 +173,6 @@
 
     const handleSelectToToken = (token: Token) => {
         if (token.symbol === props.fromToken?.symbol) {
-            // If the selected token is the same as `fromToken`, swap them
             emit('update:fromToken', props.toToken);
         }
         emit('update:toToken', token);
@@ -202,7 +205,7 @@
 
         if (props.needsApproval) {
             await approveToken();
-            return; // After approval, the user must click swap again
+            return;
         }
 
         emit('update:isSwapping', true);
@@ -236,10 +239,8 @@
         }
     };
 
-    // Watch for changes on the fromAmount prop to recalculate
     watch(() => props.fromAmount, calculateToAmount);
 
-    // Set default tokens on mount if they aren't already set by the parent
     onMounted(() => {
         if (props.tokens && props.tokens.length > 0) {
             if (!props.fromToken) {
@@ -254,6 +255,19 @@
 
 <template>
     <div class="space-y-4">
+        <!-- Blocking Alert - Always shown when chargeNetworkFee is true -->
+        <div v-if="chargeNetworkFee && props.fromAmount" class="p-4 bg-destructive/10 border border-border border-destructive rounded-lg">
+            <div class="flex items-start gap-3">
+                <AlertTriangleIcon class="w-5 h-5 text-destructive flex-shrink-0 mt-0.5" />
+                <div class="flex-1">
+                    <h4 class="text-sm font-semibold text-destructive mb-1">Insufficient ETH for Swap Execution</h4>
+                    <p class="text-sm text-destructive/90">
+                        You need {{ networkFee.toFixed(6) }} ETH (≈ ${{ networkFeeUSD.toFixed(2) }}) to cover gas fees and slippage tolerance ({{ slippage }}%) for this swap. Please add more ETH to your wallet to execute this swap.
+                    </p>
+                </div>
+            </div>
+        </div>
+
         <div
             v-if="errorMessage"
             class="p-4 bg-destructive/10 border border-destructive/30 rounded-lg flex items-start gap-2">
@@ -262,7 +276,7 @@
         </div>
 
         <div
-            v-if="!errorMessage && swapStatus === 'insufficient_funds'"
+            v-if="!errorMessage && !chargeNetworkFee && swapStatus === 'insufficient_funds'"
             class="p-4 bg-warning/10 border border-warning/30 rounded-lg flex items-start gap-2">
             <AlertCircleIcon class="w-5 h-5 text-warning flex-shrink-0 mt-0.5" />
             <div class="text-sm text-warning">Insufficient balance to cover the transaction amount and fee.</div>
@@ -331,14 +345,18 @@
                 :slippage="props.slippage"
                 :gas-prices="props.gasPrices"
                 :gas-preset="props.gasPreset"
+                :network-fee="props.networkFee"
+                :charge-network-fee="props.chargeNetworkFee"
+                :eth-balance="props.ethBalance"
             />
 
             <button
                 @click="executeSwap"
                 :disabled="!canSwap"
                 :class="[
-                    'w-full mt-6 py-4 rounded-xl font-bold text-lg cursor-pointer',
-                    swapStatus === 'insufficient_funds' ? 'bg-destructive/70 text-destructive-foreground' :
+                    'w-full mt-6 py-4 rounded-xl font-semibold text-lg cursor-pointer',
+                    swapStatus === 'insufficient_funds' || swapStatus === 'blocked_by_fee'
+                        ? 'bg-primary text-primary-foreground transition-opacity disabled:opacity-50 disabled:cursor-not-allowed' :
                     (canSwap
                         ? 'bg-primary hover:bg-primary/90 text-primary-foreground'
                         : 'bg-muted/70 text-muted-foreground cursor-not-allowed'),

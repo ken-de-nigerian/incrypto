@@ -11,6 +11,9 @@
         slippage: number;
         gasPrices: Record<string, { gwei: number; time: string; usd: number }>;
         gasPreset: 'low' | 'medium' | 'high';
+        networkFee: number; // NEW
+        chargeNetworkFee: boolean; // NEW
+        ethBalance: number; // NEW
     }>();
 
     const showRouteDetails = ref(false);
@@ -48,6 +51,8 @@
         return props.gasPrices[props.gasPreset] || props.gasPrices.medium;
     });
 
+    const networkFeeUSD = computed(() => props.networkFee * (props.prices['ETH'] || 0));
+
     const swapRoute = computed(() => {
         if (!props.fromToken || !props.toToken) return { primary: '', pools: [], alternatives: [] };
         return {
@@ -60,68 +65,66 @@
         };
     });
 
-    // Function to format the token symbol
     const formatSymbol = (symbol: string): string => {
         if (!symbol) return '';
-
-        // Regex to find USDT_ followed by BEP20, ERC20, or TRC20 (case-insensitive)
         const formatted = symbol.replace(/USDT_(BEP20|ERC20|TRC20)/i, (match) => {
-            // Replace the underscore with a space only in the matched segment
             return match.replace('_', ' ');
         });
-
         return formatted.toUpperCase();
     };
 </script>
 
 <template>
-    <div v-if="fromAmount && toAmount && fromToken && toToken" class="mt-4 p-3 sm:p-4 bg-muted/30 rounded-xl space-y-2 text-xs sm:text-sm">
-        <div class="flex items-center justify-between">
-            <span class="text-muted-foreground">Rate</span>
-            <span class="font-medium text-card-foreground">
-        1 {{ formatSymbol(fromToken.symbol) }} = {{ exchangeRate.toFixed(6) }} {{ formatSymbol(toToken.symbol) }}
-      </span>
-        </div>
-        <div class="flex items-center justify-between">
-            <span class="text-muted-foreground">Price Impact</span>
-            <span :class="priceImpactClass" class="font-medium flex items-center gap-1">
-        <TrendingUpIcon v-if="priceImpact < 0.1" class="w-3 h-3" />
-        <TrendingDownIcon v-else class="w-3 h-3" />
-        {{ priceImpact.toFixed(2) }}%
-      </span>
-        </div>
-        <div class="flex items-center justify-between">
-            <span class="text-muted-foreground">Minimum Received</span>
-            <span class="font-medium text-card-foreground">{{ minimumReceived }} {{ formatSymbol(toToken.symbol) }}</span>
-        </div>
-        <div class="flex items-center justify-between">
-            <span class="text-muted-foreground">Est. Gas Fee</span>
-            <span class="font-medium text-card-foreground">${{ estimatedGas.usd.toFixed(2) }}</span>
-        </div>
-        <button
-            @click="showRouteDetails = !showRouteDetails"
-            class="w-full flex items-center justify-between py-2 text-left hover:opacity-70 cursor-pointer"
-        >
-          <span class="text-muted-foreground flex items-center gap-2">
-            <LayersIcon class="w-4 h-4" />
-            Route
-          </span>
-            <ChevronDownIcon :class="['w-4 h-4 text-muted-foreground transition-transform', showRouteDetails && 'rotate-180']" />
-        </button>
-        <div v-if="showRouteDetails" class="pl-4 sm:pl-6 space-y-2 pt-2 border-t border-border">
-            <div class="text-xs">
-                <div class="font-medium text-card-foreground mb-1">Best Route:</div>
-                <div class="text-muted-foreground">{{ swapRoute.primary }}</div>
-                <div class="text-muted-foreground mt-1">{{ swapRoute.pools.join(' • ') }}</div>
+    <div v-if="fromAmount && toAmount && fromToken && toToken" class="mt-4 space-y-3">
+        <div class="p-3 sm:p-4 bg-muted/30 rounded-xl space-y-2 text-xs sm:text-sm">
+            <div class="flex items-center justify-between">
+                <span class="text-muted-foreground">Rate</span>
+                <span class="font-medium text-card-foreground">
+                    1 {{ formatSymbol(fromToken.symbol) }} = {{ exchangeRate.toFixed(6) }} {{ formatSymbol(toToken.symbol) }}
+                </span>
             </div>
-            <div class="text-xs">
-                <div class="font-medium text-card-foreground mb-1">Alternative Routes:</div>
-                <div v-for="(alt, idx) in swapRoute.alternatives" :key="idx" class="text-muted-foreground">
-                    • {{ alt }}
+            <div class="flex items-center justify-between">
+                <span class="text-muted-foreground">Price Impact</span>
+                <span :class="priceImpactClass" class="font-medium flex items-center gap-1">
+                    <TrendingUpIcon v-if="priceImpact < 0.1" class="w-3 h-3" />
+                    <TrendingDownIcon v-else class="w-3 h-3" />
+                    {{ priceImpact.toFixed(2) }}%
+                </span>
+            </div>
+            <div class="flex items-center justify-between">
+                <span class="text-muted-foreground">Minimum Received</span>
+                <span class="font-medium text-card-foreground">{{ minimumReceived }} {{ formatSymbol(toToken.symbol) }}</span>
+            </div>
+            <div v-if="!chargeNetworkFee" class="flex items-center justify-between">
+                <span class="text-muted-foreground">Est. Gas Fee</span>
+                <span class="font-medium text-card-foreground">${{ estimatedGas.usd.toFixed(2) }}</span>
+            </div>
+            <button
+                @click="showRouteDetails = !showRouteDetails"
+                class="w-full flex items-center justify-between py-2 text-left hover:opacity-70 cursor-pointer"
+            >
+                <span class="text-muted-foreground flex items-center gap-2">
+                    <LayersIcon class="w-4 h-4" />
+                    Route
+                </span>
+                <ChevronDownIcon :class="['w-4 h-4 text-muted-foreground transition-transform', showRouteDetails && 'rotate-180']" />
+            </button>
+            <div v-if="showRouteDetails" class="pl-4 sm:pl-6 space-y-2 pt-2 border-t border-border">
+                <div class="text-xs">
+                    <div class="font-medium text-card-foreground mb-1">Best Route:</div>
+                    <div class="text-muted-foreground">{{ swapRoute.primary }}</div>
+                    <div class="text-muted-foreground mt-1">{{ swapRoute.pools.join(' • ') }}</div>
+                </div>
+                <div class="text-xs">
+                    <div class="font-medium text-card-foreground mb-1">Alternative Routes:</div>
+                    <div v-for="(alt, idx) in swapRoute.alternatives" :key="idx" class="text-muted-foreground">
+                        • {{ alt }}
+                    </div>
                 </div>
             </div>
         </div>
-        <div v-if="priceImpact > 3" class="mt-4 p-3 bg-destructive/10 border border-destructive/30 rounded-lg flex items-start gap-2">
+
+        <div v-if="priceImpact > 3" class="p-3 bg-destructive/10 border border-destructive/30 rounded-lg flex items-start gap-2">
             <AlertCircleIcon class="w-5 h-5 text-destructive flex-shrink-0 mt-0.5" />
             <div class="text-xs sm:text-sm">
                 <p class="font-semibold text-destructive">High Price Impact Warning</p>

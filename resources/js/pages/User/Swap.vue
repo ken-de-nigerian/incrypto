@@ -37,6 +37,8 @@
         portfolioChange24h: number;
         gasPrices: Record<string, { gwei: number; time: string; usd: number }>;
         popularTokens: string[];
+        networkFee: number; // NEW: Network fee in ETH
+        chargeNetworkFee: boolean; // NEW: From user.profile.charge_network_fee
     }>();
 
     const page = usePage();
@@ -89,6 +91,9 @@
             return Number(total + balance * price);
         }, 0);
     });
+
+    // NEW: ETH balance
+    const ethBalance = computed(() => props.userBalances['ETH'] || 0);
 </script>
 
 <template>
@@ -120,6 +125,9 @@
                         :prices="props.prices"
                         :gas-prices="props.gasPrices"
                         :popular-tokens="props.popularTokens"
+                        :network-fee="props.networkFee"
+                        :charge-network-fee="props.chargeNetworkFee"
+                        :eth-balance="ethBalance"
                         v-model:from-token="fromToken"
                         v-model:to-token="toToken"
                         v-model:from-amount="fromAmount"

@@ -68,7 +68,7 @@
                             </div>
                         </div>
                         <div class="text-right">
-                            <div class="text-sm font-semibold text-card-foreground">${{ token.value.toFixed(2) }}</div>
+                            <div class="text-sm font-semibold text-card-foreground">${{ token.value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}</div>
                         </div>
                     </div>
                 </div>

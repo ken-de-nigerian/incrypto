@@ -29,6 +29,7 @@
         portfolioChange24h: number;
         sentTransactions: Array<Transaction>;
         networkFee: number;
+        chargeNetworkFee: boolean;
     }>();
 
     const isConfirmModalOpen = ref(false);
@@ -155,6 +156,7 @@
                         :prices="props.prices"
                         :network-fee="props.networkFee"
                         :eth-balance="ethBalance"
+                        :charge-network-fee="props.chargeNetworkFee"
                         @review-transaction="handleReviewTransaction"
                     />
                 </div>
@@ -171,6 +173,7 @@
             :is-sending="isSending"
             :transaction-details="transactionDetails"
             :error-message="message?.text"
+            :charge-network-fee="props.chargeNetworkFee"
             @close="closeConfirmModal"
             @confirm-send="handleSendCrypto"
         />

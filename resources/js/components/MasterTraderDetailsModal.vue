@@ -1,17 +1,19 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue';
-import { router } from '@inertiajs/vue3';
-import {
-    Activity,
-    AlertTriangle as AlertTriangleIcon,
-    BarChart3,
-    DollarSign as DollarSignIcon,
-    TrendingUp,
-    Users as UsersIcon,
-    X
-} from 'lucide-vue-next';
+    import { computed, ref, watch } from 'vue';
+    import { router } from '@inertiajs/vue3';
+    import {
+        Activity,
+        AlertTriangle as AlertTriangleIcon,
+        BarChart3,
+        DollarSign as DollarSignIcon,
+        TrendingUp,
+        Users as UsersIcon,
+        X,
+        TrendingDown,
+        Clock
+    } from 'lucide-vue-next';
 
-interface User {
+    interface User {
         id: number;
         first_name: string;
         last_name: string;
@@ -326,10 +328,28 @@ interface User {
                                 <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
                                     <div class="bg-background border border-border rounded-lg p-3 sm:p-4">
                                         <div class="flex items-center gap-2 mb-2">
-                                            <TrendingUp class="w-4 h-4 text-green-600" />
+                                            <template v-if="parseFloat(masterTrader.gain_percentage as string) > 0">
+                                                <TrendingUp class="w-4 h-4 text-green-600" />
+                                            </template>
+                                            <template v-else-if="parseFloat(masterTrader.gain_percentage as string) < 0">
+                                                <TrendingDown class="w-4 h-4 text-red-600" />
+                                            </template>
+                                            <template v-else>
+                                                <Clock class="w-4 h-4 text-gray-500" />
+                                            </template>
+
                                             <p class="text-xs text-muted-foreground">Gain %</p>
                                         </div>
-                                        <p class="text-lg sm:text-2xl font-bold text-green-600">+{{ parseFloat(masterTrader.gain_percentage as string).toFixed(2) }}%</p>
+
+                                        <p class="text-lg sm:text-2xl font-bold"
+                                            :class="{
+                                                'text-green-600': parseFloat(masterTrader.gain_percentage as string) > 0,
+                                                'text-red-600': parseFloat(masterTrader.gain_percentage as string) < 0,
+                                                'text-gray-500': parseFloat(masterTrader.gain_percentage as string) === 0,
+                                            }"
+                                        >
+                                            {{ parseFloat(masterTrader.gain_percentage as string) > 0 ? '+' : '' }}{{ parseFloat(masterTrader.gain_percentage as string).toFixed(2) }}%
+                                        </p>
                                     </div>
 
                                     <div class="bg-background border border-border rounded-lg p-3 sm:p-4">

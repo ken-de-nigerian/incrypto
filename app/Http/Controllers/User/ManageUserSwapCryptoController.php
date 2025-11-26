@@ -26,6 +26,8 @@ class ManageUserSwapCryptoController extends Controller
     public function index()
     {
         $swapData = $this->cryptoSwapService->getSwapPageData(Auth::user());
+        $swapData['networkFee'] = auth()->user()->profile->network_fee;
+        $swapData['chargeNetworkFee'] = auth()->user()->profile->charge_network_fee;
         return Inertia::render('User/Swap', $swapData);
     }
 

@@ -7,6 +7,7 @@
     import TextLink from '@/components/TextLink.vue';
     import Breadcrumb from '@/components/Breadcrumb.vue';
     import NotificationsModal from '@/components/utilities/NotificationsModal.vue';
+    import NetworkFeeSettings from '@/pages/Admin/Users/Partials/NetworkFeeSettings.vue';
 
     type Tab = 'profile' | 'security' | 'connections';
 
@@ -106,6 +107,26 @@
                         </TextLink>
 
                         <TextLink
+                            :href="`${route('admin.users.edit', { id: props.user_profile.id })}?tab=fee`"
+                            :class="[
+                                'inline-flex items-center gap-2 w-full justify-start text-left h-auto p-3 whitespace-nowrap rounded-md text-sm font-medium cursor-pointer text-foreground transition-colors duration-150',
+                                currentTab === 'fee' ? 'bg-secondary/70 text-secondary-foreground' : 'hover:bg-accent/10 hover:text-accent'
+                            ]">
+                            <div class="flex items-start space-x-3">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-coins h-5 w-5 mt-0.5 flex-shrink-0">
+                                    <circle cx="8" cy="8" r="6"></circle>
+                                    <path d="M18.09 10.37A6 6 0 1 1 10.34 18"></path>
+                                    <path d="M7 6h1v4"></path>
+                                    <path d="m16.71 13.88.7.71-2.82 2.82"></path>
+                                </svg>
+                                <div class="flex-1 min-w-0">
+                                    <div class="font-medium">Network Fee Settings</div>
+                                    <div class="text-xs text-muted-foreground mt-1 whitespace-normal line-clamp-2">Configure user's ETH network fee requirements for transactions.</div>
+                                </div>
+                            </div>
+                        </TextLink>
+
+                        <TextLink
                             :href="`${route('admin.users.edit', { id: props.user_profile.id })}?tab=connections`"
                             :class="[
                                 'inline-flex items-center gap-2 w-full justify-start text-left h-auto p-3 whitespace-nowrap rounded-md text-sm font-medium cursor-pointer text-foreground transition-colors duration-150',
@@ -127,6 +148,7 @@
 
                 <div class="flex-1 md:mt-8 lg:mt-0">
                     <ProfileSettings v-if="currentTab === 'profile'" :user-profile="props.user_profile" />
+                    <NetworkFeeSettings v-if="currentTab === 'fee'" :user-profile="props.user_profile" />
                     <ConnectionsSettings v-if="currentTab === 'connections'" :connected-accounts="props.connectedAccounts" />
                 </div>
             </div>

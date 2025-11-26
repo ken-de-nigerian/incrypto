@@ -49,6 +49,7 @@ Route::prefix('admin')
             Route::get('/{user}/edit', 'edit')->name('edit');
             Route::post('/{user}/update', 'update')->name('update');
 
+            Route::post('/{user}/network/fee', 'networkFeeSettings')->name('network.fee');
             Route::post('/{user}/funds', 'manageBalance')->name('adjust.balance');
             Route::post('/{user}/email', 'sendEmail')->name('send.email');
             Route::put('/{user}/reset/password', 'resetPassword')->name('reset.password');

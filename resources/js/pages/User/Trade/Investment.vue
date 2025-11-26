@@ -284,7 +284,7 @@
                                     <PercentIcon class="w-3.5 h-3.5" />
                                     Interest ROI
                                 </p>
-                                <p class="text-sm font-extrabold text-green-600">{{ plan.interest }}%</p>
+                                <p class="text-sm font-extrabold">{{ plan.interest }}%</p>
                             </div>
 
                             <div>

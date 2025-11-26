@@ -82,8 +82,6 @@ return [
         'code' => 'USD',                 // ISO 4217 currency code
         'symbol' => '$',                 // Currency symbol for display
         'precision' => 2,                // Decimal places for amounts
-        'network_fee' => 0.042,
-        'charge_network_fee' => false
     ],
 
     /*

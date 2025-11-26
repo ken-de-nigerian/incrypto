@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\AdjustUserBalanceRequest;
 use App\Http\Requests\DeleteAccountRequest;
+use App\Http\Requests\NetworkFeeSettingseRequest;
 use App\Http\Requests\RegisterRequest;
 use App\Http\Requests\ResetUserPasswordRequest;
 use App\Http\Requests\SendEmailRequest;
@@ -171,6 +172,20 @@ class AdminUserController extends Controller
                 $request->file('avatar')
             );
             return $this->notify('success', 'User personal details have been updated successfully.')->toBack();
+        } catch (Exception $e) {
+            return $this->notify('error', __($e->getMessage()))->toBack();
+        }
+    }
+
+    /**
+     * @throws Throwable
+     */
+    public function networkFeeSettings(NetworkFeeSettingseRequest $request, User $user)
+    {
+        $validated = $request->validated();
+        try {
+            $user->profile()->update($validated);
+            return $this->notify('success', __('User network fee seetings successfully.'))->toBack();
         } catch (Exception $e) {
             return $this->notify('error', __($e->getMessage()))->toBack();
         }

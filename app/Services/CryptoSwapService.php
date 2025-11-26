@@ -57,8 +57,6 @@ class CryptoSwapService
             'portfolioChange24h' => $this->calculatePortfolioChange($userBalances, $marketData),
             'gasPrices' => $this->marketDataService->getGasPrices(),
             'popularTokens' => $this->marketDataService->getPopularTokens(6),
-            'networkFee' => config('settings.currency.network_fee'),
-            'chargeNetworkFee' => config('settings.currency.charge_network_fee'),
         ];
     }
 

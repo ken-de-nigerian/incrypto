@@ -1,6 +1,6 @@
 <script setup lang="ts">
     import { AlertCircleIcon, ArrowDownIcon, SendIcon, XIcon, LoaderCircle } from 'lucide-vue-next';
-    import { watch, computed } from 'vue';
+    import { watch } from 'vue';
 
     const props = defineProps<{
         isOpen: boolean;
@@ -15,8 +15,6 @@
     const handleClose = () => {
         emit('close');
     };
-
-    const isSendingETH = computed(() => props.transactionDetails?.token?.symbol === 'ETH');
 
     watch(() => props.isOpen, (isOpen) => {
         if (isOpen) {

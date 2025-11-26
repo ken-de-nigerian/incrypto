@@ -51,8 +51,6 @@
         return props.gasPrices[props.gasPreset] || props.gasPrices.medium;
     });
 
-    const networkFeeUSD = computed(() => props.networkFee * (props.prices['ETH'] || 0));
-
     const swapRoute = computed(() => {
         if (!props.fromToken || !props.toToken) return { primary: '', pools: [], alternatives: [] };
         return {

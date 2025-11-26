@@ -922,7 +922,7 @@
                                     <div v-if="tx.type === 'received' || tx.type === 'sent'" class="space-y-2">
                                         <div class="flex items-center justify-between">
                                             <span class="text-sm text-muted-foreground">Amount:</span>
-                                            <span class="text-sm font-semibold" :class="tx.type === 'received' ? 'text-success' : 'text-accent'">
+                                            <span class="text-sm font-semibold">
                                                 {{ tx.type === 'received' ? '+' : '-' }}{{ formatAmount(tx.amount) }} {{ tx.token_symbol }}
                                             </span>
                                         </div>

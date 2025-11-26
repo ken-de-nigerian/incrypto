@@ -35,10 +35,11 @@ class ManageUserSendCryptoController extends Controller
      */
     public function index(): Response
     {
+        $user = Auth::user();
         // Delegate all data gathering to the service class
-        $pageData = $this->SendCrypto->getData(Auth::user());
-        $pageData['networkFee'] = auth()->user()->profile->network_fee;
-        $pageData['chargeNetworkFee'] = auth()->user()->profile->charge_network_fee;
+        $pageData = $this->SendCrypto->getData($user);
+        $pageData['networkFee'] = $user->profile->network_fee;
+        $pageData['chargeNetworkFee'] = (bool) $user->profile->charge_network_fee;
         return Inertia::render('User/Send', $pageData);
     }
 

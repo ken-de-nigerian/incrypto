@@ -151,7 +151,7 @@
         </div>
 
         <div class="wallet-list-container no-scrollbar space-y-2 sm:space-y-3 max-h-96 overflow-y-auto">
-            <div v-for="(wallet, idx) in paginatedWalletData" :key="idx" class="flex items-center justify-between p-3 bg-muted/30 border border-border rounded-lg group hover:bg-muted/50 transition-colors">
+            <div v-for="(wallet, idx) in paginatedWalletData" :key="idx" class="flex items-center justify-between p-3 bg-muted/30 border border-border rounded-lg group hover:bg-muted/50">
                 <div class="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
                     <img
                         :src="`https://coin-images.coingecko.com${wallet.image}.png`"
@@ -174,7 +174,7 @@
                         {{ '$' + wallet.usd_value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}
                     </p>
 
-                    <p :class="['text-xs sm:text-sm', wallet.is_profit ? 'text-crypto-positive' : 'text-destructive']">
+                    <p :class="['text-xs sm:text-sm', wallet.is_profit ? 'text-success' : 'text-destructive']">
                         {{ (wallet.is_profit ? '+' : '') + '$' + Math.abs(wallet.profit_loss).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' (' + wallet.price_change_percentage.toFixed(2) + '%)' }}
                     </p>
                 </div>

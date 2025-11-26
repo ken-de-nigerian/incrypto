@@ -116,7 +116,7 @@
 
 <template>
     <div class="space-y-6 margin-bottom">
-        <div class="rounded-lg border bg-card text-card-foreground shadow-sm">
+        <div class="rounded-lg border bg-card text-card-foreground">
             <div class="flex flex-col space-y-1.5 p-6">
                 <div class="text-2xl font-semibold">Profile Picture</div>
                 <p class="text-sm text-muted-foreground">Upload a picture to personalize your account.</p>
@@ -163,7 +163,7 @@
             </div>
         </div>
 
-        <form @submit.prevent="submit" class="rounded-lg border bg-card text-card-foreground shadow-sm">
+        <form @submit.prevent="submit" class="rounded-lg border bg-card text-card-foreground">
             <div class="flex flex-col space-y-1.5 p-6">
                 <div class="text-2xl font-semibold">Personal Information</div>
                 <p class="text-sm text-muted-foreground">Update your personal details and contact information.</p>

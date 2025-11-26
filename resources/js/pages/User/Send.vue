@@ -12,7 +12,6 @@
     import TransactionHistory from '@/components/layout/user/send/TransactionHistory.vue';
     import ConfirmationModal from '@/components/layout/user/send/ConfirmationModal.vue';
 
-    // Define Prop Types
     type Token = {
         symbol: string; name: string; address: string; logo: string;
         decimals: number; price_change_24h: number;
@@ -23,25 +22,22 @@
         fee: string | null; created_at: string; updated_at: string;
     };
 
-    // Props from Inertia
     const props = defineProps<{
         tokens: Array<Token>;
         userBalances: Record<string, number>;
         prices: Record<string, number>;
         portfolioChange24h: number;
         sentTransactions: Array<Transaction>;
+        networkFee: number;
     }>();
 
-    // State Management
     const isConfirmModalOpen = ref(false);
     const isSending = ref(false);
     const transactionDetails = ref<object | null>(null);
     const message = ref<{ type: 'error'; text: string; } | null>(null);
 
-    // NEW: Template ref to access the SendForm component instance
     const sendFormRef = ref(null);
 
-    // Breadcrumb & User Info
     const page = usePage();
     const user = computed(() => page.props.auth?.user);
     const initials = computed(() => user.value ? `${user.value.first_name?.charAt(0) || ''}${user.value.last_name?.charAt(0) || ''}`.toUpperCase() : '');
@@ -49,7 +45,6 @@
     const notificationCount = computed(() => page.props.auth?.notification_count || 0);
     const breadcrumbItems = [ { label: 'Dashboard', href: route('user.dashboard') }, { label: 'Send Crypto' } ];
 
-    // Computed Properties for Child Components
     const totalPortfolioValue = computed(() => {
         if (!props.userBalances || !props.prices) return 0;
         return Object.keys(props.userBalances).reduce((total, symbol) => {
@@ -85,7 +80,8 @@
             }));
     });
 
-    // Methods to Handle Child Events
+    const ethBalance = computed(() => props.userBalances['ETH'] || 0);
+
     const handleReviewTransaction = (details: object) => {
         transactionDetails.value = details;
         isConfirmModalOpen.value = true;
@@ -100,7 +96,6 @@
         try {
             await axios.post(route('user.send.store'), transactionDetails.value);
             closeConfirmModal();
-            // Reload user balances and transaction history
             router.reload({ only: ['userBalances', 'sentTransactions'] });
 
             if (sendFormRef.value && typeof sendFormRef.value.resetForm === 'function') {
@@ -125,7 +120,6 @@
         }, 300);
     };
 
-    // Watch for modal state to control body scroll
     watch(isConfirmModalOpen, (isOpen) => {
         document.body.style.overflow = isOpen ? 'hidden' : '';
     });
@@ -156,8 +150,11 @@
 
                 <div class="lg:col-span-6">
                     <SendForm
-                        ref="sendFormRef" :available-assets="availableAssets"
+                        ref="sendFormRef"
+                        :available-assets="availableAssets"
                         :prices="props.prices"
+                        :network-fee="props.networkFee"
+                        :eth-balance="ethBalance"
                         @review-transaction="handleReviewTransaction"
                     />
                 </div>

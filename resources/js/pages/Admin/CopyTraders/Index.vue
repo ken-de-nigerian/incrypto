@@ -275,7 +275,7 @@
                         <span class="text-xs font-semibold text-muted-foreground uppercase">Active</span>
                         <CheckCircleIcon class="w-4 h-4" />
                     </div>
-                    <p class="text-2xl font-bold text-green-600">{{ props.statistics.active_traders }}</p>
+                    <p class="text-2xl font-bold text-card-foreground">{{ props.statistics.active_traders }}</p>
                 </div>
 
                 <div class="bg-card border border-border rounded-xl p-4">
@@ -283,7 +283,7 @@
                         <span class="text-xs font-semibold text-muted-foreground uppercase">Inactive</span>
                         <XCircleIcon class="w-4 h-4" />
                     </div>
-                    <p class="text-2xl font-bold text-red-600">{{ props.statistics.inactive_traders }}</p>
+                    <p class="text-2xl font-bold text-card-foreground">{{ props.statistics.inactive_traders }}</p>
                 </div>
 
                 <div class="bg-card border border-border rounded-xl p-4">

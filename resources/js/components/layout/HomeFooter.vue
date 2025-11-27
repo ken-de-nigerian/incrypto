@@ -2,6 +2,15 @@
     import { computed } from 'vue'
     import TextLink from '@/components/TextLink.vue';
     import { Rotate3DIcon } from 'lucide-vue-next';
+    import { usePage } from '@inertiajs/vue3';
+
+    const page = usePage();
+
+    const site_name = computed(() => page.props.site_name);
+    const site_tagline = computed(() => page.props.site_tagline);
+
+    const siteNameDisplay = computed(() => site_name.value);
+    const siteTaglineDisplay = computed(() => site_tagline.value);
 
     interface FooterLink {
         label: string
@@ -15,11 +24,11 @@
     }
 
     const footerLinks: FooterLink[] = [
-        { label: 'About', href: '#about' },
+        { label: 'Home', href: '#home' },
         { label: 'Features', href: '#features' },
-        { label: 'Pricing', href: '#pricing' },
+        { label: 'FAQ\'s', href: '#faq' },
         { label: 'Blog', href: '#blogs' },
-        { label: 'Support', href: '#contact' },
+        { label: 'Contact', href: '#contact' },
         { label: 'Terms', href: '#terms' },
         { label: 'Privacy', href: '#privacy' },
     ]
@@ -61,7 +70,7 @@
 
                     <div class="flex flex-col justify-center">
                         <span class="font-black text-2xl tracking-tighter text-secondary-foreground group-hover:tracking-normal transition-all duration-300">
-                            coin<span class="font-light text-primary">pay.</span>
+                            {{ siteNameDisplay }}<span class="font-light text-primary">{{ siteTaglineDisplay }}.</span>
                         </span>
                     </div>
                 </TextLink>
@@ -101,7 +110,7 @@
 
                     <!-- Copyright -->
                     <p class="text-sm text-muted-foreground text-center md:text-right">
-                        © {{ currentYear }} CryptoWallet. All rights reserved.
+                        © {{ currentYear }} {{ page.props.name }}. All rights reserved.
                     </p>
                 </div>
             </div>

@@ -3,6 +3,15 @@
     import { ChevronDown, Menu, MessageCircle, Monitor, Moon, Sun, X, Rotate3DIcon } from 'lucide-vue-next';
     import TextLink from '@/components/TextLink.vue'
     import { useAppearance } from '@/composables/useAppearance'
+    import { usePage } from '@inertiajs/vue3';
+
+    const page = usePage();
+
+    const site_name = computed(() => page.props.site_name);
+    const site_tagline = computed(() => page.props.site_tagline);
+
+    const siteNameDisplay = computed(() => site_name.value);
+    const siteTaglineDisplay = computed(() => site_tagline.value);
 
     interface NavItem {
         label: string
@@ -34,7 +43,7 @@
     ]
 
     const openWhatsApp = () => {
-        window.open('https://wa.me/1234567890', '_blank');
+        window.open(`https://wa.me/${page.props.phone}`, '_blank');
     }
 
     const currentYear = computed(() => new Date().getFullYear())
@@ -99,7 +108,7 @@
 
                         <div class="flex flex-col justify-center">
                             <span class="font-black text-2xl tracking-tighter text-secondary-foreground group-hover:tracking-normal transition-all duration-300">
-                                coin<span class="font-light text-primary">pay.</span>
+                                {{ siteNameDisplay }}<span class="font-light text-primary">{{ siteTaglineDisplay }}.</span>
                             </span>
                         </div>
                     </TextLink>
@@ -193,7 +202,7 @@
                             </div>
 
                             <div class="pb-8 text-center">
-                                <p class="text-xs text-muted-foreground">© {{ currentYear }} CryptoWallet. All rights reserved.</p>
+                                <p class="text-xs text-muted-foreground">© {{ currentYear }} {{ page.props.name }}. All rights reserved.</p>
                             </div>
                         </div>
                     </div>

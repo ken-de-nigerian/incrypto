@@ -39,7 +39,10 @@ class HandleInertiaRequests extends Middleware
         return [
             ...parent::share($request),
             'name' => config('app.name'),
+            'site_name' => config('settings.site.site_name'),
+            'site_tagline' => config('settings.site.site_tagline'),
             'email' => config('settings.site.site_email'),
+            'phone' => config('settings.site.site_phone'),
             'flash' => [
                 'success' => fn () => $request->session()->get('success'),
                 'error' => fn () => $request->session()->get('error'),

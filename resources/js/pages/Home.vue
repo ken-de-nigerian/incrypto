@@ -1,5 +1,5 @@
 <script setup lang="ts">
-    import { ref, onMounted, onUnmounted } from 'vue'
+    import { ref, onMounted, onUnmounted, computed } from 'vue';
     import { Carousel, Slide } from 'vue3-carousel'
     import 'vue3-carousel/carousel.css'
     import {
@@ -34,9 +34,22 @@
     import TextLink from '@/components/TextLink.vue';
     import { Head } from '@inertiajs/vue3';
 
-    interface Crypto {
+    interface RawCryptoData {
+        name: string
+        image: string
+        current_price: number
+        price_change_24h: number
+        price_change_percentage_24h: number
+    }
+
+    const props = defineProps<{
+        cryptos: Record<string, RawCryptoData>
+    }>();
+
+    interface CryptoSlide {
         name: string
         symbol: string
+        image: string
         price: string
         change: string
         positive: boolean
@@ -78,7 +91,7 @@
         itemsToShow: 'auto',
         wrapAround: true,
         transition: 5000,
-        autoplay: 0,
+        autoplay: 3000,
         snapAlign: 'start',
         mouseDrag: true,
         touchDrag: true,
@@ -114,14 +127,32 @@
         },
     })
 
-    const cryptos: Crypto[] = [
-        { name: 'Bitcoin', symbol: 'BTC', price: '$43,250.00', change: '+5.24%', positive: true },
-        { name: 'Ethereum', symbol: 'ETH', price: '$2,280.50', change: '+3.15%', positive: true },
-        { name: 'Binance Coin', symbol: 'BNB', price: '$315.80', change: '-1.20%', positive: false },
-        { name: 'Solana', symbol: 'SOL', price: '$98.45', change: '+8.67%', positive: true },
-        { name: 'Cardano', symbol: 'ADA', price: '$0.52', change: '+2.34%', positive: true },
-        { name: 'Ripple', symbol: 'XRP', price: '$0.61', change: '-0.89%', positive: false },
-    ]
+    const processedCryptos = computed<CryptoSlide[]>(() => {
+        if (!props.cryptos) return [];
+
+        return Object.entries(props.cryptos).map(([key, data]) => {
+            const isPositive = data.price_change_percentage_24h >= 0;
+
+            const formattedPrice = new Intl.NumberFormat('en-US', {
+                style: 'currency',
+                currency: 'USD',
+                minimumFractionDigits: data.current_price < 1 ? 4 : 2,
+                maximumFractionDigits: data.current_price < 1 ? 6 : 2,
+            }).format(data.current_price);
+
+            const changeVal = Math.abs(data.price_change_percentage_24h).toFixed(2);
+            const sign = isPositive ? '+' : '-';
+
+            return {
+                name: data.name,
+                image: data.image,
+                symbol: key.toUpperCase(),
+                price: formattedPrice,
+                change: `${sign}${changeVal}%`,
+                positive: isPositive
+            };
+        });
+    });
 
     const features: Feature[] = [
         {
@@ -333,19 +364,21 @@
         </div>
     </section>
 
+    <!-- Crypto Ticker -->
     <div class="w-full bg-background border-y border-border">
         <div class="container-fluid mx-auto">
             <Carousel v-bind="cryptoCarouselSettings" class="w-full flex items-center">
-                <Slide v-for="crypto in cryptos" :key="crypto.symbol">
-                    <div class="flex items-center justify-between w-full px-6 py-3 border-r border-border/40 hover:bg-muted/30 cursor-pointer group">
+                <Slide v-for="crypto in processedCryptos" :key="crypto.symbol">
+                    <div class="flex items-center justify-between w-full px-6 py-3 border-r border-border/40 hover:bg-muted/30 cursor-pointer group transition-colors">
+
                         <div class="flex items-center gap-3 text-left">
-                            <div class="w-8 h-8 rounded-full bg-primary/5 flex items-center justify-center flex-shrink-0 group-hover:bg-primary/10">
-                                <TrendingUp :size="14" class="text-primary" />
+                            <div class="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 bg-white overflow-hidden shadow-sm">
+                                <img :src="crypto.image" :alt="crypto.name" class="w-full h-full object-cover" loading="lazy">
                             </div>
+
                             <div>
                                 <div class="font-bold text-sm tracking-tight flex items-center gap-2">
                                     {{ crypto.symbol }}
-                                    <span class="text-[10px] font-normal text-muted-foreground uppercase bg-muted px-1 rounded">CRYPTO</span>
                                 </div>
 
                                 <div class="text-xs text-muted-foreground font-medium truncate max-w-[100px]">
@@ -355,10 +388,12 @@
                         </div>
 
                         <div class="text-right pl-6">
-                            <div class="font-mono font-medium text-sm">{{ crypto.price }}</div>
+                            <div class="font-mono font-medium text-sm text-foreground">
+                                {{ crypto.price }}
+                            </div>
                             <div :class="crypto.positive ? 'text-emerald-500' : 'text-rose-500'" class="text-xs font-semibold flex items-center justify-end gap-1">
-                                <span v-if="crypto.positive">▲</span>
-                                <span v-else>▼</span>
+                                <TrendingUp v-if="crypto.positive" :size="12" />
+                                <TrendingDown v-else :size="12" />
                                 {{ crypto.change }}
                             </div>
                         </div>

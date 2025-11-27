@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\HomeController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
@@ -8,9 +9,7 @@ use Inertia\Inertia;
 | Home Routes
 |--------------------------------------------------------------------------
 */
-Route::get('/', function () {
-    return Inertia::render('Home');
-})->name('home');
+Route::get('/', HomeController::class)->name('home');
 
 Route::get('/welcome', function () {
     return Inertia::render('Onboarding');

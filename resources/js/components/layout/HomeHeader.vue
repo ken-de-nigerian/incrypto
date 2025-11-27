@@ -186,8 +186,8 @@
                             </div>
 
                             <div class="mt-4">
-                                <button @click="openWhatsApp" class="w-full py-4 rounded-xl bg-[#25D366] text-white font-bold flex items-center justify-center gap-2 hover:opacity-90 transition-opacity">
-                                    <MessageCircle :size="20" fill="currentColor" class="text-white" />
+                                <button @click="openWhatsApp" class="w-full py-4 rounded-xl bg-primary text-primary-foreground font-bold flex items-center justify-center gap-2 hover:opacity-90 transition-opacity">
+                                    <MessageCircle :size="20" class="text-primary-foreground" />
                                     Chat on WhatsApp
                                 </button>
                             </div>

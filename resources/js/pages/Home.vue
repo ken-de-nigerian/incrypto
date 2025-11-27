@@ -48,13 +48,6 @@
         description: string
     }
 
-    interface Benefit {
-        icon: string
-        title: string
-        description: string
-        stats: string
-    }
-
     interface FAQItem {
         question: string
         answer: string

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}"  @class(['dark' => ($appearance ?? 'system') == 'dark'])>
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
     <head>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -17,12 +17,25 @@
         <meta name="twitter:site" content="@lovable_dev" />
         <meta name="twitter:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
 
+        <script>
+            (function() {
+                const stored = localStorage.getItem('appearance');
+                const system = window.matchMedia('(prefers-color-scheme: dark)').matches;
+
+                if (stored === 'dark' || (!stored && system) || (stored === 'system' && system)) {
+                    document.documentElement.classList.add('dark');
+                } else {
+                    document.documentElement.classList.remove('dark');
+                }
+            })();
+        </script>
+
         @routes
         @vite(['resources/js/app.ts', "resources/js/pages/{$page['component']}.vue"])
         @inertiaHead
     </head>
 
-    <body class="bg-background text-foreground font-sans">
+    <body class="bg-background text-foreground font-sans antialiased transition-colors duration-300">
         @inertia
     </body>
 </html>

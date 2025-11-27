@@ -8,11 +8,13 @@ use Inertia\Inertia;
 | Home Routes
 |--------------------------------------------------------------------------
 */
-Route::middleware(['redirect.authenticated', 'guest'])->group(function () {
-    Route::get('/', function () {
-        return Inertia::render('Home');
-    })->name('home');
-});
+Route::get('/', function () {
+    return Inertia::render('Home');
+})->name('home');
+
+Route::get('/welcome', function () {
+    return Inertia::render('Onboarding');
+})->name('welcome');
 
 Route::get('/server-time', function () {
     return response()->json([

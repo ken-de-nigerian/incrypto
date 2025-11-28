@@ -2,7 +2,6 @@
 
 use App\Http\Controllers\HomeController;
 use Illuminate\Support\Facades\Route;
-use Inertia\Inertia;
 
 /*
 |--------------------------------------------------------------------------
@@ -10,11 +9,6 @@ use Inertia\Inertia;
 |--------------------------------------------------------------------------
 */
 Route::get('/', HomeController::class)->name('home');
-
-Route::get('/welcome', function () {
-    return Inertia::render('Welcome');
-})->name('welcome');
-
 Route::get('/server-time', function () {
     return response()->json([
         'timestamp' => now()->getTimestamp() * 1000,

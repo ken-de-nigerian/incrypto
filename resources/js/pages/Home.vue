@@ -350,12 +350,12 @@
                 </p>
 
                 <div class="flex flex-col sm:flex-row gap-4 justify-center">
-                    <TextLink :href="route('welcome')" class="px-4 py-3 text-lg font-semibold rounded-xl bg-primary/70 text-primary-foreground hover:bg-primary/90 transition-all inline-flex items-center justify-center gap-2">
+                    <TextLink :href="route('user.dashboard')" class="px-4 py-3 text-lg font-semibold rounded-xl bg-primary/70 text-primary-foreground hover:bg-primary/90 transition-all inline-flex items-center justify-center gap-2">
                         <UserPlus :size="20" />
                         Get Started
                     </TextLink>
 
-                    <TextLink :href="route('login')" class="px-4 py-3 text-lg font-semibold rounded-xl border border-border text-primary hover:bg-primary hover:text-primary-foreground transition-all inline-flex items-center justify-center gap-2">
+                    <TextLink :href="route('user.dashboard')" class="px-4 py-3 text-lg font-semibold rounded-xl border border-border text-primary hover:bg-primary hover:text-primary-foreground transition-all inline-flex items-center justify-center gap-2">
                         <LinkIcon :size="20" />
                         Connect Wallet
                     </TextLink>
@@ -443,7 +443,7 @@
                         </li>
                     </ul>
 
-                    <TextLink :href="route('welcome')" class="px-8 py-4 text-lg font-semibold rounded-full bg-primary text-primary-foreground hover:bg-primary/90 transition-all">
+                    <TextLink :href="route('user.dashboard')" class="px-8 py-4 text-lg font-semibold rounded-full bg-primary text-primary-foreground hover:bg-primary/90 transition-all">
                         Start Trading Now
                     </TextLink>
                 </div>
@@ -473,7 +473,7 @@
             </div>
 
             <div class="text-center">
-                <TextLink :href="route('welcome')" class="px-8 py-4 text-lg font-semibold rounded-full bg-primary text-primary-foreground hover:bg-primary/90 transition-all inline-flex items-center gap-2">
+                <TextLink :href="route('user.dashboard')" class="px-8 py-4 text-lg font-semibold rounded-full bg-primary text-primary-foreground hover:bg-primary/90 transition-all inline-flex items-center gap-2">
                     View All Supported Assets
                     <ArrowRight :size="20" />
                 </TextLink>
@@ -498,7 +498,7 @@
                     <component :is="feature.Icon" :size="40" class="text-primary mb-4 group-hover:scale-110 transition-transform" />
                     <h3 class="font-bold text-xl mb-3">{{ feature.title }}</h3>
                     <p class="text-muted-foreground mb-4">{{ feature.description }}</p>
-                    <TextLink :href="route('welcome')" class="inline-flex items-center gap-2 font-medium text-primary hover:gap-3 transition-all">
+                    <TextLink :href="route('user.dashboard')" class="inline-flex items-center gap-2 font-medium text-primary hover:gap-3 transition-all">
                         Learn more <ArrowRight :size="16" />
                     </TextLink>
                 </div>
@@ -584,7 +584,7 @@
             </div>
 
             <div class="mt-16 text-center">
-                <TextLink :href="route('welcome')" class="px-8 py-4 text-lg font-semibold rounded-full bg-primary text-primary-foreground hover:bg-primary/90 transition-all inline-flex items-center gap-2">
+                <TextLink :href="route('user.dashboard')" class="px-8 py-4 text-lg font-semibold rounded-full bg-primary text-primary-foreground hover:bg-primary/90 transition-all inline-flex items-center gap-2">
                     Get Started Today
                     <ArrowRight :size="20" />
                 </TextLink>
@@ -650,7 +650,7 @@
                         Connect to your favorite decentralized apps, NFT marketplaces, and DeFi protocols with seamless WalletConnect integration.
                     </p>
 
-                    <TextLink :href="route('welcome')" class="px-8 py-4 text-lg font-semibold rounded-full bg-primary text-primary-foreground hover:bg-primary/90 transition-all">
+                    <TextLink :href="route('user.dashboard')" class="px-8 py-4 text-lg font-semibold rounded-full bg-primary text-primary-foreground hover:bg-primary/90 transition-all">
                         Browse Integrations
                     </TextLink>
                 </div>
@@ -783,7 +783,7 @@
                             </div>
                             <h3 class="text-xl font-bold mb-4">{{ post.title }}</h3>
                             <p class="text-muted-foreground mb-6 flex-grow">{{ post.excerpt }}</p>
-                            <TextLink :href="route('welcome')" class="font-semibold text-primary hover:gap-2 inline-flex items-center gap-1 transition-all">
+                            <TextLink :href="route('user.dashboard')" class="font-semibold text-primary hover:gap-2 inline-flex items-center gap-1 transition-all">
                                 Read more <ArrowRight :size="16" />
                             </TextLink>
                         </div>

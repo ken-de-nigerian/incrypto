@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Http\Requests\ContactUsRequest;
 use App\Mail\ContactUsEmail;
 use App\Services\GatewayHandlerService;
-use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
 use Inertia\Inertia;
@@ -24,14 +23,9 @@ class HomeController extends Controller
 
     public function contact(ContactUsRequest $request)
     {
-        try {
-            Mail::mailer(config('settings.email_provider'))
-                ->to(config('settings.site.site_email'))
-                ->send(new ContactUsEmail($request->validated()));
-            return $this->notify('success', 'Email sent successfully')->toBack();
-        } catch (Exception $e) {
-            return $this->notify('error', __($e->getMessage()))->toBack();
-        }
+        Mail::mailer(config('settings.email_provider'))
+            ->to(config('settings.site.site_email'))
+            ->send(new ContactUsEmail($request->validated()));
     }
 
     /**

@@ -223,6 +223,32 @@
             opacity: 1;
         }
 
+        .message-details {
+            background: #f8fafc;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 24px 0;
+        }
+        .detail-row {
+            display: flex;
+            padding: 12px 0;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        .detail-row:last-child {
+            border-bottom: none;
+        }
+        .detail-label {
+            font-weight: 600;
+            color: #64748b;
+            min-width: 120px;
+            font-size: 14px;
+        }
+        .detail-value {
+            color: #1f2a44;
+            font-size: 14px;
+            word-break: break-word;
+        }
+
         @media only screen and (max-width: 640px) {
             .email-wrapper { padding: 0; }
             .container { border-radius: 0; border: 0; }
@@ -257,9 +283,21 @@
                 </div>
 
                 <div class="content">
-                    <div class="body-content">
-                        {{ $message }}
+                    <div class="message-details">
+                        <div class="detail-row">
+                            <div class="detail-label">From:</div>
+                            <div class="detail-value">{{ $name ?? 'Not provided' }}</div>
+                        </div>
+                        <div class="detail-row">
+                            <div class="detail-label">Email:</div>
+                            <div class="detail-value"><a href="mailto:{{ $email }}" style="color: #7c3aed; text-decoration: underline;">{{ $email }}</a></div>
+                        </div>
                     </div>
+
+                    <div class="body-content">
+                        {{ $content }}
+                    </div>
+
                     <div class="support-text">
                         <p>Please reach out to the user as soon as possible using the email <a href="mailto:{{ $email }}" class="support-email">{{ $email }}</a>.</p>
                     </div>

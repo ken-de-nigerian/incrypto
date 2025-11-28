@@ -37,6 +37,7 @@
     import InputError from '@/components/InputError.vue';
     import ActionButton from '@/components/ActionButton.vue';
     import FlashMessages from '@/components/utilities/FlashMessages.vue';
+    import { useFlash } from '@/composables/useFlash';
 
     interface RawCryptoData {
         name: string
@@ -92,6 +93,7 @@
     const activeAccordion = ref<number | null>(0)
 
     const page = usePage();
+    const { success, error } = useFlash();
     const isLoggedIn = computed(() => {
         return page.props.auth.user?.role === 'admin' ? route('admin.dashboard') : route('user.dashboard');
     })
@@ -106,8 +108,12 @@
     const submit = () => {
         form.post(route('contact.us'), {
             preserveScroll: true,
-            onFinish: () => {
-                form.reset('name', 'email', 'message');
+            onSuccess: () => {
+                form.reset();
+                success('Your message has been sent successfully!', 'Message Sent');
+            },
+            onError: () => {
+                error('Failed to send message. Please try again.', 'Error');
             },
         });
     };
@@ -542,13 +548,10 @@
             </div>
 
             <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                <div v-for="feature in features" :key="feature.title" class="p-8 rounded-2xl bg-card border hover:border-primary/50 transition-all group">
+                <div v-for="feature in features" :key="feature.title" class="p-8 rounded-2xl bg-card border hover:border-primary/50 transition-all cursor-pointer group">
                     <component :is="feature.Icon" :size="40" class="text-primary mb-4 group-hover:scale-110 transition-transform" />
                     <h3 class="font-bold text-xl mb-3">{{ feature.title }}</h3>
                     <p class="text-muted-foreground mb-4">{{ feature.description }}</p>
-                    <TextLink :href="isLoggedIn" class="inline-flex items-center gap-2 font-medium text-primary hover:gap-3 transition-all">
-                        Learn more <ArrowRight :size="16" />
-                    </TextLink>
                 </div>
             </div>
         </div>
@@ -900,10 +903,7 @@
                     </div>
 
                     <div class="flex flex-col sm:flex-row gap-4">
-                        <button class="relative group flex items-center gap-3 bg-card border border-border text-foreground px-5 py-3 rounded-xl hover:opacity-90 transition-opacity disabled:opacity-70 disabled:cursor-not-allowed">
-                            <span class="absolute -top-3 -right-3 bg-primary text-primary-foreground text-[10px] font-bold px-2 py-1 rounded-full shadow-sm border border-background">
-                                COMING SOON
-                            </span>
+                        <button class="relative group flex items-center gap-3 bg-card border border-border text-foreground px-5 py-3 rounded-xl hover:opacity-90 transition-opacity disabled:opacity-70 cursor-pointer disabled:cursor-not-allowed">
                             <Apple :size="32" />
                             <div class="flex flex-col items-start leading-none">
                                 <span class="text-[10px] uppercase font-medium opacity-80">Download on the</span>
@@ -911,10 +911,7 @@
                             </div>
                         </button>
 
-                        <button class="relative group flex items-center gap-3 bg-card border border-border text-foreground px-5 py-3 rounded-xl hover:opacity-90 transition-opacity disabled:opacity-70 disabled:cursor-not-allowed">
-                            <span class="absolute -top-3 -right-3 bg-primary text-primary-foreground text-[10px] font-bold px-2 py-1 rounded-full shadow-sm border border-background">
-                                COMING SOON
-                            </span>
+                        <button class="relative group flex items-center gap-3 bg-card border border-border text-foreground px-5 py-3 rounded-xl hover:opacity-90 transition-opacity disabled:opacity-70 cursor-pointer disabled:cursor-not-allowed">
                             <Play :size="30" class="ml-1" />
                             <div class="flex flex-col items-start leading-none ml-1">
                                 <span class="text-[10px] uppercase font-medium opacity-80">Get it on</span>
@@ -925,7 +922,7 @@
 
                     <p class="mt-6 text-xs text-muted-foreground">
                         * Mobile app requires iOS 15.0+ or Android 10.0+.
-                        <a class="underline hover:text-primary">Join the beta waitlist</a> to get early access.
+                        <TextLink :href="isLoggedIn" class="underline hover:text-primary">Join the beta waitlist</TextLink> to get early access.
                     </p>
                 </div>
             </div>

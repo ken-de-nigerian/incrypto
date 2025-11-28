@@ -43,7 +43,7 @@
     }
 
     const props = defineProps<{
-        cryptos: Record<string, RawCryptoData>
+        cryptos?: Record<string, RawCryptoData>
     }>();
 
     interface CryptoSlide {
@@ -365,9 +365,9 @@
     </section>
 
     <!-- Crypto Ticker -->
-    <div class="w-full bg-background border-y border-border">
-        <div class="container-fluid mx-auto">
-            <Carousel v-bind="cryptoCarouselSettings" class="w-full flex items-center">
+    <div class="w-full bg-background border-y border-border h-[57px]">
+        <div class="container-fluid mx-auto h-full">
+            <Carousel v-if="processedCryptos.length" v-bind="cryptoCarouselSettings" class="w-full flex items-center h-full">
                 <Slide v-for="crypto in processedCryptos" :key="crypto.symbol">
                     <div class="flex items-center justify-between w-full px-6 py-3 border-r border-border/40 hover:bg-muted/30 cursor-pointer group transition-colors">
 
@@ -400,6 +400,23 @@
                     </div>
                 </Slide>
             </Carousel>
+
+            <div v-else class="w-full flex items-center overflow-hidden h-full">
+                <div v-for="n in 10" :key="n" class="flex-shrink-0 flex items-center justify-between min-w-[250px] w-full md:w-auto px-6 py-3 border-r border-border/40">
+                    <div class="flex items-center gap-3">
+                        <div class="w-8 h-8 rounded-full bg-muted animate-pulse"></div>
+                        <div>
+                            <div class="w-12 h-3.5 bg-muted rounded animate-pulse mb-1.5"></div>
+                            <div class="w-16 h-2.5 bg-muted rounded animate-pulse"></div>
+                        </div>
+                    </div>
+
+                    <div class="flex flex-col items-end gap-1.5 pl-6">
+                        <div class="w-20 h-3.5 bg-muted rounded animate-pulse"></div>
+                        <div class="w-10 h-2.5 bg-muted rounded animate-pulse"></div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 

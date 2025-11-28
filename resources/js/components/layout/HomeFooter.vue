@@ -1,16 +1,10 @@
 <script setup lang="ts">
     import { computed } from 'vue'
     import TextLink from '@/components/TextLink.vue';
-    import { Rotate3DIcon } from 'lucide-vue-next';
+    import SiteLogo from '@/components/SiteLogo.vue';
     import { usePage } from '@inertiajs/vue3';
 
     const page = usePage();
-
-    const site_name = computed(() => page.props.site_name);
-    const site_tagline = computed(() => page.props.site_tagline);
-
-    const siteNameDisplay = computed(() => site_name.value);
-    const siteTaglineDisplay = computed(() => site_tagline.value);
 
     interface FooterLink {
         label: string
@@ -59,21 +53,7 @@
         <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-10 md:py-12">
             <div class="grid grid-cols-1 md:grid-cols-3 gap-8 items-center">
                 <!-- Logo Section -->
-                <TextLink :href="route('home')" class="justify-center md:justify-start flex-shrink-0 z-50 flex items-center gap-2.5 group">
-                    <div class="relative">
-                        <div class="absolute -inset-1 rounded-full bg-primary/30 blur-sm group-hover:bg-primary/50 transition-all duration-500"></div>
-                        <div class="relative flex items-center justify-center w-11 h-11 bg-card border-2 border-primary/20 rounded-full shadow-sm overflow-hidden group-hover:border-primary duration-300">
-                            <div class="absolute -bottom-2 -right-2 w-8 h-8 bg-primary/10 rounded-full blur-sm"></div>
-                            <Rotate3DIcon class="relative w-6 h-6 text-primary transition-transform duration-500 group-hover:rotate-180" />
-                        </div>
-                    </div>
-
-                    <div class="flex flex-col justify-center">
-                        <span class="font-black text-2xl tracking-tighter text-secondary-foreground group-hover:tracking-normal transition-all duration-300">
-                            {{ siteNameDisplay }}<span class="font-light text-primary">{{ siteTaglineDisplay }}.</span>
-                        </span>
-                    </div>
-                </TextLink>
+                <SiteLogo class="justify-center md:justify-start flex-shrink-0 z-50" />
 
                 <!-- Navigation Links -->
                 <nav class="flex justify-center" aria-label="Footer navigation">

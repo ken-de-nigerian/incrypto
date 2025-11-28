@@ -14,9 +14,6 @@
         Building2,
         FileText,
         ChevronDown,
-        MessageCircle,
-        FileQuestion,
-        PlayCircle,
         ArrowRight,
         CheckCircle2,
         Users,
@@ -27,8 +24,11 @@
         HardDrive,
         Fingerprint,
         TrendingDown,
-        Headphones
-    } from 'lucide-vue-next'
+        Headphones, Apple, Play,
+        BellRing,
+        LineChart,
+        ShieldCheck
+    } from 'lucide-vue-next';
     import HomeHeader from '@/components/layout/HomeHeader.vue'
     import HomeFooter from '@/components/layout/HomeFooter.vue'
     import TextLink from '@/components/TextLink.vue';
@@ -802,26 +802,83 @@
                 </div>
 
                 <div>
-                    <h2 class="text-4xl lg:text-5xl font-bold mb-6">Expert Support When You Need It</h2>
+                    <h2 class="text-4xl lg:text-5xl font-bold mb-6">Trade Anywhere, Anytime</h2>
+
                     <p class="text-lg text-muted-foreground mb-8">
-                        Our dedicated support team is available 24/7 to help you with any questions, from basic setup to advanced trading strategies.
+                        Experience the full power of a professional trading terminal in your pocket.
+                        Whether you are commuting or traveling, never miss a market movement.
                     </p>
-                    <div class="flex flex-wrap items-center gap-6 mb-8">
-                        <TextLink :href="route('welcome')" class="hover:text-primary font-medium inline-flex items-center gap-2">
-                            <FileQuestion :size="22" /> Knowledge Base
-                        </TextLink>
 
-                        <span class="text-border">|</span>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
+                        <div class="flex items-start gap-3">
+                            <div class="p-2 rounded-lg bg-primary/10 text-primary">
+                                <Zap :size="20" />
+                            </div>
+                            <div>
+                                <h4 class="font-bold text-foreground">Lightning Fast</h4>
+                                <p class="text-sm text-muted-foreground">Execute trades with zero latency via our dedicated mobile nodes.</p>
+                            </div>
+                        </div>
 
-                        <TextLink :href="route('welcome')" class="hover:text-primary font-medium inline-flex items-center gap-2">
-                            <PlayCircle :size="22" /> Video Tutorials
-                        </TextLink>
+                        <div class="flex items-start gap-3">
+                            <div class="p-2 rounded-lg bg-primary/10 text-primary">
+                                <ShieldCheck :size="20" />
+                            </div>
+                            <div>
+                                <h4 class="font-bold text-foreground">Biometric Security</h4>
+                                <p class="text-sm text-muted-foreground">Login securely with FaceID or Fingerprint authentication.</p>
+                            </div>
+                        </div>
+
+                        <div class="flex items-start gap-3">
+                            <div class="p-2 rounded-lg bg-primary/10 text-primary">
+                                <BellRing :size="20" />
+                            </div>
+                            <div>
+                                <h4 class="font-bold text-foreground">Smart Alerts</h4>
+                                <p class="text-sm text-muted-foreground">Get instant push notifications for price spikes and order fills.</p>
+                            </div>
+                        </div>
+
+                        <div class="flex items-start gap-3">
+                            <div class="p-2 rounded-lg bg-primary/10 text-primary">
+                                <LineChart :size="20" />
+                            </div>
+                            <div>
+                                <h4 class="font-bold text-foreground">Advanced Charting</h4>
+                                <p class="text-sm text-muted-foreground">Full TradingView integration optimized for mobile screens.</p>
+                            </div>
+                        </div>
                     </div>
 
-                    <TextLink href="#contact" class="px-8 py-4 text-lg font-semibold rounded-full bg-primary text-primary-foreground hover:bg-primary/90 transition-all inline-flex items-center gap-2">
-                        <MessageCircle :size="20" />
-                        Contact Support
-                    </TextLink>
+                    <div class="flex flex-col sm:flex-row gap-4">
+                        <button class="relative group flex items-center gap-3 bg-card border border-border text-foreground px-5 py-3 rounded-xl hover:opacity-90 transition-opacity disabled:opacity-70 disabled:cursor-not-allowed">
+                            <span class="absolute -top-3 -right-3 bg-primary text-primary-foreground text-[10px] font-bold px-2 py-1 rounded-full shadow-sm border border-background">
+                                COMING SOON
+                            </span>
+                            <Apple :size="32" />
+                            <div class="flex flex-col items-start leading-none">
+                                <span class="text-[10px] uppercase font-medium opacity-80">Download on the</span>
+                                <span class="text-lg font-bold">App Store</span>
+                            </div>
+                        </button>
+
+                        <button class="relative group flex items-center gap-3 bg-card border border-border text-foreground px-5 py-3 rounded-xl hover:opacity-90 transition-opacity disabled:opacity-70 disabled:cursor-not-allowed">
+                            <span class="absolute -top-3 -right-3 bg-primary text-primary-foreground text-[10px] font-bold px-2 py-1 rounded-full shadow-sm border border-background">
+                                COMING SOON
+                            </span>
+                            <Play :size="30" class="ml-1" />
+                            <div class="flex flex-col items-start leading-none ml-1">
+                                <span class="text-[10px] uppercase font-medium opacity-80">Get it on</span>
+                                <span class="text-lg font-bold">Google Play</span>
+                            </div>
+                        </button>
+                    </div>
+
+                    <p class="mt-6 text-xs text-muted-foreground">
+                        * Mobile app requires iOS 15.0+ or Android 10.0+.
+                        <a class="underline hover:text-primary">Join the beta waitlist</a> to get early access.
+                    </p>
                 </div>
             </div>
         </div>

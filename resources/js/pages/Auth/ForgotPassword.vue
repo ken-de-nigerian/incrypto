@@ -6,6 +6,7 @@
     import InputError from '@/components/InputError.vue';
     import ActionButton from '@/components/ActionButton.vue';
     import FlashMessages from '@/components/utilities/FlashMessages.vue';
+    import SiteLogo from '@/components/SiteLogo.vue';
 
     defineProps<{
         errors?: object;
@@ -72,9 +73,7 @@
     <div class="min-h-screen bg-gradient-to-br from-background via-background to-muted/20 flex flex-col items-center justify-center p-6">
         <div class="w-full max-w-md mx-auto">
             <header class="mb-6 text-center">
-                <TextLink :href="route('home')" aria-label="Forgot Password" class="inline-flex items-center gap-2 select-none">
-                    <img class="w-[110px]" src="/assets/images/logo.png" loading="lazy" alt="logo">
-                </TextLink>
+                <SiteLogo class="inline-flex items-center gap-2 select-none" />
                 <h1 class="mt-4 text-2xl font-semibold">Forgot Password</h1>
                 <p class="mt-1 text-sm text-muted-foreground">Enter your email to reset your password.</p>
             </header>

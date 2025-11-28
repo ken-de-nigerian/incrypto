@@ -7,6 +7,7 @@
     import { ref } from 'vue';
     import { VueTelInput } from 'vue-tel-input';
     import 'vue-tel-input/vue-tel-input.css';
+    import SiteLogo from '@/components/SiteLogo.vue';
 
     const props = defineProps<{
         email?: string;
@@ -68,9 +69,7 @@
     <div class="min-h-screen bg-gradient-to-br from-background via-background to-muted/20 flex flex-col items-center justify-center p-6">
         <div class="w-full max-w-md mx-auto">
             <header class="mb-6 text-center">
-                <TextLink :href="route('home')" aria-label="Onboarding" class="inline-flex items-center gap-2 select-none">
-                    <img class="w-[110px]" src="/assets/images/logo.png" loading="lazy" alt="logo">
-                </TextLink>
+                <SiteLogo class="inline-flex items-center gap-2 select-none" />
                 <h1 class="mt-4 text-2xl font-semibold">Create your account</h1>
                 <p class="mt-1 text-sm text-muted-foreground">Start your crypto journey today</p>
             </header>

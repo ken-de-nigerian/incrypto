@@ -6,6 +6,7 @@
     import InputError from '@/components/InputError.vue';
     import AuthCard from '@/components/layout/auth/AuthCard.vue';
     import ActionButton from '@/components/ActionButton.vue';
+    import SiteLogo from '@/components/SiteLogo.vue';
 
     defineProps<{
         status?: string;
@@ -75,9 +76,7 @@
     <AuthCard>
         <template #header>
             <header class="mb-6 text-center">
-                <TextLink :href="route('home')" aria-label="Login" class="inline-flex items-center gap-2 select-none">
-                    <img class="w-[110px]" src="/assets/images/logo.png" loading="lazy" alt="logo">
-                </TextLink>
+                <SiteLogo class="inline-flex items-center gap-2 select-none" />
                 <h1 class="mt-4 text-2xl font-semibold">Log in to your account</h1>
                 <p class="mt-1 text-sm text-muted-foreground">Welcome back! Please enter your details.</p>
             </header>

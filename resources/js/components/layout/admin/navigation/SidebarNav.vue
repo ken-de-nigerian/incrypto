@@ -14,6 +14,7 @@
         import TextLink from '@/components/TextLink.vue';
         import { computed } from 'vue';
         import { usePage } from '@inertiajs/vue3';
+    import SiteLogo from '@/components/SiteLogo.vue';
 
     const page = usePage();
     const user = computed(() => page.props.auth.user);
@@ -81,9 +82,7 @@
         <div class="flex flex-col flex-grow bg-sidebar p-3 border-r border-sidebar-border">
             <div class="flex items-center px-4 py-4 pb-10">
                 <div class="flex items-center">
-                    <TextLink :href="route('admin.dashboard')" aria-label="Admin Dashboard" class="inline-flex items-center gap-2 select-none">
-                        <img class="w-[150px]" src="/assets/images/logo.png" loading="lazy" alt="Admin logo">
-                    </TextLink>
+                    <SiteLogo class="inline-flex items-center gap-2 select-none" />
                 </div>
             </div>
 

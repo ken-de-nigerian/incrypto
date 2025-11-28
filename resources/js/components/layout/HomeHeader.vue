@@ -1,17 +1,12 @@
 <script setup lang="ts">
     import { computed, ref, onMounted, onUnmounted } from 'vue'
-    import { ChevronDown, Menu, MessageCircle, Monitor, Moon, Sun, X, Rotate3DIcon } from 'lucide-vue-next';
+    import { ChevronDown, Menu, MessageCircle, Monitor, Moon, Sun, X } from 'lucide-vue-next';
     import TextLink from '@/components/TextLink.vue'
     import { useAppearance } from '@/composables/useAppearance'
     import { usePage } from '@inertiajs/vue3';
+    import SiteLogo from '@/components/SiteLogo.vue';
 
     const page = usePage();
-
-    const site_name = computed(() => page.props.site_name);
-    const site_tagline = computed(() => page.props.site_tagline);
-
-    const siteNameDisplay = computed(() => site_name.value);
-    const siteTaglineDisplay = computed(() => site_tagline.value);
 
     interface NavItem {
         label: string
@@ -97,21 +92,7 @@
         <nav>
             <div class="container mx-auto px-4 sm:px-6 lg:px-8">
                 <div class="flex items-center justify-between py-4">
-                    <TextLink :href="route('home')" class="flex-shrink-0 z-50 flex items-center gap-2.5 group">
-                        <div class="relative">
-                            <div class="absolute -inset-1 rounded-full bg-primary/30 blur-sm group-hover:bg-primary/50 transition-all duration-500"></div>
-                            <div class="relative flex items-center justify-center w-11 h-11 bg-card border-2 border-primary/20 rounded-full shadow-sm overflow-hidden group-hover:border-primary duration-300">
-                                <div class="absolute -bottom-2 -right-2 w-8 h-8 bg-primary/10 rounded-full blur-sm"></div>
-                                <Rotate3DIcon class="relative w-6 h-6 text-primary duration-500" />
-                            </div>
-                        </div>
-
-                        <div class="flex flex-col justify-center">
-                            <span class="font-black text-2xl tracking-tighter text-secondary-foreground group-hover:tracking-normal transition-all duration-300">
-                                {{ siteNameDisplay }}<span class="font-light text-primary">{{ siteTaglineDisplay }}.</span>
-                            </span>
-                        </div>
-                    </TextLink>
+                    <SiteLogo class="flex-shrink-0 z-50 flex items-center gap-2.5 group" />
 
                     <div class="hidden lg:flex flex-1 items-center justify-center">
                         <ul class="flex items-center gap-6">

@@ -8,7 +8,12 @@ use Illuminate\Support\Facades\Route;
 | Home Routes
 |--------------------------------------------------------------------------
 */
-Route::get('/', HomeController::class)->name('home');
+Route::controller(HomeController::class)->group(function () {
+    Route::get('/', 'index')->name('home');
+    Route::post('/contact/us', 'contact')->name('contact.us');
+});
+
+// Server time
 Route::get('/server-time', function () {
     return response()->json([
         'timestamp' => now()->getTimestamp() * 1000,

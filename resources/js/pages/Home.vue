@@ -32,7 +32,11 @@
     import HomeHeader from '@/components/layout/HomeHeader.vue'
     import HomeFooter from '@/components/layout/HomeFooter.vue'
     import TextLink from '@/components/TextLink.vue';
-    import { Head } from '@inertiajs/vue3';
+    import { Head, useForm, usePage } from '@inertiajs/vue3';
+    import { route } from 'ziggy-js';
+    import InputError from '@/components/InputError.vue';
+    import ActionButton from '@/components/ActionButton.vue';
+    import FlashMessages from '@/components/utilities/FlashMessages.vue';
 
     interface RawCryptoData {
         name: string
@@ -86,6 +90,33 @@
     }
 
     const activeAccordion = ref<number | null>(0)
+
+    const page = usePage();
+    const isLoggedIn = computed(() => {
+        return page.props.auth.user?.role === 'admin' ? route('admin.dashboard') : route('user.dashboard');
+    })
+
+    // Initialize form
+    const form = useForm({
+        name: '',
+        email: '',
+        message: '',
+    });
+
+    const submit = () => {
+        form.post(route('contact.us'), {
+            preserveScroll: true,
+            onFinish: () => {
+                form.reset('name', 'email', 'message');
+            },
+        });
+    };
+
+    const clearError = (field: keyof typeof form.errors) => {
+        if (form.errors[field]) {
+            form.clearErrors(field);
+        }
+    };
 
     const cryptoCarouselSettings = {
         itemsToShow: 'auto',
@@ -350,12 +381,12 @@
                 </p>
 
                 <div class="flex flex-col sm:flex-row gap-4 justify-center">
-                    <TextLink :href="route('user.dashboard')" class="px-4 py-3 text-lg font-semibold rounded-xl bg-primary/70 text-primary-foreground hover:bg-primary/90 transition-all inline-flex items-center justify-center gap-2">
+                    <TextLink :href="isLoggedIn" class="px-4 py-3 text-lg font-semibold rounded-xl bg-primary/70 text-primary-foreground hover:bg-primary/90 transition-all inline-flex items-center justify-center gap-2">
                         <UserPlus :size="20" />
                         Get Started
                     </TextLink>
 
-                    <TextLink :href="route('user.dashboard')" class="px-4 py-3 text-lg font-semibold rounded-xl border border-border text-primary hover:bg-primary hover:text-primary-foreground transition-all inline-flex items-center justify-center gap-2">
+                    <TextLink :href="isLoggedIn" class="px-4 py-3 text-lg font-semibold rounded-xl border border-border text-primary hover:bg-primary hover:text-primary-foreground transition-all inline-flex items-center justify-center gap-2">
                         <LinkIcon :size="20" />
                         Connect Wallet
                     </TextLink>
@@ -460,7 +491,7 @@
                         </li>
                     </ul>
 
-                    <TextLink :href="route('user.dashboard')" class="px-8 py-4 text-lg font-semibold rounded-full bg-primary text-primary-foreground hover:bg-primary/90 transition-all">
+                    <TextLink :href="isLoggedIn" class="px-8 py-4 text-lg font-semibold rounded-full bg-primary text-primary-foreground hover:bg-primary/90 transition-all">
                         Start Trading Now
                     </TextLink>
                 </div>
@@ -490,7 +521,7 @@
             </div>
 
             <div class="text-center">
-                <TextLink :href="route('user.dashboard')" class="px-8 py-4 text-lg font-semibold rounded-full bg-primary text-primary-foreground hover:bg-primary/90 transition-all inline-flex items-center gap-2">
+                <TextLink :href="isLoggedIn" class="px-8 py-4 text-lg font-semibold rounded-full bg-primary text-primary-foreground hover:bg-primary/90 transition-all inline-flex items-center gap-2">
                     View All Supported Assets
                     <ArrowRight :size="20" />
                 </TextLink>
@@ -515,7 +546,7 @@
                     <component :is="feature.Icon" :size="40" class="text-primary mb-4 group-hover:scale-110 transition-transform" />
                     <h3 class="font-bold text-xl mb-3">{{ feature.title }}</h3>
                     <p class="text-muted-foreground mb-4">{{ feature.description }}</p>
-                    <TextLink :href="route('user.dashboard')" class="inline-flex items-center gap-2 font-medium text-primary hover:gap-3 transition-all">
+                    <TextLink :href="isLoggedIn" class="inline-flex items-center gap-2 font-medium text-primary hover:gap-3 transition-all">
                         Learn more <ArrowRight :size="16" />
                     </TextLink>
                 </div>
@@ -601,7 +632,7 @@
             </div>
 
             <div class="mt-16 text-center">
-                <TextLink :href="route('user.dashboard')" class="px-8 py-4 text-lg font-semibold rounded-full bg-primary text-primary-foreground hover:bg-primary/90 transition-all inline-flex items-center gap-2">
+                <TextLink :href="isLoggedIn" class="px-8 py-4 text-lg font-semibold rounded-full bg-primary text-primary-foreground hover:bg-primary/90 transition-all inline-flex items-center gap-2">
                     Get Started Today
                     <ArrowRight :size="20" />
                 </TextLink>
@@ -667,7 +698,7 @@
                         Connect to your favorite decentralized apps, NFT marketplaces, and DeFi protocols with seamless WalletConnect integration.
                     </p>
 
-                    <TextLink :href="route('user.dashboard')" class="px-8 py-4 text-lg font-semibold rounded-full bg-primary text-primary-foreground hover:bg-primary/90 transition-all">
+                    <TextLink :href="isLoggedIn" class="px-8 py-4 text-lg font-semibold rounded-full bg-primary text-primary-foreground hover:bg-primary/90 transition-all">
                         Browse Integrations
                     </TextLink>
                 </div>
@@ -800,7 +831,7 @@
                             </div>
                             <h3 class="text-xl font-bold mb-4">{{ post.title }}</h3>
                             <p class="text-muted-foreground mb-6 flex-grow">{{ post.excerpt }}</p>
-                            <TextLink :href="route('user.dashboard')" class="font-semibold text-primary hover:gap-2 inline-flex items-center gap-1 transition-all">
+                            <TextLink :href="isLoggedIn" class="font-semibold text-primary hover:gap-2 inline-flex items-center gap-1 transition-all">
                                 Read more <ArrowRight :size="16" />
                             </TextLink>
                         </div>
@@ -911,21 +942,29 @@
                 </p>
             </div>
 
-            <form class="max-w-2xl mx-auto">
+            <form method="POST" @submit.prevent="submit" class="max-w-2xl mx-auto space-y-4">
                 <div class="space-y-5">
-                    <input type="text" placeholder="Your name" class="w-full px-5 py-4 rounded-xl border bg-background focus:border-primary input-crypto transition-all">
-                    <input type="email" placeholder="Email address" class="w-full px-5 py-4 rounded-xl border bg-background focus:border-primary input-crypto transition-all">
-                    <textarea placeholder="Your message" class="w-full px-5 py-4 rounded-xl border bg-background focus:border-primary input-crypto transition-all h-40 resize-none"></textarea>
+                    <input type="text" @focus="clearError('name')" v-model="form.name" placeholder="Your name" class="px-5 py-4 input-crypto w-full text-sm">
+                    <InputError :message="form.errors.name" />
                 </div>
 
-                <button type="submit" class="mt-6 w-full sm:w-auto px-8 py-4 cursor-pointer text-lg font-semibold rounded-full bg-primary text-primary-foreground hover:bg-primary/90 transition-all">
-                    Send Message
-                </button>
+                <div class="space-y-5">
+                    <input type="email" @focus="clearError('email')" v-model="form.email" placeholder="Email address" class="px-5 py-4 input-crypto w-full text-sm">
+                    <InputError :message="form.errors.email" />
+                </div>
+
+                <div class="space-y-5">
+                    <textarea @focus="clearError('message')" v-model="form.message" placeholder="Your message" class="px-5 py-4 input-crypto w-full text-sm h-40 resize-none"></textarea>
+                    <InputError :message="form.errors.message" />
+                </div>
+
+                <ActionButton :processing="form.processing">Send Message</ActionButton>
             </form>
         </div>
     </section>
 
     <HomeFooter />
+    <FlashMessages />
 </template>
 
 <style scoped>

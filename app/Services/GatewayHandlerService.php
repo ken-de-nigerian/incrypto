@@ -323,9 +323,6 @@ class GatewayHandlerService
         $chartData = [];
         $now = now();
 
-        // Start from the current price and work backwards
-        $price = $currentPrice;
-
         // Generate seed based on the current day to maintain consistency
         $seed = (int) $now->format('Ymd');
         mt_srand($seed);
@@ -338,46 +335,91 @@ class GatewayHandlerService
             default => 150000
         };
 
-        for ($i = self::FALLBACK_CHART_BARS - 1; $i >= 0; $i--) {
-            // Calculate timestamp (going backwards in time)
-            $timestamp = $now->copy()->subDays($i)->startOfDay()->timestamp;
+        // Calculate starting price (work backwards from current price)
+        $startingPrice = $currentPrice;
+        $priceHistory = [$startingPrice];
 
-            // Generate random daily movement
+        // First, calculate all prices working backwards to get the starting point
+        for ($i = 0; $i < self::FALLBACK_CHART_BARS - 1; $i++) {
             $dailyChange = $this->generateRandomChange($volatilityFactor);
+            $previousPrice = $startingPrice / (1 + $dailyChange);
+            array_unshift($priceHistory, $previousPrice);
+            $startingPrice = $previousPrice;
+        }
 
-            // Calculate OHLC values
-            $open = $price;
-            $close = $price * (1 + $dailyChange);
+        // Now generate candles forward in time with proper OHLC
+        for ($i = 0; $i < self::FALLBACK_CHART_BARS; $i++) {
+            // Calculate timestamp
+            $timestamp = $now->copy()->subDays(self::FALLBACK_CHART_BARS - 1 - $i)->startOfDay()->timestamp;
 
-            // Generate high and low with additional randomness
-            $highChange = abs($this->generateRandomChange($volatilityFactor * 0.5));
-            $lowChange = abs($this->generateRandomChange($volatilityFactor * 0.5));
+            $open = $priceHistory[$i];
 
-            $high = max($open, $close) * (1 + $highChange);
-            $low = min($open, $close) * (1 - $lowChange);
+            // Determine close price
+            if ($i < self::FALLBACK_CHART_BARS - 1) {
+                // For all candles except the last, close should trend toward the next open
+                $nextOpen = $priceHistory[$i + 1];
+                $closeVariation = $this->generateRandomChange($volatilityFactor * 0.3);
+                $close = $open + (($nextOpen - $open) * 0.7) + ($open * $closeVariation);
+            } else {
+                // Last candle closes at current price
+                $close = $currentPrice;
+            }
 
-            // Ensure high is highest, and low is lowest
+            // Generate intraday high and low
+            // High should be above both open and close
+            // Low should be below both open and close
+            $maxPrice = max($open, $close);
+            $minPrice = min($open, $close);
+
+            // Add some wick to high and low
+            $highWickPercent = abs($this->generateRandomChange($volatilityFactor * 0.4));
+            $lowWickPercent = abs($this->generateRandomChange($volatilityFactor * 0.4));
+
+            $high = $maxPrice * (1 + $highWickPercent);
+            $low = $minPrice * (1 - $lowWickPercent);
+
+            // Ensure OHLC relationships are valid
             $high = max($high, $open, $close);
             $low = min($low, $open, $close);
+
+            // Ensure high >= low (safety check)
+            if ($high < $low) {
+                $temp = $high;
+                $high = $low;
+                $low = $temp;
+            }
 
             // Generate volume with some randomness
             $volumeVariation = 0.7 + (mt_rand() / mt_getrandmax()) * 0.6; // 0.7 to 1.3
             $volume = (int) ($baseVolume * $volumeVariation);
 
+            // Get precision based on category
+            $precision = $this->getPricePrecisionForCategory($category, $currentPrice);
+
             $chartData[] = [
                 'time' => $timestamp,
-                'open' => round($open, 5),
-                'high' => round($high, 5),
-                'low' => round($low, 5),
-                'close' => round($close, 5),
+                'open' => round($open, $precision),
+                'high' => round($high, $precision),
+                'low' => round($low, $precision),
+                'close' => round($close, $precision),
                 'volume' => $volume
             ];
-
-            // Update price for the next iteration (working backwards)
-            $price = $open / (1 + $dailyChange);
         }
 
         return $chartData;
+    }
+
+    /**
+     * Get appropriate price precision based on category and price level
+     */
+    private function getPricePrecisionForCategory(string $category, float $price): int
+    {
+        return match($category) {
+            'forex' => 5,
+            'stock' => $price < 10 ? 4 : 2,
+            'crypto' => $price > 1000 ? 2 : ($price > 10 ? 3 : 5),
+            default => 5
+        };
     }
 
     /**

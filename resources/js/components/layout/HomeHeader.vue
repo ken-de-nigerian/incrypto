@@ -92,7 +92,7 @@
         <nav>
             <div class="container mx-auto px-4 sm:px-6 lg:px-8">
                 <div class="flex items-center justify-between py-4">
-                    <SiteLogo class="flex-shrink-0 z-50 flex items-center gap-2.5 group" />
+                    <SiteLogo class="flex-shrink-0 flex items-center gap-2.5 group" />
 
                     <div class="hidden lg:flex flex-1 items-center justify-center">
                         <ul class="flex items-center gap-6">

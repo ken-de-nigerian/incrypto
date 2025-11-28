@@ -17,6 +17,7 @@ class GatewayHandlerService
         'WALLET_DATA' => 43200, // 12 hours
         'CHART_DATA' => 300, // 5 minutes
         'CRYPTOS_LIST' => 3600, // 1 hour
+        'FALLBACK_CHART_DATA' => 1800, // 30 minutes for fallback data
     ];
 
     /**
@@ -40,6 +41,16 @@ class GatewayHandlerService
     private const MAX_TOKENS = 100; // maximum tokens in bucket
     private const REFILL_TOKENS_PER_MINUTE = 100; // refill rate per minute
     private const QUEUE_CHECK_INTERVAL = 1; // seconds to wait before checking token again
+
+    /**
+     * Fallback chart data constants
+     */
+    private const FALLBACK_CHART_BARS = 120; // Number of candles to generate
+    private const FALLBACK_VOLATILITY_FACTORS = [
+        'forex' => 0.002, // 0.2% average daily volatility
+        'stock' => 0.015, // 1.5% average daily volatility
+        'crypto' => 0.035, // 3.5% average daily volatility
+    ];
 
     private const API_PROVIDERS = [
         'price' => ['cryptocompare', 'coinmarketcap', 'coingecko'],
@@ -96,17 +107,32 @@ class GatewayHandlerService
 
         $pairData = collect($allPairs)->firstWhere('symbol', $symbol);
 
-        if (!$pairData || !isset($pairData['polygon'])) {
+        if (!$pairData) {
             $error = 'Pair not found';
             Log::warning($error, ['method' => __METHOD__, 'symbol' => $symbol, 'category' => $category]);
             return ['success' => false, 'error' => $error];
         }
 
+        // Check for cached fallback data first (in case API is consistently failing)
+        $fallbackCacheKey = "fallback_chart_{$category}_$symbol";
+
+        // Only try API if we don't have polygon data or API key
+        if (!isset($pairData['polygon'])) {
+            Log::info("No polygon data available for $symbol, using fallback", [
+                'method' => __METHOD__,
+                'symbol' => $symbol,
+                'category' => $category
+            ]);
+            return $this->generateFallbackChartData($symbol, $category, $pairData, $fallbackCacheKey);
+        }
+
         $apiKey = config('services.massive.key');
         if (!$apiKey) {
-            $error = 'API key not configured';
-            Log::error($error, ['method' => __METHOD__, 'service' => 'massive']);
-            return ['success' => false, 'error' => $error];
+            Log::warning('API key not configured, using fallback', [
+                'method' => __METHOD__,
+                'service' => 'massive'
+            ]);
+            return $this->generateFallbackChartData($symbol, $category, $pairData, $fallbackCacheKey);
         }
 
         // Dynamic cache key
@@ -131,6 +157,16 @@ class GatewayHandlerService
             $data = $responseData['json'];
 
             $allResults = $data['results'] ?? [];
+
+            // If no results, use fallback
+            if (empty($allResults)) {
+                Log::warning("No results from API, using fallback", [
+                    'method' => __METHOD__,
+                    'symbol' => $symbol,
+                    'category' => $category
+                ]);
+                return $this->generateFallbackChartData($symbol, $category, $pairData, $fallbackCacheKey);
+            }
 
             // Pagination url
             $nextUrl = $data['next_url'] ?? null;
@@ -189,6 +225,7 @@ class GatewayHandlerService
                 'high' => $latestResult['h'] ?? 0,
                 'low' => $latestResult['l'] ?? 0,
                 'volume' => $latestResult['v'] ?? 0,
+                'is_fallback' => false,
             ];
 
             Cache::put($cacheKey, $result, self::CACHE_TTL['CHART_DATA']);
@@ -196,18 +233,226 @@ class GatewayHandlerService
             return $result;
         } catch (Throwable $e) {
             $error = $e->getMessage();
-            Log::error("Failed to fetch trade chart data", [
+            Log::error("Failed to fetch trade chart data from API, using fallback", [
                 'method' => __METHOD__,
                 'symbol' => $symbol,
                 'category' => $category,
                 'error' => $error,
                 'trace' => $e->getTraceAsString()
             ]);
+
+            return $this->generateFallbackChartData($symbol, $category, $pairData, $fallbackCacheKey);
+        }
+    }
+
+    /**
+     * Generate fallback chart data when API fails
+     */
+    private function generateFallbackChartData(string $symbol, string $category, array $pairData, string $cacheKey): array
+    {
+        // Check if we have cached fallback data
+        $cached = Cache::get($cacheKey);
+        if ($cached && ($cached['success'] ?? false)) {
+            return $cached;
+        }
+
+        try {
+            // Get the current price from pair data or use a default
+            $currentPrice = $pairData['price'] ?? $this->getDefaultPriceForPair($symbol, $category);
+
+            if (!$currentPrice || $currentPrice <= 0) {
+                $currentPrice = $this->getDefaultPriceForPair($symbol, $category);
+            }
+
+            // Get a volatility factor for this category
+            $volatilityFactor = self::FALLBACK_VOLATILITY_FACTORS[$category] ?? 0.015;
+
+            // Generate chart data
+            $chartData = $this->generateSyntheticChartData(
+                $currentPrice,
+                $volatilityFactor,
+                $category
+            );
+
+            // Get latest candle for stats
+            $latestCandle = $chartData[count($chartData) - 1] ?? null;
+
+            $result = [
+                'success' => true,
+                'data' => $chartData,
+                'next_url' => null, // No pagination for fallback data
+                'symbol' => $symbol,
+                'timeframe' => '1D',
+                'total_bars' => count($chartData),
+                'high' => $latestCandle['high'] ?? $currentPrice,
+                'low' => $latestCandle['low'] ?? $currentPrice,
+                'volume' => $latestCandle['volume'] ?? 100000,
+                'is_fallback' => true,
+                'fallback_message' => 'Using synthetic data due to API unavailability'
+            ];
+
+            // Cache fallback data with shorter TTL
+            Cache::put($cacheKey, $result, self::CACHE_TTL['FALLBACK_CHART_DATA']);
+
+            return $result;
+
+        } catch (Throwable $e) {
+            Log::error("Failed to generate fallback chart data", [
+                'method' => __METHOD__,
+                'symbol' => $symbol,
+                'category' => $category,
+                'error' => $e->getMessage()
+            ]);
+
             return [
                 'success' => false,
-                'error' => $error
+                'error' => 'Failed to generate fallback chart data',
+                'is_fallback' => true
             ];
         }
+    }
+
+    /**
+     * Generate synthetic chart data with realistic price movements
+     */
+    private function generateSyntheticChartData(
+        float $currentPrice,
+        float $volatilityFactor,
+        string $category
+    ): array {
+        $chartData = [];
+        $now = now();
+
+        // Start from the current price and work backwards
+        $price = $currentPrice;
+
+        // Generate seed based on the current day to maintain consistency
+        $seed = (int) $now->format('Ymd');
+        mt_srand($seed);
+
+        // Calculate base volume based on category
+        $baseVolume = match($category) {
+            'forex' => 150000,
+            'stock' => 1000000,
+            'crypto' => 500000,
+            default => 150000
+        };
+
+        for ($i = self::FALLBACK_CHART_BARS - 1; $i >= 0; $i--) {
+            // Calculate timestamp (going backwards in time)
+            $timestamp = $now->copy()->subDays($i)->startOfDay()->timestamp;
+
+            // Generate random daily movement
+            $dailyChange = $this->generateRandomChange($volatilityFactor);
+
+            // Calculate OHLC values
+            $open = $price;
+            $close = $price * (1 + $dailyChange);
+
+            // Generate high and low with additional randomness
+            $highChange = abs($this->generateRandomChange($volatilityFactor * 0.5));
+            $lowChange = abs($this->generateRandomChange($volatilityFactor * 0.5));
+
+            $high = max($open, $close) * (1 + $highChange);
+            $low = min($open, $close) * (1 - $lowChange);
+
+            // Ensure high is highest, and low is lowest
+            $high = max($high, $open, $close);
+            $low = min($low, $open, $close);
+
+            // Generate volume with some randomness
+            $volumeVariation = 0.7 + (mt_rand() / mt_getrandmax()) * 0.6; // 0.7 to 1.3
+            $volume = (int) ($baseVolume * $volumeVariation);
+
+            $chartData[] = [
+                'time' => $timestamp,
+                'open' => round($open, 5),
+                'high' => round($high, 5),
+                'low' => round($low, 5),
+                'close' => round($close, 5),
+                'volume' => $volume
+            ];
+
+            // Update price for the next iteration (working backwards)
+            $price = $open / (1 + $dailyChange);
+        }
+
+        return $chartData;
+    }
+
+    /**
+     * Generate a random price change using Box-Muller transform for normal distribution
+     */
+    private function generateRandomChange(float $volatility): float
+    {
+        // Box-Muller transform to generate normally distributed random numbers
+        $u1 = mt_rand() / mt_getrandmax();
+        $u2 = mt_rand() / mt_getrandmax();
+
+        // Avoid log(0)
+        $u1 = max($u1, 0.0001);
+
+        $z0 = sqrt(-2 * log($u1)) * cos(2 * M_PI * $u2);
+
+        return $z0 * $volatility;
+    }
+
+    /**
+     * Get the default price for a pair when no price data is available
+     */
+    private function getDefaultPriceForPair(string $symbol, string $category): float
+    {
+        // Default prices based on common pairs
+        $defaultPrices = [
+            // Forex
+            'EUR/USD' => 1.08,
+            'GBP/USD' => 1.27,
+            'USD/JPY' => 149.50,
+            'AUD/USD' => 0.66,
+            'USD/CAD' => 1.36,
+            'USD/CHF' => 0.88,
+            'NZD/USD' => 0.61,
+            'EUR/GBP' => 0.85,
+            'EUR/JPY' => 161.50,
+            'GBP/JPY' => 190.00,
+
+            // Stocks (approximate prices)
+            'AAPL' => 180.00,
+            'MSFT' => 380.00,
+            'GOOGL' => 140.00,
+            'AMZN' => 175.00,
+            'TSLA' => 250.00,
+            'META' => 485.00,
+            'NVDA' => 875.00,
+            'JPM' => 190.00,
+            'V' => 280.00,
+            'WMT' => 170.00,
+
+            // Crypto
+            'BTC/USD' => 95000.00,
+            'ETH/USD' => 3300.00,
+            'BNB/USD' => 650.00,
+            'XRP/USD' => 2.30,
+            'ADA/USD' => 0.95,
+            'SOL/USD' => 190.00,
+            'DOT/USD' => 7.20,
+            'DOGE/USD' => 0.32,
+            'MATIC/USD' => 0.48,
+            'LTC/USD' => 105.00,
+        ];
+
+        // Return a specific price if available, otherwise use category defaults
+        if (isset($defaultPrices[$symbol])) {
+            return $defaultPrices[$symbol];
+        }
+
+        // Category-based defaults
+        return match($category) {
+            'forex' => 1.00,
+            'stock' => 100.00,
+            'crypto' => 1000.00,
+            default => 1.00
+        };
     }
 
     /**
@@ -236,16 +481,34 @@ class GatewayHandlerService
             $pairData = collect($allPairs)->firstWhere('symbol', $symbol);
 
             if (!$pairData || !isset($pairData['polygon'])) {
-                $error = 'Pair not found';
-                Log::warning($error, ['method' => __METHOD__, 'symbol' => $symbol, 'category' => $category]);
-                return ['success' => false, 'error' => $error];
+                // For pagination, if no polygon data, return empty (fallback doesn't support pagination)
+                Log::info("No polygon data for pagination request", [
+                    'method' => __METHOD__,
+                    'symbol' => $symbol,
+                    'category' => $category
+                ]);
+                return [
+                    'success' => true,
+                    'data' => [],
+                    'next_url' => null,
+                    'symbol' => $symbol,
+                    'timeframe' => '1D',
+                    'total_bars' => 0,
+                    'message' => 'Pagination not available for this pair'
+                ];
             }
 
             $apiKey = config('services.massive.key');
             if (!$apiKey) {
-                $error = 'API key not configured';
-                Log::error($error, ['method' => __METHOD__, 'service' => 'massive']);
-                return ['success' => false, 'error' => $error];
+                return [
+                    'success' => true,
+                    'data' => [],
+                    'next_url' => null,
+                    'symbol' => $symbol,
+                    'timeframe' => '1D',
+                    'total_bars' => 0,
+                    'message' => 'API key not configured'
+                ];
             }
 
             // Use provided from/to or default to current date range

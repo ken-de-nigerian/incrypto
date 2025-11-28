@@ -66,7 +66,11 @@
 
     let isLoadingHistoricalData = ref(false)
     let hasSubscribedToRange = false
+    let lastLoadedLogicalFrom = ref<number | null>(null)
+    let isUserScrolling = ref(false)
+    let scrollDebounceTimer: ReturnType<typeof setTimeout> | null = null
     const SCROLL_THRESHOLD = 10
+    const SCROLL_DEBOUNCE_MS = 300
 
     const TICK_MS = 2000
     const UPDATES_PER_CANDLE = 20
@@ -334,7 +338,6 @@
         chartStore.setHistoricalLoadingState(props.pair, true);
 
         try {
-
             const response = await fetch(pairData.nextUrl);
 
             if (!response.ok) {
@@ -384,16 +387,47 @@
         hasSubscribedToRange = true;
 
         chart.timeScale().subscribeVisibleLogicalRangeChange((logicalRange: LogicalRange | null) => {
-            if (!logicalRange) {
+            if (!logicalRange || !isUserScrolling.value) {
                 return;
             }
 
             const barsFromStart = logicalRange.from;
-
             if (barsFromStart <= SCROLL_THRESHOLD) {
-                loadMoreHistoricalData();
+                if (lastLoadedLogicalFrom.value === null ||
+                    Math.abs(barsFromStart - lastLoadedLogicalFrom.value) > 5) {
+
+                    lastLoadedLogicalFrom.value = barsFromStart;
+
+                    if (scrollDebounceTimer) {
+                        clearTimeout(scrollDebounceTimer);
+                    }
+
+                    scrollDebounceTimer = setTimeout(() => {
+                        loadMoreHistoricalData();
+                    }, SCROLL_DEBOUNCE_MS);
+                }
             }
         });
+
+        let scrollTimeout: ReturnType<typeof setTimeout> | null = null;
+
+        const handleUserInteraction = () => {
+            isUserScrolling.value = true;
+
+            if (scrollTimeout) {
+                clearTimeout(scrollTimeout);
+            }
+
+            scrollTimeout = setTimeout(() => {
+                isUserScrolling.value = false;
+            }, 1000);
+        };
+
+        if (chartContainer.value) {
+            chartContainer.value.addEventListener('wheel', handleUserInteraction, { passive: true });
+            chartContainer.value.addEventListener('touchmove', handleUserInteraction, { passive: true });
+            chartContainer.value.addEventListener('mousedown', handleUserInteraction);
+        }
     }
 
     function* createRealtimeTickGenerator(historicalCandles: Candle[]): Generator<CandlestickData<number>, void, unknown> {
@@ -587,14 +621,30 @@
     })
 
     const jumpToLive = () => {
-        if (chart) chart.timeScale().scrollToRealTime()
+        isUserScrolling.value = false;
+        lastLoadedLogicalFrom.value = null;
+
+        if (chart) {
+            chart.timeScale().scrollToRealTime();
+        }
+
+        setTimeout(() => {
+            isUserScrolling.value = false;
+        }, 500);
     }
 
     const fitToScreen = () => {
+        isUserScrolling.value = false;
+        lastLoadedLogicalFrom.value = null;
+
         if (chart && candlestickSeries) {
-            chart.timeScale().fitContent()
-            jumpToLive()
+            chart.timeScale().fitContent();
+            chart.timeScale().scrollToRealTime();
         }
+
+        setTimeout(() => {
+            isUserScrolling.value = false;
+        }, 500);
     }
 
     const zoomIn = () => {
@@ -638,66 +688,79 @@
         monitorForcedWinTrades();
 
         try {
-            tickInterval = setInterval(() => {
+            let lastTickTime = Date.now();
+
+            const tick = () => {
                 if (!isComponentMounted.value) {
-                    if (tickInterval) {
-                        clearInterval(tickInterval);
-                        tickInterval = null;
+                    return;
+                }
+
+                const now = Date.now();
+                const elapsed = now - lastTickTime;
+
+                if (elapsed >= TICK_MS) {
+                    lastTickTime = now;
+
+                    if (!validateChartState() || !candlestickSeries || !streamingDataProvider) {
+                        requestAnimationFrame(tick);
+                        return;
                     }
-                    return;
-                }
 
-                if (!validateChartState() || !candlestickSeries || !streamingDataProvider) {
-                    return;
-                }
+                    const update = streamingDataProvider.next();
+                    const candleData = update.value;
+                    if (!candleData) {
+                        requestAnimationFrame(tick);
+                        return;
+                    }
 
-                const update = streamingDataProvider.next();
-                const candleData = update.value;
-                if (!candleData) return;
+                    candlestickSeries.update(candleData);
 
-                candlestickSeries.update(candleData);
+                    const internalCandle: Candle = {
+                        time: candleData.time * 1000,
+                        open: candleData.open,
+                        high: candleData.high,
+                        low: candleData.low,
+                        close: candleData.close,
+                        volume: Math.floor(Math.random() * 500) + 100,
+                    };
 
-                const internalCandle: Candle = {
-                    time: candleData.time * 1000,
-                    open: candleData.open,
-                    high: candleData.high,
-                    low: candleData.low,
-                    close: candleData.close,
-                    volume: Math.floor(Math.random() * 500) + 100,
-                };
-
-                if (candles.value.length > 0) {
-                    const lastCandle = candles.value[candles.value.length - 1];
-                    if (Math.floor(lastCandle.time / 1000) === candleData.time) {
-                        chartStore.updateLastCandle(props.pair, {
-                            close: candleData.close,
-                            high: candleData.high,
-                            low: candleData.low,
-                            volume: internalCandle.volume
-                        });
+                    if (candles.value.length > 0) {
+                        const lastCandle = candles.value[candles.value.length - 1];
+                        if (Math.floor(lastCandle.time / 1000) === candleData.time) {
+                            chartStore.updateLastCandle(props.pair, {
+                                close: candleData.close,
+                                high: candleData.high,
+                                low: candleData.low,
+                                volume: internalCandle.volume
+                            });
+                        } else {
+                            chartStore.addCandle(props.pair, internalCandle);
+                            chartStore.updateLastCandleTime(props.pair, internalCandle.time);
+                        }
                     } else {
                         chartStore.addCandle(props.pair, internalCandle);
                         chartStore.updateLastCandleTime(props.pair, internalCandle.time);
                     }
-                } else {
-                    chartStore.addCandle(props.pair, internalCandle);
-                    chartStore.updateLastCandleTime(props.pair, internalCandle.time);
+
+                    chartStore.updateCurrentPrice(props.pair, candleData.close);
+
+                    chartStore.openTrades.forEach(t => {
+                        if (t.pair === props.pair) {
+                            chartStore.updateTradePnL(t.id, candleData.close);
+
+                            if (t.is_demo_forced_win === true || t.is_demo_forced_win === 1) {
+                                chartStore.calculateTradePnL(t, candleData.close);
+                            }
+                        }
+                    });
+
+                    updateCurrentPriceLine();
                 }
 
-                chartStore.updateCurrentPrice(props.pair, candleData.close);
+                requestAnimationFrame(tick);
+            };
 
-                chartStore.openTrades.forEach(t => {
-                    if (t.pair === props.pair) {
-                        chartStore.updateTradePnL(t.id, candleData.close);
-
-                        if (t.is_demo_forced_win === true || t.is_demo_forced_win === 1) {
-                            chartStore.calculateTradePnL(t, candleData.close);
-                        }
-                    }
-                });
-
-                updateCurrentPriceLine();
-            }, TICK_MS);
+            requestAnimationFrame(tick);
         } catch (error) {
             console.error('Error starting ticker:', error);
         }
@@ -1049,6 +1112,7 @@
 
     onMounted(async () => {
         isComponentMounted.value = true;
+        chartStore.checkAndClearExpiredData();
 
         handleResize()
         window.addEventListener('resize', handleResize)
@@ -1126,6 +1190,11 @@
             timeSyncInterval = null
         }
 
+        if (scrollDebounceTimer) {
+            clearTimeout(scrollDebounceTimer)
+            scrollDebounceTimer = null
+        }
+
         if (mo) {
             mo.disconnect()
             mo = null
@@ -1163,6 +1232,8 @@
 
         hasSubscribedToRange = false
         isLoadingHistoricalData.value = false
+        lastLoadedLogicalFrom.value = null
+        isUserScrolling.value = false
 
         await syncServerTime();
         initializeSeededRNG(newPair)

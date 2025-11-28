@@ -338,7 +338,7 @@
                 <div class="inline-flex items-center gap-2 px-4 py-2 mb-8 rounded-full bg-primary/10 border border-primary/20">
                     <Shield :size="16" class="text-primary" />
                     <span class="text-sm font-medium">Trusted by 500K+ traders worldwide</span>
-                    <img src="/assets/images/users.webp" alt="users" class="h-5 w-auto">
+                    <img src="/assets/images/users.webp" alt="users" class="h-5 w-auto" loading="lazy">
                 </div>
 
                 <h1 class="text-3xl md:text-4xl lg:text-5xl font-bold mb-6 leading-tight">

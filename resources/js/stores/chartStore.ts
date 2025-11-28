@@ -55,11 +55,19 @@ export interface TradeWithPnL extends OpenTrade {
     pnlPct: string
 }
 
+interface StoreMetadata {
+    version: string
+    lastUpdated: number
+    expiresAt: number
+}
+
 const MAX_CANDLES = 5000
 const MIN_ZOOM = 0.1
 const MAX_ZOOM = 10
 const MAX_PAN_THRESHOLD = 100000
 const DEFAULT_CANDLE_INTERVAL_MS = 60000
+const STORE_VERSION = '1.0.0'
+const STORE_EXPIRY_MS = 24 * 60 * 60 * 1000
 
 export const useChartStore = defineStore('chart', () => {
     const selectedPair = ref<string>('EUR/USD')
@@ -68,6 +76,11 @@ export const useChartStore = defineStore('chart', () => {
     const panX = ref(0)
     const openTrades = ref<OpenTrade[]>([])
     const chartError = ref<string | null>(null)
+    const metadata = ref<StoreMetadata>({
+        version: STORE_VERSION,
+        lastUpdated: Date.now(),
+        expiresAt: Date.now() + STORE_EXPIRY_MS
+    })
 
     const currentPairData = computed(() => pairDataMap.value[selectedPair.value])
     const hasPairData = computed(() =>
@@ -80,6 +93,32 @@ export const useChartStore = defineStore('chart', () => {
         openTrades.value.filter(t => t.pair === selectedPair.value)
     )
     const hasChartError = computed(() => !!chartError.value)
+
+    function checkAndClearExpiredData(): boolean {
+        const now = Date.now()
+
+        if (!metadata.value.expiresAt || now > metadata.value.expiresAt) {
+            console.warn('Store data expired, clearing...')
+            clearCorruptedData()
+            return true
+        }
+
+        if (metadata.value.version !== STORE_VERSION) {
+            console.warn('Store version mismatch, clearing...')
+            clearCorruptedData()
+            return true
+        }
+
+        return false
+    }
+
+    function updateMetadata() {
+        metadata.value = {
+            version: STORE_VERSION,
+            lastUpdated: Date.now(),
+            expiresAt: Date.now() + STORE_EXPIRY_MS
+        }
+    }
 
     function sortCandles(candles: Candle[]): Candle[] {
         return candles.sort((a, b) => a.time - b.time)
@@ -128,6 +167,8 @@ export const useChartStore = defineStore('chart', () => {
         if (!pairDataMap.value[pair]) {
             initializePairData(pair)
         }
+
+        updateMetadata()
     }
 
     function initializePairData(pair: string, initialPrice: number = 0) {
@@ -153,6 +194,8 @@ export const useChartStore = defineStore('chart', () => {
                 currentCandleTick: 0
             }
         }
+
+        updateMetadata()
     }
 
     function setChartError(error: string) {
@@ -185,6 +228,7 @@ export const useChartStore = defineStore('chart', () => {
             pairData.basePrice = initialPrice
             pairData.nextUrl = nextUrl
             pairData.hasMoreHistoricalData = !!nextUrl
+            updateMetadata()
             return
         }
 
@@ -224,6 +268,8 @@ export const useChartStore = defineStore('chart', () => {
         if (pairData.candles.length > 0) {
             pairData.lastCandleTime = pairData.candles[pairData.candles.length - 1].time * 1000
         }
+
+        updateMetadata()
     }
 
     function initializeCandlesFromForexData(
@@ -248,6 +294,7 @@ export const useChartStore = defineStore('chart', () => {
             pairData.basePrice = initialPrice
             pairData.nextUrl = nextUrl
             pairData.hasMoreHistoricalData = !!nextUrl
+            updateMetadata()
             return
         }
 
@@ -266,6 +313,8 @@ export const useChartStore = defineStore('chart', () => {
         if (pairData.candles.length > 0) {
             pairData.lastCandleTime = pairData.candles[pairData.candles.length - 1].time * 1000
         }
+
+        updateMetadata()
     }
 
     function prependHistoricalCandles(
@@ -300,6 +349,8 @@ export const useChartStore = defineStore('chart', () => {
         pairData.nextUrl = nextUrl
         pairData.hasMoreHistoricalData = !!nextUrl
         pairData.isLoadingHistorical = false
+
+        updateMetadata()
     }
 
     function setHistoricalLoadingState(pair: string, isLoading: boolean) {
@@ -315,6 +366,7 @@ export const useChartStore = defineStore('chart', () => {
         }
 
         Object.assign(pairDataMap.value[pair], updates)
+        updateMetadata()
     }
 
     function addCandle(pair: string, candle: Candle) {
@@ -343,6 +395,7 @@ export const useChartStore = defineStore('chart', () => {
         }
 
         pairData.lastCandleTime = Math.max(pairData.lastCandleTime, candle.time * 1000)
+        updateMetadata()
     }
 
     function updateLastCandle(pair: string, updates: Partial<Candle>) {
@@ -597,6 +650,11 @@ export const useChartStore = defineStore('chart', () => {
         panX.value = 0
         openTrades.value = []
         chartError.value = null
+        metadata.value = {
+            version: STORE_VERSION,
+            lastUpdated: Date.now(),
+            expiresAt: Date.now() + STORE_EXPIRY_MS
+        }
 
         if (typeof localStorage !== 'undefined') {
             try {
@@ -610,9 +668,13 @@ export const useChartStore = defineStore('chart', () => {
     if (typeof window !== 'undefined') {
         setTimeout(() => {
             try {
-                const isValid = validateDataIntegrity()
-                if (!isValid) {
-                    console.warn('Data integrity issues found during initialization')
+                const isExpired = checkAndClearExpiredData()
+
+                if (!isExpired) {
+                    const isValid = validateDataIntegrity()
+                    if (!isValid) {
+                        console.warn('Data integrity issues found during initialization')
+                    }
                 }
             } catch (error) {
                 console.error('Error during data validation:', error)
@@ -627,6 +689,7 @@ export const useChartStore = defineStore('chart', () => {
         zoom,
         panX,
         openTrades,
+        metadata,
         currentPairData,
         hasPairData,
         currentPrice,
@@ -660,11 +723,12 @@ export const useChartStore = defineStore('chart', () => {
         setChartError,
         clearChartError,
         clearCorruptedData,
+        checkAndClearExpiredData,
     }
 }, {
     persist: {
         key: 'forex-chart-store',
         storage: localStorage,
-        paths: ['selectedPair', 'zoom', 'panX', 'pairDataMap', 'openTrades']
+        paths: ['selectedPair', 'zoom', 'panX', 'pairDataMap', 'openTrades', 'metadata']
     }
 })

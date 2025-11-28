@@ -13,9 +13,8 @@ class HomeController extends Controller
      */
     public function __invoke(Request $request)
     {
-        $cryptos = $this->getCryptoPrices();
         return Inertia::render('Home', [
-            'cryptos' => $cryptos,
+            'cryptos' => Inertia::defer(fn () => $this->getCryptoPrices()),
         ]);
     }
 

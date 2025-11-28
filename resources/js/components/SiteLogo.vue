@@ -2,7 +2,7 @@
     import { computed } from 'vue';
     import { usePage } from '@inertiajs/vue3';
     import { Rotate3DIcon } from 'lucide-vue-next';
-    import TextLink from '@/Components/TextLink.vue';
+    import TextLink from '@/components/TextLink.vue';
 
     const page = usePage();
     const siteName = computed(() => page.props.site_name);

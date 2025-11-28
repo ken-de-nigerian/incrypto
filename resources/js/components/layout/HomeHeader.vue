@@ -5,6 +5,7 @@
     import { useAppearance } from '@/composables/useAppearance'
     import { usePage } from '@inertiajs/vue3';
     import SiteLogo from '@/components/SiteLogo.vue';
+    import GoogleTranslateSelect from '@google-translate-select/vue3';
 
     const page = usePage();
 
@@ -63,6 +64,10 @@
     const closeMenu = () => {
         isMobileMenuOpen.value = false;
         document.body.style.overflow = '';
+    }
+
+    const handleGoogleTranslateSelect = (language: any) => {
+        console.log(language)
     }
 
     const toggleAppearance = () => {
@@ -173,6 +178,14 @@
                                     </span>
                                     <span class="text-sm text-muted-foreground capitalize">{{ appearance }}</span>
                                 </button>
+
+                                <GoogleTranslateSelect
+                                    default-language-code="en"
+                                    default-page-language-code="en"
+                                    :fetch-browser-language="false"
+                                    trigger="click"
+                                    @select="handleGoogleTranslateSelect"
+                                />
                             </div>
 
                             <div class="mt-4">

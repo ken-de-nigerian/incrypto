@@ -410,12 +410,12 @@
         <button
             @click="toggleTranslateWidget"
             :class="[
-            'group relative w-14 h-14 rounded-full flex items-center justify-center transition-all duration-300 hover:scale-110 active:scale-95 overflow-hidden',
+            'group relative w-12 h-12 rounded-full flex items-center justify-center transition-all duration-300 hover:scale-110 active:scale-95 cursor-pointer overflow-hidden',
             isTranslateOpen ? 'bg-primary' : 'bg-primary'
         ]"
             :aria-label="isTranslateOpen ? 'Close translate widget' : 'Open translate widget'"
             :aria-expanded="isTranslateOpen">
-            <span v-if="!isTranslateOpen" class="absolute inset-0 rounded-full bg-primary animate-ping"></span>
+            <span v-if="!isTranslateOpen" class="absolute inset-0 rounded-full bg-primary"></span>
 
             <Transition
                 enter-active-class="transition ease-out duration-200"
@@ -435,7 +435,7 @@
     <div id="google_translate_element" class="hidden"></div>
 </template>
 
-<style scoped>
+<style>
     .no-scrollbar::-webkit-scrollbar {
         display: none;
     }
@@ -445,19 +445,6 @@
         scrollbar-width: none;
     }
 
-    @keyframes ping {
-        75%, 100% {
-            transform: scale(1.5);
-            opacity: 0;
-        }
-    }
-
-    .animate-ping {
-        animation: ping 2s cubic-bezier(0, 0, 0.2, 1) infinite;
-    }
-</style>
-
-<style>
     .goog-logo-link {
         display: none !important;
     }

@@ -36,6 +36,8 @@
     </head>
 
     <body class="bg-background text-foreground font-sans antialiased transition-colors duration-300">
-        @inertia
+        <div class="theme-transition">
+            @inertia
+        </div>
     </body>
 </html>

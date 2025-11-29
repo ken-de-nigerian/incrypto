@@ -66,10 +66,6 @@
         return appearanceTabs.find(tab => tab.value === appearance.value)?.Icon ?? Sun
     })
 
-    const selectedLanguage = computed(() => {
-        return languages.find(lang => lang.code === currentLanguage.value) || languages[0]
-    })
-
     const filteredLanguages = computed(() => {
         if (!searchQuery.value.trim()) {
             return languages
@@ -343,7 +339,7 @@
                     type="text"
                     placeholder="Search languages..."
                     v-model="searchQuery"
-                    class="w-full px-4 py-2.5 pl-10 bg-secondary/50 border border-border rounded-xl text-sm transition-all focus:outline-none focus:ring-2 focus:ring-primary/20"
+                    class="w-full px-4 py-2.5 pl-10 bg-secondary/50 border border-border rounded-xl text-sm transition-all input-crypto"
                 />
                 <Languages :size="16" class="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
             </div>

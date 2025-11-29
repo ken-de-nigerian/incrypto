@@ -1,11 +1,22 @@
 <script setup lang="ts">
     import { computed, ref, onMounted, onUnmounted } from 'vue'
-    import { ChevronDown, Menu, MessageCircle, Monitor, Moon, Sun, X } from 'lucide-vue-next';
+    import {
+        ChevronDown,
+        Menu,
+        MessageCircle,
+        Monitor,
+        Moon,
+        Sun,
+        X,
+        Languages,
+        Check,
+    } from 'lucide-vue-next';
     import TextLink from '@/components/TextLink.vue'
     import { useAppearance } from '@/composables/useAppearance'
+    import { useLanguages } from '@/composables/useLanguages'
     import { usePage } from '@inertiajs/vue3';
     import SiteLogo from '@/components/SiteLogo.vue';
-    import GoogleTranslateSelect from '@google-translate-select/vue3';
+    import QuickActionModal from '@/components/QuickActionModal.vue';
 
     const page = usePage();
 
@@ -22,7 +33,11 @@
 
     const isMobileMenuOpen = ref(false)
     const isScrolled = ref(false)
+    const isTranslateOpen = ref(false)
+    const searchQuery = ref('')
+    const isChangingLanguage = ref(false)
     const { appearance, updateAppearance } = useAppearance()
+    const { languages, defaultLanguage: defaultLang } = useLanguages()
 
     const navItems: NavItem[] = [
         { label: 'Home', href: '#home' },
@@ -38,6 +53,9 @@
         { value: 'system', Icon: Monitor, label: 'System' },
     ]
 
+    const defaultLanguage = ref(defaultLang)
+    const currentLanguage = ref('en')
+
     const openWhatsApp = () => {
         window.open(`https://wa.me/${page.props.phone}`, '_blank');
     }
@@ -47,6 +65,102 @@
     const currentIcon = computed(() => {
         return appearanceTabs.find(tab => tab.value === appearance.value)?.Icon ?? Sun
     })
+
+    const selectedLanguage = computed(() => {
+        return languages.find(lang => lang.code === currentLanguage.value) || languages[0]
+    })
+
+    const filteredLanguages = computed(() => {
+        if (!searchQuery.value.trim()) {
+            return languages
+        }
+        const query = searchQuery.value.toLowerCase()
+        return languages.filter(lang =>
+            lang.name.toLowerCase().includes(query) ||
+            lang.nativeName.toLowerCase().includes(query) ||
+            lang.code.toLowerCase().includes(query)
+        )
+    })
+
+    const getCurrentLanguage = () => {
+        const hash = window.location.hash;
+        if (hash && hash.includes('googtrans')) {
+            const match = hash.match(/googtrans\([^|]+\|([^)]+)\)/);
+            if (match && match[1]) {
+                return match[1];
+            }
+        }
+
+        const cookies = document.cookie.split(';');
+        for (let cookie of cookies) {
+            const parts = cookie.trim().split('=');
+            if (parts[0] === 'googtrans') {
+                const value = decodeURIComponent(parts[1]);
+                const langParts = value.split('/');
+                if (langParts.length >= 3 && langParts[2]) {
+                    return langParts[2];
+                }
+            }
+        }
+
+        return 'en';
+    }
+
+    const loadGoogleTranslateScript = () => {
+        if (document.getElementById('google-translate-script')) return;
+
+        const script = document.createElement('script');
+        script.id = 'google-translate-script';
+        script.src = '//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit';
+        script.async = true;
+        document.head.appendChild(script);
+
+        window.googleTranslateElementInit = () => {
+            new window.google.translate.TranslateElement(
+                {
+                    pageLanguage: defaultLanguage.value,
+                    includedLanguages: languages.map(lang => lang.code).join(','),
+                    layout: window.google.translate.TranslateElement.InlineLayout.SIMPLE,
+                    autoDisplay: false,
+                },
+                'google_translate_element'
+            );
+        };
+    };
+
+    const changeLanguage = (lang: string) => {
+        if (isChangingLanguage.value) return;
+
+        isChangingLanguage.value = true;
+        isTranslateOpen.value = false;
+
+        document.cookie = 'googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+        document.cookie = 'googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=' + window.location.hostname;
+
+        if (lang === 'en') {
+            currentLanguage.value = 'en';
+            location.reload();
+            return;
+        }
+
+        const cookieValue = `/en/${lang}`;
+        document.cookie = `googtrans=${cookieValue}; path=/`;
+        document.cookie = `googtrans=${cookieValue}; path=/; domain=${window.location.hostname}`;
+
+        currentLanguage.value = lang;
+
+        const googleTranslateComboBox = document.querySelector('.goog-te-combo') as HTMLSelectElement;
+        if (googleTranslateComboBox) {
+            googleTranslateComboBox.value = lang;
+            googleTranslateComboBox.dispatchEvent(new Event('change'));
+
+            setTimeout(() => {
+                location.reload();
+            }, 300);
+        } else {
+            location.reload();
+        }
+    };
 
     const handleScroll = () => {
         isScrolled.value = window.scrollY > 20
@@ -66,18 +180,52 @@
         document.body.style.overflow = '';
     }
 
-    const handleGoogleTranslateSelect = (language: any) => {
-        console.log(language)
+    const toggleTranslateWidget = () => {
+        isTranslateOpen.value = !isTranslateOpen.value;
+        if (!isTranslateOpen.value) {
+            searchQuery.value = ''
+        }
+    }
+
+    const closeTranslateWidget = () => {
+        isTranslateOpen.value = false;
+        searchQuery.value = ''
     }
 
     const toggleAppearance = () => {
+        if (isMobileMenuOpen.value) {
+            closeMenu()
+            setTimeout(() => {
+                const currentIndex = appearanceTabs.findIndex(tab => tab.value === appearance.value)
+                const nextIndex = (currentIndex + 1) % appearanceTabs.length
+                updateAppearance(appearanceTabs[nextIndex].value)
+            }, 250)
+            return
+        }
         const currentIndex = appearanceTabs.findIndex(tab => tab.value === appearance.value)
         const nextIndex = (currentIndex + 1) % appearanceTabs.length
         updateAppearance(appearanceTabs[nextIndex].value)
     }
 
     onMounted(() => {
-        window.addEventListener('scroll', handleScroll)
+        currentLanguage.value = getCurrentLanguage();
+        loadGoogleTranslateScript();
+        window.addEventListener('scroll', handleScroll);
+
+        const checkTranslateReady = setInterval(() => {
+            const googleTranslateComboBox = document.querySelector('.goog-te-combo') as HTMLSelectElement;
+            if (googleTranslateComboBox) {
+                clearInterval(checkTranslateReady);
+
+                const detectedLang = getCurrentLanguage();
+                if (detectedLang !== 'en' && googleTranslateComboBox.value !== detectedLang) {
+                    googleTranslateComboBox.value = detectedLang;
+                    googleTranslateComboBox.dispatchEvent(new Event('change'));
+                }
+            }
+        }, 100);
+
+        setTimeout(() => clearInterval(checkTranslateReady), 5000);
     })
 
     onUnmounted(() => {
@@ -124,7 +272,7 @@
                     </div>
 
                     <div class="flex items-center gap-3 lg:hidden">
-                        <button type="button" @click="toggleAppearance" class="p-2 rounded-xl border border-border bg-transparentcursor-pointer hover:bg-secondary/50 duration-200" :title="`Switch to ${appearanceTabs[(appearanceTabs.findIndex(t => t.value === appearance) + 1) % appearanceTabs.length].label} mode`">
+                        <button type="button" @click="toggleAppearance" class="p-2 rounded-xl border border-border bg-transparent cursor-pointer hover:bg-secondary/50 duration-200" :title="`Switch to ${appearanceTabs[(appearanceTabs.findIndex(t => t.value === appearance) + 1) % appearanceTabs.length].label} mode`">
                             <component :is="currentIcon" :size="22" class="text-card-foreground" />
                         </button>
 
@@ -165,29 +313,6 @@
                                 </li>
                             </ul>
 
-                            <hr class="border-border/50">
-
-                            <div class="space-y-4">
-                                <h3 class="text-xs font-bold uppercase tracking-wider text-muted-foreground px-4">Preferences</h3>
-                                <button
-                                    @click="toggleAppearance"
-                                    class="w-full flex items-center justify-between p-4 rounded-xl bg-card border border-border">
-                                    <span class="flex items-center gap-3 font-medium">
-                                        <component :is="currentIcon" :size="18" />
-                                        Appearance
-                                    </span>
-                                    <span class="text-sm text-muted-foreground capitalize">{{ appearance }}</span>
-                                </button>
-
-                                <GoogleTranslateSelect
-                                    default-language-code="en"
-                                    default-page-language-code="en"
-                                    :fetch-browser-language="false"
-                                    trigger="click"
-                                    @select="handleGoogleTranslateSelect"
-                                />
-                            </div>
-
                             <div class="mt-4">
                                 <button @click="openWhatsApp" class="w-full py-4 rounded-xl bg-primary text-primary-foreground font-bold flex items-center justify-center gap-2 hover:opacity-90 transition-opacity">
                                     <MessageCircle :size="20" class="text-primary-foreground" />
@@ -204,4 +329,176 @@
             </div>
         </nav>
     </header>
+
+    <QuickActionModal
+        :is-open="isTranslateOpen"
+        title="Change Language"
+        subtitle="Select your preferred language for the interface"
+        @close="closeTranslateWidget">
+
+        <div class="space-y-4">
+            <!-- Search Bar -->
+            <div class="relative">
+                <input
+                    type="text"
+                    placeholder="Search languages..."
+                    v-model="searchQuery"
+                    class="w-full px-4 py-2.5 pl-10 bg-secondary/50 border border-border rounded-xl text-sm transition-all focus:outline-none focus:ring-2 focus:ring-primary/20"
+                />
+                <Languages :size="16" class="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+            </div>
+
+            <!-- Languages List -->
+            <div v-if="filteredLanguages.length > 0" class="space-y-2">
+                <div
+                    v-for="language in filteredLanguages"
+                    :key="language.code"
+                    @click="() => !isChangingLanguage && changeLanguage(language.code)"
+                    :class="[
+                    'group flex items-center justify-between p-3 rounded-xl transition-all duration-200',
+                    isChangingLanguage
+                        ? 'cursor-not-allowed opacity-50'
+                        : 'cursor-pointer',
+                    currentLanguage === language.code
+                        ? 'bg-primary/10 border-2 border-primary/30'
+                        : 'border border-border hover:bg-secondary/50 hover:border-border/50'
+                ]">
+                    <div class="flex items-center gap-3 flex-1 min-w-0">
+                        <div class="relative flex-shrink-0">
+                            <img
+                                class="w-10 h-7 rounded-md object-cover"
+                                :src="`https://flagcdn.com/${language.flag}.svg`"
+                                :alt="`${language.name} flag`"
+                                loading="lazy"
+                                @error="(e) => (e.target as HTMLImageElement).style.display = 'none'" />
+                            <div
+                                v-if="currentLanguage === language.code && !isChangingLanguage"
+                                class="absolute -top-1 -right-1 w-4 h-4 bg-primary rounded-full flex items-center justify-center">
+                                <Check :size="10" class="text-primary-foreground" />
+                            </div>
+                            <div
+                                v-if="isChangingLanguage && currentLanguage === language.code"
+                                class="absolute -top-1 -right-1 w-4 h-4 bg-primary rounded-full flex items-center justify-center">
+                                <div class="w-2 h-2 border border-primary-foreground border-t-transparent rounded-full animate-spin"></div>
+                            </div>
+                        </div>
+                        <div class="flex flex-col min-w-0 flex-1">
+                        <span class="font-semibold text-sm truncate" :class="currentLanguage === language.code ? 'text-primary' : 'text-foreground'">
+                            {{ language.nativeName }}
+                        </span>
+                            <span class="text-xs text-muted-foreground truncate">{{ language.name }}</span>
+                        </div>
+                    </div>
+                    <ChevronDown
+                        :size="16"
+                        :class="[
+                        'flex-shrink-0 -rotate-90 transition-all duration-200',
+                        currentLanguage === language.code
+                            ? 'text-primary opacity-100'
+                            : 'text-muted-foreground opacity-0 group-hover:opacity-50'
+                    ]" />
+                </div>
+            </div>
+
+            <!-- No Results -->
+            <div v-else class="py-12 text-center">
+                <Languages :size="48" class="mx-auto text-muted-foreground/30 mb-3" />
+                <p class="text-sm text-muted-foreground">No languages found</p>
+                <p class="text-xs text-muted-foreground/70 mt-1">Try a different search term</p>
+            </div>
+        </div>
+    </QuickActionModal>
+
+    <!-- Floating Button -->
+    <div v-if="!isTranslateOpen" class="fixed left-4 bottom-4 md:left-6 md:bottom-6 z-[9999]">
+        <button
+            @click="toggleTranslateWidget"
+            :class="[
+            'group relative w-14 h-14 rounded-full flex items-center justify-center transition-all duration-300 hover:scale-110 active:scale-95 overflow-hidden',
+            isTranslateOpen ? 'bg-primary' : 'bg-primary'
+        ]"
+            :aria-label="isTranslateOpen ? 'Close translate widget' : 'Open translate widget'"
+            :aria-expanded="isTranslateOpen">
+            <span v-if="!isTranslateOpen" class="absolute inset-0 rounded-full bg-primary animate-ping"></span>
+
+            <Transition
+                enter-active-class="transition ease-out duration-200"
+                enter-from-class="opacity-0 rotate-90 scale-50"
+                enter-to-class="opacity-100 rotate-0 scale-100"
+                leave-active-class="transition ease-in duration-150"
+                leave-from-class="opacity-100 rotate-0 scale-100"
+                leave-to-class="opacity-0 rotate-90 scale-50"
+                mode="out-in">
+                <X v-if="isTranslateOpen" :size="24" class="text-primary-foreground relative z-10" />
+                <Languages v-else :size="24" class="text-primary-foreground relative z-10 group-hover:scale-110 transition-transform" />
+            </Transition>
+        </button>
+    </div>
+
+    <!-- Hidden Google Translate Element -->
+    <div id="google_translate_element" class="hidden"></div>
 </template>
+
+<style scoped>
+    .no-scrollbar::-webkit-scrollbar {
+        display: none;
+    }
+
+    .no-scrollbar {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+    }
+
+    @keyframes ping {
+        75%, 100% {
+            transform: scale(1.5);
+            opacity: 0;
+        }
+    }
+
+    .animate-ping {
+        animation: ping 2s cubic-bezier(0, 0, 0.2, 1) infinite;
+    }
+</style>
+
+<style>
+    .goog-logo-link {
+        display: none !important;
+    }
+
+    .goog-te-gadget {
+        color: transparent !important;
+    }
+
+    .goog-te-gadget .goog-te-combo {
+        color: #b5b5b5 !important;
+    }
+
+    .goog-te-banner-frame.skiptranslate {
+        display: none !important;
+    }
+
+    .VIpgJd-ZVi9od-l4eHX-hSRGPd,
+    .VIpgJd-ZVi9od-l4eHX-hSRGPd:link,
+    .VIpgJd-ZVi9od-l4eHX-hSRGPd:visited,
+    .VIpgJd-ZVi9od-l4eHX-hSRGPd:hover,
+    .VIpgJd-ZVi9od-l4eHX-hSRGPd:active {
+        font-size: 12px;
+        font-weight: bold;
+        color: #444;
+        text-decoration: none;
+        display: none;
+    }
+
+    .goog-te-gadget img {
+        display: none !important;
+    }
+
+    body > .skiptranslate {
+        display: none;
+    }
+
+    body {
+        top: 0 !important;
+    }
+</style>

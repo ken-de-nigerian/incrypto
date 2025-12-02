@@ -87,6 +87,13 @@ return [
         'precision' => 2,                // Decimal places for amounts
     ],
 
+    'loan' => [
+        'min_amount' => 1000,
+        'max_amount' => 50000,
+        'interest_rate' => 12.5, // Default base rate
+        'repayment_period' => 36, // Max months
+    ],
+
     /*
     |--------------------------------------------------------------------------
     | Cryptocurrency API Keys

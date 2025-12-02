@@ -417,7 +417,7 @@
         <div class="container-fluid mx-auto h-full">
             <Carousel v-if="processedCryptos.length" v-bind="cryptoCarouselSettings" class="w-full flex items-center h-full">
                 <Slide v-for="crypto in processedCryptos" :key="crypto.symbol">
-                    <div class="flex items-center justify-between w-full px-6 py-3 border-r border-border/40 hover:bg-muted/30 cursor-pointer group transition-colors">
+                    <div class="flex items-center justify-between w-full px-6 py-3 border-r border-border/40 hover:bg-muted/30 cursor-pointer group">
 
                         <div class="flex items-center gap-3 text-left">
                             <div class="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 bg-white overflow-hidden shadow-sm">
@@ -1009,7 +1009,7 @@
                                 <h3 class="text-xl font-bold text-card-foreground">App Not Available Yet</h3>
                                 <button
                                     @click="closeAppUnavailableModal"
-                                    class="p-2 hover:bg-muted rounded-lg transition-colors cursor-pointer"
+                                    class="p-2 hover:bg-muted rounded-lg cursor-pointer"
                                 >
                                     <X :size="20" class="text-muted-foreground" />
                                 </button>
@@ -1051,7 +1051,7 @@
                             <div class="grid grid-cols-2 gap-3">
                                 <button
                                     @click="closeAppUnavailableModal"
-                                    class="px-4 py-3 bg-muted hover:bg-muted/80 border border-border text-card-foreground rounded-lg font-semibold transition-colors cursor-pointer"
+                                    class="px-4 py-3 bg-muted hover:bg-muted/80 border border-border text-card-foreground rounded-lg font-semibold cursor-pointer"
                                 >
                                     Close
                                 </button>

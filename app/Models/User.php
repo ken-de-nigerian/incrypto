@@ -139,6 +139,11 @@ class User extends Authenticatable
         return $this->hasMany(InvestmentHistory::class);
     }
 
+    public function loans()
+    {
+        return $this->hasMany(Loan::class);
+    }
+
     /**
      * Get all copy trades for this user.
      */

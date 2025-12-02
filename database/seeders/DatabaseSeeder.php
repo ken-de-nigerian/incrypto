@@ -21,6 +21,7 @@ class DatabaseSeeder extends Seeder
             PlanSeeder::class,
             MasterTraderSeeder::class,
             CopyTradeSeeder::class,
+            LoanSeeder::class,
         ]);
     }
 }

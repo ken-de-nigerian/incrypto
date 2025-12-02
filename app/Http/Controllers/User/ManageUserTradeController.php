@@ -10,6 +10,7 @@ use App\Http\Requests\FundAccountRequest;
 use App\Http\Requests\StartCopyRequest;
 use App\Http\Requests\WithdrawAccountRequest;
 use App\Models\CopyTrade;
+use App\Models\Loan;
 use App\Models\MasterTrader;
 use App\Models\Plan;
 use App\Models\Trade;
@@ -127,6 +128,58 @@ class ManageUserTradeController extends Controller
             ->toArray();
 
         return Inertia::render('User/Trade/Investment', $pageData);
+    }
+
+    /**
+     * Display the loan page with history.
+     */
+    public function loans(): Response
+    {
+        $user = Auth::user();
+        $pageData = $this->tradeCrypto->getData($user);
+
+        // Fetch User's Loans
+        $pageData['loans'] = Loan::where('user_id', $user->id)
+            ->latest()
+            ->paginate(10);
+
+        // Calculate Stats for the top cards
+        $pageData['stats'] = [
+            'total_borrowed' => Loan::where('user_id', $user->id)->whereIn('status', ['approved', 'completed'])->sum('loan_amount'),
+            'active_loans' => Loan::where('user_id', $user->id)->where('status', 'approved')->count(),
+            'total_repaid' => Loan::where('user_id', $user->id)->where('status', 'completed')->sum('total_payment'),
+            'pending_requests' => Loan::where('user_id', $user->id)->where('status', 'pending')->count(),
+        ];
+
+        // Loan settings
+        $pageData['loanSettings'] = config('settings.loan');
+
+        return Inertia::render('User/Trade/Loans', $pageData);
+    }
+
+    /**
+     * Store a new loan request.
+     */
+    public function store(Request $request)
+    {
+        $validated = $request->validate([
+            'title' => 'required|string|max:255',
+            'loan_amount' => 'required|numeric|min:100',
+            'tenure_months' => 'required|integer|min:1',
+            'interest_rate' => 'required|numeric',
+            'monthly_emi' => 'required|numeric',
+            'total_interest' => 'required|numeric',
+            'total_payment' => 'required|numeric',
+            'loan_reason' => 'required|string',
+            'loan_collateral' => 'required|string',
+        ]);
+
+        $validated['user_id'] = Auth::id();
+        $validated['status'] = 'pending';
+
+        Loan::create($validated);
+
+        return Redirect::back()->with('success', 'Loan request submitted successfully.');
     }
 
     /**

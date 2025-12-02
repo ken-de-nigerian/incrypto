@@ -6,7 +6,8 @@
         ClockIcon, AlertCircleIcon, CopyIcon, CheckIcon,
         ActivityIcon, ArrowUpDownIcon,
         SortAscIcon, SortDescIcon, TrendingUpIcon, TrendingDownIcon,
-        DollarSignIcon, BarChart3Icon, CoinsIcon, WalletIcon, PieChartIcon, ExternalLinkIcon
+        DollarSignIcon, BarChart3Icon, CoinsIcon, WalletIcon, PieChartIcon, ExternalLinkIcon,
+        TrendingUp
     } from 'lucide-vue-next';
     import { router } from '@inertiajs/vue3';
     import CustomSelectDropdown from '@/components/CustomSelectDropdown.vue';
@@ -31,12 +32,13 @@
         chain?: string;
         // Received/Sent crypto
         token_symbol?: string;
+        fee_token?: string;
         amount?: number | string;
         wallet_address?: string;
         recipient_address?: string;
         transaction_hash?: string;
         fee?: number | string;
-        // Trades (forex, stocks, crypto)
+        // Trades (forex, stocks, crypto, commodities)
         pair?: string;
         pair_name?: string;
         entry_price?: number | string;
@@ -75,6 +77,7 @@
                 forex_trades: Transaction[];
                 stock_trades: Transaction[];
                 crypto_trades: Transaction[];
+                commodities: Transaction[];
                 investments: Transaction[];
             },
             required: true
@@ -93,17 +96,18 @@
                 forex_trades: number;
                 stock_trades: number;
                 crypto_trades: number;
+                commodities: number;
                 investments: number;
             },
             required: true
         },
         currentTab: {
-            type: String as () => 'all' | 'swaps' | 'received' | 'sent' | 'forex' | 'stocks' | 'crypto_trades' | 'investments',
+            type: String as () => 'all' | 'swaps' | 'received' | 'sent' | 'forex' | 'stocks' | 'crypto_trades' | 'commodities' | 'investments',
             default: 'all'
         }
     });
 
-    const activeTab = ref<'all' | 'swaps' | 'received' | 'sent' | 'forex' | 'stocks' | 'crypto_trades' | 'investments'>(props.currentTab);
+    const activeTab = ref<'all' | 'swaps' | 'received' | 'sent' | 'forex' | 'stocks' | 'crypto_trades' | 'commodities' | 'investments'>(props.currentTab);
     const searchQuery = ref('');
     const dateFilter = ref<string>('all');
     const sortOrder = ref<'asc' | 'desc' | 'default'>('default');
@@ -164,6 +168,12 @@
             type: 'crypto_trade' as const,
             compositeId: `crypto-trade-${tx.id}`
         }));
+        const commodityTrades = (props.transactions.commodities || []).map(tx => ({
+            ...tx,
+            trade_direction: (tx as any).type,
+            type: 'commodity_trade' as const,
+            compositeId: `commodity-trade-${tx.id}`
+        }));
         const investments = (props.transactions.investments || []).map(tx => ({
             ...tx,
             type: 'investment' as const,
@@ -172,7 +182,7 @@
             totalInterestEarned: calculateTotalInterestEarned(tx)
         }));
 
-        return [...swaps, ...received, ...sent, ...forexTrades, ...stockTrades, ...cryptoTrades, ...investments].sort((a, b) =>
+        return [...swaps, ...received, ...sent, ...forexTrades, ...stockTrades, ...cryptoTrades, ...commodityTrades, ...investments].sort((a, b) =>
             new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
         );
     });
@@ -200,6 +210,7 @@
         const forex_trades = allTx.filter(tx => tx.type === 'forex_trade').length;
         const stock_trades = allTx.filter(tx => tx.type === 'stock_trade').length;
         const crypto_trades = allTx.filter(tx => tx.type === 'crypto_trade').length;
+        const commodities = allTx.filter(tx => tx.type === 'commodity_trade').length;
         const investments = allTx.filter(tx => tx.type === 'investment').length;
 
         return {
@@ -215,6 +226,7 @@
             forex_trades,
             stock_trades,
             crypto_trades,
+            commodities,
             investments
         };
     });
@@ -233,6 +245,8 @@
                 return allTransactions.value.filter(tx => tx.type === 'stock_trade');
             case 'crypto_trades':
                 return allTransactions.value.filter(tx => tx.type === 'crypto_trade');
+            case 'commodities':
+                return allTransactions.value.filter(tx => tx.type === 'commodity_trade');
             case 'investments':
                 return allTransactions.value.filter(tx => tx.type === 'investment');
             default:
@@ -248,6 +262,7 @@
             filtered = filtered.filter(tx =>
                 tx.transaction_hash?.toLowerCase().includes(query) ||
                 tx.token_symbol?.toLowerCase().includes(query) ||
+                tx.fee_token?.toLowerCase().includes(query) ||
                 tx.from_token?.toLowerCase().includes(query) ||
                 tx.to_token?.toLowerCase().includes(query) ||
                 tx.wallet_address?.toLowerCase().includes(query) ||
@@ -324,6 +339,8 @@
                 return BarChart3Icon;
             case 'crypto_trade':
                 return CoinsIcon;
+            case 'commodity_trade':
+                return TrendingUp;
             case 'investment':
                 return WalletIcon;
             default:
@@ -339,6 +356,7 @@
             'forex_trade': 'Forex Trade',
             'stock_trade': 'Stock Trade',
             'crypto_trade': 'Crypto Trade',
+            'commodity_trade': 'Commodity Trade',
             'investment': 'Investment',
         };
         return labels[type] || type;
@@ -584,6 +602,7 @@
         { id: 'forex', label: 'Forex', icon: DollarSignIcon },
         { id: 'stocks', label: 'Stocks', icon: BarChart3Icon },
         { id: 'crypto_trades', label: 'Crypto', icon: CoinsIcon },
+        { id: 'commodities', label: 'Commodities', icon: TrendingUp },
         { id: 'investments', label: 'Investments', icon: WalletIcon }
     ];
 
@@ -621,7 +640,7 @@
         <div>
             <h1 class="text-3xl sm:text-4xl font-bold text-card-foreground mb-2">Transaction Center</h1>
             <p class="text-muted-foreground">
-                Track all your transactions including crypto swaps, transfers, trades (forex, stocks, crypto), and investments.
+                Track all your transactions including crypto swaps, transfers, trades (forex, stocks, crypto, commodities), and investments.
             </p>
         </div>
     </div>
@@ -690,7 +709,7 @@
                 </div>
                 <span class="text-xs font-medium">Types</span>
             </div>
-            <p class="text-2xl font-bold text-card-foreground">7</p>
+            <p class="text-2xl font-bold text-card-foreground">8</p>
             <p class="text-xs text-muted-foreground mt-1">Categories</p>
         </div>
     </div>
@@ -716,7 +735,7 @@
                         class="px-2 py-0.5 text-xs rounded-full"
                         :class="activeTab === tab.id ? 'bg-primary-foreground/20' : 'bg-muted'"
                     >
-                        {{ computedStatistics[tab.id === 'forex' ? 'forex_trades' : tab.id === 'stocks' ? 'stock_trades' : tab.id === 'crypto_trades' ? 'crypto_trades' : tab.id] }}
+                        {{ computedStatistics[tab.id === 'forex' ? 'forex_trades' : tab.id === 'stocks' ? 'stock_trades' : tab.id === 'crypto_trades' ? 'crypto_trades' : tab.id === 'commodities' ? 'commodities' : tab.id] }}
                     </span>
                 </button>
             </div>
@@ -929,7 +948,7 @@
                             </div>
                             <div v-if="tx.fee" class="bg-muted/50 rounded-lg p-3">
                                 <p class="text-xs text-muted-foreground mb-1">Transaction Fee</p>
-                                <p class="text-sm font-semibold text-card-foreground">{{ formatAmount(tx.fee) }} {{ tx.token_symbol }}</p>
+                                <p class="text-sm font-semibold text-card-foreground">{{ formatAmount(tx.fee) }} {{ tx.fee_token }}</p>
                             </div>
                             <div v-if="tx.recipient_address" class="bg-muted/50 rounded-lg p-3 sm:col-span-2">
                                 <p class="text-xs text-muted-foreground mb-1">Recipient Address</p>
@@ -956,8 +975,8 @@
                             </div>
                         </div>
 
-                        <!-- Trade Transactions (Forex, Stock, Crypto) -->
-                        <div v-if="['forex_trade', 'stock_trade', 'crypto_trade'].includes(tx.type)" class="space-y-2">
+                        <!-- Trade Transactions (Forex, Stock, Crypto, Commodities) -->
+                        <div v-if="['forex_trade', 'stock_trade', 'crypto_trade', 'commodity_trade'].includes(tx.type)" class="space-y-2">
                             <div class="flex items-center justify-between">
                                 <span class="text-sm text-muted-foreground">Pair:</span>
                                 <span class="text-sm font-semibold text-card-foreground">{{ tx.pair_name || tx.pair }}</span>

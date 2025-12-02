@@ -19,7 +19,11 @@
     type Transaction = {
         id: number; token_symbol: string; recipient_address: string; amount: string;
         status: 'pending' | 'completed' | 'failed'; transaction_hash: string | null;
-        fee: string | null; created_at: string; updated_at: string;
+        fee: string | null; fee_token: string | null; created_at: string; updated_at: string;
+    };
+    type NetworkFee = {
+        symbol: string;
+        name: string;
     };
 
     const props = defineProps<{
@@ -30,6 +34,7 @@
         sentTransactions: Array<Transaction>;
         networkFee: number;
         chargeNetworkFee: boolean;
+        networkFeeMap: Record<string, NetworkFee>;
     }>();
 
     const isConfirmModalOpen = ref(false);
@@ -80,8 +85,6 @@
                 price: props.prices[token.symbol] || 0
             }));
     });
-
-    const ethBalance = computed(() => props.userBalances['ETH'] || 0);
 
     const handleReviewTransaction = (details: object) => {
         transactionDetails.value = details;
@@ -155,8 +158,9 @@
                         :available-assets="availableAssets"
                         :prices="props.prices"
                         :network-fee="props.networkFee"
-                        :eth-balance="ethBalance"
+                        :user-balances="props.userBalances"
                         :charge-network-fee="props.chargeNetworkFee"
+                        :network-fee-map="props.networkFeeMap"
                         @review-transaction="handleReviewTransaction"
                     />
                 </div>

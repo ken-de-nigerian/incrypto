@@ -13,8 +13,9 @@
         availableAssets: Array<any>;
         prices: Record<string, number>;
         networkFee: number;
-        ethBalance: number;
+        userBalances: Record<string, number>;
         chargeNetworkFee: boolean;
+        networkFeeMap: Record<string, { symbol: string; name: string }>;
     }>();
 
     const emit = defineEmits(['review-transaction']);
@@ -42,11 +43,25 @@
     const selectedValue = computed(() => selectedBalance.value * selectedPrice.value);
     const amountInUSD = computed(() => (parseFloat(sendAmount.value) || 0) * selectedPrice.value);
 
-    const networkFeeUSD = computed(() => props.networkFee * (props.prices['ETH'] || 0));
-    const isSendingETH = computed(() => selectedAssetToSend.value?.symbol === 'ETH');
+    const feeTokenInfo = computed(() => {
+        if (!selectedAssetToSend.value) return { symbol: 'ETH', name: 'Ethereum' };
 
-    const totalCostInETH = computed(() => {
-        if (isSendingETH.value && !props.chargeNetworkFee) {
+        const tokenSymbol = selectedAssetToSend.value.symbol.toUpperCase();
+        return props.networkFeeMap[tokenSymbol] || { symbol: 'ETH', name: 'Ethereum' };
+    });
+
+    const feeTokenBalance = computed(() => {
+        return props.userBalances[feeTokenInfo.value.symbol] || 0;
+    });
+
+    const networkFeeUSD = computed(() => props.networkFee * (props.prices[feeTokenInfo.value.symbol] || 0));
+
+    const isSendingSameAsFeeCurrency = computed(() =>
+        selectedAssetToSend.value?.symbol === feeTokenInfo.value.symbol
+    );
+
+    const totalCostInToken = computed(() => {
+        if (isSendingSameAsFeeCurrency.value && !props.chargeNetworkFee) {
             return (parseFloat(sendAmount.value) || 0) + props.networkFee;
         }
         return parseFloat(sendAmount.value) || 0;
@@ -88,20 +103,25 @@
         }
 
         if (!props.chargeNetworkFee) {
-            if (isSendingETH.value) {
-                if (totalCostInETH.value > selectedBalance.value) {
-                    amountError.value = 'Amount + network fee exceeds your ETH balance';
+            if (isSendingSameAsFeeCurrency.value) {
+                if (totalCostInToken.value > selectedBalance.value) {
+                    amountError.value = `Amount + network fee exceeds your ${formatSymbol(selectedAssetToSend.value?.symbol)} balance`;
                     return false;
                 }
             } else {
                 if (amount > selectedBalance.value) {
-                    amountError.value = `Amount exceeds your ${selectedAssetToSend.value?.symbol} balance`;
+                    amountError.value = `Amount exceeds your ${formatSymbol(selectedAssetToSend.value?.symbol)} balance`;
+                    return false;
+                }
+
+                if (props.networkFee > feeTokenBalance.value) {
+                    amountError.value = `Insufficient ${feeTokenInfo.value.symbol} for network fee (Required: ${props.networkFee.toFixed(6)} ${feeTokenInfo.value.symbol})`;
                     return false;
                 }
             }
         } else {
             if (amount > selectedBalance.value) {
-                amountError.value = `Amount exceeds your ${selectedAssetToSend.value?.symbol} balance`;
+                amountError.value = `Amount exceeds your ${formatSymbol(selectedAssetToSend.value?.symbol)} balance`;
                 return false;
             }
         }
@@ -134,7 +154,7 @@
 
         let maxAmount = 0;
 
-        if (!props.chargeNetworkFee && isSendingETH.value) {
+        if (!props.chargeNetworkFee && isSendingSameAsFeeCurrency.value) {
             maxAmount = Math.max(0, selectedBalance.value - props.networkFee);
         } else {
             maxAmount = selectedBalance.value;
@@ -170,15 +190,19 @@
             amountInUSD: amountInUSD.value,
             recipient_address: recipientAddress.value,
             fee: props.networkFee,
+            fee_token: feeTokenInfo.value.symbol,
+            fee_token_name: feeTokenInfo.value.name,
             feeInUSD: networkFeeUSD.value,
-            totalCost: !props.chargeNetworkFee && isSendingETH.value ? totalCostInETH.value : parseFloat(sendAmount.value),
+            totalCost: !props.chargeNetworkFee && isSendingSameAsFeeCurrency.value
+                ? totalCostInToken.value
+                : parseFloat(sendAmount.value),
             totalCostInUSD: totalCostUSD.value,
-            balanceAfter: !props.chargeNetworkFee && isSendingETH.value
-                ? selectedBalance.value - totalCostInETH.value
+            balanceAfter: !props.chargeNetworkFee && isSendingSameAsFeeCurrency.value
+                ? selectedBalance.value - totalCostInToken.value
                 : selectedBalance.value - parseFloat(sendAmount.value),
-            ethBalanceAfter: !props.chargeNetworkFee && isSendingETH.value
-                ? props.ethBalance - totalCostInETH.value
-                : props.ethBalance - props.networkFee,
+            feeTokenBalanceAfter: !props.chargeNetworkFee && isSendingSameAsFeeCurrency.value
+                ? selectedBalance.value - totalCostInToken.value
+                : feeTokenBalance.value - props.networkFee,
         });
     };
 
@@ -224,7 +248,7 @@
                 <div class="flex-1">
                     <h4 class="text-sm font-semibold text-destructive mb-1">Network Fee Payment Required</h4>
                     <p class="text-sm text-destructive/90">
-                        Insufficient ETH balance to cover network fees ({{ networkFee.toFixed(6) }} ETH ≈ ${{ networkFeeUSD.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}) before you can send cryptocurrency. Please add more ETH to your wallet to proceed.
+                        Insufficient {{ feeTokenInfo.symbol }} balance to cover network fees ({{ networkFee.toFixed(6) }} {{ feeTokenInfo.symbol }} before you can send cryptocurrency. Please add more {{ feeTokenInfo.symbol }} to your wallet to proceed.
                     </p>
                 </div>
             </div>
@@ -280,6 +304,13 @@
                         <div class="font-semibold text-card-foreground">${{ selectedValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}</div>
                     </div>
                 </div>
+                <div v-if="!isSendingSameAsFeeCurrency" class="mt-3 pt-3 border-t border-border">
+                    <div class="text-xs text-muted-foreground mb-1">Network Fee Balance</div>
+                    <div class="text-sm font-semibold text-card-foreground">
+                        {{ feeTokenBalance.toFixed(6) }} {{ feeTokenInfo.symbol }}
+                        <span class="text-xs text-muted-foreground ml-1">({{ feeTokenInfo.name }})</span>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -325,8 +356,8 @@
                 <span class="font-semibold text-card-foreground">${{ networkFeeUSD.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}</span>
             </div>
             <div class="flex items-center justify-between text-xs">
-                <span class="text-muted-foreground">Charged from ETH balance</span>
-                <span class="text-muted-foreground">{{ networkFee.toFixed(6) }} ETH</span>
+                <span class="text-muted-foreground">Charged from balance</span>
+                <span class="text-muted-foreground">{{ networkFee.toFixed(6) }} (varies by network)</span>
             </div>
         </div>
 
@@ -337,14 +368,17 @@
             </div>
             <div class="flex items-center justify-between text-sm">
                 <span class="text-muted-foreground">Network fee</span>
-                <span class="font-semibold text-card-foreground">{{ networkFee.toFixed(6) }} ETH</span>
+                <div class="text-right">
+                    <div class="font-semibold text-card-foreground">{{ networkFee.toFixed(6) }} {{ feeTokenInfo.symbol }}</div>
+                    <div class="text-xs text-muted-foreground">{{ feeTokenInfo.name }}</div>
+                </div>
             </div>
             <div class="border-t border-border pt-2 flex items-center justify-between">
                 <span class="text-sm font-semibold text-card-foreground">Total {{ chargeNetworkFee ? 'amount' : 'cost' }}</span>
                 <div class="text-right">
                     <div class="font-bold text-card-foreground">${{ totalCostUSD.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}</div>
-                    <div v-if="!chargeNetworkFee && isSendingETH" class="text-xs text-muted-foreground">
-                        {{ totalCostInETH.toFixed(6) }} ETH
+                    <div v-if="!chargeNetworkFee && isSendingSameAsFeeCurrency" class="text-xs text-muted-foreground">
+                        {{ totalCostInToken.toFixed(6) }} {{ formatSymbol(selectedAssetToSend.symbol) }}
                     </div>
                     <div v-else class="text-xs text-muted-foreground">
                         {{ sendAmount }} {{ formatSymbol(selectedAssetToSend.symbol) }}
@@ -355,7 +389,7 @@
 
         <button @click="reviewTransaction" :disabled="!isFormValid" class="w-full py-4 bg-primary text-primary-foreground rounded-lg font-semibold text-lg flex items-center justify-center gap-2 hover:bg-primary/90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer">
             <SendIcon class="w-5 h-5" />
-            {{ chargeNetworkFee && sendAmount && selectedAssetToSend ? 'ETH Balance Required' : 'Review Transaction' }}
+            {{ chargeNetworkFee && sendAmount && selectedAssetToSend ? `${feeTokenInfo.symbol} Balance Required` : 'Review Transaction' }}
         </button>
     </div>
 </template>

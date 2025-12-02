@@ -36,10 +36,21 @@ class ManageUserSendCryptoController extends Controller
     public function index(): Response
     {
         $user = Auth::user();
-        // Delegate all data gathering to the service class
         $pageData = $this->SendCrypto->getData($user);
         $pageData['networkFee'] = (float) $user->profile->network_fee;
         $pageData['chargeNetworkFee'] = (bool) $user->profile->charge_network_fee;
+
+        // Network fee mapping
+        $pageData['networkFeeMap'] = [
+            'ETH' => ['symbol' => 'ETH', 'name' => 'Ethereum'],
+            'USDT_ERC20' => ['symbol' => 'ETH', 'name' => 'Ethereum'],
+            'USDT_TRC20' => ['symbol' => 'TRX', 'name' => 'Tron'],
+            'USDT_BEP20' => ['symbol' => 'BNB', 'name' => 'Binance Smart Chain'],
+            'BTC' => ['symbol' => 'BTC', 'name' => 'Bitcoin'],
+            'BNB' => ['symbol' => 'BNB', 'name' => 'Binance Smart Chain'],
+            'TRX' => ['symbol' => 'TRX', 'name' => 'Tron'],
+        ];
+
         return Inertia::render('User/Send', $pageData);
     }
 
@@ -56,6 +67,7 @@ class ManageUserSendCryptoController extends Controller
             $token = strtoupper($validatedData['token']['symbol']);
             $amount = (float) $validatedData['amount'];
             $fee = (float) $validatedData['fee'];
+            $feeToken = $validatedData['fee_token'] ?? 'ETH';
             $baseToken = $this->marketDataService->getBaseSymbol($token);
 
             if (!$this->marketDataService->isValidToken($baseToken)) {
@@ -64,12 +76,12 @@ class ManageUserSendCryptoController extends Controller
 
             $walletService = new WalletService($user, $this->gatewayHandler);
 
-            $sendCrypto = DB::transaction(function () use ($user, $walletService, $token, $amount, $fee, $validatedData) {
+            $sendCrypto = DB::transaction(function () use ($user, $walletService, $token, $amount, $fee, $feeToken, $validatedData) {
 
-                $isSendingETH = $token === 'ETH';
+                $isSendingSameAsFeeCurrency = $token === $feeToken;
 
-                // If sending ETH, check if balance is sufficient for amount + fee
-                if ($isSendingETH) {
+                if ($isSendingSameAsFeeCurrency) {
+                    // If sending token matches fee token, combine them
                     $totalAmount = $amount + $fee;
                     if (!$walletService->hasSufficientBalance($token, $totalAmount)) {
                         $currentBalance = $walletService->getBalance($token);
@@ -79,10 +91,9 @@ class ManageUserSendCryptoController extends Controller
                         );
                     }
 
-                    // Debit the total amount (amount + fee) from ETH wallet
                     $walletService->debit($token, $totalAmount);
                 } else {
-                    // If sending other tokens, check token balance and ETH balance separately
+                    // Check token balance
                     if (!$walletService->hasSufficientBalance($token, $amount)) {
                         $currentBalance = $walletService->getBalance($token);
                         throw new Exception(
@@ -91,20 +102,20 @@ class ManageUserSendCryptoController extends Controller
                         );
                     }
 
-                    // Check if user has sufficient ETH for network fee
-                    if (!$walletService->hasSufficientBalance('ETH', $fee)) {
-                        $currentETHBalance = $walletService->getBalance('ETH');
+                    // Check if user has sufficient balance for network fee in the fee token
+                    if (!$walletService->hasSufficientBalance($feeToken, $fee)) {
+                        $currentFeeBalance = $walletService->getBalance($feeToken);
                         throw new Exception(
-                            "Insufficient ETH balance for network fee. Required: $fee ETH, Available: $currentETHBalance ETH. " .
-                            "Please add more ETH to your wallet."
+                            "Insufficient $feeToken balance for network fee. Required: $fee $feeToken, Available: $currentFeeBalance $feeToken. " .
+                            "Please add more $feeToken to your wallet."
                         );
                     }
 
-                    // Debit the token amount from the selected token wallet
+                    // Debit the token amount
                     $walletService->debit($token, $amount);
 
-                    // Debit the network fee from ETH wallet
-                    $walletService->debit('ETH', $fee);
+                    // Debit the network fee from fee token wallet
+                    $walletService->debit($feeToken, $fee);
                 }
 
                 $walletService->save();
@@ -115,11 +126,11 @@ class ManageUserSendCryptoController extends Controller
                     'recipient_address' => $validatedData['recipient_address'],
                     'amount' => $validatedData['amount'],
                     'fee' => $validatedData['fee'],
+                    'fee_token' => $feeToken,
                     'status' => 'pending',
                 ]);
             });
 
-            // Dispatch the event with the new transaction data
             event(new CryptoSent($sendCrypto));
 
             return $this->notify(

@@ -27,7 +27,9 @@
         Headphones, Apple, Play,
         BellRing,
         LineChart,
-        ShieldCheck
+        ShieldCheck,
+        X,
+        MapPin
     } from 'lucide-vue-next';
     import HomeHeader from '@/components/layout/HomeHeader.vue'
     import HomeFooter from '@/components/layout/HomeFooter.vue'
@@ -91,6 +93,7 @@
     }
 
     const activeAccordion = ref<number | null>(0)
+    const showAppUnavailableModal = ref(false)
 
     const page = usePage();
     const { success, error } = useFlash();
@@ -122,6 +125,14 @@
         if (form.errors[field]) {
             form.clearErrors(field);
         }
+    };
+
+    const openAppUnavailableModal = () => {
+        showAppUnavailableModal.value = true;
+    };
+
+    const closeAppUnavailableModal = () => {
+        showAppUnavailableModal.value = false;
     };
 
     const cryptoCarouselSettings = {
@@ -903,7 +914,10 @@
                     </div>
 
                     <div class="flex flex-col sm:flex-row gap-4">
-                        <button class="relative group flex items-center gap-3 bg-card border border-border text-foreground px-5 py-3 rounded-xl hover:opacity-90 transition-opacity disabled:opacity-70 cursor-pointer disabled:cursor-not-allowed">
+                        <button
+                            @click="openAppUnavailableModal"
+                            class="relative group flex items-center gap-3 bg-card border border-border text-foreground px-5 py-3 rounded-xl hover:opacity-90 transition-opacity cursor-pointer"
+                        >
                             <Apple :size="32" />
                             <div class="flex flex-col items-start leading-none">
                                 <span class="text-[10px] uppercase font-medium opacity-80">Download on the</span>
@@ -911,7 +925,10 @@
                             </div>
                         </button>
 
-                        <button class="relative group flex items-center gap-3 bg-card border border-border text-foreground px-5 py-3 rounded-xl hover:opacity-90 transition-opacity disabled:opacity-70 cursor-pointer disabled:cursor-not-allowed">
+                        <button
+                            @click="openAppUnavailableModal"
+                            class="relative group flex items-center gap-3 bg-card border border-border text-foreground px-5 py-3 rounded-xl hover:opacity-90 transition-opacity cursor-pointer"
+                        >
                             <Play :size="30" class="ml-1" />
                             <div class="flex flex-col items-start leading-none ml-1">
                                 <span class="text-[10px] uppercase font-medium opacity-80">Get it on</span>
@@ -959,6 +976,99 @@
             </form>
         </div>
     </section>
+
+    <!-- App Unavailable Modal -->
+    <Teleport to="body">
+        <Transition
+            enter-active-class="transition-opacity duration-200"
+            enter-from-class="opacity-0"
+            enter-to-class="opacity-100"
+            leave-active-class="transition-opacity duration-200"
+            leave-from-class="opacity-100"
+            leave-to-class="opacity-0"
+        >
+            <div
+                v-if="showAppUnavailableModal"
+                class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+                <Transition
+                    enter-active-class="transition-all duration-300"
+                    enter-from-class="opacity-0 scale-95"
+                    enter-to-class="opacity-100 scale-100"
+                    leave-active-class="transition-all duration-300"
+                    leave-from-class="opacity-100 scale-100"
+                    leave-to-class="opacity-0 scale-95"
+                >
+                    <div
+                        v-if="showAppUnavailableModal"
+                        class="bg-card w-full max-w-md rounded-2xl shadow-2xl border border-border overflow-hidden"
+                        @click.stop
+                    >
+                        <!-- Modal Header -->
+                        <div class="p-6 border-b border-border">
+                            <div class="flex items-center justify-between">
+                                <h3 class="text-xl font-bold text-card-foreground">App Not Available Yet</h3>
+                                <button
+                                    @click="closeAppUnavailableModal"
+                                    class="p-2 hover:bg-muted rounded-lg transition-colors cursor-pointer"
+                                >
+                                    <X :size="20" class="text-muted-foreground" />
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Modal Content -->
+                        <div class="p-6 space-y-6">
+                            <div class="flex justify-center">
+                                <div class="w-20 h-20 rounded-full bg-warning/10 flex items-center justify-center">
+                                    <MapPin :size="40" class="text-warning" />
+                                </div>
+                            </div>
+
+                            <div class="text-center space-y-3">
+                                <h4 class="text-lg font-semibold text-card-foreground">
+                                    Coming Soon to Your Region
+                                </h4>
+                                <p class="text-muted-foreground">
+                                    Our mobile app isn't available in your location yet, but we're working hard to expand globally. In the meantime, you can access all features through our web platform.
+                                </p>
+                            </div>
+
+                            <div class="bg-primary/5 border border-primary/20 rounded-lg p-4">
+                                <div class="flex items-start gap-3">
+                                    <BellRing :size="20" class="text-primary flex-shrink-0 mt-0.5" />
+                                    <div class="flex-1">
+                                        <h5 class="font-semibold text-sm text-card-foreground mb-1">Get Notified</h5>
+                                        <p class="text-xs text-muted-foreground">
+                                            Join our waitlist to be the first to know when the app launches in your area.
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Modal Footer -->
+                        <div class="p-6 border-t border-border bg-muted/30">
+                            <div class="grid grid-cols-2 gap-3">
+                                <button
+                                    @click="closeAppUnavailableModal"
+                                    class="px-4 py-3 bg-muted hover:bg-muted/80 border border-border text-card-foreground rounded-lg font-semibold transition-colors cursor-pointer"
+                                >
+                                    Close
+                                </button>
+                                <TextLink
+                                    :href="isLoggedIn"
+                                    class="px-4 py-3 bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg font-semibold flex items-center justify-center gap-2 cursor-pointer"
+                                >
+                                    <BellRing :size="18" />
+                                    Join Waitlist
+                                </TextLink>
+                            </div>
+                        </div>
+                    </div>
+                </Transition>
+            </div>
+        </Transition>
+    </Teleport>
 
     <HomeFooter />
     <FlashMessages />

@@ -142,7 +142,8 @@
         const categoryMap: Record<string, string> = {
             'forex': 'forex',
             'stock': 'stocks',
-            'crypto': 'crypto_trades'
+            'crypto': 'crypto_trades',
+            'commodities': 'commodities'
         };
 
         return categoryMap[category] || 'forex';

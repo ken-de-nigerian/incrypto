@@ -21,6 +21,7 @@ class ManageUserTransactionController extends Controller
             'forex_trades' => $this->getForexTrades($user),
             'stock_trades' => $this->getStockTrades($user),
             'crypto_trades' => $this->getCryptoTrades($user),
+            'commodities' => $this->getCommoditiesTrades($user),
             'investment_histories' => $this->getInvestmentHistories($user),
             'tab' => $tab,
         ]);
@@ -92,6 +93,7 @@ class ManageUserTransactionController extends Controller
                 'amount',
                 'transaction_hash',
                 'fee',
+                'fee_token',
                 'status',
                 'created_at',
             ])
@@ -105,6 +107,7 @@ class ManageUserTransactionController extends Controller
             'amount' => $crypto->amount,
             'transaction_hash' => $crypto->transaction_hash,
             'fee' => $crypto->fee,
+            'fee_token' => $crypto->fee_token,
             'status' => $crypto->status,
             'created_at' => $crypto->created_at,
         ])->toArray();
@@ -168,6 +171,33 @@ class ManageUserTransactionController extends Controller
     {
         return $user->trades()
             ->where('category', 'crypto')
+            ->select([
+                'id',
+                'pair',
+                'pair_name',
+                'type',
+                'amount',
+                'leverage',
+                'duration',
+                'entry_price',
+                'exit_price',
+                'status',
+                'pnl',
+                'trading_mode',
+                'opened_at',
+                'closed_at',
+                'expiry_time',
+                'created_at',
+            ])
+            ->latest()
+            ->get()
+            ->toArray();
+    }
+
+    protected function getCommoditiesTrades($user)
+    {
+        return $user->trades()
+            ->where('category', 'commodities')
             ->select([
                 'id',
                 'pair',

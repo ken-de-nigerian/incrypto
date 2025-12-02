@@ -32,7 +32,7 @@ class ExecuteTradeRequest extends FormRequest
             'duration' => 'required|string|in:1m,5m,15m,30m,1h,4h,1d',
             'entry_price' => 'required|numeric|min:0',
             'trading_mode' => 'required|in:live,demo',
-            'category' => 'required|in:forex,stock,crypto'
+            'category' => 'required|in:forex,stock,crypto,commodities'
         ];
     }
 }

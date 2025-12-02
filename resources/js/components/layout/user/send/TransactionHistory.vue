@@ -101,7 +101,7 @@
                                 To: {{ tx.recipient_address.slice(0, 10) }}...{{ tx.recipient_address.slice(-8) }}
                             </div>
                             <div v-if="tx.fee" class="text-xs text-muted-foreground">
-                                Fee: {{ parseFloat(tx.fee).toFixed(6) }} ETH
+                                Fee: {{ parseFloat(tx.fee).toFixed(6) }} {{ tx.fee_token }}
                             </div>
                             <a v-if="tx.transaction_hash && tx.status === 'completed'" :href="`https://etherscan.io/tx/${tx.transaction_hash}`" target="_blank" class="text-xs text-primary hover:underline flex items-center gap-1 mt-2">
                                 View on Explorer

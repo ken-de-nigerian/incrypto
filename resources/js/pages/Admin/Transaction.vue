@@ -26,6 +26,7 @@
         WalletIcon,
         TrendingUpIcon,
         TrendingDownIcon,
+        TrendingUp,
         UserIcon,
         ActivityIcon,
         PieChartIcon
@@ -116,18 +117,22 @@
             type: Array as () => Transaction[],
             default: () => []
         },
+        commodities: {
+            type: Array as () => Transaction[],
+            default: () => []
+        },
         investment_histories: {
             type: Array as () => Transaction[],
             default: () => []
         },
         tab: {
-            type: String as () => 'all' | 'swaps' | 'received' | 'sent' | 'forex' | 'stocks' | 'crypto_trades' | 'investments',
+            type: String as () => 'all' | 'swaps' | 'received' | 'sent' | 'forex' | 'stocks' | 'crypto_trades' | 'commodities' | 'investments',
             default: 'all'
         }
     });
 
     const page = usePage();
-    const activeTab = ref<'all' | 'swaps' | 'received' | 'sent' | 'forex' | 'stocks' | 'crypto_trades' | 'investments'>(props.tab);
+    const activeTab = ref<'all' | 'swaps' | 'received' | 'sent' | 'forex' | 'stocks' | 'crypto_trades' | 'commodities' | 'investments'>(props.tab);
     const searchQuery = ref('');
     const sortOrder = ref<'asc' | 'desc' | 'default'>('default');
     const filterByStatus = ref<string>('all');
@@ -247,6 +252,12 @@
             type: 'crypto_trade' as const,
             compositeId: `crypto-trade-${tx.id}`
         }));
+        const commodityTrades = (props.commodities || []).map(tx => ({
+            ...tx,
+            trade_direction: (tx as any).type,
+            type: 'commodity_trade' as const,
+            compositeId: `commodity-${tx.id}`
+        }));
         const investments = props.investment_histories.map(tx => ({
             ...tx,
             type: 'investment' as const,
@@ -255,7 +266,7 @@
             totalInterestEarned: calculateTotalInterestEarned(tx)
         }));
 
-        return [...swaps, ...received, ...sent, ...forexTrades, ...stockTrades, ...cryptoTrades, ...investments].sort((a, b) =>
+        return [...swaps, ...received, ...sent, ...forexTrades, ...stockTrades, ...cryptoTrades, ...commodityTrades, ...investments].sort((a, b) =>
             new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
         );
     });
@@ -274,6 +285,8 @@
                 return allTransactions.value.filter(tx => tx.type === 'stock_trade');
             case 'crypto_trades':
                 return allTransactions.value.filter(tx => tx.type === 'crypto_trade');
+            case 'commodities':
+                return allTransactions.value.filter(tx => tx.type === 'commodity_trade');
             case 'investments':
                 return allTransactions.value.filter(tx => tx.type === 'investment');
             default:
@@ -374,6 +387,7 @@
             forex_trades: props.forex_trades.length,
             stock_trades: props.stock_trades.length,
             crypto_trades: props.crypto_trades.length,
+            commodities: (props.commodities || []).length,
             investments: props.investment_histories.length,
             totalVolume,
             successRate
@@ -388,6 +402,7 @@
             case 'forex_trade': return DollarSignIcon;
             case 'stock_trade': return BarChart3Icon;
             case 'crypto_trade': return CoinsIcon;
+            case 'commodity_trade': return TrendingUp;
             case 'investment': return WalletIcon;
             default: return HistoryIcon;
         }
@@ -401,6 +416,7 @@
             'forex_trade': 'Forex Trade',
             'stock_trade': 'Stock Trade',
             'crypto_trade': 'Crypto Trade',
+            'commodity_trade': 'Commodity Trade',
             'investment': 'Investment',
         };
         return labels[type] || type;
@@ -529,6 +545,7 @@
         { id: 'forex', label: 'Forex', icon: DollarSignIcon, params: { tab: 'forex' } },
         { id: 'stocks', label: 'Stocks', icon: BarChart3Icon, params: { tab: 'stocks' } },
         { id: 'crypto_trades', label: 'Crypto', icon: CoinsIcon, params: { tab: 'crypto_trades' } },
+        { id: 'commodities', label: 'Commodities', icon: TrendingUp, params: { tab: 'commodities' } },
         { id: 'investments', label: 'Investments', icon: WalletIcon, params: { tab: 'investments' } }
     ];
 
@@ -709,7 +726,7 @@
                             </div>
                             <span class="text-xs font-medium">Types</span>
                         </div>
-                        <p class="text-2xl font-bold text-card-foreground">7</p>
+                        <p class="text-2xl font-bold text-card-foreground">8</p>
                         <p class="text-xs text-muted-foreground mt-1">Categories</p>
                     </div>
                 </div>
@@ -738,7 +755,7 @@
                                     class="px-2 py-0.5 text-xs rounded-full"
                                     :class="activeTab === tab.id ? 'bg-primary-foreground/20' : 'bg-muted'"
                                 >
-                                    {{ statistics[tab.id === 'forex' ? 'forex_trades' : tab.id === 'stocks' ? 'stock_trades' : tab.id === 'crypto_trades' ? 'crypto_trades' : tab.id] }}
+                                    {{ statistics[tab.id === 'forex' ? 'forex_trades' : tab.id === 'stocks' ? 'stock_trades' : tab.id === 'crypto_trades' ? 'crypto_trades' : tab.id === 'commodities' ? 'commodities' : tab.id] }}
                                 </span>
                             </TextLink>
                         </div>
@@ -938,8 +955,8 @@
                                         </div>
                                     </div>
 
-                                    <!-- Trade Details -->
-                                    <div v-if="['forex_trade', 'stock_trade', 'crypto_trade'].includes(tx.type)" class="space-y-2">
+                                    <!-- Trade Details (Forex, Stock, Crypto, Commodity) -->
+                                    <div v-if="['forex_trade', 'stock_trade', 'crypto_trade', 'commodity_trade'].includes(tx.type)" class="space-y-2">
                                         <div class="flex items-center justify-between">
                                             <span class="text-sm text-muted-foreground">Pair:</span>
                                             <span class="text-sm font-semibold text-card-foreground">{{ tx.pair_name || tx.pair }}</span>
@@ -1023,7 +1040,7 @@
                                     </div>
                                 </div>
 
-                                <div v-if="['running', 'open', 'pending'].includes(tx.status.toLowerCase()) && ['forex_trade', 'stock_trade', 'crypto_trade'].includes(tx.type)"
+                                <div v-if="['running', 'open', 'pending'].includes(tx.status.toLowerCase()) && ['forex_trade', 'stock_trade', 'crypto_trade', 'commodity_trade'].includes(tx.type)"
                                      class="p-4 border-t border-border bg-muted/20">
                                     <button
                                         @click="openTradeModal(tx)"

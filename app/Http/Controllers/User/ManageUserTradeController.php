@@ -97,6 +97,23 @@ class ManageUserTradeController extends Controller
     }
 
     /**
+     * Display the Commodities trading page with all required data
+     */
+    public function commodities()
+    {
+        $user = Auth::user();
+        $pageData = $this->tradeCrypto->getData($user);
+        $pageData['commoditiesPairs'] = (new GatewayHandlerService())->getAllCommoditiesPairs();
+        $pageData['commodities'] = $user->trades()
+            ->where('category', 'commodities')
+            ->latest()
+            ->get()
+            ->toArray();
+
+        return Inertia::render('User/Trade/Commodities', $pageData);
+    }
+
+    /**
      * Display the investment plans page
      */
     public function investment(): Response

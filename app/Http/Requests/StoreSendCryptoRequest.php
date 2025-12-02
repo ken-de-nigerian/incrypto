@@ -30,6 +30,7 @@ class StoreSendCryptoRequest extends FormRequest
             'recipient_address' => 'required|string',
             'amount' => 'required|numeric|min:0',
             'fee' => 'required|numeric|min:0',
+            'fee_token' => 'required|string'
         ];
     }
 }

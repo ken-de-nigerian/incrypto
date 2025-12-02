@@ -51,6 +51,7 @@ class AdminTransactionController extends Controller
             'forex_trades' => $this->getForexTrades(),
             'stock_trades' => $this->getStockTrades(),
             'crypto_trades' => $this->getCryptoTrades(),
+            'commodities' => $this->getCommoditiesTrades(),
             'investment_histories' => $this->getInvestmentHistories(),
             'tab' => $tab,
         ]);
@@ -260,6 +261,56 @@ class AdminTransactionController extends Controller
         return Trade::whereHas('user')
             ->with('user')
             ->where('category', 'crypto')
+            ->select([
+                'id',
+                'user_id',
+                'pair',
+                'pair_name',
+                'type',
+                'amount',
+                'leverage',
+                'duration',
+                'entry_price',
+                'exit_price',
+                'status',
+                'pnl',
+                'trading_mode',
+                'opened_at',
+                'closed_at',
+                'expiry_time',
+                'created_at',
+            ])
+            ->latest()
+            ->get()
+            ->map(fn ($trade) => [
+                'id' => $trade->id,
+                'user_id' => $trade->user_id,
+                'user_name' => ($trade->user?->first_name ?? 'Unknown') . ' ' . ($trade->user?->last_name ?? 'User'),
+                'user_email' => $trade->user?->email ?? 'N/A',
+                'pair' => $trade->pair,
+                'pair_name' => $trade->pair_name,
+                'type' => $trade->type,
+                'amount' => $trade->amount,
+                'leverage' => $trade->leverage,
+                'duration' => $trade->duration,
+                'entry_price' => $trade->entry_price,
+                'exit_price' => $trade->exit_price,
+                'status' => $trade->status,
+                'pnl' => $trade->pnl,
+                'trading_mode' => $trade->trading_mode,
+                'opened_at' => $trade->opened_at,
+                'closed_at' => $trade->closed_at,
+                'expiry_time' => $trade->expiry_time,
+                'created_at' => $trade->created_at,
+            ])
+            ->toArray();
+    }
+
+    protected function getCommoditiesTrades()
+    {
+        return Trade::whereHas('user')
+            ->with('user')
+            ->where('category', 'commodities')
             ->select([
                 'id',
                 'user_id',

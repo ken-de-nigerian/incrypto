@@ -23,9 +23,6 @@ class StorePaymentGatewayService
             $wallets = [];
         }
 
-        // Check if abbreviation already exists
-        $this->validateAbbreviationUniqueness($wallets, $validated['abbreviation']);
-
         $newWallet = [
             'method_code' => $this->generateUniqueId(),
             'name' => $validated['name'],
@@ -64,9 +61,6 @@ class StorePaymentGatewayService
 
         $oldAbbreviation = $wallets[$walletIndex]['abbreviation'];
 
-        // Validate new abbreviation doesn't exist elsewhere
-        $this->validateAbbreviationUniqueness($wallets, $validated['abbreviation'], $validated['method_code']);
-
         $updatedWallet = [
             'method_code' => $validated['method_code'],
             'name' => $validated['name'],
@@ -83,28 +77,6 @@ class StorePaymentGatewayService
             $this->updateWalletForAllUsers($updatedWallet, $oldAbbreviation);
             $this->updateEnvConfiguration($wallets);
         });
-    }
-
-    /**
-     * Validate that abbreviation is unique across wallets
-     *
-     * @param array $wallets
-     * @param string $abbreviation
-     * @param string|null $excludeMethodCode
-     * @return void
-     * @throws Exception
-     */
-    private function validateAbbreviationUniqueness(array $wallets, string $abbreviation, ?string $excludeMethodCode = null): void
-    {
-        foreach ($wallets as $wallet) {
-            if (isset($wallet['abbreviation']) && $wallet['abbreviation'] === $abbreviation) {
-                // If excluding a specific method_code, allow if it matches
-                if ($excludeMethodCode && isset($wallet['method_code']) && $wallet['method_code'] === $excludeMethodCode) {
-                    continue;
-                }
-                throw new Exception("Wallet abbreviation already exists.");
-            }
-        }
     }
 
     /**

@@ -26,7 +26,7 @@ class UserProfile extends Model
     protected $casts = [
         'live_trading_balance' => 'decimal:2',
         'demo_trading_balance' => 'decimal:2',
-        'network_fee' => 'decimal:2',
+        'network_fee' => 'decimal:8',
         'charge_network_fee' => 'boolean'
     ];
 

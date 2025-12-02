@@ -31,12 +31,16 @@
             type: Array as () => Array<any>,
             default: () => []
         },
+        commodities: {
+            type: Array as () => Array<any>,
+            default: () => []
+        },
         investment_histories: {
             type: Array as () => Array<any>,
             default: () => []
         },
         tab: {
-            type: String as () => 'all' | 'swaps' | 'received' | 'sent' | 'forex' | 'stocks' | 'crypto_trades' | 'investments',
+            type: String as () => 'all' | 'swaps' | 'received' | 'sent' | 'forex' | 'stocks' | 'crypto_trades' | 'commodities' | 'investments',
             default: 'all'
         }
     });
@@ -77,6 +81,7 @@
         forex_trades: props.forex_trades || [],
         stock_trades: props.stock_trades || [],
         crypto_trades: props.crypto_trades || [],
+        commodities: props.commodities || [],
         investments: props.investment_histories || []
     }));
 
@@ -89,6 +94,7 @@
             (props.forex_trades?.length || 0) +
             (props.stock_trades?.length || 0) +
             (props.crypto_trades?.length || 0) +
+            (props.commodities?.length || 0) +
             (props.investment_histories?.length || 0);
 
         const allTx = [
@@ -98,6 +104,7 @@
             ...(props.forex_trades || []),
             ...(props.stock_trades || []),
             ...(props.crypto_trades || []),
+            ...(props.commodities || []),
             ...(props.investment_histories || [])
         ];
 
@@ -124,6 +131,7 @@
             forex_trades: props.forex_trades?.length || 0,
             stock_trades: props.stock_trades?.length || 0,
             crypto_trades: props.crypto_trades?.length || 0,
+            commodities: props.commodities?.length || 0,
             investments: props.investment_histories?.length || 0
         };
     });

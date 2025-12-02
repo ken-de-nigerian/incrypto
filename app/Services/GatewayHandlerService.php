@@ -90,7 +90,7 @@ class GatewayHandlerService
     public function fetchTradeChartData(string $symbol, string $category = 'forex'): array
     {
         // Validate category
-        $supportedCategories = ['forex', 'stock', 'crypto'];
+        $supportedCategories = ['forex', 'stock', 'crypto', 'commodities'];
         if (!in_array($category, $supportedCategories)) {
             $error = "Unsupported category: $category. Supported: " . implode(', ', $supportedCategories);
             Log::warning($error, ['method' => __METHOD__, 'symbol' => $symbol, 'category' => $category]);
@@ -102,6 +102,7 @@ class GatewayHandlerService
             'forex' => $this->getAllForexPairs(),
             'stock' => $this->getAllStocksPairs(),
             'crypto' => $this->getAllCryptoPairs(),
+            'commodities' => $this->getAllCommoditiesPairs(),
             default => $this->getAllForexPairs()
         };
 
@@ -505,7 +506,7 @@ class GatewayHandlerService
         try {
 
             // Validate category
-            $supportedCategories = ['forex', 'stock', 'crypto'];
+            $supportedCategories = ['forex', 'stock', 'crypto', 'commodities'];
             if (!in_array($category, $supportedCategories)) {
                 $error = "Unsupported category: $category";
                 Log::warning($error, ['method' => __METHOD__, 'symbol' => $symbol, 'category' => $category]);
@@ -517,6 +518,7 @@ class GatewayHandlerService
                 'forex' => $this->getAllForexPairs(),
                 'stock' => $this->getAllStocksPairs(),
                 'crypto' => $this->getAllCryptoPairs(),
+                'commodities' => $this->getAllCommoditiesPairs(),
                 default => $this->getAllForexPairs()
             };
 
@@ -906,6 +908,14 @@ class GatewayHandlerService
     public function getAllCryptoPairs(): array
     {
         return CryptoImageService::getCryptosWithImages();
+    }
+
+    /**
+     * Get all available commodities with image URLs included.
+     */
+    public function getAllCommoditiesPairs(): array
+    {
+        return CommoditiesImageService::getCommoditiesWithImages();
     }
 
     /**

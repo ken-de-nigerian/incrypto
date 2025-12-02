@@ -113,16 +113,20 @@
                                     <div class="p-4 bg-primary/5 border border-primary/20 rounded-lg">
                                         <div class="flex items-center justify-between mb-2">
                                             <div class="flex items-center gap-2">
-                                                <span class="text-sm font-semibold text-card-foreground">Network Fee</span>
+                                                <span class="text-sm font-semibold text-card-foreground">Fee</span>
                                                 <span class="text-xs px-2 py-0.5 bg-primary/10 text-primary rounded-full font-medium">Included</span>
                                             </div>
                                             <div class="text-right">
                                                 <div class="text-sm font-semibold text-card-foreground">${{ transactionDetails.feeInUSD.toFixed(2) }}</div>
                                             </div>
                                         </div>
-                                        <div class="flex items-center justify-between text-xs text-muted-foreground">
-                                            <span>Processed automatically</span>
-                                            <span>{{ transactionDetails.fee.toFixed(6) }} ETH</span>
+                                        <div class="flex items-center justify-between text-xs">
+                                            <span class="text-muted-foreground">
+                                                {{ transactionDetails.fee_token_name || 'Ethereum' }}
+                                            </span>
+                                            <span class="text-muted-foreground">
+                                                {{ transactionDetails.fee.toFixed(6) }} {{ transactionDetails.fee_token || 'ETH' }}
+                                            </span>
                                         </div>
                                     </div>
                                 </div>

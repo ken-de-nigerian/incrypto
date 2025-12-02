@@ -23,6 +23,7 @@ class SendCrypto extends Model
         'status',
         'transaction_hash',
         'fee',
+        'fee_token'
     ];
 
     /**

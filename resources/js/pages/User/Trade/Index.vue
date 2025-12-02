@@ -7,7 +7,7 @@
         WalletIcon,
         PiggyBankIcon,
         BarChartIcon,
-        GlobeIcon, ReceiptIcon
+        GlobeIcon, ReceiptIcon, TrendingUpIcon, CreditCardIcon
     } from 'lucide-vue-next';
     import Breadcrumb from '@/components/Breadcrumb.vue';
     import AppLayout from '@/components/layout/user/dashboard/AppLayout.vue';
@@ -102,10 +102,12 @@
         { title: 'Forex Trading', icon: GlobeIcon, description: 'Trade major and exotic currency pairs with leverage.', route: route('user.trade.forex') },
         { title: 'Stock Trading', icon: BarChartIcon, description: 'Invest in global stocks and ETFs.', route: route('user.trade.stock') },
         { title: 'Crypto Trading', icon: WalletIcon, description: 'Trade popular cryptocurrencies.', route: route('user.trade.crypto') },
+        { title: 'Commodities Trading', icon: TrendingUpIcon, description: 'Trade gold, oil, silver, and other commodities.', route: route('user.trade.commodities') },
         { title: 'Investments & Staking', icon: PiggyBankIcon, description: 'Explore fixed-term investment plans and earn APY.', route: route('user.trade.investment') },
+        { title: 'Loans', icon: CreditCardIcon, description: 'Apply for instant loans and manage repayments.', route: route('user.trade.loans') },
         { title: 'Copy Trading Network', icon: UsersIcon, description: 'Automatically copy top-performing traders.', route: route('user.trade.network') },
         { title: 'Transaction History', icon: ReceiptIcon, description: 'View your trading history and past transactions.', route: route('user.transactions.index') },
-    ];
+    ]
 
     const handleFundingClick = () => {
         if (!isLiveMode.value) {

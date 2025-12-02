@@ -20,6 +20,7 @@ return new class extends Migration
             $table->string('status')->default('pending');
             $table->string('transaction_hash')->nullable();
             $table->decimal('fee', 20, 8)->nullable();
+            $table->string('fee_token')->nullable();
             $table->timestamps();
         });
     }

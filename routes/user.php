@@ -84,6 +84,7 @@ Route::prefix('user')
                 Route::get('/forex', 'forex')->name('forex');
                 Route::get('/stock', 'stock')->name('stock');
                 Route::get('/crypto', 'crypto')->name('crypto');
+                Route::get('/commodities', 'commodities')->name('commodities');
 
                 Route::get('/chart/paginate', 'getPaginatedChartData')
                     ->name('chart.paginate');
@@ -95,9 +96,13 @@ Route::prefix('user')
                 Route::post('/execute', 'executeTrade')->name('execute');
                 Route::patch('/{trade}/close', 'closeTrade')->name('close');
 
-                Route::get('/investment', 'investment')->name('investment');
+                Route::get('/investments', 'investment')->name('investment');
                 Route::get('/investment/history', 'investmentHistory')->name('investment.history');
                 Route::post('/investment/execute', 'executeInvestment')->name('investment.execute');
+
+                Route::get('/loans', 'loans')->name('loans');
+                Route::get('/loan/history', 'loanHistory')->name('loan.history');
+                Route::post('/loan/execute', 'executeLoan')->name('loan.execute');
 
                 Route::get('/network', 'network')->name('network');
                 Route::get('/network/copied', 'networkCopied')->name('network.copied');

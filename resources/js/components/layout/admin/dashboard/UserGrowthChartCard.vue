@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { PieChart } from 'lucide-vue-next';
+    import { PieChart } from 'lucide-vue-next';
     import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
     import { Chart, BarController, DoughnutController, ArcElement, BarElement, Tooltip, Legend, CategoryScale, LinearScale } from 'chart.js';
 

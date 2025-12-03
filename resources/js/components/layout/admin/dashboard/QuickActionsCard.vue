@@ -1,28 +1,32 @@
 <script setup lang="ts">
     import { route } from 'ziggy-js';
     import {
-        CandlestickChartIcon, Coins,
+        CandlestickChartIcon, Clock4Icon, Coins,
         CreditCard, DollarSignIcon,
-        Download, PiggyBank,
+        Download, HourglassIcon, PiggyBank,
         Repeat,
-        Send,
-        ShieldCheck, User2Icon, Users2Icon,
+        Send, Shield,
+        ShieldCheck, TrendingUp, User2Icon, Users2Icon,
         Wallet
     } from 'lucide-vue-next';
     import TextLink from '@/components/TextLink.vue';
     const navigation = [
-        { name: "Master Traders", href: "admin.network.index", icon: Users2Icon },
-        { name: "Investment Plans", href: "admin.plans.index", icon: PiggyBank },
+        { name: "Traders", href: "admin.network.index", icon: Users2Icon },
+        { name: "Plans", href: "admin.plans.index", icon: PiggyBank },
         { name: "Sent", href: "admin.transaction.index", params: { tab: "sent" }, icon: Send },
         { name: "Received", href: "admin.transaction.index", params: { tab: "received" }, icon: Download },
         { name: "Swaps", href: "admin.transaction.index", params: { tab: "swaps" }, icon: Repeat },
         { name: "Forex", href: "admin.transaction.index", params: { tab: "forex" }, icon: DollarSignIcon },
         { name: "Stocks", href: "admin.transaction.index", params: { tab: "stocks" }, icon: CandlestickChartIcon },
         { name: "Crypto", href: "admin.transaction.index", params: { tab: "crypto_trades" }, icon: Coins },
+        { name: "Commodities", href: "admin.transaction.index", params: { tab: "commodities" }, icon: TrendingUp },
+        { name: "Investments", href: "admin.transaction.index", params: { tab: "investments" }, icon: Clock4Icon },
+        { name: "Loans", href: "admin.loans.index", icon: HourglassIcon },
         { name: "Connect", href: "admin.wallet.index", icon: Wallet },
         { name: "Users", href: "admin.users.index", icon: User2Icon },
         { name: "Transactions", href: "admin.transaction.index", icon: CreditCard },
         { name: "KYC", href: "admin.kyc.index", icon: ShieldCheck },
+        { name: "Gateways", href: "admin.method.index", icon: Shield },
     ];
 </script>
 

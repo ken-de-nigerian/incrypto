@@ -191,7 +191,7 @@
 </script>
 
 <template>
-    <Head title="Investments & Staking" />
+    <Head title="Loans & Credit" />
 
     <AppLayout>
 
@@ -312,6 +312,7 @@
                                                 {{ loan.status }}
                                             </span>
                                         </td>
+
                                         <td class="px-6 py-4 text-sm text-muted-foreground">
                                             {{ new Date(loan.created_at).toLocaleDateString() }}
                                         </td>
@@ -348,15 +349,14 @@
                             </div>
                         </div>
 
-                        <div class="p-4 border-t border-border">
-                            <PaginationControls
-                                v-if="props.loans.last_page > 1"
-                                :links="props.loans.links"
-                                :from="props.loans.from"
-                                :to="props.loans.to"
-                                :total="props.loans.total"
-                            />
-                        </div>
+                        <PaginationControls
+                            v-if="props.loans.last_page > 1"
+                            :links="props.loans.links"
+                            :from="props.loans.from"
+                            :to="props.loans.to"
+                            :total="props.loans.total"
+                            class="p-4 sm:p-6 pt-6 border-t border-border"
+                        />
                     </div>
 
                     <div v-else class="flex flex-col items-center justify-center text-center py-16 px-4">

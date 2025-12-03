@@ -43,7 +43,7 @@ class ContactUsEmail extends Mailable implements ShouldQueue
     public function content(): Content
     {
         return new Content(
-            view: 'view.contact_us_email',
+            view: 'emails.contact_us_email',
             with: [
                 'name' => $this->data['name'],
                 'email' => $this->data['email'],

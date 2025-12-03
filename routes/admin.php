@@ -3,6 +3,7 @@
 use App\Http\Controllers\Admin\AdminCopyTradersController;
 use App\Http\Controllers\Admin\AdminDashboardController;
 use App\Http\Controllers\Admin\AdminKycController;
+use App\Http\Controllers\Admin\AdminLoanController;
 use App\Http\Controllers\Admin\AdminNotificationController;
 use App\Http\Controllers\Admin\AdminPaymentMethodController;
 use App\Http\Controllers\Admin\AdminPlansController;
@@ -140,6 +141,16 @@ Route::prefix('admin')
             ->controller(AdminNotificationController::class)
             ->group(function () {
                 Route::post('/broadcast', 'broadcast')->name('broadcast');
+            });
+
+        // Loan Requests
+        Route::prefix('loans')
+            ->name('loans.')
+            ->controller(AdminLoanController::class)
+            ->group(function () {
+                Route::get('/', 'index')->name('index');
+                Route::post('/{loan}/approve', 'approve')->name('approve');
+                Route::post('/{loan}/reject', 'reject')->name('reject');
             });
     });
 

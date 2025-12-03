@@ -52,6 +52,7 @@
     const isConnectedWalletsActive = computed(() => route().current('admin.wallet.*'));
     const isUsersActive = computed(() => route().current('admin.users.*') || route().current('admin.network.*'));
     const isPlansActive = computed(() => route().current('admin.plans.*') || route().current('admin.time.*'));
+    const isTransactionsActive = computed(() => route().current('admin.transaction.*') || route().current('admin.loans.*'));
 
     const isActive = (href: string) => route().current(href);
     const isProfileIndexActive = computed(() => {
@@ -143,17 +144,17 @@
 
                 <div class="space-y-1">
                     <TextLink
-                        v-for="subItem in transactionRoutes"
-                        :key="subItem.name"
-                        :href="route(subItem.href)"
+                        v-for="item in transactionRoutes"
+                        :key="item.name"
+                        :href="route(item.href)"
                         class="flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200"
                         :class="[
-                            isActive(subItem.href)
+                            isTransactionsActive || isActive(item.href)
                                 ? 'bg-sidebar-accent text-sidebar-foreground'
                                 : 'text-sidebar-foreground/70 hover:bg-sidebar-accent/30'
                         ]">
-                        <component :is="subItem.icon" class="mr-3 h-4 w-4 text-sidebar-foreground/70" />
-                        {{ subItem.name }}
+                        <component :is="item.icon" class="mr-3 h-4 w-4 text-sidebar-foreground/70" />
+                        {{ item.name }}
                     </TextLink>
                 </div>
 

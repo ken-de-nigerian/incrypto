@@ -5,6 +5,7 @@ namespace App\Http\Controllers\User;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\CloseTradeRequest;
 use App\Http\Requests\ExecuteInvestmentRequest;
+use App\Http\Requests\ExecuteLoanRequest;
 use App\Http\Requests\ExecuteTradeRequest;
 use App\Http\Requests\FundAccountRequest;
 use App\Http\Requests\StartCopyRequest;
@@ -159,27 +160,25 @@ class ManageUserTradeController extends Controller
 
     /**
      * Store a new loan request.
+     * @throws Throwable
      */
-    public function store(Request $request)
+    public function executeLoan(ExecuteLoanRequest $request, TradeService $tradeService)
     {
-        $validated = $request->validate([
-            'title' => 'required|string|max:255',
-            'loan_amount' => 'required|numeric|min:100',
-            'tenure_months' => 'required|integer|min:1',
-            'interest_rate' => 'required|numeric',
-            'monthly_emi' => 'required|numeric',
-            'total_interest' => 'required|numeric',
-            'total_payment' => 'required|numeric',
-            'loan_reason' => 'required|string',
-            'loan_collateral' => 'required|string',
-        ]);
+        try {
+            $result = $tradeService->executeLoan(
+                $request->user(),
+                $request->validated()
+            );
 
-        $validated['user_id'] = Auth::id();
-        $validated['status'] = 'pending';
+            if (!$result) {
+                return $this->notify('error', 'Failed to execute loan request - invalid state')->toBack();
+            }
 
-        Loan::create($validated);
-
-        return Redirect::back()->with('success', 'Loan request submitted successfully.');
+            return $this->notify('success', 'Loan request submitted successfully')
+                ->toBack();
+        } catch (Exception $e) {
+            return $this->notify('error', __($e->getMessage()))->toBack();
+        }
     }
 
     /**

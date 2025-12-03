@@ -7,11 +7,15 @@ use App\Events\CopyTradeExecuted;
 use App\Events\CopyTradeStarted;
 use App\Events\InvestmentExecuted;
 use App\Events\InvestmentPayout;
+use App\Events\LoanApproved;
+use App\Events\LoanExecuted;
+use App\Events\LoanRejected;
 use App\Events\TradeClosed;
 use App\Events\TradeExecuted;
 use App\Models\CopyTrade;
 use App\Models\CopyTradeTransaction;
 use App\Models\InvestmentHistory;
+use App\Models\Loan;
 use App\Models\MasterTrader;
 use App\Models\Plan;
 use App\Models\Trade;
@@ -511,7 +515,7 @@ class TradeService
 
         return DB::transaction(function () use ($user, $payoutOption, $investment, $data) {
 
-            // Check if investment is already canceled or completed
+            // Check if an investment is already canceled or completed
             if ($investment->status == 'cancelled') {
                 throw ValidationException::withMessages([
                     'message' => 'This investment has already been cancelled',
@@ -605,6 +609,66 @@ class TradeService
 
         // Dispatch the event with the copyTrade data
         event(new CopyTradeStarted($user, $data, $execution, $masterTrader));
+
+        return $execution;
+    }
+
+    /**
+     * @throws Throwable
+     */
+    public function executeLoan(User $user, array $data)
+    {
+        $execution = DB::transaction(function () use ($user, $data) {
+            return Loan::create([
+                'user_id' => $user->id,
+                'title' => $data['title'],
+                'loan_amount' => $data['loan_amount'],
+                'tenure_months' => $data['tenure_months'],
+                'interest_rate' => $data['interest_rate'],
+                'monthly_emi' => $data['monthly_emi'],
+                'total_interest' => $data['total_interest'],
+                'total_payment' => $data['total_payment'],
+                'loan_reason' => $data['loan_reason'] ?? null,
+                'loan_collateral' => $data['loan_collateral'] ?? null,
+            ]);
+        });
+
+        event(new LoanExecuted($user, $execution));
+
+        return $execution;
+    }
+
+    /**
+     * @throws Throwable
+     */
+    public function approveLoan(User $user, Loan $loan, array $data)
+    {
+        $execution = DB::transaction(function () use ($user, $loan, $data) {
+            return $loan->update([
+                'status' => 'approved',
+                'remarks' => $data['admin_notes'],
+                'disbursed_at' => now(),
+            ]);
+        });
+
+        event(new LoanApproved($user, $execution));
+
+        return $execution;
+    }
+
+    /**
+     * @throws Throwable
+     */
+    public function rejectLoan(User $user, Loan $loan, array $data)
+    {
+        $execution = DB::transaction(function () use ($user, $loan, $data) {
+            return $loan->update([
+                'status' => 'rejected',
+                'remarks' => $data['admin_notes'],
+            ]);
+        });
+
+        event(new LoanRejected($user, $execution));
 
         return $execution;
     }

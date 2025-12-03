@@ -6,7 +6,7 @@ return [
     | Registration Settings
     |--------------------------------------------------------------------------
     |
-    | This option controls whether new user registration is enabled.
+    | This option controls whether a new user registration is enabled.
     | When disabled, the registration routes will be unavailable.
     |
     */
@@ -58,22 +58,6 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | Social Media Settings
-    |--------------------------------------------------------------------------
-    |
-    | Social media profile links displayed in emails, footers,
-    | and throughout the platform interface.
-    |
-    */
-    'social' => [
-        'site_fb' => env('SOCIAL_FACEBOOK', 'https://facebook.com/cryptoexample'),
-        'site_instagram' => env('SOCIAL_INSTAGRAM', 'https://instagram.com/cryptoexample'),
-        'site_linkedin' => env('SOCIAL_LINKEDIN', 'https://linkedin.com/company/cryptoexample'),
-        'site_youtube' => env('SOCIAL_YOUTUBE', 'https://youtube.com/channel/cryptoexample'),
-    ],
-
-    /*
-    |--------------------------------------------------------------------------
     | Currency Settings
     |--------------------------------------------------------------------------
     |
@@ -81,37 +65,10 @@ return [
     | prices, and conducting financial transactions.
     |
     */
-    'currency' => [
-        'code' => 'USD',                 // ISO 4217 currency code
-        'symbol' => '$',                 // Currency symbol for display
-        'precision' => 2,                // Decimal places for amounts
-    ],
-
     'loan' => [
-        'min_amount' => 1000,
-        'max_amount' => 50000,
+        'min_amount' => 100,
+        'max_amount' => 5000000,
         'interest_rate' => 12.5, // Default base rate
         'repayment_period' => 36, // Max months
-    ],
-
-    /*
-    |--------------------------------------------------------------------------
-    | Cryptocurrency API Keys
-    |--------------------------------------------------------------------------
-    |
-    | API credentials for third-party cryptocurrency data providers.
-    | These services provide real-time prices, market data, and analytics.
-    |
-    */
-    'cryptocompare' => [
-        'key' => env('CRYPTOCOMPARE_API_KEY'),  // CryptoCompare API key
-    ],
-
-    'coinmarketcap' => [
-        'key' => env('COINMARKETCAP_API_KEY'),  // CoinMarketCap API key
-    ],
-
-    'coingecko' => [
-        'key' => env('COINGECKO_API_KEY'),      // CoinGecko API key (optional for free tier)
     ],
 ];

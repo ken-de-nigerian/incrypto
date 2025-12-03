@@ -101,7 +101,6 @@ Route::prefix('user')
                 Route::post('/investment/execute', 'executeInvestment')->name('investment.execute');
 
                 Route::get('/loans', 'loans')->name('loans');
-                Route::get('/loan/history', 'loanHistory')->name('loan.history');
                 Route::post('/loan/execute', 'executeLoan')->name('loan.execute');
 
                 Route::get('/network', 'network')->name('network');

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-    import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
+    import { ref, computed, watch } from 'vue';
     import { useForm } from '@inertiajs/vue3';
     import {
         DollarSign,
@@ -28,9 +28,8 @@
     const props = defineProps<Props>();
     const emit = defineEmits(['close']);
 
-    const { success, error } = useFlash();
+    const { error } = useFlash();
 
-    // Form state
     const loanAmount = ref(props.loanSettings.min_amount);
     const tenureMonths = ref(1);
     const interestRate = ref(props.loanSettings.interest_rate);
@@ -48,11 +47,6 @@
         confirmed: false
     });
 
-    // Refs for chart
-    const chartCanvas = ref<HTMLCanvasElement | null>(null);
-    let chartInstance: any = null;
-
-    // EMI Calculation
     const emiCalculation = computed(() => {
         const principal = loanAmount.value;
         const annualRate = interestRate.value;
@@ -67,15 +61,12 @@
             };
         }
 
-        // Monthly interest rate
         const monthlyRate = annualRate / 12 / 100;
 
         let emi: number;
         if (monthlyRate === 0) {
-            // If interest rate is 0%, simple division
             emi = principal / months;
         } else {
-            // EMI formula: [P x R x (1+R)^N] / [(1+R)^N-1]
             const power = Math.pow(1 + monthlyRate, months);
             emi = (principal * monthlyRate * power) / (power - 1);
         }
@@ -91,7 +82,6 @@
         };
     });
 
-    // Format currency
     const formatCurrency = (value: number) => {
         return new Intl.NumberFormat('en-US', {
             style: 'currency',
@@ -101,14 +91,12 @@
         }).format(value);
     };
 
-    // Update form values when calculations change
     watch(emiCalculation, (calc) => {
         form.monthly_emi = calc.emi;
         form.total_interest = calc.totalInterest;
         form.total_payment = calc.totalPayment;
     });
 
-    // Sync slider with input
     watch(loanAmount, (val) => {
         form.loan_amount = val;
     });
@@ -119,84 +107,6 @@
 
     watch(interestRate, (val) => {
         form.interest_rate = val;
-    });
-
-    // Initialize/update chart
-    const updateChart = async () => {
-        if (!chartCanvas.value) return;
-
-        // Dynamically import Chart.js
-        const Chart = (await import('chart.js/auto')).default;
-
-        const calc = emiCalculation.value;
-
-        // Destroy existing chart
-        if (chartInstance) {
-            chartInstance.destroy();
-        }
-
-        const ctx = chartCanvas.value.getContext('2d');
-        if (!ctx) return;
-
-        chartInstance = new Chart(ctx, {
-            type: 'doughnut',
-            data: {
-                labels: ['Principal', 'Interest'],
-                datasets: [{
-                    data: [calc.principal, calc.totalInterest],
-                    backgroundColor: [
-                        'hsl(var(--primary))',
-                        'hsl(var(--primary) / 0.3)'
-                    ],
-                    borderWidth: 0
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: true,
-                cutout: '70%',
-                plugins: {
-                    legend: {
-                        display: false
-                    },
-                    tooltip: {
-                        callbacks: {
-                            label: function(context) {
-                                const label = context.label || '';
-                                const value = context.parsed || 0;
-                                return `${label}: ${formatCurrency(value)}`;
-                            }
-                        }
-                    }
-                }
-            }
-        });
-    };
-
-    // Watch for chart updates
-    watch([loanAmount, tenureMonths, interestRate], () => {
-        updateChart();
-    }, { immediate: false });
-
-    // Initialize chart when modal opens
-    watch(() => props.isOpen, (isOpen) => {
-        if (isOpen) {
-            setTimeout(() => {
-                updateChart();
-            }, 100);
-        }
-    });
-
-    onMounted(() => {
-        if (props.isOpen) {
-            updateChart();
-        }
-    });
-
-    onUnmounted(() => {
-        if (chartInstance) {
-            chartInstance.destroy();
-        }
     });
 
     const clearError = (field: keyof typeof form.errors) => {
@@ -211,18 +121,22 @@
             return;
         }
 
-        form.post(route('user.loan.store'), {
+        const calc = emiCalculation.value;
+        form.loan_amount = loanAmount.value;
+        form.tenure_months = tenureMonths.value;
+        form.interest_rate = interestRate.value;
+        form.monthly_emi = calc.emi;
+        form.total_interest = calc.totalInterest;
+        form.total_payment = calc.totalPayment;
+
+        form.post(route('user.trade.loan.execute'), {
             preserveScroll: true,
             onSuccess: () => {
-                success('Your loan request has been submitted successfully!', 'Loan Request Submitted');
                 emit('close');
                 form.reset();
                 loanAmount.value = props.loanSettings.min_amount;
                 tenureMonths.value = 1;
                 interestRate.value = props.loanSettings.interest_rate;
-            },
-            onError: () => {
-                error('Failed to submit loan request. Please try again.', 'Error');
             }
         });
     };
@@ -234,6 +148,14 @@
             form.clearErrors();
         }
     };
+
+    watch(() => props.isOpen, (isOpen) => {
+        if (isOpen) {
+            document.body.style.overflow = 'hidden';
+        } else {
+            document.body.style.overflow = '';
+        }
+    });
 </script>
 
 <template>
@@ -278,180 +200,174 @@
                             </div>
                         </div>
 
-                        <form @submit.prevent="submit" class="flex-1 overflow-y-auto no-scrollbar px-4 sm:px-6 py-6">
-                            <div class="grid lg:grid-cols-2 gap-8 mb-8">
-                                <!-- Left Column: Inputs -->
-                                <div class="space-y-6">
+                        <form @submit.prevent="submit" class="flex-1 overflow-y-auto no-scrollbar">
+                            <div class="px-4 sm:px-6 py-6 space-y-6">
+                                <!-- EMI Summary Cards - Mobile First -->
+                                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+                                    <!-- Monthly EMI - Highlighted -->
+                                    <div class="sm:col-span-2 lg:col-span-3 p-4 sm:p-6 bg-gradient-to-br from-primary/10 to-primary/5 border-2 border-primary/30 rounded-xl">
+                                        <p class="text-xs sm:text-sm text-muted-foreground mb-2">Monthly EMI Payment</p>
+                                        <p class="text-3xl sm:text-4xl font-bold text-primary mb-1">
+                                            {{ formatCurrency(emiCalculation.emi) }}
+                                        </p>
+                                        <p class="text-xs sm:text-sm text-muted-foreground">per month for {{ tenureMonths }} months</p>
+                                    </div>
+
+                                    <!-- Principal Amount -->
+                                    <div class="p-4 bg-card border border-border rounded-xl">
+                                        <div class="flex items-center gap-2 mb-2">
+                                            <div class="w-2 h-2 rounded-full bg-blue-500"></div>
+                                            <p class="text-xs text-muted-foreground">Principal Amount</p>
+                                        </div>
+                                        <p class="text-xl sm:text-2xl font-bold text-card-foreground">
+                                            {{ formatCurrency(emiCalculation.principal) }}
+                                        </p>
+                                    </div>
+
+                                    <!-- Total Interest -->
+                                    <div class="p-4 bg-card border border-border rounded-xl">
+                                        <div class="flex items-center gap-2 mb-2">
+                                            <div class="w-2 h-2 rounded-full bg-blue-300"></div>
+                                            <p class="text-xs text-muted-foreground">Total Interest</p>
+                                        </div>
+                                        <p class="text-xl sm:text-2xl font-bold text-card-foreground">
+                                            {{ formatCurrency(emiCalculation.totalInterest) }}
+                                        </p>
+                                    </div>
+
+                                    <!-- Total Repayment -->
+                                    <div class="p-4 bg-card border border-border rounded-xl">
+                                        <div class="flex items-center gap-2 mb-2">
+                                            <div class="w-2 h-2 rounded-full bg-green-500"></div>
+                                            <p class="text-xs text-muted-foreground">Total Repayment</p>
+                                        </div>
+                                        <p class="text-xl sm:text-2xl font-bold text-card-foreground">
+                                            {{ formatCurrency(emiCalculation.totalPayment) }}
+                                        </p>
+                                    </div>
+                                </div>
+
+                                <!-- Loan Parameters -->
+                                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
                                     <!-- Loan Amount -->
                                     <div>
-                                        <label class="block text-sm font-medium text-card-foreground mb-2">
-                                            <DollarSign class="w-4 h-4 inline mr-1" />
+                                        <label class="flex items-center gap-2 text-sm font-medium text-card-foreground mb-3">
+                                            <DollarSign class="w-4 h-4" />
                                             Loan Amount
                                         </label>
 
-                                        <div class="flex items-center gap-2 mb-2">
+                                        <div class="flex items-center gap-2 mb-3">
                                             <span class="text-sm font-semibold text-muted-foreground">$</span>
-                                            <input v-model.number="loanAmount" type="number" :min="loanSettings.min_amount" :max="loanSettings.max_amount" class="flex-1 px-4 py-2.5 input-crypto border border-border rounded-lg text-sm font-semibold" />
+                                            <input v-model.number="loanAmount" type="number" :min="loanSettings.min_amount" :max="loanSettings.max_amount" class="flex-1 px-3 sm:px-4 py-2 sm:py-2.5 input-crypto border border-border rounded-lg text-sm font-semibold transition-all" />
                                         </div>
 
                                         <input v-model.number="loanAmount" type="range" :min="loanSettings.min_amount" :max="loanSettings.max_amount" :step="100" class="w-full h-2 bg-muted rounded-lg appearance-none cursor-pointer slider" />
                                         <p class="text-xs text-muted-foreground mt-2">
-                                            Range: {{ formatCurrency(loanSettings.min_amount) }} - {{ formatCurrency(loanSettings.max_amount) }}
+                                            {{ formatCurrency(loanSettings.min_amount) }} - {{ formatCurrency(loanSettings.max_amount) }}
                                         </p>
                                     </div>
 
                                     <!-- Tenure -->
                                     <div>
-                                        <label class="block text-sm font-medium text-card-foreground mb-2">
-                                            <Calendar class="w-4 h-4 inline mr-1" />
-                                            Loan Tenure (Months)
+                                        <label class="flex items-center gap-2 text-sm font-medium text-card-foreground mb-3">
+                                            <Calendar class="w-4 h-4" />
+                                            Loan Tenure
                                         </label>
 
-                                        <div class="flex items-center gap-2 mb-2">
-                                            <input v-model.number="tenureMonths" type="number" min="1" :max="loanSettings.repayment_period" class="flex-1 px-4 py-2.5 input-crypto border border-border rounded-lg text-sm font-semibold" />
-                                            <span class="text-sm font-semibold text-muted-foreground">Months</span>
+                                        <div class="flex items-center gap-2 mb-3">
+                                            <input v-model.number="tenureMonths" type="number" min="1" :max="loanSettings.repayment_period" class="flex-1 px-3 sm:px-4 py-2 sm:py-2.5 input-crypto border border-border rounded-lg text-sm font-semibold transition-all" />
+                                            <span class="text-sm font-semibold text-muted-foreground whitespace-nowrap">Months</span>
                                         </div>
 
                                         <input v-model.number="tenureMonths" type="range" min="1" :max="loanSettings.repayment_period" class="w-full h-2 bg-muted rounded-lg appearance-none cursor-pointer slider" />
                                         <p class="text-xs text-muted-foreground mt-2">
-                                            Range: 1 - {{ loanSettings.repayment_period }} months
+                                            1 - {{ loanSettings.repayment_period }} months
                                         </p>
                                     </div>
 
                                     <!-- Interest Rate -->
                                     <div>
-                                        <label class="block text-sm font-medium text-card-foreground mb-2">
-                                            <Percent class="w-4 h-4 inline mr-1" />
+                                        <label class="flex items-center gap-2 text-sm font-medium text-card-foreground mb-3">
+                                            <Percent class="w-4 h-4" />
                                             Annual Interest Rate
                                         </label>
 
-                                        <div class="flex items-center gap-2 mb-2">
-                                            <input v-model.number="interestRate" type="number" min="0" max="50" step="0.1" class="flex-1 px-4 py-2.5 input-crypto border border-border rounded-lg text-sm font-semibold" />
+                                        <div class="flex items-center gap-2 mb-3">
+                                            <input v-model.number="interestRate" type="number" min="0" max="50" step="0.1" class="flex-1 px-3 sm:px-4 py-2 sm:py-2.5 input-crypto border border-border rounded-lg text-sm font-semibold transition-all" />
                                             <span class="text-sm font-semibold text-muted-foreground">%</span>
                                         </div>
 
                                         <input v-model.number="interestRate" type="range" min="0" max="50" step="0.1" class="w-full h-2 bg-muted rounded-lg appearance-none cursor-pointer slider" />
                                         <p class="text-xs text-muted-foreground mt-2">
-                                            Range: 0% - 50%
+                                            0% - 50%
                                         </p>
                                     </div>
                                 </div>
 
-                                <!-- Right Column: EMI Display -->
-                                <div class="space-y-6">
-                                    <!-- Chart -->
-                                    <div class="relative">
-                                        <div class="w-full max-w-xs mx-auto" style="height: 200px;">
-                                            <canvas ref="chartCanvas"></canvas>
-                                        </div>
-                                        <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
-                                            <div class="text-center">
-                                                <p class="text-2xl font-bold text-card-foreground">
-                                                    {{ formatCurrency(emiCalculation.totalPayment) }}
-                                                </p>
-                                                <p class="text-xs text-muted-foreground">Total Repayment</p>
-                                            </div>
-                                        </div>
-                                    </div>
+                                <!-- Loan Information Section -->
+                                <div class="border-t border-border pt-6">
+                                    <h3 class="text-base sm:text-lg font-bold text-card-foreground mb-2">Loan Information</h3>
+                                    <p class="text-xs sm:text-sm text-muted-foreground mb-4 sm:mb-6">
+                                        Loan approval is subject to credit assessment and verification. We reserve the right to approve or decline your application.
+                                    </p>
 
-                                    <!-- EMI Amount -->
-                                    <div class="text-center p-6 bg-primary/5 border border-primary/20 rounded-xl">
-                                        <p class="text-sm text-muted-foreground mb-2">Your EMI will be</p>
-                                        <p class="text-4xl font-bold text-primary mb-1">
-                                            {{ formatCurrency(emiCalculation.emi) }}
-                                        </p>
-                                        <p class="text-sm text-muted-foreground">/month</p>
-                                    </div>
-
-                                    <!-- Breakdown -->
-                                    <div class="grid grid-cols-2 gap-4">
-                                        <div class="text-center p-4 bg-card border border-border rounded-xl">
-                                            <div class="flex items-center justify-center gap-2 mb-2">
-                                                <span class="w-3 h-3 rounded-full bg-primary"></span>
-                                                <p class="text-xs text-muted-foreground">Principal</p>
-                                            </div>
-                                            <p class="text-lg font-bold text-card-foreground">
-                                                {{ formatCurrency(emiCalculation.principal) }}
-                                            </p>
+                                    <div class="space-y-4">
+                                        <!-- Loan Title -->
+                                        <div>
+                                            <label for="title" class="block text-sm font-medium text-card-foreground mb-2">
+                                                Loan Title <span class="text-red-500">*</span>
+                                            </label>
+                                            <input id="title" v-model="form.title" @focus="clearError('title')" type="text" class="w-full px-3 sm:px-4 py-2 sm:py-2.5 input-crypto border border-border rounded-lg text-sm transition-all" placeholder="e.g., Business Expansion Loan" />
+                                            <InputError :message="form.errors.title" />
                                         </div>
 
-                                        <div class="text-center p-4 bg-card border border-border rounded-xl">
-                                            <div class="flex items-center justify-center gap-2 mb-2">
-                                                <span class="w-3 h-3 rounded-full bg-primary/30"></span>
-                                                <p class="text-xs text-muted-foreground">Interest</p>
+                                        <!-- Loan Reason and Collateral -->
+                                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            <div>
+                                                <label for="loan_reason" class="block text-sm font-medium text-card-foreground mb-2">
+                                                    Loan Reason <span class="text-red-500">*</span>
+                                                </label>
+                                                <textarea id="loan_reason" v-model="form.loan_reason" @focus="clearError('loan_reason')" rows="4" class="w-full px-3 sm:px-4 py-2 sm:py-2.5 input-crypto border border-border rounded-lg text-sm resize-none transition-all" placeholder="Describe why you need this loan..."></textarea>
+                                                <InputError :message="form.errors.loan_reason" />
                                             </div>
-                                            <p class="text-lg font-bold text-card-foreground">
-                                                {{ formatCurrency(emiCalculation.totalInterest) }}
-                                            </p>
+
+                                            <div>
+                                                <label for="loan_collateral" class="block text-sm font-medium text-card-foreground mb-2">
+                                                    Collateral Information <span class="text-red-500">*</span>
+                                                </label>
+                                                <textarea id="loan_collateral" v-model="form.loan_collateral" @focus="clearError('loan_collateral')" rows="4" class="w-full px-3 sm:px-4 py-2 sm:py-2.5 input-crypto border border-border rounded-lg text-sm resize-none transition-all" placeholder="Describe collateral assets..."></textarea>
+                                                <InputError :message="form.errors.loan_collateral" />
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
-                            </div>
 
-                            <!-- Loan Information -->
-                            <div class="border-t border-border pt-6 mb-6">
-                                <h3 class="text-lg font-bold text-card-foreground mb-2">Loan Information</h3>
-                                <p class="text-sm text-muted-foreground mb-6">
-                                    Loan approval is subject to credit assessment and verification. We reserve the right to approve or decline your application.
-                                </p>
-
-                                <div class="space-y-4">
-                                    <!-- Loan Title -->
-                                    <div>
-                                        <label for="title" class="block text-sm font-medium text-card-foreground mb-2">
-                                            Loan Title
-                                        </label>
-
-                                        <input id="title" v-model="form.title" @focus="clearError('title')" type="text" class="w-full px-4 py-2.5 input-crypto border border-border rounded-lg text-sm" placeholder="e.g., Business Expansion Loan" />
-                                        <InputError :message="form.errors.title" />
-                                    </div>
-
-                                    <!-- Loan Reason and Collateral -->
-                                    <div class="grid md:grid-cols-2 gap-4">
-                                        <div>
-                                            <label for="loan_reason" class="block text-sm font-medium text-card-foreground mb-2">
-                                                Loan Reason
-                                            </label>
-                                            <textarea id="loan_reason" v-model="form.loan_reason" @focus="clearError('loan_reason')" rows="4" class="w-full px-4 py-2.5 input-crypto border border-border rounded-lg text-sm resize-none" placeholder="Describe why you need this loan..."></textarea>
-                                            <InputError :message="form.errors.loan_reason" />
-                                        </div>
-
-                                        <div>
-                                            <label for="loan_collateral" class="block text-sm font-medium text-card-foreground mb-2">
-                                                Collateral Information
-                                            </label>
-                                            <textarea id="loan_collateral" v-model="form.loan_collateral" @focus="clearError('loan_collateral')" rows="4" class="w-full px-4 py-2.5 input-crypto border border-border rounded-lg text-sm resize-none" placeholder="Describe collateral assets..."></textarea>
-                                            <InputError :message="form.errors.loan_collateral" />
-                                        </div>
-                                    </div>
+                                <!-- Confirmation -->
+                                <div class="flex items-start gap-3 p-3 sm:p-4 bg-muted/30 border border-border rounded-xl">
+                                    <input id="confirmCheck" v-model="form.confirmed" type="checkbox" class="mt-0.5 sm:mt-1 w-4 h-4 rounded border-border text-primary focus:ring-primary cursor-pointer flex-shrink-0" />
+                                    <label for="confirmCheck" class="text-xs sm:text-sm text-card-foreground cursor-pointer">
+                                        I confirm that all provided information is accurate and I understand that loan approval is subject to verification.
+                                    </label>
                                 </div>
-                            </div>
 
-                            <!-- Confirmation -->
-                            <div class="flex items-start gap-3 p-4 bg-muted/30 border border-border rounded-xl mb-6">
-                                <input id="confirmCheck" v-model="form.confirmed" type="checkbox" class="mt-1 w-4 h-4 rounded border-border text-primary focus:ring-primary cursor-pointer" />
-                                <label for="confirmCheck" class="text-sm text-card-foreground cursor-pointer">
-                                    I confirm that all provided information is accurate and I understand that loan approval is subject to verification.
-                                </label>
-                            </div>
+                                <!-- Disclaimer -->
+                                <div class="flex items-start gap-3 p-3 sm:p-4 bg-warning/5 border border-warning/20 rounded-xl">
+                                    <AlertCircle class="w-4 h-4 sm:w-5 sm:h-5 text-warning flex-shrink-0 mt-0.5" />
+                                    <p class="text-xs sm:text-sm text-muted-foreground">
+                                        <strong class="text-card-foreground">Important:</strong> You cannot modify loan details after submission. Please review all information carefully before proceeding.
+                                    </p>
+                                </div>
 
-                            <!-- Disclaimer -->
-                            <div class="flex items-start gap-3 p-4 bg-warning/5 border border-warning/20 rounded-xl mb-6">
-                                <AlertCircle class="w-5 h-5 text-warning flex-shrink-0 mt-0.5" />
-                                <p class="text-sm text-muted-foreground">
-                                    <strong class="text-card-foreground">Important:</strong> You cannot modify loan details after submission. Please review all information carefully before proceeding.
-                                </p>
-                            </div>
+                                <!-- Action Buttons -->
+                                <div class="flex flex-col sm:flex-row gap-3 pt-2">
+                                    <button type="button" @click="handleClose" :disabled="form.processing" class="flex-1 px-4 sm:px-6 py-2.5 sm:py-3 bg-muted hover:bg-muted/80 border border-border text-card-foreground rounded-xl font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base">
+                                        Cancel
+                                    </button>
 
-                            <!-- Action Buttons -->
-                            <div class="flex flex-col sm:flex-row gap-3">
-                                <button type="button" @click="handleClose" :disabled="form.processing" class="flex-1 px-6 py-3 bg-muted hover:bg-muted/80 border border-border text-card-foreground rounded-xl font-semibold transition-colors disabled:opacity-50 cursor-pointer">
-                                    Cancel
-                                </button>
-
-                                <ActionButton :processing="form.processing" class="flex-1">
-                                    Submit Loan Request
-                                </ActionButton>
+                                    <ActionButton :processing="form.processing" class="flex-1">
+                                        Submit Loan Request
+                                    </ActionButton>
+                                </div>
                             </div>
                         </form>
                     </div>
@@ -462,6 +378,16 @@
 </template>
 
 <style scoped>
+    input[type="number"]::-webkit-inner-spin-button,
+    input[type="number"]::-webkit-outer-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+    }
+
+    input[type="number"] {
+        -moz-appearance: textfield;
+    }
+
     /* Custom slider styles */
     .slider::-webkit-slider-thumb {
         appearance: none;

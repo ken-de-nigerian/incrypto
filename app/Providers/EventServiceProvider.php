@@ -8,6 +8,7 @@ use App\Events\CopyTradeExecuted;
 use App\Events\CopyTradeStarted;
 use App\Events\InvestmentExecuted;
 use App\Events\InvestmentPayout;
+use App\Events\LoanExecuted;
 use App\Events\TradeClosed;
 use App\Events\TradeExecuted;
 use App\Events\TradingAccountDebited;
@@ -38,6 +39,7 @@ use App\Listeners\SendCryptoSentNotifications;
 use App\Listeners\SendDebitedSuccessfulNotification;
 use App\Listeners\SendInvestmentExecutedNotification;
 use App\Listeners\SendInvestmentPayoutNotification;
+use App\Listeners\SendLoanExecutedNotification;
 use App\Listeners\SendTradeClosedNotification;
 use App\Listeners\SendTradeExecutedNotification;
 use App\Listeners\SendFundedSuccessfulNotification;
@@ -113,6 +115,9 @@ class EventServiceProvider extends ServiceProvider
         ],
         CopyTradeClosed::class => [
             SendCopyTradeClosedNotification::class
+        ],
+        LoanExecuted::class => [
+            SendLoanExecutedNotification::class
         ],
         DatabaseAndEmailNotificationDispatchedEvent::class => [
             DatabaseAndEmailNotificationListener::class,

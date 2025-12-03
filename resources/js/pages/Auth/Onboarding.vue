@@ -8,6 +8,7 @@
     import { VueTelInput } from 'vue-tel-input';
     import 'vue-tel-input/vue-tel-input.css';
     import SiteLogo from '@/components/SiteLogo.vue';
+    import LiveSupport from '@/components/LiveSupport.vue';
 
     const props = defineProps<{
         email?: string;
@@ -158,6 +159,8 @@
             </div>
         </div>
     </div>
+
+    <LiveSupport />
 </template>
 
 <style>

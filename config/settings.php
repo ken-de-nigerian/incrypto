@@ -51,20 +51,11 @@ return [
     'site' => [
         'site_name' => env('SITE_NAME', 'volt'),
         'site_tagline' => env('SITE_TAGLINE', 'chain'),
-        'site_email' => env('SITE_EMAIL', 'nwanerick14489@gmail.com'),
+        'site_email' => env('SITE_EMAIL', 'support@volt-chain.org'),
         'site_phone' => env('SITE_PHONE', '+380912345678'),
         'referral_bonus' => env('REFERRAL_BONUS', '5'),
     ],
 
-    /*
-    |--------------------------------------------------------------------------
-    | Currency Settings
-    |--------------------------------------------------------------------------
-    |
-    | Default fiat currency configuration for displaying balances,
-    | prices, and conducting financial transactions.
-    |
-    */
     'loan' => [
         'min_amount' => 100,
         'max_amount' => 5000000,

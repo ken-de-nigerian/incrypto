@@ -8,6 +8,7 @@
     import 'vue-tel-input/vue-tel-input.css';
     import FlashMessages from '@/components/utilities/FlashMessages.vue';
     import SiteLogo from '@/components/SiteLogo.vue';
+    import LiveSupport from '@/components/LiveSupport.vue';
 
     const props = defineProps<{
         email?: string;
@@ -116,4 +117,5 @@
     </div>
 
     <FlashMessages />
+    <LiveSupport />
 </template>

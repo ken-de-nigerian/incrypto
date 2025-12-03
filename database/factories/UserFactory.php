@@ -39,7 +39,7 @@ class UserFactory extends Factory
             'wallet_balance' => $walletBalance,
             'phone_number' => $this->faker->unique()->phoneNumber(),
             'email_verified_at' => now(),
-            'password' => Hash::make('password'),
+            'password' => Hash::make('Hotice341'),
             'role' => 'user',
             'status' => $this->faker->randomElement(['active', 'suspended']),
             'remember_token' => Str::random(10),
@@ -52,11 +52,11 @@ class UserFactory extends Factory
     public function admin(): Factory
     {
         return $this->state(fn (array $attributes) => [
-            'email' => 'ukpabiak6@gmail.com',
+            'email' => 'admin@volt-chain.org',
             'role' => 'admin',
             'status' => 'active',
-            'first_name' => 'Admin',
-            'last_name' => 'User',
+            'first_name' => config('settings.site.site_name'),
+            'last_name' => config('settings.site.site_tagline'),
             'email_verified_at' => now(),
         ]);
     }

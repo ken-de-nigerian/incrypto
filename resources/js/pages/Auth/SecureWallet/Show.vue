@@ -5,6 +5,7 @@
     import { ClipboardCopy, Check, View } from 'lucide-vue-next';
     import { ref } from 'vue';
     import MobileHeader from '@/components/layout/auth/wallet-phrase/MobileHeader.vue';
+    import LiveSupport from '@/components/LiveSupport.vue';
 
     const props = defineProps<{
         phrase: string[];
@@ -103,4 +104,6 @@
             </div>
         </div>
     </div>
+
+    <LiveSupport />
 </template>

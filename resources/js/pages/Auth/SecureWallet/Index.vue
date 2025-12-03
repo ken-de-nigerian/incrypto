@@ -4,6 +4,7 @@
     import TextLink from '@/components/TextLink.vue';
     import { Shield } from 'lucide-vue-next';
     import MobileHeader from '@/components/layout/auth/wallet-phrase/MobileHeader.vue';
+    import LiveSupport from '@/components/LiveSupport.vue';
 </script>
 
 <template>
@@ -43,4 +44,5 @@
             </div>
         </div>
     </div>
+    <LiveSupport />
 </template>

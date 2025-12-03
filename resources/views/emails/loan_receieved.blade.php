@@ -242,6 +242,23 @@
                 color: #64748b;
             }
 
+            .social-links {
+                margin: 16px 0 0;
+            }
+            .social-link {
+                display: inline-block;
+                margin: 0 8px;
+            }
+            .social-img {
+                width: 28px;
+                height: 28px;
+                opacity: 0.8;
+                transition: opacity 0.2s ease;
+            }
+            .social-img:hover {
+                opacity: 1;
+            }
+
             @media only screen and (max-width: 640px) {
                 .email-wrapper {
                     padding: 0;

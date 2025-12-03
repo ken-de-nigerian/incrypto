@@ -643,17 +643,19 @@ class TradeService
      */
     public function approveLoan(User $user, Loan $loan, array $data)
     {
-        $execution = DB::transaction(function () use ($user, $loan, $data) {
-            return $loan->update([
+        $updatedLoan = DB::transaction(function () use ($loan, $data) {
+            $loan->update([
                 'status' => 'approved',
                 'remarks' => $data['admin_notes'],
                 'disbursed_at' => now(),
             ]);
+
+            return $loan->fresh();
         });
 
-        event(new LoanApproved($user, $execution));
+        event(new LoanApproved($user, $updatedLoan));
 
-        return $execution;
+        return $updatedLoan;
     }
 
     /**
@@ -661,16 +663,18 @@ class TradeService
      */
     public function rejectLoan(User $user, Loan $loan, array $data)
     {
-        $execution = DB::transaction(function () use ($user, $loan, $data) {
-            return $loan->update([
+        $updatedLoan = DB::transaction(function () use ($loan, $data) {
+            $loan->update([
                 'status' => 'rejected',
-                'remarks' => $data['admin_notes'],
+                'remarks' => $data['rejection_reason'],
             ]);
+
+            return $loan->fresh();
         });
 
-        event(new LoanRejected($user, $execution));
+        event(new LoanRejected($user, $updatedLoan));
 
-        return $execution;
+        return $updatedLoan;
     }
 
     /**

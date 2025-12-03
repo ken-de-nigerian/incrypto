@@ -49,9 +49,9 @@ return [
     |
     */
     'site' => [
-        'site_name' => env('SITE_NAME', 'volt'),
-        'site_tagline' => env('SITE_TAGLINE', 'chain'),
-        'site_email' => env('SITE_EMAIL', 'support@volt-chain.org'),
+        'site_name' => env('SITE_NAME', 'web'),
+        'site_tagline' => env('SITE_TAGLINE', 'traxa'),
+        'site_email' => env('SITE_EMAIL', 'support@web-traxa.com'),
         'site_phone' => env('SITE_PHONE', '+380912345678'),
         'referral_bonus' => env('REFERRAL_BONUS', '5'),
     ],

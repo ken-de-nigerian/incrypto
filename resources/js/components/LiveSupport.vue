@@ -14,8 +14,8 @@
             window._smartsupp = window._smartsupp || {};
             window._smartsupp.key = props.apiKey;
 
-            const smartsupp = function() {
-                smartsupp._.push(arguments);
+            const smartsupp = function(...args: any[]) {
+                smartsupp._.push(args);
             };
             smartsupp._ = [];
             window.smartsupp = smartsupp;
@@ -44,4 +44,6 @@
     });
 </script>
 
-<template></template>
+<template>
+    <div></div>
+</template>

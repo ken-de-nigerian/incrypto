@@ -49,8 +49,8 @@ return [
     |
     */
     'site' => [
-        'site_name' => env('SITE_NAME', 'coin'),
-        'site_tagline' => env('SITE_TAGLINE', 'pay'),
+        'site_name' => env('SITE_NAME', 'volt'),
+        'site_tagline' => env('SITE_TAGLINE', 'chain'),
         'site_email' => env('SITE_EMAIL', 'nwanerick14489@gmail.com'),
         'site_phone' => env('SITE_PHONE', '+380912345678'),
         'referral_bonus' => env('REFERRAL_BONUS', '5'),

@@ -291,14 +291,7 @@ import { ref, computed, watch } from 'vue';
                                 <div v-if="loan.status !== 'pending'" class="border-t border-border pt-4">
                                     <div v-if="loan.remarks" class="mb-4">
                                         <label class="block text-sm font-bold text-card-foreground mb-2">Admin Notes</label>
-                                        <p class="text-sm text-muted-foreground bg-green-50 dark:bg-green-950/20 rounded-lg p-3 whitespace-pre-wrap">
-                                            {{ loan.remarks }}
-                                        </p>
-                                    </div>
-
-                                    <div v-if="loan.remarks" class="mb-4">
-                                        <label class="block text-sm font-bold text-card-foreground mb-2">Rejection Reason</label>
-                                        <p class="text-sm text-muted-foreground bg-red-50 dark:bg-red-950/20 rounded-lg p-3 whitespace-pre-wrap">
+                                        <p class="text-sm text-muted-foreground bg-card rounded-lg p-3 whitespace-pre-wrap">
                                             {{ loan.remarks }}
                                         </p>
                                     </div>

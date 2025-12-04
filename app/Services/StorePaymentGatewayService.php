@@ -3,10 +3,9 @@
 namespace App\Services;
 
 use App\Models\User;
+use App\Models\WalletAddress;
 use Exception;
-use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Log;
 use Throwable;
 
@@ -17,12 +16,6 @@ class StorePaymentGatewayService
      */
     public function store(array $validated): void
     {
-        $wallets = config('gateways.wallet_addresses');
-
-        if (!is_array($wallets)) {
-            $wallets = [];
-        }
-
         $newWallet = [
             'method_code' => $this->generateUniqueId(),
             'name' => $validated['name'],
@@ -32,12 +25,13 @@ class StorePaymentGatewayService
             'status' => $validated['status'],
         ];
 
-        $wallets[] = $newWallet;
-
         // Perform operations in transaction to ensure consistency
-        DB::transaction(function () use ($newWallet, $wallets) {
+        DB::transaction(function () use ($newWallet) {
+            // Create wallet in a database
+            WalletAddress::create($newWallet);
+
+            // Add wallet to all users
             $this->addWalletToAllUsers($newWallet);
-            $this->updateEnvConfiguration($wallets);
         });
     }
 
@@ -46,20 +40,14 @@ class StorePaymentGatewayService
      */
     public function update(array $validated): void
     {
-        $wallets = config('gateways.wallet_addresses');
-
-        if (!is_array($wallets)) {
-            $wallets = [];
-        }
-
         // Find the wallet to update
-        $walletIndex = $this->findWalletIndexByMethodCode($wallets, $validated['method_code']);
+        $walletAddress = WalletAddress::where('method_code', $validated['method_code'])->first();
 
-        if ($walletIndex === null) {
+        if (!$walletAddress) {
             throw new Exception("Wallet not found.");
         }
 
-        $oldAbbreviation = $wallets[$walletIndex]['abbreviation'];
+        $oldAbbreviation = $walletAddress->abbreviation;
 
         $updatedWallet = [
             'method_code' => $validated['method_code'],
@@ -70,65 +58,38 @@ class StorePaymentGatewayService
             'status' => $validated['status'],
         ];
 
-        $wallets[$walletIndex] = $updatedWallet;
-
         // Perform operations in transaction to ensure consistency
-        DB::transaction(function () use ($updatedWallet, $oldAbbreviation, $wallets) {
+        DB::transaction(function () use ($walletAddress, $updatedWallet, $oldAbbreviation) {
+            // Update wallet in database
+            $walletAddress->update($updatedWallet);
+
+            // Update wallet for all users
             $this->updateWalletForAllUsers($updatedWallet, $oldAbbreviation);
-            $this->updateEnvConfiguration($wallets);
         });
     }
 
     /**
-     * Find wallet index by method_code
+     * Delete a wallet
      *
-     * @param array $wallets
      * @param string $methodCode
-     * @return int|null
-     */
-    private function findWalletIndexByMethodCode(array $wallets, string $methodCode): ?int
-    {
-        foreach ($wallets as $index => $wallet) {
-            if (isset($wallet['method_code']) && $wallet['method_code'] === $methodCode) {
-                return $index;
-            }
-        }
-        return null;
-    }
-
-    /**
-     * Update .env configuration and clear cache
-     *
-     * @param array $wallets
      * @return void
-     * @throws Exception
+     * @throws Exception|Throwable
      */
-    private function updateEnvConfiguration(array $wallets): void
+    public function delete(string $methodCode): void
     {
-        try {
-            $envPath = base_path('.env');
-            if (!File::exists($envPath)) {
-                throw new Exception(".env file not found.");
-            }
+        $walletAddress = WalletAddress::where('method_code', $methodCode)->first();
 
-            $envContent = File::get($envPath);
-            $newEnvContent = preg_replace(
-                '/^WALLET_ADDRESSES=.*/m',
-                'WALLET_ADDRESSES=\'' . json_encode($wallets) . '\'',
-                $envContent
-            );
-
-            File::put($envPath, $newEnvContent);
-
-            try {
-                Artisan::call('config:clear');
-            } catch (Exception $e) {
-                Log::warning('Failed to clear config cache: ' . $e->getMessage());
-            }
-        } catch (Exception $e) {
-            Log::error('Failed to update .env configuration: ' . $e->getMessage());
-            throw $e;
+        if (!$walletAddress) {
+            throw new Exception("Wallet not found.");
         }
+
+        DB::transaction(function () use ($walletAddress) {
+            // Remove wallet from all users
+            $this->removeWalletFromAllUsers($walletAddress->toArray());
+
+            // Delete from database
+            $walletAddress->delete();
+        });
     }
 
     /**
@@ -248,6 +209,27 @@ class StorePaymentGatewayService
     }
 
     /**
+     * Remove wallet from all existing users' wallet_balance using chunking
+     *
+     * @param array $wallet
+     * @return void
+     * @throws Exception
+     */
+    private function removeWalletFromAllUsers(array $wallet): void
+    {
+        try {
+            User::chunk(1000, function ($users) use ($wallet) {
+                foreach ($users as $user) {
+                    $this->removeWalletFromUser($user, $wallet);
+                }
+            });
+        } catch (Exception $e) {
+            Log::error('Failed to remove wallet from users: ' . $e->getMessage());
+            throw $e;
+        }
+    }
+
+    /**
      * Add a new wallet to a single user's wallet_balance
      *
      * @param User $user
@@ -357,6 +339,43 @@ class StorePaymentGatewayService
             ]);
         } catch (Exception $e) {
             Log::error("Failed to update wallet for user $user->id: " . $e->getMessage());
+            throw $e;
+        }
+    }
+
+    /**
+     * Remove wallet from a single user's wallet_balance
+     *
+     * @param User $user
+     * @param array $wallet
+     * @return void
+     * @throws Exception
+     */
+    private function removeWalletFromUser(User $user, array $wallet): void
+    {
+        try {
+            $walletBalance = $user->wallet_balance;
+            $wallets = is_string($walletBalance)
+                ? json_decode($walletBalance, true)
+                : (is_array($walletBalance) ? $walletBalance : []);
+
+            if (!is_array($wallets)) {
+                return;
+            }
+
+            // Find and remove wallet by method_code (id)
+            foreach ($wallets as $key => $userWallet) {
+                if (isset($userWallet['id']) && $userWallet['id'] === $wallet['method_code']) {
+                    unset($wallets[$key]);
+                    break;
+                }
+            }
+
+            $user->update([
+                'wallet_balance' => json_encode($wallets),
+            ]);
+        } catch (Exception $e) {
+            Log::error("Failed to remove wallet from user $user->id: " . $e->getMessage());
             throw $e;
         }
     }

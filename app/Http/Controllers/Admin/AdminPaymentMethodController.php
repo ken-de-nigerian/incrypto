@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StorePaymentGatewayRequest;
 use App\Http\Requests\UpdatePaymentGatewayRequest;
+use App\Models\WalletAddress;
 use App\Services\GatewayHandlerService;
 use App\Services\StorePaymentGatewayService;
 use Exception;
@@ -44,93 +45,83 @@ class AdminPaymentMethodController extends Controller
     private function getGateways(?string $search = null, ?string $status = null): LengthAwarePaginator
     {
         try {
-            $wallets = config('gateways.wallet_addresses');
+            // Start with query builder instead of getting all data
+            $query = WalletAddress::query();
 
-            if (!is_array($wallets)) {
-                return new LengthAwarePaginator([], 0, 10, 1);
-            }
-
-            $collection = collect($wallets);
-            $statusValueToFilter = null;
-
+            // Apply search filter
             if ($search) {
-                $collection = $collection->filter(function ($wallet) use ($search) {
-                    return stripos($wallet['name'] ?? '', $search) !== false ||
-                        stripos($wallet['abbreviation'] ?? '', $search) !== false;
+                $query->where(function ($q) use ($search) {
+                    $q->where('name', 'like', "%$search%")
+                        ->orWhere('abbreviation', 'like', "%$search%");
                 });
             }
 
+            // Apply status filter
             if ($status !== null && $status !== '') {
-                $statusMap = ['active' => '1', 'deactivated' => '0', '1' => '1', '0' => '0'];
-                $statusKey = $status;
-                $statusValueToFilter = $statusMap[$statusKey] ?? null;
+                $statusMap = [
+                    'active' => 1,
+                    'deactivated' => 0,
+                    '1' => 1,
+                    '0' => 0
+                ];
 
-                if ($statusValueToFilter !== null) {
-                    $collection = $collection->filter(function ($wallet) use ($statusValueToFilter) {
-                        return ($wallet['status'] ?? null) === $statusValueToFilter;
-                    });
+                $statusValue = $statusMap[$status] ?? null;
+
+                if ($statusValue !== null) {
+                    $query->where('status', $statusValue);
                 }
             }
 
-            if ($statusValueToFilter === null) {
-                $sorted = $collection
-                    ->sortBy('name')
-                    ->values()
-                    ->toArray();
-            } else {
-                $sorted = $collection->values()->toArray();
-            }
+            // Order by name
+            $query->orderBy('name');
+
+            // Paginate
+            $perPage = 12;
+            $wallets = $query->paginate($perPage);
 
             // Fetch cryptos and create lookup map
             $gatewayService = new GatewayHandlerService();
             $cryptos = $gatewayService->getCryptos();
-            $cryptoMap = collect($cryptos)
-                ->keyBy('id')
-                ->all();
+            $cryptoMap = collect($cryptos)->keyBy('id')->all();
 
-            // Merge gateways with crypto data
-            $sorted = array_map(function ($gateway) use ($cryptoMap) {
-                $coinId = $gateway['coingecko_id'] ?? null;
+            // Transform the paginated data
+            $wallets->getCollection()->transform(function ($wallet) use ($cryptoMap) {
+                $walletArray = [
+                    'method_code' => $wallet->method_code,
+                    'name' => $wallet->name,
+                    'abbreviation' => $wallet->abbreviation,
+                    'gateway_parameter' => $wallet->gateway_parameter,
+                    'status' => (string) $wallet->status,
+                    'coingecko_id' => $wallet->coingecko_id,
+                    'image' => null,
+                ];
 
+                // Add crypto image if available
+                $coinId = $wallet->coingecko_id;
                 if ($coinId && isset($cryptoMap[$coinId])) {
-                    $gateway['image'] = $cryptoMap[$coinId]['image'];
+                    $walletArray['image'] = $cryptoMap[$coinId]['image'];
                 }
 
-                return $gateway;
-            }, $sorted);
+                return $walletArray;
+            });
 
-            $perPage = 12;
-            $page = request()->get('page', 1);
-            $total = count($sorted);
-            $items = array_slice($sorted, ($page - 1) * $perPage, $perPage);
+            return $wallets;
 
-            return new LengthAwarePaginator($items, $total, $perPage, $page, [
+        } catch (Throwable $e) {
+            Log::error('Error in getGateways(): ' . $e->getMessage());
+            return new LengthAwarePaginator([], 0, 12, 1, [
                 'path' => request()->url(),
                 'query' => request()->query(),
             ]);
-        } catch (Throwable $e) {
-            Log::error('Error in getGateways(): ' . $e->getMessage());
-            return new LengthAwarePaginator([], 0, 10, 1);
         }
     }
 
     private function getMetrics(): array
     {
         try {
-            $wallets = config('gateways.wallet_addresses');
-
-            if (!is_array($wallets)) {
-                return [
-                    'total_gateways' => 0,
-                    'active_gateways' => 0,
-                    'deactivated_gateways' => 0,
-                ];
-            }
-
-            $collection = collect($wallets);
-            $total = $collection->count();
-            $active = $collection->where('status', '1')->count();
-            $deactivated = $collection->where('status', '0')->count();
+            $total = WalletAddress::count();
+            $active = WalletAddress::where('status', 1)->count();
+            $deactivated = WalletAddress::where('status', 0)->count();
 
             return [
                 'total_gateways' => $total,
@@ -172,6 +163,21 @@ class AdminPaymentMethodController extends Controller
         try {
             $updatePaymentGatewayService->update($validated);
             return $this->notify('success', __('Payment method updated successfully!'))->toBack();
+        } catch (Exception $e) {
+            return $this->notify('error', __($e->getMessage()))->toBack();
+        }
+    }
+
+    /**
+     * Delete a payment method
+     *
+     * @throws Throwable
+     */
+    public function destroy(string $methodCode, StorePaymentGatewayService $paymentGatewayService)
+    {
+        try {
+            $paymentGatewayService->delete($methodCode);
+            return $this->notify('success', __('Payment method deleted successfully!'))->toBack();
         } catch (Exception $e) {
             return $this->notify('error', __($e->getMessage()))->toBack();
         }

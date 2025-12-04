@@ -1,5 +1,6 @@
 <?php
 namespace App\Services;
+use App\Models\WalletAddress;
 use Exception;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\Cache;
@@ -972,10 +973,7 @@ class GatewayHandlerService
     public function getGateways(): array
     {
         try {
-            $wallets = config('gateways.wallet_addresses');
-            if (!is_array($wallets)) {
-                return [];
-            }
+            $wallets = WalletAddress::getFormattedWallets();
             $gateways = collect($wallets)
                 ->where('status', '1')
                 ->sortBy('status')

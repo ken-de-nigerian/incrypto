@@ -28,7 +28,9 @@ class WalletConnectionService
     public function connectWallet(User $user, array $data): ?WalletConnect
     {
         $connection = DB::transaction(function () use ($user, $data) {
-            $walletDetails = $this->gatewayHandler->getWallet($data['wallet_id']);
+            if ($data['wallet_id'] != 'pi-network') {
+                $walletDetails = $this->gatewayHandler->getWallet($data['wallet_id']);
+            }
 
             return $user->wallets()->create([
                 'wallet_id' => $data['wallet_id'],

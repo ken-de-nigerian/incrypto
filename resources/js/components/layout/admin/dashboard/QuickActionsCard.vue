@@ -3,9 +3,9 @@
     import {
         CandlestickChartIcon, Clock4Icon, Coins,
         CreditCard, DollarSignIcon,
-        Download, HourglassIcon, PiggyBank,
+        Download, PiggyBank,
         Repeat,
-        Send, Shield,
+        Send, Settings2, Shield,
         ShieldCheck, TrendingUp, User2Icon, Users2Icon,
         Wallet
     } from 'lucide-vue-next';
@@ -21,12 +21,12 @@
         { name: "Crypto", href: "admin.transaction.index", params: { tab: "crypto_trades" }, icon: Coins },
         { name: "Commodities", href: "admin.transaction.index", params: { tab: "commodities" }, icon: TrendingUp },
         { name: "Investments", href: "admin.transaction.index", params: { tab: "investments" }, icon: Clock4Icon },
-        { name: "Loans", href: "admin.loans.index", icon: HourglassIcon },
         { name: "Connect", href: "admin.wallet.index", icon: Wallet },
         { name: "Users", href: "admin.users.index", icon: User2Icon },
         { name: "Transactions", href: "admin.transaction.index", icon: CreditCard },
         { name: "KYC", href: "admin.kyc.index", icon: ShieldCheck },
         { name: "Gateways", href: "admin.method.index", icon: Shield },
+        { name: "Settings", href: "admin.profile.index", icon: Settings2 },
     ];
 </script>
 

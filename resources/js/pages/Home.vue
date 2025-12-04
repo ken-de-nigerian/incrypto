@@ -42,27 +42,6 @@
     import { useFlash } from '@/composables/useFlash';
     import LiveSupport from '@/components/LiveSupport.vue';
 
-    interface RawCryptoData {
-        name: string
-        image: string
-        current_price: number
-        price_change_24h: number
-        price_change_percentage_24h: number
-    }
-
-    const props = defineProps<{
-        cryptos?: Record<string, RawCryptoData>
-    }>();
-
-    interface CryptoSlide {
-        name: string
-        symbol: string
-        image: string
-        price: string
-        change: string
-        positive: boolean
-    }
-
     interface Feature {
         Icon: any
         title: string
@@ -175,33 +154,6 @@
             1280: { itemsToShow: 6 },
         },
     })
-
-    const processedCryptos = computed<CryptoSlide[]>(() => {
-        if (!props.cryptos) return [];
-
-        return Object.entries(props.cryptos).map(([key, data]) => {
-            const isPositive = data.price_change_percentage_24h >= 0;
-
-            const formattedPrice = new Intl.NumberFormat('en-US', {
-                style: 'currency',
-                currency: 'USD',
-                minimumFractionDigits: data.current_price < 1 ? 4 : 2,
-                maximumFractionDigits: data.current_price < 1 ? 6 : 2,
-            }).format(data.current_price);
-
-            const changeVal = Math.abs(data.price_change_percentage_24h).toFixed(2);
-            const sign = isPositive ? '+' : '-';
-
-            return {
-                name: data.name,
-                image: data.image,
-                symbol: key.toUpperCase(),
-                price: formattedPrice,
-                change: `${sign}${changeVal}%`,
-                positive: isPositive
-            };
-        });
-    });
 
     const features: Feature[] = [
         {
@@ -413,64 +365,8 @@
         </div>
     </section>
 
-    <!-- Crypto Ticker -->
-    <div class="w-full bg-background border-y border-border h-[57px]">
-        <div class="container-fluid mx-auto h-full">
-            <Carousel v-if="processedCryptos.length" v-bind="cryptoCarouselSettings" class="w-full flex items-center h-full">
-                <Slide v-for="crypto in processedCryptos" :key="crypto.symbol">
-                    <div class="flex items-center justify-between w-full px-6 py-3 border-r border-border/40 hover:bg-muted/30 cursor-pointer group">
-
-                        <div class="flex items-center gap-3 text-left">
-                            <div class="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 bg-white overflow-hidden shadow-sm">
-                                <img :src="crypto.image" :alt="crypto.name" class="w-full h-full object-cover" loading="lazy">
-                            </div>
-
-                            <div>
-                                <div class="font-bold text-sm tracking-tight flex items-center gap-2">
-                                    {{ crypto.symbol }}
-                                </div>
-
-                                <div class="text-xs text-muted-foreground font-medium truncate max-w-[100px]">
-                                    {{ crypto.name }}
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="text-right pl-6">
-                            <div class="font-mono font-medium text-sm text-foreground">
-                                {{ crypto.price }}
-                            </div>
-                            <div :class="crypto.positive ? 'text-emerald-500' : 'text-rose-500'" class="text-xs font-semibold flex items-center justify-end gap-1">
-                                <TrendingUp v-if="crypto.positive" :size="12" />
-                                <TrendingDown v-else :size="12" />
-                                {{ crypto.change }}
-                            </div>
-                        </div>
-                    </div>
-                </Slide>
-            </Carousel>
-
-            <div v-else class="w-full flex items-center overflow-hidden h-full">
-                <div v-for="n in 10" :key="n" class="flex-shrink-0 flex items-center justify-between min-w-[250px] w-full md:w-auto px-6 py-3 border-r border-border/40">
-                    <div class="flex items-center gap-3">
-                        <div class="w-8 h-8 rounded-full bg-muted animate-pulse"></div>
-                        <div>
-                            <div class="w-12 h-3.5 bg-muted rounded animate-pulse mb-1.5"></div>
-                            <div class="w-16 h-2.5 bg-muted rounded animate-pulse"></div>
-                        </div>
-                    </div>
-
-                    <div class="flex flex-col items-end gap-1.5 pl-6">
-                        <div class="w-20 h-3.5 bg-muted rounded animate-pulse"></div>
-                        <div class="w-10 h-2.5 bg-muted rounded animate-pulse"></div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
     <!-- Highlights Section -->
-    <section class="py-24 animate-on-scroll">
+    <section class="lg:py-24 py-20 animate-on-scroll">
         <div class="container mx-auto px-4 sm:px-6 lg:px-8">
             <div class="grid lg:grid-cols-2 gap-12 items-center">
                 <div class="order-2 lg:order-1">

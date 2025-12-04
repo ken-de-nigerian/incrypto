@@ -6,7 +6,7 @@
     }
 
     const props = withDefaults(defineProps<Props>(), {
-        apiKey: '8eb6a4485f2fe0d54cd3df29b1b105f5cc211a03'
+        apiKey: '46cfb8f58494a045428caff585bd7e53b27cd936'
     });
 
     onMounted(() => {

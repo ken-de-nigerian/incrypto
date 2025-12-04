@@ -46,10 +46,10 @@
                 <div class="flex items-start justify-between p-4 rounded-lg border border-border bg-muted/30">
                     <div class="flex-1 space-y-1">
                         <label for="charge_network_fee" class="text-sm font-semibold text-card-foreground cursor-pointer">
-                            Require ETH Balance for Network Fees
+                            Require Sufficient Balance for Network Fees
                         </label>
                         <p class="text-xs text-muted-foreground">
-                            When enabled, user must have sufficient ETH balance to cover network fees before they can send or swap cryptocurrency.
+                            When enabled, user must have sufficient balance to cover network fees before they can send or swap cryptocurrency.
                         </p>
                     </div>
                     <div class="ml-4">
@@ -64,11 +64,10 @@
                 <!-- Network Fee Amount -->
                 <div class="space-y-2">
                     <label for="network_fee" class="text-sm font-medium flex items-center gap-2">
-                        Network Fee Amount (ETH)
+                        Network Fee Amount
                     </label>
                     <div class="relative">
                         <input id="network_fee" v-model="form.network_fee" @focus="clearError('network_fee')" type="number" step="0.000001" min="0" placeholder="0.001" class="input-crypto w-full pr-16" />
-                        <span class="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground font-medium">ETH</span>
                     </div>
                     <InputError :message="form.errors.network_fee" />
                 </div>
@@ -84,8 +83,8 @@
                         <div class="flex-1">
                             <p class="text-sm font-semibold text-warning">Important Notice</p>
                             <p class="text-xs text-warning/90 mt-1">
-                                When this setting is enabled, the user will be blocked from sending or swapping cryptocurrency until they have sufficient ETH balance.
-                                They will see a clear message explaining they need to add more ETH to proceed.
+                                When this setting is enabled, the user will be blocked from sending or swapping cryptocurrency until they have sufficient balance.
+                                They will see a clear message explaining they need to add more coin to proceed.
                             </p>
                         </div>
                     </div>

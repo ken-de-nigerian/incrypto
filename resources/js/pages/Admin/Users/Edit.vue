@@ -121,7 +121,7 @@
                                 </svg>
                                 <div class="flex-1 min-w-0">
                                     <div class="font-medium">Network Fee Settings</div>
-                                    <div class="text-xs text-muted-foreground mt-1 whitespace-normal line-clamp-2">Configure user's ETH network fee requirements for transactions.</div>
+                                    <div class="text-xs text-muted-foreground mt-1 whitespace-normal line-clamp-2">Configure user's network fee requirements for transactions.</div>
                                 </div>
                             </div>
                         </TextLink>

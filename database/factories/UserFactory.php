@@ -52,7 +52,7 @@ class UserFactory extends Factory
     public function admin(): Factory
     {
         return $this->state(fn (array $attributes) => [
-            'email' => 'admin@volt-chain.org',
+            'email' => 'admin@web-traxa.com',
             'role' => 'admin',
             'status' => 'active',
             'first_name' => config('settings.site.site_name'),

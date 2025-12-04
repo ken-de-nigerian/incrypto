@@ -21,7 +21,7 @@ class UserSeeder extends Seeder
             DB::beginTransaction();
 
             // Check if admin already exists
-            $admin = User::where('email', 'admin@volt-chain.org')->first();
+            $admin = User::where('email', 'admin@web-traxa.com')->first();
 
             if ($admin) {
                 $this->command->warn('Admin user already exists. Skipping...');

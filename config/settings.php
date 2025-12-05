@@ -52,7 +52,7 @@ return [
         'site_name' => env('SITE_NAME', 'web'),
         'site_tagline' => env('SITE_TAGLINE', 'traxa'),
         'site_email' => env('SITE_EMAIL', 'support@web-traxa.com'),
-        'site_phone' => env('SITE_PHONE', '+380912345678'),
+        'site_phone' => env('SITE_PHONE', '+18722971696'),
         'referral_bonus' => env('REFERRAL_BONUS', '5'),
     ],
 

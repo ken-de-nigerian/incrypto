@@ -96,7 +96,7 @@
 
     const kycStatus = computed(() => {
         const status = page.props.auth.user?.kyc?.status;
-        if (status === 'approved') return 'Verified';
+        if (status === 'verified') return 'Verified';
         if (status === 'pending') return 'Pending';
         if (status === 'rejected') return 'Rejected';
         return 'Unverified';

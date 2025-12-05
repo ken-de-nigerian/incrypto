@@ -22,7 +22,6 @@ class ManageUserWalletConnectController extends Controller
 
     public function index()
     {
-        // Get All Wallets Listed
         $wallets = (new GatewayHandlerService())->getWallets();
 
         return Inertia::render('User/Wallet/Index', [
@@ -36,10 +35,20 @@ class ManageUserWalletConnectController extends Controller
      */
     public function create(Request $request)
     {
-        // Get the wallet details from market data
-        $wallet = (new GatewayHandlerService())->getWallet($request->id);
-        if (!$wallet){
-            return $this->notify('error', 'Wallet data not found')->toBack();
+        $walletId = $request->id;
+
+        if ($walletId === 'pi-network') {
+            $wallet = [
+                'Id' => 'pi-network',
+                'Name' => 'Pi Network',
+                'LogoUrl' => null, // Will be handled specially in the component
+                'Description' => 'Pi Network is a cryptocurrency project that allows users to mine Pi coins on their mobile phones without draining battery or consuming data.',
+            ];
+        } else {
+            $wallet = (new GatewayHandlerService())->getWallet($walletId);
+            if (!$wallet) {
+                return $this->notify('error', 'Wallet data not found')->toBack();
+            }
         }
 
         return Inertia::render('User/Wallet/Create', [

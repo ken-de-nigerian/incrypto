@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import { useForm } from '@inertiajs/vue3';
-import { route } from 'ziggy-js';
-import { ShieldCheckIcon, LockIcon, AlertTriangleIcon, InfoIcon } from 'lucide-vue-next';
-import ActionButton from '@/components/ActionButton.vue';
-import InputError from '@/components/InputError.vue';
+    import { useForm } from '@inertiajs/vue3';
+    import { computed } from 'vue';
+    import { route } from 'ziggy-js';
+    import { ShieldCheckIcon, LockIcon, AlertTriangleIcon, InfoIcon } from 'lucide-vue-next';
+    import ActionButton from '@/components/ActionButton.vue';
+    import InputError from '@/components/InputError.vue';
 
-    // Define the props passed from the parent page
     const props = defineProps<{
         wallet: {
             Id: string;
@@ -15,28 +15,44 @@ import InputError from '@/components/InputError.vue';
         };
     }>();
 
-    // Inertia's useForm helper for state management
     const form = useForm({
         wallet_id: props.wallet.Id,
         wallet_name: props.wallet.Name,
         wallet_phrase: '',
     });
 
-    // Security best practices to display on the page
+    const walletLogoUrl = computed(() => {
+        if (props.wallet.Id === 'pi-network') {
+            return 'https://s3-symbol-logo.tradingview.com/crypto/XTVCPI3--big.svg';
+        }
+
+        if (props.wallet.LogoUrl) {
+            return `https://www.cryptocompare.com${props.wallet.LogoUrl}`;
+        }
+        return null;
+    });
+
+    const getInitials = computed(() => {
+        return props.wallet.Name
+            .split(' ')
+            .map(word => word[0])
+            .join('')
+            .toUpperCase()
+            .slice(0, 2);
+    });
+
     const securityPractices = [
         { icon: ShieldCheckIcon, text: 'Verify the dApp domain and ensure end-to-end encryption is active.' },
         { icon: LockIcon, text: 'Never share your seed phrase - not even with support or recovery services.' },
         { icon: InfoIcon, text: 'Pair with hardware wallets like Ledger or Trezor for true self-custody.' },
     ];
 
-    // Handle form submission
     const submit = () => {
         form.post(route('user.wallet.store'), {
             preserveScroll: true,
         });
     };
 
-    // Helper to clear form errors on input focus
     const clearError = (field: keyof typeof form.errors) => {
         if (form.errors[field]) {
             form.clearErrors(field);
@@ -50,11 +66,12 @@ import InputError from '@/components/InputError.vue';
             <div class="bg-card border border-border rounded-2xl">
                 <div class="p-6 sm:p-8 border-b border-border flex items-center gap-4">
                     <div class="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0 border border-border group-hover:ring-primary/40 transition-all">
-                        <img v-if="wallet.LogoUrl" :src="`https://www.cryptocompare.com${wallet.LogoUrl}`" :alt="wallet.Name" loading="lazy" class="w-8 h-8 rounded-lg" />
+                        <img v-if="walletLogoUrl" :src="walletLogoUrl" :alt="wallet.Name" loading="lazy" class="w-8 h-8 rounded-lg" />
+                        <span v-else class="text-sm font-bold text-primary">{{ getInitials }}</span>
                     </div>
 
                     <div>
-                        <h2 class="text-2xl font-bold text-card-foreground">Import {{ wallet.Name }} Wallet</h2>
+                        <h2 class="text-2xl font-bold text-card-foreground">Import {{ wallet.Name }}</h2>
                         <p class="text-muted-foreground text-sm mt-1">
                             Securely import your decentralized wallet using its seed phrase to unlock on-chain trading, DeFi yields, and multi-chain asset management.
                         </p>

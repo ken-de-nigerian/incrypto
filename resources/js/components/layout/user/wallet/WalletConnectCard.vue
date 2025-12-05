@@ -2,6 +2,7 @@
     import { computed, ref, onMounted, onUnmounted, watch } from 'vue';
     import { WalletIcon, CheckCircleIcon, PlusCircleIcon, ArrowRightIcon, InfoIcon, ShieldCheckIcon, TrendingUpIcon, LockIcon, ZapIcon, ExternalLinkIcon, CopyIcon, CheckIcon, Loader2Icon, SearchIcon, ArrowUpDownIcon, SortAscIcon, SortDescIcon, FilterIcon, XIcon } from 'lucide-vue-next';
     import TextLink from '@/components/TextLink.vue';
+    import { getAllManualWallets, getWalletLogoUrl } from '@/utils/manualWallets';
 
     const props = defineProps({
         userWallets: {
@@ -30,13 +31,11 @@
 
     const copiedAddress = ref<string | null>(null);
 
-    // Search and filter state
     const searchQuery = ref('');
     const sortOrder = ref<'asc' | 'desc' | 'default'>('default');
     const filterByType = ref<string>('all');
     const showFilters = ref(false);
 
-    // Infinite scroll state
     const displayCount = ref(8);
     const isLoadingMore = ref(false);
     const scrollContainer = ref<HTMLElement | null>(null);
@@ -44,16 +43,25 @@
     const loadBuffer = 300;
 
     const connectedWallets = computed(() => props.userWallets);
+
+    const enhancedAvailableWallets = computed(() => {
+        const manualWallets = getAllManualWallets();
+        const apiWalletIds = new Set(props.availableWallets.map(w => w.id));
+
+        const walletsToAdd = manualWallets.filter(w => !apiWalletIds.has(w.id));
+
+        return [...walletsToAdd, ...props.availableWallets];
+    });
+
     const walletTypes = computed(() => {
-        const types = new Set(props.availableWallets.map(w => w.type));
+        const types = new Set(enhancedAvailableWallets.value.map(w => w.type));
         return ['all', ...Array.from(types)];
     });
 
     const availableToConnect = computed(() => {
         const connectedIds = connectedWallets.value.map(w => w.wallet_id);
-        let filtered = props.availableWallets.filter(w => !connectedIds.includes(w.id));
+        let filtered = enhancedAvailableWallets.value.filter(w => !connectedIds.includes(w.id));
 
-        // Apply search filter
         if (searchQuery.value.trim()) {
             const query = searchQuery.value.toLowerCase();
             filtered = filtered.filter(w =>
@@ -63,12 +71,10 @@
             );
         }
 
-        // Apply type filter
         if (filterByType.value !== 'all') {
             filtered = filtered.filter(w => w.type === filterByType.value);
         }
 
-        // Apply sorting
         if (sortOrder.value === 'asc') {
             filtered = [...filtered].sort((a, b) => a.name.localeCompare(b.name));
         } else if (sortOrder.value === 'desc') {
@@ -80,7 +86,6 @@
         return filtered;
     });
 
-    // Paginated wallets for infinite scroll
     const displayedWallets = computed(() => {
         return availableToConnect.value.slice(0, displayCount.value);
     });
@@ -139,13 +144,11 @@
         return searchQuery.value.trim() !== '' || sortOrder.value !== 'default' || filterByType.value !== 'all';
     });
 
-    // Load more wallets
     const loadMore = () => {
         if (isLoadingMore.value || !hasMoreWallets.value) return;
 
         isLoadingMore.value = true;
 
-        // Simulate network delay for smooth UX
         setTimeout(() => {
             displayCount.value = Math.min(
                 displayCount.value + itemsPerLoad,
@@ -155,23 +158,19 @@
         }, 500);
     };
 
-    // Scroll handler for infinite scroll
     const handleScroll = (event: Event) => {
         const target = event.target as HTMLElement;
         const scrollTop = target.scrollTop;
         const scrollHeight = target.scrollHeight;
         const clientHeight = target.clientHeight;
 
-        // Calculate distance from bottom
         const distanceFromBottom = scrollHeight - (scrollTop + clientHeight);
 
-        // Load more when within buffer distance from the bottom
         if (distanceFromBottom < loadBuffer && hasMoreWallets.value && !isLoadingMore.value) {
             loadMore();
         }
     };
 
-    // Watch for search/filter changes to reset pagination
     watch([searchQuery, sortOrder, filterByType], () => {
         displayCount.value = Math.min(itemsPerLoad, totalWalletsCount.value);
         if (scrollContainer.value) {
@@ -179,20 +178,17 @@
         }
     });
 
-    // Watch for wallet list changes to reset if needed
-    watch(() => props.availableWallets.length, (newLength) => {
+    watch(() => enhancedAvailableWallets.value.length, (newLength) => {
         if (newLength < displayCount.value) {
             displayCount.value = Math.min(itemsPerLoad, newLength);
         }
     });
 
     onMounted(() => {
-        // Set initial display count
         displayCount.value = Math.min(itemsPerLoad, totalWalletsCount.value);
     });
 
     onUnmounted(() => {
-        // Cleanup logic remains the same
         if (copiedAddress.value !== null) {
             copiedAddress.value = null;
         }
@@ -414,7 +410,7 @@
                                 </span>
                                 <div class="flex items-start gap-4 mb-4">
                                     <div class="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0 border border-border group-hover:ring-primary/40 transition-all">
-                                        <img v-if="wallet.logo" :src="`https://www.cryptocompare.com${wallet.logo}`" :alt="wallet.name" loading="lazy" class="w-8 h-8 rounded-lg" />
+                                        <img v-if="getWalletLogoUrl(wallet.id, wallet.logo)" :src="getWalletLogoUrl(wallet.id, wallet.logo)" :alt="wallet.name" loading="lazy" class="w-8 h-8 rounded-lg" />
                                         <span v-else class="text-sm font-bold text-primary">{{ getInitials(wallet.name) }}</span>
                                     </div>
 

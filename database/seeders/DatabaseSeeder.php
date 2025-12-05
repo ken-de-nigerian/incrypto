@@ -15,13 +15,9 @@ class DatabaseSeeder extends Seeder
     {
         User::factory()->admin()->create();
 
-        // 2. Seed bulk fake users and their profiles
         $this->call([
             UserSeeder::class,
             PlanSeeder::class,
-            MasterTraderSeeder::class,
-            CopyTradeSeeder::class,
-            LoanSeeder::class,
         ]);
     }
 }

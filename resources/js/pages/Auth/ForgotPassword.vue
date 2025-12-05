@@ -7,6 +7,7 @@
     import ActionButton from '@/components/ActionButton.vue';
     import FlashMessages from '@/components/utilities/FlashMessages.vue';
     import SiteLogo from '@/components/SiteLogo.vue';
+    import LiveSupport from '@/components/LiveSupport.vue';
 
     defineProps<{
         errors?: object;
@@ -100,4 +101,5 @@
     </div>
 
     <FlashMessages />
+    <LiveSupport />
 </template>

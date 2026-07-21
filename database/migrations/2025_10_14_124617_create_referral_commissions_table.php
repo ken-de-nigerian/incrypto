@@ -19,6 +19,11 @@ return new class extends Migration
             $table->decimal('amount', 15)->default(0.00);
             $table->string('percent');
             $table->timestamps();
+
+            // Indexes
+            $table->index('received_crypto_id');
+            $table->index('from_id');
+            $table->index('to_id');
         });
     }
 

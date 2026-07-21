@@ -25,6 +25,12 @@ return new class extends Migration
             $table->enum('status', ['running', 'completed', 'cancelled'])->default('running');
             $table->string('capital_back_status')->default('no');
             $table->timestamps();
+
+            // Indexes
+            $table->index('user_id');
+            $table->index('plan_id');
+            $table->index('status');
+            $table->index('next_time');
         });
     }
 

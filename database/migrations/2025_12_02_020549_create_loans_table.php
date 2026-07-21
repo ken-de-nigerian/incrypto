@@ -29,6 +29,11 @@ return new class extends Migration
             $table->timestamp('due_date')->nullable();
             $table->text('remarks')->nullable();
             $table->timestamps();
+
+            // Indexes
+            $table->index('user_id');
+            $table->index('status');
+            $table->index('due_date');
         });
     }
 

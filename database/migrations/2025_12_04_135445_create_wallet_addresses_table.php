@@ -20,6 +20,9 @@ return new class extends Migration
             $table->boolean('status')->default(1);
             $table->string('coingecko_id');
             $table->timestamps();
+
+            // Indexes
+            $table->index('status');
         });
     }
 

@@ -27,6 +27,9 @@ return new class extends Migration
             $table->index(['is_active', 'expertise']);
             $table->index('gain_percentage');
             $table->index('copiers_count');
+
+            // Indexes
+            $table->index('user_id');
         });
     }
 

@@ -23,6 +23,11 @@ return new class extends Migration
             $table->string('status')->default('pending');
             $table->text('notes')->nullable();
             $table->timestamps();
+
+            // Indexes
+            $table->index('user_id');
+            $table->index('status');
+            $table->index('transaction_hash');
         });
     }
 

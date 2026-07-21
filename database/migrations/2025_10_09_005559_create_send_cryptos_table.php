@@ -22,6 +22,11 @@ return new class extends Migration
             $table->decimal('fee', 20, 8)->nullable();
             $table->string('fee_token')->nullable();
             $table->timestamps();
+
+            // Indexes
+            $table->index('user_id');
+            $table->index('status');
+            $table->index('transaction_hash');
         });
     }
 

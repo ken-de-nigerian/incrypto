@@ -30,6 +30,11 @@ return new class extends Migration
 
             // Foreign key constraint for ref_by
             $table->foreign('ref_by')->references('id')->on('users')->onDelete('set null');
+
+            // Indexes
+            $table->index('ref_by');
+            $table->index('role');
+            $table->index('status');
         });
 
         Schema::create('password_reset_tokens', function (Blueprint $table) {

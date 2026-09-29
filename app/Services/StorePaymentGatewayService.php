@@ -47,14 +47,8 @@ class StorePaymentGatewayService
             throw new Exception("Wallet not found.");
         }
 
-        // If the stored value was encrypted with an old APP_KEY, drop it from the
-        // original attributes; otherwise Eloquent's dirty check tries to decrypt it and throws.
-        if ($walletAddress->safeGatewayParameter() === null) {
-            $walletAddress->setRawAttributes(
-                array_merge($walletAddress->getAttributes(), ['gateway_parameter' => null]),
-                true
-            );
-        }
+        // The stored value may have been encrypted with an old APP_KEY
+        $walletAddress->forgetUnreadableGatewayParameter();
 
         $oldAbbreviation = $walletAddress->abbreviation;
 

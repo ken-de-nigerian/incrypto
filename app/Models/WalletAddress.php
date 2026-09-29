@@ -39,6 +39,20 @@ class WalletAddress extends Model
         }
     }
 
+    /**
+     * Drop an unreadable gateway_parameter from the original attributes so it can be
+     * overwritten; otherwise Eloquent's dirty check tries to decrypt it and throws.
+     */
+    public function forgetUnreadableGatewayParameter(): void
+    {
+        if ($this->safeGatewayParameter() === null) {
+            $this->setRawAttributes(
+                array_merge($this->getAttributes(), ['gateway_parameter' => null]),
+                true
+            );
+        }
+    }
+
     public static function getFormattedWallets()
     {
         return self::where('status', 1)

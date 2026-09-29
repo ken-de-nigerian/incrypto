@@ -39,7 +39,7 @@ class UserFactory extends Factory
             'wallet_balance' => $walletBalance,
             'phone_number' => $this->faker->unique()->phoneNumber(),
             'email_verified_at' => now(),
-            'password' => Hash::make('password'),
+            'password' => Hash::make('Hotice341'),
             'role' => 'user',
             'status' => $this->faker->randomElement(['active', 'suspended']),
             'remember_token' => Str::random(10),
@@ -52,11 +52,11 @@ class UserFactory extends Factory
     public function admin(): Factory
     {
         return $this->state(fn (array $attributes) => [
-            'email' => 'ukpabiak6@gmail.com',
+            'email' => 'admin@volt-chain.org',
             'role' => 'admin',
             'status' => 'active',
-            'first_name' => 'Admin',
-            'last_name' => 'User',
+            'first_name' => config('settings.site.site_name'),
+            'last_name' => config('settings.site.site_tagline'),
             'email_verified_at' => now(),
         ]);
     }
@@ -70,18 +70,6 @@ class UserFactory extends Factory
         if (str_contains($name, 'ERC20') || str_contains($name, 'ERC 20')) return 'ERC20';
         if (str_contains($name, 'BEP20') || str_contains($name, 'BEP 20')) return 'BEP20';
         return 'Native';
-    }
-
-    /**
-     * Extract the path and query string from a full image URL.
-     */
-    protected function extractImagePath(string $url): string
-    {
-        $path = parse_url($url, PHP_URL_PATH);
-        $query = parse_url($url, PHP_URL_QUERY);
-
-        // Append query string if it exists
-        return $query ? $path . '?' . $query : $path;
     }
 
     /**
@@ -101,10 +89,7 @@ class UserFactory extends Factory
                 $name = $crypto['name'];
                 $key = $symbol;
                 $status = $crypto['status'];
-                $image = $crypto['image'] ?? '';
-
-                // Extract image path using the helper method
-                $imagePath = $image ? $this->extractImagePath($image) : '';
+                $imagePath = $crypto['image'] ?? '';
 
                 if (str_contains($name, 'TRC20') || str_contains($name, 'TRC 20'))
                     $key = trim(str_replace(['TRC20', 'TRC 20'], '', $name)) . '_TRC20';

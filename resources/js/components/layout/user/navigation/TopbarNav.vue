@@ -1,4 +1,5 @@
 <script setup lang="ts">
+    import { coinImageUrl } from '@/utils/coinImage';
     import { computed, ref, onMounted, onUnmounted } from 'vue';
     import { useAppearance } from '@/composables/useAppearance';
     import {
@@ -96,7 +97,7 @@
 
     const kycStatus = computed(() => {
         const status = page.props.auth.user?.kyc?.status;
-        if (status === 'approved') return 'Verified';
+        if (status === 'verified') return 'Verified';
         if (status === 'pending') return 'Pending';
         if (status === 'rejected') return 'Rejected';
         return 'Unverified';
@@ -603,7 +604,7 @@
                                     <div class="flex items-center gap-3 flex-1 min-w-0">
                                         <div class="w-10 h-10 xs:w-12 xs:h-12 flex-shrink-0 rounded-full overflow-hidden bg-background border border-border">
                                             <img
-                                                :src="`https://coin-images.coingecko.com${wallet.image}.png`"
+                                                :src="coinImageUrl(wallet.image)"
                                                 loading="lazy"
                                                 :alt="`${wallet.name} icon`"
                                                 class="h-full w-full object-cover"

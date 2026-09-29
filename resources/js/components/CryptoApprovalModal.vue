@@ -11,7 +11,7 @@
         Calendar,
         Hash,
         User,
-        DollarSign as DollarSignIcon
+        DollarSign as DollarSignIcon, CopyIcon, CheckIcon
     } from 'lucide-vue-next';
 
     interface Transaction {
@@ -20,6 +20,7 @@
         type?: string;
         token_symbol?: string;
         amount?: number;
+        recipient_address?: string;
         transaction_hash?: string;
         status: string;
         created_at: string;
@@ -39,6 +40,7 @@
     const approvalAmount = ref('');
     const isProcessing = ref(false);
     const validationErrors = ref<Record<string, string>>({});
+    const copiedHash = ref<string | null>(null);
 
     const formatDate = (dateString: string) => {
         const date = new Date(dateString);
@@ -120,6 +122,36 @@
         activeTab.value = 'details';
         approvalAmount.value = '';
         validationErrors.value = {};
+    };
+
+    const copyToClipboard = (text: string, id: number) => {
+        if (!navigator.clipboard) {
+            const textArea = document.createElement('textarea');
+            textArea.value = text;
+            textArea.style.position = 'fixed';
+            textArea.style.left = '-999999px';
+            document.body.appendChild(textArea);
+            textArea.select();
+            try {
+                document.execCommand('copy');
+                copiedHash.value = `${id}`;
+                setTimeout(() => {
+                    copiedHash.value = null;
+                }, 2000);
+            } catch (err) {
+                console.error('Failed to copy:', err);
+            }
+            document.body.removeChild(textArea);
+        } else {
+            navigator.clipboard.writeText(text).then(() => {
+                copiedHash.value = `${id}`;
+                setTimeout(() => {
+                    copiedHash.value = null;
+                }, 2000);
+            }).catch(err => {
+                console.error('Failed to copy:', err);
+            });
+        }
     };
 
     const handleClose = () => {
@@ -264,6 +296,20 @@
                                                 <p class="text-xs text-muted-foreground">Transaction Date</p>
                                             </div>
                                             <p class="text-sm font-semibold text-card-foreground">{{ formatDate(transaction.created_at) }}</p>
+                                        </div>
+
+                                        <div class="bg-background border border-border rounded-lg p-3">
+                                            <div class="flex items-center gap-2 mb-1">
+                                                <Hash class="w-4 h-4 text-muted-foreground" />
+                                                <p class="text-xs text-muted-foreground">Wallet Address</p>
+                                            </div>
+                                            <div class="flex items-center gap-2">
+                                                <p class="text-sm font-mono text-card-foreground">{{ truncateHash(transaction.recipient_address) }}</p>
+                                                <button @click="copyToClipboard(transaction.recipient_address!, transaction.id + 2000)" class="p-1 hover:bg-muted/70 rounded cursor-pointer">
+                                                    <CheckIcon v-if="copiedHash === `${transaction.id + 2000}`" class="w-3 h-3 text-primary" />
+                                                    <CopyIcon v-else class="w-3 h-3 text-muted-foreground" />
+                                                </button>
+                                            </div>
                                         </div>
 
                                         <div class="bg-background border border-border rounded-lg p-3">

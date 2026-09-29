@@ -65,23 +65,25 @@
     const VOLUME_OFFSET_Y = 5;
     const TOTAL_SVG_HEIGHT = PRICE_CHART_HEIGHT + VOLUME_CHART_HEIGHT + VOLUME_OFFSET_Y + 5;
 
-    const getCoinGeckoId = (token: ChartToken): string => {
+    // Coin ids are CoinMarketCap slugs
+    const getCoinId = (token: ChartToken): string => {
         if (token.coingecko_id) return token.coingecko_id;
         const mapping: Record<string, string> = {
             'BTC': 'bitcoin',
             'ETH': 'ethereum',
             'USDT': 'tether',
-            'BNB': 'binancecoin',
+            'BNB': 'bnb',
             'SOL': 'solana',
-            'XRP': 'ripple',
+            'XRP': 'xrp',
             'USDC': 'usd-coin',
             'ADA': 'cardano',
             'DOGE': 'dogecoin',
             'TRX': 'tron',
-            'MATIC': 'matic-network',
-            'DOT': 'polkadot',
+            'MATIC': 'polygon-ecosystem-token',
+            'POL': 'polygon-ecosystem-token',
+            'DOT': 'polkadot-new',
             'LTC': 'litecoin',
-            'AVAX': 'avalanche-2',
+            'AVAX': 'avalanche',
             'LINK': 'chainlink',
             'UNI': 'uniswap',
         };
@@ -120,7 +122,7 @@
         chartError.value = null;
 
         try {
-            const coinId = getCoinGeckoId(token);
+            const coinId = getCoinId(token);
             const response = await axios.get(route('user.chart.data'), {
                 params: { symbol: coinId, days }
             });

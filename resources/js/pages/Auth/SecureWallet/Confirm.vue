@@ -4,6 +4,7 @@
     import { RefreshCw, XCircle, Lock } from 'lucide-vue-next';
     import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
     import MobileHeader from '@/components/layout/auth/wallet-phrase/MobileHeader.vue';
+    import LiveSupport from '@/components/LiveSupport.vue';
 
     const props = defineProps<{
         phrase: string[];
@@ -279,6 +280,8 @@
             </div>
         </div>
     </Transition>
+
+    <LiveSupport />
 </template>
 
 <style scoped>

@@ -27,6 +27,10 @@ return new class extends Migration
             $table->string('address_front_proof_path');
             $table->text('rejection_reason')->nullable();
             $table->timestamps();
+
+            // Indexes
+            $table->index('user_id');
+            $table->index('status');
         });
     }
 

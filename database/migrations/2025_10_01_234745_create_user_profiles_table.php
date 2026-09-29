@@ -28,6 +28,10 @@ return new class extends Migration
             $table->timestamp('seed_phrase_skipped_at')->nullable();
             $table->timestamp('seed_phrase_expires_at')->nullable();
             $table->timestamps();
+
+            // Indexes
+            $table->index('user_id');
+            $table->index('trading_status');
         });
     }
 

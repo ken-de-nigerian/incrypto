@@ -1,4 +1,5 @@
 <script setup lang="ts">
+    import { coinImageUrl } from '@/utils/coinImage';
     import { DefineComponent } from 'vue';
     import { AlertTriangle, CheckCircle2, Copy, RotateCw } from 'lucide-vue-next';
     import { ref, computed } from 'vue';
@@ -307,7 +308,7 @@
                         <template v-if="selectedOption">
                             <div class="flex items-center gap-3">
                                 <img
-                                    :src="`https://coin-images.coingecko.com${selectedOption.image}.png`"
+                                    :src="coinImageUrl(selectedOption.image)"
                                     loading="lazy"
                                     :alt="selectedOption.symbol"
                                     class="h-8 w-8 object-cover"
@@ -331,7 +332,7 @@
                     <template #option="{ option }">
                         <div class="flex items-center gap-3">
                             <img
-                                :src="`https://coin-images.coingecko.com${option.image}.png`"
+                                :src="coinImageUrl(option.image)"
                                 loading="lazy"
                                 :alt="option.symbol"
                                 class="h-8 w-8 object-cover"

@@ -66,10 +66,6 @@ return [
         'key' => env('COINMARKETCAP_API_KEY'),
     ],
 
-    'coingecko' => [
-        'key' => env('COINGECKO_API_KEY'),
-    ],
-
     'etherscan' => [
         'key' => env('ETHERSCAN_API_KEY'),
     ],

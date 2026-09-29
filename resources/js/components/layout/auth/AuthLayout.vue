@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import FlashMessages from '@/components/utilities/FlashMessages.vue';
+    import FlashMessages from '@/components/utilities/FlashMessages.vue';
+    import LiveSupport from '@/components/LiveSupport.vue';
 </script>
 
 <template>
@@ -9,4 +10,5 @@ import FlashMessages from '@/components/utilities/FlashMessages.vue';
     </div>
 
     <FlashMessages />
+    <LiveSupport />
 </template>

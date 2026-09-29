@@ -23,6 +23,10 @@ return new class extends Migration
             $table->enum('capital_back_status', ['yes', 'no'])->default('yes');
             $table->integer('repeat_time')->default('1');
             $table->timestamps();
+
+            // Indexes
+            $table->index('plan_time_settings_id');
+            $table->index('status');
         });
     }
 

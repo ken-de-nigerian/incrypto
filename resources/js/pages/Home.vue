@@ -40,6 +40,7 @@
     import ActionButton from '@/components/ActionButton.vue';
     import FlashMessages from '@/components/utilities/FlashMessages.vue';
     import { useFlash } from '@/composables/useFlash';
+    import LiveSupport from '@/components/LiveSupport.vue';
 
     interface RawCryptoData {
         name: string
@@ -1072,6 +1073,7 @@
 
     <HomeFooter />
     <FlashMessages />
+    <LiveSupport />
 </template>
 
 <style scoped>

@@ -54,35 +54,73 @@ class GatewayHandlerService
     ];
 
     private const API_PROVIDERS = [
-        'price' => ['cryptocompare', 'coinmarketcap', 'coingecko'],
-        'chart' => ['coingecko', 'coinmarketcap', 'coinpaprika'],
+        'price' => ['coinmarketcap', 'cryptocompare', 'coinpaprika'],
+        'chart' => ['coinmarketcap', 'cryptocompare', 'coinpaprika'],
+    ];
+
+    /**
+     * Number of top coins (by CoinMarketCap rank) offered in the crypto list, and
+     * the number kept for id/symbol/logo lookups.
+     */
+    private const CRYPTOS_LIST_LIMIT = 500;
+    private const ALL_CRYPTOS_LIMIT = 2000;
+
+    /**
+     * Per-instance copy of the full crypto list, so repeated lookups don't hit the cache store.
+     */
+    private ?array $allCryptos = null;
+
+    private const CMC_LOGO_URL = 'https://s2.coinmarketcap.com/static/img/coins/64x64/%d.png';
+
+    /**
+     * Coin ids are CoinMarketCap slugs. Wallets created before the switch from
+     * CoinGecko store CoinGecko ids; these are the ones whose slug differs.
+     */
+    private const LEGACY_COIN_IDS = [
+        'binancecoin' => 'bnb',
+        'ripple' => 'xrp',
+        'avalanche-2' => 'avalanche',
+        'polkadot' => 'polkadot-new',
+        'dai' => 'multi-collateral-dai',
+        'matic-network' => 'polygon-ecosystem-token',
+        'usdt_trc20' => 'tether',
+        'usdt_bep20' => 'tether',
+        'usdt_erc20' => 'tether',
+    ];
+
+    /**
+     * Ticker fallbacks for common coins, used when the crypto list is unavailable.
+     */
+    private const COIN_TICKERS = [
+        'bitcoin' => 'BTC',
+        'ethereum' => 'ETH',
+        'tether' => 'USDT',
+        'bnb' => 'BNB',
+        'xrp' => 'XRP',
+        'usd-coin' => 'USDC',
+        'solana' => 'SOL',
+        'tron' => 'TRX',
+        'dogecoin' => 'DOGE',
+        'cardano' => 'ADA',
+        'litecoin' => 'LTC',
+        'chainlink' => 'LINK',
+        'monero' => 'XMR',
+        'avalanche' => 'AVAX',
+        'sui' => 'SUI',
+        'multi-collateral-dai' => 'DAI',
+        'shiba-inu' => 'SHIB',
+        'polkadot-new' => 'DOT',
+        'polygon-ecosystem-token' => 'POL',
+        'cosmos' => 'ATOM',
+        'wrapped-bitcoin' => 'WBTC',
+        'uniswap' => 'UNI',
     ];
 
     private const SYMBOL_MAPPINGS = [
-        'usdt_trc20' => [
-            'coingecko' => 'tether',
-            'coinpaprika' => 'usdt-tether',
-            'cryptocompare' => 'USDT',
-            'coinmarketcap' => 'USDT',
-        ],
-        'usdt_bep20' => [
-            'coingecko' => 'tether',
-            'coinpaprika' => 'usdt-tether',
-            'cryptocompare' => 'USDT',
-            'coinmarketcap' => 'USDT',
-        ],
-        'binancecoin' => [
-            'coingecko' => 'binancecoin',
-            'coinpaprika' => 'bnb-binance-coin',
-            'cryptocompare' => 'BNB',
-            'coinmarketcap' => 'BNB',
-        ],
-        'ethereum' => [
-            'coingecko' => 'ethereum',
-            'coinpaprika' => 'eth-ethereum',
-            'cryptocompare' => 'ETH',
-            'coinmarketcap' => 'ETH',
-        ],
+        'tether' => ['coinpaprika' => 'usdt-tether'],
+        'bnb' => ['coinpaprika' => 'bnb-binance-coin'],
+        'ethereum' => ['coinpaprika' => 'eth-ethereum'],
+        'bitcoin' => ['coinpaprika' => 'btc-bitcoin'],
     ];
 
     /**
@@ -657,11 +695,6 @@ class GatewayHandlerService
         $apiKey = config("services.$provider.key");
         if ($apiKey) {
             switch ($provider) {
-                case 'coingecko':
-                    if (!str_contains($url, 'x_cg_api_key=')) {
-                        $url .= (!str_contains($url, '?') ? '?' : '&') . 'x_cg_api_key=' . $apiKey;
-                    }
-                    break;
                 case 'cryptocompare':
                     if (!str_contains($url, 'api_key=')) {
                         $url .= (!str_contains($url, '?') ? '?' : '&') . 'api_key=' . $apiKey;
@@ -920,54 +953,190 @@ class GatewayHandlerService
     }
 
     /**
-     * Gets market prices via CoinGecko API without pagination and caches results.
+     * Gets the top cryptos from CoinMarketCap (CryptoCompare as fallback) and caches results.
+     * Each entry: id (CoinMarketCap slug), symbol, name, image.
      */
     public function getCryptos(): array
     {
-        $cacheKey = "coinGeckoCryptosList";
-        $ttl = self::CACHE_TTL['CRYPTOS_LIST'];
-        return Cache::remember($cacheKey, $ttl, function () {
-            $data = $this->coinGeckoNoPagination();
-            if (empty($data)) {
-                return [];
-            }
-            usort($data, function ($a, $b) {
-                return strcmp($a['name'], $b['name']);
-            });
-            return $this->transformCoinGeckoCryptos($data);
-        });
-    }
+        $cacheKey = "cryptosList";
+        $cached = Cache::get($cacheKey);
+        if (is_array($cached) && !empty($cached)) {
+            return $cached;
+        }
 
-    /**
-     * Gets raw market data from CoinGecko API.
-     */
-    private function coinGeckoNoPagination(): array
-    {
-        $url = "https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&sparkline=false";
-        return $this->fetchData(
-            "raw_coingecko_no_pagination_temp",
-            $url,
-            self::CACHE_TTL['CRYPTOS_LIST'],
-            "Failed to fetch CoinGecko top cryptos"
-        );
-    }
-
-    /**
-     * Transforms raw CoinGecko market data to cache only required fields.
-     */
-    private function transformCoinGeckoCryptos(array $rawData): array
-    {
-        return collect($rawData)->map(function ($coin) {
-            return [
-                'id' => $coin['id'] ?? null,
-                'symbol' => $coin['symbol'] ?? '',
-                'name' => $coin['name'] ?? '',
-                'image' => $coin['image'] ?? asset('assets/images/crypto.png'),
-            ];
-        })
-            ->filter(fn($coin) => $coin['id'] !== null)
+        // Top coins, plus any coin an existing wallet uses so the admin edit form can match it
+        $walletCoinIds = WalletAddress::pluck('coingecko_id')
+            ->map(fn($id) => $this->normalizeCoinId($id))
+            ->filter()
+            ->flip();
+        $data = collect($this->getAllCryptos())
+            ->filter(fn($coin) => $coin['rank'] <= self::CRYPTOS_LIST_LIMIT || $walletCoinIds->has($coin['id']))
             ->values()
             ->toArray();
+        if (!empty($data)) {
+            Cache::put($cacheKey, $data, self::CACHE_TTL['CRYPTOS_LIST']);
+        }
+        return $data;
+    }
+
+    /**
+     * Full crypto list used for id, symbol and logo lookups, sorted by name.
+     */
+    private function getAllCryptos(): array
+    {
+        if ($this->allCryptos !== null) {
+            return $this->allCryptos;
+        }
+
+        $cacheKey = "allCryptosList";
+        $cached = Cache::get($cacheKey);
+        if (is_array($cached) && !empty($cached)) {
+            return $this->allCryptos = $cached;
+        }
+
+        $data = $this->fetchCryptosFromCoinMarketCap();
+        if (empty($data)) {
+            $data = $this->fetchCryptosFromCryptoCompare();
+        }
+        if (empty($data)) {
+            return [];
+        }
+
+        usort($data, fn($a, $b) => strcmp($a['name'], $b['name']));
+        Cache::put($cacheKey, $data, self::CACHE_TTL['CRYPTOS_LIST']);
+        return $this->allCryptos = $data;
+    }
+
+    private function fetchCryptosFromCoinMarketCap(): array
+    {
+        if (!config('services.coinmarketcap.key')) {
+            return [];
+        }
+        $response = $this->fetchFromAPIWithRetry(
+            'https://pro-api.coinmarketcap.com/v1/cryptocurrency/map?' . http_build_query([
+                'sort' => 'cmc_rank',
+                'limit' => self::ALL_CRYPTOS_LIMIT,
+            ]),
+            'coinmarketcap'
+        );
+        if ($response['error'] ?? false) {
+            Log::warning('Failed to fetch CoinMarketCap crypto list', ['method' => __METHOD__]);
+            return [];
+        }
+        $coins = collect($response['data']['data'] ?? []);
+
+        // Wallet coins ranked outside the list (e.g. WBTC) are fetched by ticker
+        $listed = $coins->pluck('slug')->flip();
+        $missingTickers = WalletAddress::all(['coingecko_id', 'abbreviation'])
+            ->reject(fn($wallet) => $listed->has($this->normalizeCoinId($wallet->coingecko_id)))
+            ->map(fn($wallet) => strtoupper($wallet->abbreviation))
+            ->filter()
+            ->unique()
+            ->implode(',');
+        if ($missingTickers !== '') {
+            $extra = $this->fetchFromAPIWithRetry(
+                'https://pro-api.coinmarketcap.com/v1/cryptocurrency/map?' . http_build_query(['symbol' => $missingTickers]),
+                'coinmarketcap'
+            );
+            $coins = $coins->concat($extra['data']['data'] ?? [])->unique('slug');
+        }
+
+        return $coins
+            ->filter(fn($coin) => !empty($coin['slug']) && ($coin['is_active'] ?? 1))
+            ->map(fn($coin) => [
+                'id' => $coin['slug'],
+                'symbol' => strtolower($coin['symbol'] ?? ''),
+                'name' => $coin['name'] ?? '',
+                'image' => sprintf(self::CMC_LOGO_URL, $coin['id']),
+                'rank' => $coin['rank'] ?? PHP_INT_MAX,
+            ])
+            ->values()
+            ->toArray();
+    }
+
+    private function fetchCryptosFromCryptoCompare(): array
+    {
+        $response = $this->fetchFromAPIWithRetry(
+            'https://min-api.cryptocompare.com/data/top/mktcapfull?limit=100&tsym=USD',
+            'cryptocompare'
+        );
+        if ($response['error'] ?? false) {
+            Log::warning('Failed to fetch CryptoCompare crypto list', ['method' => __METHOD__]);
+            return [];
+        }
+
+        $tickerToId = array_flip(self::COIN_TICKERS);
+        return collect($response['data']['Data'] ?? [])
+            ->map(function ($item, $index) use ($tickerToId) {
+                $info = $item['CoinInfo'] ?? [];
+                $ticker = strtoupper($info['Name'] ?? '');
+                if ($ticker === '') {
+                    return null;
+                }
+                return [
+                    'id' => $tickerToId[$ticker] ?? strtolower($ticker),
+                    'symbol' => strtolower($ticker),
+                    'name' => $info['FullName'] ?? $ticker,
+                    'image' => !empty($info['ImageUrl'])
+                        ? 'https://www.cryptocompare.com' . $info['ImageUrl']
+                        : asset('assets/images/crypto.png'),
+                    'rank' => $index + 1,
+                ];
+            })
+            ->filter()
+            ->values()
+            ->toArray();
+    }
+
+    /**
+     * Translate a stored coin id (legacy CoinGecko id or CoinMarketCap slug) to a CoinMarketCap slug.
+     */
+    public function normalizeCoinId(?string $coinId): ?string
+    {
+        if ($coinId === null || $coinId === '') {
+            return $coinId;
+        }
+        $coinId = strtolower($coinId);
+        return self::LEGACY_COIN_IDS[$coinId] ?? $coinId;
+    }
+
+    /**
+     * Find a coin in the crypto list by id, falling back to its ticker symbol.
+     */
+    public function findCrypto(?string $coinId, ?string $symbol = null): ?array
+    {
+        $cryptos = collect($this->getAllCryptos());
+        $coinId = $this->normalizeCoinId($coinId);
+
+        if ($coinId && ($crypto = $cryptos->firstWhere('id', $coinId))) {
+            return $crypto;
+        }
+        if ($symbol) {
+            // Several coins can share a ticker; pick the highest ranked one
+            return $cryptos->where('symbol', strtolower($symbol))->sortBy('rank')->first();
+        }
+        return null;
+    }
+
+    public function getCoinImage(?string $coinId, ?string $symbol = null): ?string
+    {
+        return $this->findCrypto($coinId, $symbol)['image'] ?? null;
+    }
+
+    /**
+     * Resolve a coin id (CoinMarketCap slug, legacy CoinGecko id, or ticker) to a ticker symbol.
+     */
+    private function resolveTicker(string $coinId, ?string $fallbackSymbol = null): string
+    {
+        $normalized = $this->normalizeCoinId($coinId);
+        if (isset(self::COIN_TICKERS[$normalized])) {
+            return self::COIN_TICKERS[$normalized];
+        }
+        $crypto = collect($this->getAllCryptos())->firstWhere('id', $normalized);
+        if ($crypto && !empty($crypto['symbol'])) {
+            return strtoupper($crypto['symbol']);
+        }
+        return strtoupper($fallbackSymbol ?: $coinId);
     }
 
     public function getGateways(): array
@@ -982,22 +1151,11 @@ class GatewayHandlerService
             if (empty($gateways)) {
                 return [];
             }
-            $coinGeckoIds = collect($gateways)
-                ->pluck('coingecko_id')
-                ->filter()
-                ->unique()
-                ->all();
-            if (empty($coinGeckoIds)) {
-                return $gateways;
-            }
-            $cryptos = $this->getCryptos();
-            $cryptoMap = collect($cryptos)
-                ->keyBy('id')
-                ->all();
-            return array_map(function ($gateway) use ($cryptoMap) {
-                $coinId = $gateway['coingecko_id'] ?? null;
-                if ($coinId && isset($cryptoMap[$coinId])) {
-                    $gateway['image'] = $cryptoMap[$coinId]['image'];
+            return array_map(function ($gateway) {
+                $gateway['coingecko_id'] = $this->normalizeCoinId($gateway['coingecko_id'] ?? null);
+                $image = $this->getCoinImage($gateway['coingecko_id'], $gateway['abbreviation'] ?? null);
+                if ($image) {
+                    $gateway['image'] = $image;
                 }
                 return $gateway;
             }, $gateways);
@@ -1013,7 +1171,7 @@ class GatewayHandlerService
 
     private function getMappedSymbol(string $symbol, string $provider): string
     {
-        return self::SYMBOL_MAPPINGS[$symbol][$provider] ?? $symbol;
+        return self::SYMBOL_MAPPINGS[$this->normalizeCoinId($symbol)][$provider] ?? $symbol;
     }
 
     public function fetchChartData(string $symbol, float $days = 1): array
@@ -1090,7 +1248,7 @@ class GatewayHandlerService
     private function fetchChartDataFromProvider(string $provider, string $symbol, float $days): array
     {
         return match ($provider) {
-            'coingecko' => $this->fetchChartDataFromCoinGecko($symbol, $days),
+            'cryptocompare' => $this->fetchChartDataFromCryptoCompare($symbol, $days),
             'coinmarketcap' => $this->fetchChartDataFromCoinMarketCap($symbol, $days),
             'coinpaprika' => $this->fetchChartDataFromCoinPaprika($symbol, $days),
             default => ['success' => false, 'error' => 'Unknown provider'],
@@ -1098,26 +1256,63 @@ class GatewayHandlerService
     }
 
     /**
+     * CryptoCompare reports rate limiting as HTTP 200 with Response=Error, which
+     * makeResilientRequest treats as success, so retry that case here.
      * @throws Exception
      */
-    private function fetchChartDataFromCoinGecko(string $symbol, float $days): array
+    private function cryptoCompareRequest(string $url, array $params): array
+    {
+        for ($attempt = 0; ; $attempt++) {
+            $data = $this->makeResilientRequest('cryptocompare', $url, $params)['json'] ?? [];
+            $isRateLimited = ($data['Response'] ?? '') === 'Error'
+                && str_contains(strtolower($data['Message'] ?? ''), 'rate limit');
+            if (!$isRateLimited || $attempt >= self::RATE_LIMIT_MAX_RETRIES) {
+                return $data;
+            }
+            sleep(self::RETRY_BASE_DELAY * ($attempt + 1));
+        }
+    }
+
+    /**
+     * Returns chart data as ['prices' => [[ms, price]], 'total_volumes' => [[ms, volume]]].
+     */
+    private function fetchChartDataFromCryptoCompare(string $symbol, float $days): array
     {
         try {
-            $mappedSymbol = $this->getMappedSymbol($symbol, 'coingecko');
-            $url = "https://api.coingecko.com/api/v3/coins/$mappedSymbol/market_chart";
+            $ticker = $this->resolveTicker($symbol);
+            // Pick a resolution that keeps the point count reasonable (API max is 2000)
+            [$endpoint, $aggregate, $limit] = match (true) {
+                $days <= 1 => ['histominute', 5, (int) ceil($days * 1440 / 5)],
+                $days <= 30 => ['histohour', 1, (int) ceil($days * 24)],
+                $days <= 90 => ['histohour', 3, (int) ceil($days * 8)],
+                default => ['histoday', 1, (int) ceil($days)],
+            };
+            $url = "https://min-api.cryptocompare.com/data/v2/$endpoint";
             $params = [
-                'vs_currency' => 'usd',
-                'days' => $days,
+                'fsym' => $ticker,
+                'tsym' => 'USD',
+                'aggregate' => $aggregate,
+                'limit' => max(1, min($limit, 2000)),
             ];
-            $responseData = $this->makeResilientRequest('coingecko', $url, $params);
-            $data = $responseData['json'];
-            if (!isset($data['prices']) || !is_array($data['prices'])) {
-                throw new Exception('Invalid chart data structure received');
+            $data = $this->cryptoCompareRequest($url, $params);
+            if (($data['Response'] ?? '') === 'Error' || !isset($data['Data']['Data']) || !is_array($data['Data']['Data'])) {
+                throw new Exception($data['Message'] ?? 'Invalid chart data structure received');
             }
-            return ['success' => true, 'data' => $data, 'provider' => 'coingecko'];
+            $candles = collect($data['Data']['Data'])->filter(fn($candle) => ($candle['close'] ?? 0) > 0)->values();
+            if ($candles->isEmpty()) {
+                return ['success' => false, 'error' => 'No chart data available'];
+            }
+            return [
+                'success' => true,
+                'data' => [
+                    'prices' => $candles->map(fn($candle) => [$candle['time'] * 1000, (float) $candle['close']])->toArray(),
+                    'total_volumes' => $candles->map(fn($candle) => [$candle['time'] * 1000, (float) ($candle['volumeto'] ?? 0)])->toArray(),
+                ],
+                'provider' => 'cryptocompare'
+            ];
         } catch (Throwable $e) {
             $error = $e->getMessage();
-            Log::error("Failed to fetch chart data from CoinGecko", [
+            Log::error("Failed to fetch chart data from CryptoCompare", [
                 'method' => __METHOD__,
                 'symbol' => $symbol,
                 'days' => $days,
@@ -1129,7 +1324,7 @@ class GatewayHandlerService
 
     private function fetchChartDataFromCoinMarketCap(string $symbol, float $days): array
     {
-        $mappedSymbol = strtoupper($this->getMappedSymbol($symbol, 'coinmarketcap'));
+        $mappedSymbol = $this->resolveTicker($symbol);
         $apiKey = config('services.coinmarketcap.key');
         if (!$apiKey) {
             $error = 'API key missing';
@@ -1139,10 +1334,12 @@ class GatewayHandlerService
         try {
             $timeStart = now()->subDays($days)->toIso8601String();
             $timeEnd = now()->toIso8601String();
+            // Billed at 1 credit per 100 data points, so keep most timeframes near 100 points
             $interval = match (true) {
-                $days <= 1 => '5m',
-                $days <= 7 => '30m',
-                $days <= 30 => '4h',
+                $days <= 1 => '15m',
+                $days <= 7 => '2h',
+                $days <= 14 => '4h',
+                $days <= 30 => '6h',
                 default => '1d',
             };
             $url = "https://pro-api.coinmarketcap.com/v1/cryptocurrency/quotes/historical";
@@ -1155,7 +1352,7 @@ class GatewayHandlerService
             ];
             $responseData = $this->makeResilientRequest('coinmarketcap', $url, $params);
             $data = $responseData['json'];
-            $coinData = collect($data['data'])->first();
+            $coinData = isset($data['data']['quotes']) ? $data['data'] : collect($data['data'] ?? [])->first();
             $quotes = $coinData['quotes'] ?? [];
             if (empty($quotes)) {
                 return ['success' => false, 'error' => 'No chart data available'];
@@ -1168,9 +1365,13 @@ class GatewayHandlerService
                     $price
                 ];
             })->values()->toArray();
+            $volumes = collect($quotes)->map(fn($item) => [
+                strtotime($item['timestamp']) * 1000,
+                $item['quote']['USD']['volume_24h'] ?? 0.0,
+            ])->values()->toArray();
             return [
                 'success' => true,
-                'data' => ['prices' => $prices],
+                'data' => ['prices' => $prices, 'total_volumes' => $volumes],
                 'provider' => 'coinmarketcap'
             ];
         } catch (Throwable $e) {
@@ -1230,131 +1431,157 @@ class GatewayHandlerService
         ];
     }
 
-    private function fetchCoinGeckoMarketData(array $coinIds): array
+    /**
+     * Fetch market data for the given coins. $coins maps coin id => ticker symbol.
+     * Tries CoinMarketCap, then CryptoCompare, then CoinPaprika.
+     */
+    private function fetchMarketData(array $coins): array
     {
-        if (empty($coinIds)) {
+        if (empty($coins)) {
             return [];
         }
-        $idString = implode('_', $coinIds);
-        $hashedIds = sha1($idString);
-        $cacheKey = "coinGeckoSpecificCoins_" . $hashedIds;
+        ksort($coins);
+        $cacheKey = "marketData_" . sha1(json_encode($coins));
         $cached = Cache::get($cacheKey);
         if (is_array($cached) && !empty($cached)) {
             return $cached;
         }
-        try {
-            $result = $this->fetchMarketDataFromCoinGeckoWithRetry($coinIds);
-            if (!empty($result)) {
-                Cache::put($cacheKey, $result, self::CACHE_TTL['PRICE_DATA']);
-                return $result;
-            }
-        } catch (Throwable $e) {
-            Log::warning('CoinGecko market data fetch failed, falling back to CoinPaprika', [
-                'method' => __METHOD__,
-                'coin_ids' => $coinIds,
-                'error' => $e->getMessage()
-            ]);
-        }
-        $fallbackResult = $this->fetchMarketDataFromCoinPaprika($coinIds);
-        if (!empty($fallbackResult)) {
-            Cache::put($cacheKey, $fallbackResult, self::CACHE_TTL['PRICE_DATA']);
-        }
-        return $fallbackResult;
-    }
 
-    private function fetchMarketDataFromCoinGeckoWithRetry(array $coinIds): array
-    {
-        $maxRetries = self::MAX_RETRIES;
-        for ($attempt = 0; $attempt < $maxRetries; $attempt++) {
+        foreach (self::API_PROVIDERS['price'] as $provider) {
             try {
-                $result = $this->fetchMarketDataFromCoinGecko($coinIds);
+                $result = match ($provider) {
+                    'cryptocompare' => $this->fetchMarketDataFromCryptoCompare($coins),
+                    'coinmarketcap' => $this->fetchMarketDataFromCoinMarketCap($coins),
+                    'coinpaprika' => $this->fetchMarketDataFromCoinPaprika($coins),
+                };
                 if (!empty($result)) {
+                    Cache::put($cacheKey, $result, self::CACHE_TTL['PRICE_DATA']);
                     return $result;
                 }
-                if ($attempt < $maxRetries - 1) {
-                    $delay = self::RETRY_BASE_DELAY * pow(2, $attempt);
-                    sleep($delay);
-                }
             } catch (Throwable $e) {
-                if (str_contains($e->getMessage(), '429') || str_contains($e->getMessage(), 'rate limit')) {
-                    if ($attempt < $maxRetries - 1) {
-                        sleep(self::RATE_LIMIT_RETRY_DELAY);
-                    }
-                    continue;
-                }
-                if ($attempt < $maxRetries - 1) {
-                    $delay = self::RETRY_BASE_DELAY * pow(2, $attempt);
-                    sleep($delay);
-                }
+                Log::warning("Market data fetch from $provider failed, trying next provider", [
+                    'method' => __METHOD__,
+                    'coins' => $coins,
+                    'error' => $e->getMessage()
+                ]);
             }
         }
-        Log::warning('CoinGecko market data fetch exhausted retries', ['method' => __METHOD__, 'coin_ids' => $coinIds]);
+
+        Log::error('All market data providers failed', ['method' => __METHOD__, 'coins' => $coins]);
         return [];
     }
 
-    private function fetchMarketDataFromCoinGecko(array $coinIds): array
+    /**
+     * Build a market data entry in the shape the rest of the app expects.
+     */
+    private function formatMarketData(string $coinId, string $ticker, array $values): array
     {
-        $ids = implode(',', $coinIds);
-        $url = "https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=$ids&order=market_cap_desc&sparkline=false";
-        try {
-            $rawData = $this->fetchData(
-                'temp_coingecko_market_data',
-                $url,
-                self::CACHE_TTL['PRICE_DATA'],
-                'Failed to fetch CoinGecko market data for specific IDs'
-            );
-            if (!empty($rawData)) {
-                return $this->transformCoinGeckoMarketData($rawData);
+        $crypto = $this->findCrypto($coinId, $ticker);
+        return [
+            'id' => $coinId,
+            'symbol' => strtolower($ticker),
+            'name' => $crypto['name'] ?? ($values['name'] ?? $ticker),
+            'image' => $crypto['image'] ?? ($values['image'] ?? asset('assets/images/crypto.png')),
+            'current_price' => (float) ($values['current_price'] ?? 0.0),
+            'market_cap' => $values['market_cap'] ?? 0,
+            'price_change_24h' => (float) ($values['price_change_24h'] ?? 0.0),
+            'price_change_percentage_24h' => (float) ($values['price_change_percentage_24h'] ?? 0.0),
+            'total_volume' => (float) ($values['total_volume'] ?? 0.0),
+        ];
+    }
+
+    /**
+     * @throws Exception
+     */
+    private function fetchMarketDataFromCryptoCompare(array $coins): array
+    {
+        $url = "https://min-api.cryptocompare.com/data/pricemultifull";
+        $params = [
+            'fsyms' => implode(',', array_unique(array_values($coins))),
+            'tsyms' => 'USD',
+        ];
+        $data = $this->cryptoCompareRequest($url, $params);
+        if (($data['Response'] ?? '') === 'Error') {
+            throw new Exception($data['Message'] ?? 'CryptoCompare returned an error');
+        }
+
+        $results = [];
+        foreach ($coins as $coinId => $ticker) {
+            $raw = $data['RAW'][$ticker]['USD'] ?? null;
+            if (!$raw || empty($raw['PRICE'])) {
+                continue;
             }
-            return [];
-        } catch (Throwable $e) {
-            Log::error("Failed to fetch market data from CoinGecko", [
-                'method' => __METHOD__,
-                'coin_ids' => $coinIds,
-                'error' => $e->getMessage()
+            $results[] = $this->formatMarketData($coinId, $ticker, [
+                'image' => !empty($raw['IMAGEURL']) ? 'https://www.cryptocompare.com' . $raw['IMAGEURL'] : null,
+                'current_price' => $raw['PRICE'],
+                'market_cap' => $raw['MKTCAP'] ?? 0,
+                'price_change_24h' => $raw['CHANGE24HOUR'] ?? 0,
+                'price_change_percentage_24h' => $raw['CHANGEPCT24HOUR'] ?? 0,
+                'total_volume' => $raw['TOTALVOLUME24HTO'] ?? ($raw['VOLUME24HOURTO'] ?? 0),
             ]);
+        }
+        return $results;
+    }
+
+    /**
+     * @throws Exception
+     */
+    private function fetchMarketDataFromCoinMarketCap(array $coins): array
+    {
+        if (!config('services.coinmarketcap.key')) {
             return [];
         }
+        $url = "https://pro-api.coinmarketcap.com/v2/cryptocurrency/quotes/latest";
+        $params = [
+            'symbol' => implode(',', array_unique(array_values($coins))),
+            'convert' => 'USD',
+            'skip_invalid' => 'true',
+        ];
+        $data = $this->makeResilientRequest('coinmarketcap', $url, $params)['json'];
+
+        $results = [];
+        foreach ($coins as $coinId => $ticker) {
+            // Several coins can share a ticker; prefer the matching slug, else the highest ranked
+            $matches = collect($data['data'][$ticker] ?? []);
+            $coin = $matches->firstWhere('slug', $coinId)
+                ?? $matches->sortBy(fn($c) => $c['cmc_rank'] ?? PHP_INT_MAX)->first();
+            $quote = $coin['quote']['USD'] ?? null;
+            if (!$quote || empty($quote['price'])) {
+                continue;
+            }
+            $price = (float) $quote['price'];
+            $changePct = (float) ($quote['percent_change_24h'] ?? 0);
+            $results[] = $this->formatMarketData($coinId, $ticker, [
+                'name' => $coin['name'] ?? null,
+                'image' => isset($coin['id']) ? sprintf(self::CMC_LOGO_URL, $coin['id']) : null,
+                'current_price' => $price,
+                'market_cap' => $quote['market_cap'] ?? 0,
+                'price_change_24h' => $price - ($price / (1 + $changePct / 100)),
+                'price_change_percentage_24h' => $changePct,
+                'total_volume' => $quote['volume_24h'] ?? 0,
+            ]);
+        }
+        return $results;
     }
 
-    private function transformCoinGeckoMarketData(array $rawData): array
-    {
-        return collect($rawData)->map(function ($coin) {
-            return [
-                'id' => $coin['id'] ?? null,
-                'symbol' => $coin['symbol'] ?? '',
-                'name' => $coin['name'] ?? '',
-                'image' => $coin['image'] ?? asset('assets/images/crypto.png'),
-                'current_price' => $coin['current_price'] ?? 0.0,
-                'market_cap' => $coin['market_cap'] ?? 0,
-                'price_change_24h' => $coin['price_change_24h'] ?? 0,
-                'price_change_percentage_24h' => $coin['price_change_percentage_24h'] ?? 0.0,
-                'total_volume' => $coin['total_volume'] ?? 0.0,
-            ];
-        })->filter(fn($coin) => $coin['id'] !== null)->values()->toArray();
-    }
-
-    private function fetchMarketDataFromCoinPaprika(array $coinIds): array
+    private function fetchMarketDataFromCoinPaprika(array $coins): array
     {
         $results = [];
-        foreach ($coinIds as $coinId) {
+        foreach ($coins as $coinId => $ticker) {
             try {
                 $mappedId = $this->getMappedSymbol($coinId, 'coinpaprika');
                 $url = "https://api.coinpaprika.com/v1/tickers/$mappedId";
                 $responseData = $this->makeResilientRequest('coinpaprika', $url);
                 $data = $responseData['json'];
                 $quotes = $data['quotes']['USD'] ?? [];
-                $results[] = [
-                    'id' => $coinId,
-                    'symbol' => $data['symbol'] ?? '',
-                    'name' => $data['name'] ?? '',
-                    'image' => asset('assets/images/crypto.png'),
+                $results[] = $this->formatMarketData($coinId, $data['symbol'] ?? $ticker, [
+                    'name' => $data['name'] ?? null,
                     'current_price' => $quotes['price'] ?? 0.0,
                     'market_cap' => $quotes['market_cap'] ?? 0,
                     'price_change_24h' => 0.0,
                     'price_change_percentage_24h' => $quotes['percent_change_24h'] ?? 0.0,
                     'total_volume' => $quotes['volume_24h'] ?? 0.0,
-                ];
+                ]);
             } catch (Throwable $e) {
                 Log::warning("Failed to fetch $coinId from CoinPaprika", [
                     'method' => __METHOD__,
@@ -1372,15 +1599,16 @@ class GatewayHandlerService
         if (empty($gateways)) {
             return [];
         }
-        $coinIds = collect($gateways)
-            ->pluck('coingecko_id')
-            ->filter()
-            ->unique()
+        $coins = collect($gateways)
+            ->filter(fn($gateway) => !empty($gateway['coingecko_id']))
+            ->mapWithKeys(fn($gateway) => [
+                $gateway['coingecko_id'] => $this->resolveTicker($gateway['coingecko_id'], $gateway['abbreviation'] ?? null),
+            ])
             ->all();
-        if (empty($coinIds)) {
+        if (empty($coins)) {
             return [];
         }
-        $coinData = $this->fetchCoinGeckoMarketData($coinIds);
+        $coinData = $this->fetchMarketData($coins);
         if (empty($coinData)) {
             return [];
         }
@@ -1451,24 +1679,6 @@ class GatewayHandlerService
             }
         }
         return null;
-    }
-
-    private function fetchData(string $cacheKey, string $apiUrl, int $ttl, string $errorContext): array
-    {
-        $cached = Cache::get($cacheKey);
-        if (is_array($cached) && !empty($cached)) {
-            return $cached;
-        }
-        $response = $this->fetchFromAPIWithRetry($apiUrl, 'coingecko');
-        if ($response['error'] ?? false) {
-            Log::warning($errorContext, ['method' => __METHOD__, 'provider' => 'coingecko', 'url' => $apiUrl]);
-            return [];
-        }
-        $data = $response['data'] ?? [];
-        if (!empty($data) && !str_contains($cacheKey, 'coinGeckoSpecificCoins_') && !str_contains($cacheKey, 'raw_coingecko_no_pagination_temp')) {
-            Cache::put($cacheKey, $data, $ttl);
-        }
-        return $data;
     }
 
     private function fetchFromAPIWithRetry(string $apiUrl, string $provider): array

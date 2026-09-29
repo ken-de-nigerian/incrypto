@@ -1,4 +1,5 @@
 <script setup lang="ts">
+    import { coinImageUrl } from '@/utils/coinImage';
     import { Loader2 } from 'lucide-vue-next';
 
     interface WalletItem {
@@ -39,7 +40,7 @@
                         <div class="flex items-center gap-2 flex-1 min-w-0">
                             <div class="w-8 h-8 flex-shrink-0 rounded-full overflow-hidden bg-background border border-border">
                                 <img
-                                    :src="`https://coin-images.coingecko.com${wallet.image}.png`"
+                                    :src="coinImageUrl(wallet.image)"
                                     loading="lazy"
                                     :alt="`${wallet.name} icon`"
                                     class="h-full w-full object-cover"

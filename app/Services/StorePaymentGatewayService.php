@@ -47,6 +47,15 @@ class StorePaymentGatewayService
             throw new Exception("Wallet not found.");
         }
 
+        // If the stored value was encrypted with an old APP_KEY, drop it from the
+        // original attributes; otherwise Eloquent's dirty check tries to decrypt it and throws.
+        if ($walletAddress->safeGatewayParameter() === null) {
+            $walletAddress->setRawAttributes(
+                array_merge($walletAddress->getAttributes(), ['gateway_parameter' => null]),
+                true
+            );
+        }
+
         $oldAbbreviation = $walletAddress->abbreviation;
 
         $updatedWallet = [
@@ -93,39 +102,18 @@ class StorePaymentGatewayService
     }
 
     /**
-     * Extract the path and query string from a full image URL.
+     * Get the crypto image URL for a coin id, falling back to its ticker symbol
      *
-     * @param string $url
-     * @return string
-     */
-    private function extractImagePath(string $url): string
-    {
-        $path = parse_url($url, PHP_URL_PATH);
-        $query = parse_url($url, PHP_URL_QUERY);
-
-        return $query ? $path . '?' . $query : $path;
-    }
-
-    /**
-     * Get crypto image from coingecko_id
-     *
-     * @param string $coingeckoId
+     * @param string $coinId
+     * @param string|null $symbol
      * @return string|null
      */
-    private function getCryptoImage(string $coingeckoId): ?string
+    private function getCryptoImage(string $coinId, ?string $symbol = null): ?string
     {
         try {
-            $gatewayService = new GatewayHandlerService();
-            $cryptos = $gatewayService->getCryptos();
-
-            foreach ($cryptos as $crypto) {
-                if ($crypto['id'] === $coingeckoId) {
-                    $image = $crypto['image'] ?? null;
-                    return $image ? $this->extractImagePath($image) : null;
-                }
-            }
+            return (new GatewayHandlerService())->getCoinImage($coinId, $symbol);
         } catch (Exception $e) {
-            Log::warning("Failed to fetch crypto image for $coingeckoId: " . $e->getMessage());
+            Log::warning("Failed to fetch crypto image for $coinId: " . $e->getMessage());
         }
 
         return null;
@@ -250,7 +238,7 @@ class StorePaymentGatewayService
             }
 
             $key = $this->generateWalletKey($newWallet['name'], $newWallet['abbreviation']);
-            $image = $this->getCryptoImage($newWallet['coingecko_id']);
+            $image = $this->getCryptoImage($newWallet['coingecko_id'], $newWallet['abbreviation']);
 
             // Check if wallet already exists
             if (isset($wallets[$key])) {
@@ -298,7 +286,7 @@ class StorePaymentGatewayService
                 $wallets = [];
             }
 
-            $image = $this->getCryptoImage($updatedWallet['coingecko_id']);
+            $image = $this->getCryptoImage($updatedWallet['coingecko_id'], $updatedWallet['abbreviation']);
             $newKey = $this->generateWalletKey($updatedWallet['name'], $updatedWallet['abbreviation']);
 
             // Find wallet by method_code (id)

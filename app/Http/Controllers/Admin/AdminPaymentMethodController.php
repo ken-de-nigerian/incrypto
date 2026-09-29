@@ -85,21 +85,24 @@ class AdminPaymentMethodController extends Controller
             $cryptoMap = collect($cryptos)->keyBy('id')->all();
 
             // Transform the paginated data
-            $wallets->getCollection()->transform(function ($wallet) use ($cryptoMap) {
+            $wallets->getCollection()->transform(function ($wallet) use ($cryptoMap, $gatewayService) {
+                // Legacy CoinGecko ids are mapped to CoinMarketCap slugs so the edit form matches the crypto list
+                $coinId = $gatewayService->normalizeCoinId($wallet->coingecko_id);
                 $walletArray = [
                     'method_code' => $wallet->method_code,
                     'name' => $wallet->name,
                     'abbreviation' => $wallet->abbreviation,
-                    'gateway_parameter' => $wallet->gateway_parameter,
+                    'gateway_parameter' => $wallet->safeGatewayParameter(),
                     'status' => (string) $wallet->status,
-                    'coingecko_id' => $wallet->coingecko_id,
+                    'coingecko_id' => $coinId,
                     'image' => null,
                 ];
 
                 // Add crypto image if available
-                $coinId = $wallet->coingecko_id;
                 if ($coinId && isset($cryptoMap[$coinId])) {
                     $walletArray['image'] = $cryptoMap[$coinId]['image'];
+                } else {
+                    $walletArray['image'] = $gatewayService->getCoinImage($coinId, $wallet->abbreviation);
                 }
 
                 return $walletArray;
